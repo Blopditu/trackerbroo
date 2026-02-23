@@ -1,0 +1,13 @@
+<div class="app-container">
+  <router-outlet></router-outlet>
+  @if (showNav()) {
+    <app-bottom-nav></app-bottom-nav>
+  }
+</div>
+
+<style>
+  .app-container {
+    min-height: 100vh;
+    padding-bottom: 80px; /* Space for bottom nav */
+  }
+</style>
