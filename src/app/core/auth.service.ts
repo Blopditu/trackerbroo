@@ -36,20 +36,22 @@ export class AuthService {
   }
 
   async signIn(email: string) {
+    const callbackUrl = this.getAuthCallbackUrl();
     const { error } = await this.supabaseService.client.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`
+        emailRedirectTo: callbackUrl
       }
     });
     if (error) throw error;
   }
 
   async signInWithGoogle() {
+    const callbackUrl = this.getAuthCallbackUrl();
     const { error } = await this.supabaseService.client.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`
+        redirectTo: callbackUrl
       }
     });
     if (error) throw error;
@@ -63,5 +65,16 @@ export class AuthService {
 
   get isAuthenticated() {
     return this.user() !== null;
+  }
+
+  private getAuthCallbackUrl(): string {
+    const baseUrl =
+      typeof document !== 'undefined'
+        ? document.baseURI
+        : typeof window !== 'undefined'
+          ? `${window.location.origin}/`
+          : 'http://localhost:4200/';
+
+    return new URL('auth/callback', baseUrl).toString();
   }
 }
