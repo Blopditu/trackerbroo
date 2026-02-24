@@ -4,27 +4,20 @@ import { RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-bottom-nav',
-  standalone: true,
   imports: [CommonModule, RouterModule],
   template: `
-    <nav class="bottom-nav">
-      <a routerLink="/today" routerLinkActive="active">
-        <div class="nav-item">
-          <span>📅</span>
-          <span>Today</span>
-        </div>
+    <nav class="bottom-nav" aria-label="Primary">
+      <a routerLink="/today" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+        <span class="icon" aria-hidden="true">🍜</span>
+        <span>Today</span>
       </a>
       <a routerLink="/library" routerLinkActive="active">
-        <div class="nav-item">
-          <span>📚</span>
-          <span>Library</span>
-        </div>
+        <span class="icon" aria-hidden="true">📚</span>
+        <span>Library</span>
       </a>
       <a routerLink="/dashboard" routerLinkActive="active">
-        <div class="nav-item">
-          <span>📊</span>
-          <span>Dashboard</span>
-        </div>
+        <span class="icon" aria-hidden="true">📜</span>
+        <span>Stats</span>
       </a>
     </nav>
   `,
@@ -32,30 +25,45 @@ import { RouterModule } from '@angular/router';
     .bottom-nav {
       position: fixed;
       bottom: 0;
-      left: 0;
-      right: 0;
-      background: white;
-      border-top: 1px solid #eee;
-      display: flex;
-      justify-content: space-around;
-      padding: 0.5rem;
-      box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(100%, 480px);
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.5rem;
+      padding: 0.55rem 0.75rem calc(0.75rem + env(safe-area-inset-bottom));
+      border-top: 3px solid #2f1f15;
+      background: linear-gradient(180deg, #7f4e2a 0%, #593117 100%);
+      box-shadow: 0 -6px 14px rgba(0, 0, 0, 0.25);
+      z-index: 15;
     }
-    .nav-item {
+
+    a {
       display: flex;
       flex-direction: column;
       align-items: center;
+      justify-content: center;
+      gap: 0.2rem;
+      min-height: 52px;
+      border-radius: 12px;
+      border: 2px solid #2f1f15;
       text-decoration: none;
-      color: #666;
-      padding: 0.5rem;
-      border-radius: 10px;
+      color: #ffe5b5;
+      background: linear-gradient(180deg, #9a6438 0%, #7a4a26 100%);
+      font-size: 0.78rem;
+      font-weight: 800;
+      transition: transform 0.15s ease, background 0.15s ease;
     }
-    .nav-item span {
-      font-size: 0.8rem;
+
+    a.active {
+      background: linear-gradient(180deg, #f78a1d 0%, #e1680e 100%);
+      color: #ffffff;
+      transform: translateY(-1px);
     }
-    .active .nav-item {
-      background: #667eea;
-      color: white;
+
+    .icon {
+      font-size: 1.1rem;
+      line-height: 1;
     }
   `]
 })

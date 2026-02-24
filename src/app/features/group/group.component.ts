@@ -8,89 +8,104 @@ import { Group } from '../../core/types';
 
 @Component({
   selector: 'app-group',
-  standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="group-container">
-      <h1>Select or Create Group</h1>
+    <main class="page group-page">
+      <header class="panel">
+        <p class="title-font">Village Selection</p>
+        <h1 class="group-title">Choose Your Squad</h1>
+      </header>
+
       @if (groups().length > 0) {
-        <div class="groups-list">
-          <h2>Your Groups</h2>
-          @for (group of groups(); track group.id) {
-            <div class="group-card" (click)="selectGroup(group)">
-              {{ group.name }}
-            </div>
-          }
-        </div>
+        <section class="panel" aria-label="Your groups">
+          <div class="scroll-header title-font">Your Groups</div>
+          <div class="group-list">
+            @for (group of groups(); track group.id) {
+              <button type="button" class="list-card group-card" (click)="selectGroup(group)">
+                <span>{{ group.name }}</span>
+                <span class="mono-badge">Enter</span>
+              </button>
+            }
+          </div>
+        </section>
       }
-      <div class="create-group">
-        <h2>Create New Group</h2>
-        <form (ngSubmit)="createGroup()" #groupForm="ngForm">
+
+      <section class="panel" aria-label="Create group">
+        <div class="scroll-header title-font">Create Group</div>
+        <form (ngSubmit)="createGroup()" #groupForm="ngForm" class="stack-form">
+          <label for="group-name" class="sr-only">Group name</label>
           <input
+            id="group-name"
             type="text"
             [(ngModel)]="groupName"
             name="groupName"
-            placeholder="Group name"
+            placeholder="Leaf Village"
             required
           >
-          <button type="submit" [disabled]="!groupForm.valid || loading">
+          <button type="submit" class="action-btn" [disabled]="!groupForm.valid || loading">
             {{ loading ? 'Creating...' : 'Create Group' }}
           </button>
         </form>
-      </div>
-      <div class="join-group">
-        <h2>Join Group</h2>
-        <form (ngSubmit)="joinGroup()" #joinForm="ngForm">
+      </section>
+
+      <section class="panel" aria-label="Join group">
+        <div class="scroll-header title-font">Join Group</div>
+        <form (ngSubmit)="joinGroup()" #joinForm="ngForm" class="stack-form">
+          <label for="invite-code" class="sr-only">Invite code</label>
           <input
+            id="invite-code"
             type="text"
             [(ngModel)]="inviteCode"
             name="inviteCode"
-            placeholder="Invite code"
+            placeholder="Paste invite code"
             required
           >
-          <button type="submit" [disabled]="!joinForm.valid || loading">
+          <button type="submit" class="action-btn alt" [disabled]="!joinForm.valid || loading">
             {{ loading ? 'Joining...' : 'Join Group' }}
           </button>
         </form>
-      </div>
-    </div>
+      </section>
+    </main>
   `,
   styles: [`
-    .group-container {
-      padding: 1rem;
-      max-width: 480px;
-      margin: 0 auto;
+    .group-page {
+      display: grid;
+      gap: 0.8rem;
     }
-    .groups-list {
-      margin-bottom: 2rem;
+
+    .group-title {
+      margin-top: 0.2rem;
+      font-size: 1.8rem;
     }
+
+    .group-list {
+      margin-top: 0.75rem;
+      display: grid;
+      gap: 0.55rem;
+    }
+
     .group-card {
-      background: #f0f0f0;
-      padding: 1rem;
-      border-radius: 10px;
-      margin-bottom: 0.5rem;
-      cursor: pointer;
+      width: 100%;
+      text-align: left;
+      background: linear-gradient(180deg, #fff9eb 0%, #f7e0b8 100%);
     }
-    form {
-      display: flex;
-      flex-direction: column;
+
+    .stack-form {
+      margin-top: 0.75rem;
+      display: grid;
+      gap: 0.65rem;
     }
-    input {
-      padding: 1rem;
-      border: 2px solid #eee;
-      border-radius: 10px;
-      margin-bottom: 1rem;
-    }
-    button {
-      padding: 1rem;
-      background: #667eea;
-      color: white;
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
-    }
-    button:disabled {
-      opacity: 0.6;
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
     }
   `]
 })
@@ -122,7 +137,11 @@ export class GroupComponent implements OnInit {
       return;
     }
 
-    this.groups.set(data?.map((item: any) => item.groups) || []);
+    const resolvedGroups = (data ?? [])
+      .map(item => (Array.isArray(item.groups) ? item.groups[0] : item.groups))
+      .filter((group): group is Group => Boolean(group));
+
+    this.groups.set(resolvedGroups);
   }
 
   async createGroup() {
@@ -142,7 +161,6 @@ export class GroupComponent implements OnInit {
 
       if (error) throw error;
 
-      // Add creator as owner
       await this.supabaseService.client
         .from('group_members')
         .insert({
@@ -160,7 +178,6 @@ export class GroupComponent implements OnInit {
   }
 
   async joinGroup() {
-    // For MVP, assume inviteCode is group_id
     const user = this.authService.user();
     if (!user) return;
 

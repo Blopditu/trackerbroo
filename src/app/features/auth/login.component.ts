@@ -6,123 +6,116 @@ import { AuthService } from '../../core/auth.service';
 
 @Component({
   selector: 'app-login',
-  standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="login-container">
-      <div class="login-card">
-        <h1>🍎 Protein Tracker</h1>
-        <p>Track macros with friends!</p>
-        <div class="auth-options">
-          <button type="button" class="google-btn" (click)="signInWithGoogle()">
-            <span>🔵</span> Continue with Google
-          </button>
-          <div class="divider">
-            <span>or</span>
-          </div>
-        </div>
+    <main class="page login-page">
+      <section class="panel hero" aria-labelledby="login-title">
+        <p class="title-font crest">Shinobi Nutrition Log</p>
+        <h1 id="login-title">Enter The Village</h1>
+        <p class="subtitle">Track macros with your squad using a manga-inspired dashboard.</p>
+      </section>
+
+      <section class="panel auth-panel" aria-label="Sign in">
+        <button type="button" class="action-btn ghost provider" (click)="signInWithGoogle()">
+          <span aria-hidden="true">🌀</span>
+          Continue with Google
+        </button>
+
+        <div class="divider" role="separator" aria-label="or">or</div>
+
         <form (ngSubmit)="onSubmit()" #loginForm="ngForm">
+          <label for="email" class="sr-only">Email</label>
           <input
+            id="email"
             type="email"
             [(ngModel)]="email"
             name="email"
-            placeholder="Enter your email"
+            placeholder="name@village.com"
             required
             email
+            autocomplete="email"
           >
-          <button type="submit" [disabled]="!loginForm.valid || loading">
-            {{ loading ? 'Sending...' : 'Send Magic Link' }}
+
+          <button type="submit" class="action-btn" [disabled]="!loginForm.valid || loading">
+            {{ loading ? 'Sending Scroll...' : 'Send Magic Link' }}
           </button>
         </form>
-        <p>
-          @if (message) {
-            {{ message }}
-          }
-        </p>
-      </div>
-    </div>
+
+        @if (message) {
+          <p class="message" aria-live="polite">{{ message }}</p>
+        }
+      </section>
+    </main>
   `,
   styles: [`
-    .login-container {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+    .login-page {
+      display: grid;
+      gap: 0.9rem;
+      min-height: calc(100vh - 88px);
+      align-content: center;
     }
-    .login-card {
-      background: white;
-      padding: 2rem;
-      border-radius: 20px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+
+    .hero {
       text-align: center;
-      max-width: 400px;
-      width: 90%;
+      background: linear-gradient(145deg, #fff4d4 0%, #f1d8a6 100%);
     }
-    .auth-options {
-      margin-bottom: 1.5rem;
+
+    .crest {
+      color: #8a3d14;
+      font-size: 1.1rem;
     }
-    .google-btn {
+
+    h1 {
+      font-size: 2.1rem;
+      margin-top: 0.25rem;
+    }
+
+    .subtitle {
+      margin: 0.35rem 0 0;
+      color: #3b2a1f;
+      font-weight: 700;
+    }
+
+    .auth-panel {
+      display: grid;
+      gap: 0.8rem;
+    }
+
+    .provider {
       width: 100%;
-      padding: 1rem;
-      background: white;
-      color: #333;
-      border: 2px solid #ddd;
-      border-radius: 10px;
-      font-size: 1rem;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-      margin-bottom: 1rem;
-      transition: all 0.2s;
     }
-    .google-btn:hover {
-      background: #f8f9fa;
-      border-color: #ccc;
+
+    form {
+      display: grid;
+      gap: 0.65rem;
     }
+
     .divider {
-      position: relative;
       text-align: center;
-      margin: 1rem 0;
+      font-weight: 800;
+      color: #6f3f1f;
     }
-    .divider::before {
-      content: '';
+
+    .message {
+      margin: 0;
+      padding: 0.6rem 0.7rem;
+      border: 2px solid #2f1f15;
+      border-radius: 10px;
+      background: #ffe9bc;
+      font-weight: 700;
+      color: #5a2f14;
+    }
+
+    .sr-only {
       position: absolute;
-      top: 50%;
-      left: 0;
-      right: 0;
+      width: 1px;
       height: 1px;
-      background: #ddd;
-    }
-    .divider span {
-      background: white;
-      padding: 0 1rem;
-      color: #666;
-      font-size: 0.9rem;
-    }
-    input {
-      width: 100%;
-      padding: 1rem;
-      border: 2px solid #eee;
-      border-radius: 10px;
-      margin-bottom: 1rem;
-      font-size: 1rem;
-    }
-    button {
-      width: 100%;
-      padding: 1rem;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      border: none;
-      border-radius: 10px;
-      font-size: 1rem;
-      cursor: pointer;
-    }
-    button:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
     }
   `]
 })
@@ -136,11 +129,8 @@ export class LoginComponent implements OnInit {
   private route = inject(ActivatedRoute);
 
   ngOnInit() {
-    // Handle auth callback
     this.route.fragment.subscribe(fragment => {
       if (fragment && fragment.includes('access_token')) {
-        // Auth callback - user will be automatically logged in by the auth service
-        // Redirect to main app after a short delay to ensure auth state is updated
         setTimeout(() => {
           if (this.authService.user()) {
             this.router.navigate(['/today']);
@@ -149,7 +139,6 @@ export class LoginComponent implements OnInit {
       }
     });
 
-    // If user is already authenticated, redirect to main app
     if (this.authService.user()) {
       this.router.navigate(['/today']);
     }
@@ -160,9 +149,9 @@ export class LoginComponent implements OnInit {
     this.message = '';
     try {
       await this.authService.signIn(this.email);
-      this.message = 'Check your email for the magic link!';
-    } catch (error: any) {
-      this.message = error.message;
+      this.message = 'Check your email for the magic link.';
+    } catch (error: unknown) {
+      this.message = error instanceof Error ? error.message : 'Sign-in failed.';
     } finally {
       this.loading = false;
     }
@@ -171,8 +160,8 @@ export class LoginComponent implements OnInit {
   async signInWithGoogle() {
     try {
       await this.authService.signInWithGoogle();
-    } catch (error: any) {
-      this.message = error.message;
+    } catch (error: unknown) {
+      this.message = error instanceof Error ? error.message : 'Google sign-in failed.';
     }
   }
 }

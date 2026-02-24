@@ -7,232 +7,267 @@ import { Ingredient, Meal, LogEntry, DailySummary } from '../../core/types';
 
 @Component({
   selector: 'app-today',
-  standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="today-container">
-      <div class="header">
+    <main class="page today-page">
+      <header class="panel header-panel">
+        <p class="title-font">Mission Log</p>
         <h1>Today</h1>
-        <div class="totals">
-          <div class="macro">{{ summary()?.kcal || 0 }} kcal</div>
-          <div class="macro">P: {{ summary()?.protein || 0 }}g</div>
-          <div class="macro">C: {{ summary()?.carbs || 0 }}g</div>
-          <div class="macro">F: {{ summary()?.fat || 0 }}g</div>
+        <div class="orbs" role="list" aria-label="Macro summary">
+          <div class="orb" role="listitem">
+            <span class="label">Kcal</span>
+            <strong>{{ summary()?.kcal || 0 }}</strong>
+          </div>
+          <div class="orb" role="listitem">
+            <span class="label">Protein</span>
+            <strong>{{ summary()?.protein || 0 }}g</strong>
+          </div>
+          <div class="orb" role="listitem">
+            <span class="label">Carbs</span>
+            <strong>{{ summary()?.carbs || 0 }}g</strong>
+          </div>
+          <div class="orb" role="listitem">
+            <span class="label">Fat</span>
+            <strong>{{ summary()?.fat || 0 }}g</strong>
+          </div>
         </div>
-      </div>
+      </header>
 
-      <div class="add-section">
-        <button class="big-add-btn" (click)="showAddModal = true">+ Add</button>
-      </div>
+      <section class="panel">
+        <button class="action-btn add-trigger" (click)="showAddModal = true" type="button">
+          + Add New Entry
+        </button>
+      </section>
 
-      <div class="tabs">
-        <button [class.active]="activeTab === 'favorites'" (click)="activeTab = 'favorites'">Favorites</button>
-        <button [class.active]="activeTab === 'recent'" (click)="activeTab = 'recent'">Recent</button>
-        <button [class.active]="activeTab === 'search'" (click)="activeTab = 'search'">Search</button>
-      </div>
+      <section class="panel">
+        <div class="segmented" role="tablist" aria-label="Library filter">
+          <button type="button" role="tab" [attr.aria-selected]="activeTab === 'favorites'" [class.active]="activeTab === 'favorites'" (click)="activeTab = 'favorites'">Favorites</button>
+          <button type="button" role="tab" [attr.aria-selected]="activeTab === 'recent'" [class.active]="activeTab === 'recent'" (click)="activeTab = 'recent'">Recent</button>
+          <button type="button" role="tab" [attr.aria-selected]="activeTab === 'search'" [class.active]="activeTab === 'search'" (click)="activeTab = 'search'">Search</button>
+        </div>
 
-      <div class="items-list">
-        @for (item of displayedItems(); track item.id || item.name) {
-          <div class="item-card" (click)="addItem(item)">
-            {{ item.name }}
-          </div>
-        }
-      </div>
+        <div class="items-list">
+          @for (item of displayedItems(); track item.id || item.name) {
+            <button type="button" class="list-card quick-card" (click)="addItem(item)">
+              <span>{{ item.name }}</span>
+              <span class="mono-badge">Quick Add</span>
+            </button>
+          }
+        </div>
+      </section>
 
-      <div class="entries-list">
-        @for (entry of entries(); track entry.id) {
-          <div class="entry-card">
-            <span>{{ entry.entry_type === 'ingredient' ? getIngredientName(entry.ref_id) : getMealName(entry.ref_id) }}</span>
-            <span>{{ entry.quantity }}{{ entry.entry_type === 'ingredient' ? 'g' : ' servings' }}</span>
-            <button (click)="editEntry(entry)">Edit</button>
-            <button (click)="deleteEntry(entry)">Delete</button>
-          </div>
-        }
-      </div>
+      <section class="panel">
+        <div class="scroll-header title-font">Today's Entries</div>
+        <div class="entries-list">
+          @for (entry of entries(); track entry.id) {
+            <article class="list-card entry-card">
+              <div class="entry-main">
+                <strong>{{ entry.entry_type === 'ingredient' ? getIngredientName(entry.ref_id) : getMealName(entry.ref_id) }}</strong>
+                <span class="entry-sub">{{ entry.quantity }}{{ entry.entry_type === 'ingredient' ? 'g' : ' servings' }}</span>
+              </div>
+              <div class="entry-actions">
+                <button type="button" class="mini-btn" (click)="editEntry(entry)">Edit</button>
+                <button type="button" class="mini-btn danger" (click)="deleteEntry(entry)">Delete</button>
+              </div>
+            </article>
+          }
+          @if (entries().length === 0) {
+            <p class="empty">No entries yet. Add your first meal.</p>
+          }
+        </div>
+      </section>
 
-      <button class="repeat-btn" (click)="repeatLast()">Repeat Last</button>
-    </div>
+      <button class="action-btn alt" type="button" (click)="repeatLast()">Repeat Last</button>
+    </main>
 
-    <!-- Add Modal -->
     @if (showAddModal) {
-      <div class="modal">
-        <div class="modal-content">
-          <h2>Add Entry</h2>
-          <div class="add-tabs">
-            <button [class.active]="addTab === 'ingredient'" (click)="addTab = 'ingredient'">Ingredient</button>
-            <button [class.active]="addTab === 'meal'" (click)="addTab = 'meal'">Meal</button>
+      <div class="modal" role="dialog" aria-modal="true" aria-label="Add entry">
+        <div class="modal-card">
+          <h2 class="title-font">Add Entry</h2>
+          <div class="segmented add-type" role="tablist" aria-label="Entry type">
+            <button type="button" role="tab" [attr.aria-selected]="addTab === 'ingredient'" [class.active]="addTab === 'ingredient'" (click)="addTab = 'ingredient'">Ingredient</button>
+            <button type="button" role="tab" [attr.aria-selected]="addTab === 'meal'" [class.active]="addTab === 'meal'" (click)="addTab = 'meal'">Meal</button>
+            <span class="spacer" aria-hidden="true"></span>
           </div>
+
           @if (addTab === 'ingredient') {
-            <select [(ngModel)]="selectedIngredientId">
+            <label for="ingredient-select">Ingredient</label>
+            <select id="ingredient-select" [(ngModel)]="selectedIngredientId">
               @for (ing of ingredients(); track ing.id) {
                 <option [value]="ing.id">{{ ing.name }}</option>
               }
             </select>
-            <input type="number" [(ngModel)]="grams" placeholder="Grams">
-            <div class="presets">
+            <label for="grams-input">Grams</label>
+            <input id="grams-input" type="number" [(ngModel)]="grams" placeholder="Grams">
+            <div class="presets" role="group" aria-label="Common gram values">
               @for (preset of [50, 100, 200]; track preset) {
-                <button (click)="grams = preset">{{ preset }}g</button>
+                <button type="button" class="mini-btn" (click)="grams = preset">{{ preset }}g</button>
               }
             </div>
           }
+
           @if (addTab === 'meal') {
-            <select [(ngModel)]="selectedMealId">
+            <label for="meal-select">Meal</label>
+            <select id="meal-select" [(ngModel)]="selectedMealId">
               @for (meal of meals(); track meal.id) {
                 <option [value]="meal.id">{{ meal.name }}</option>
               }
             </select>
-            <div class="servings">
-              <button (click)="decreaseServings()">-</button>
+            <div class="servings" role="group" aria-label="Servings">
+              <button type="button" class="mini-btn" (click)="decreaseServings()">-</button>
               <span>{{ servings }}</span>
-              <button (click)="increaseServings()">+</button>
+              <button type="button" class="mini-btn" (click)="increaseServings()">+</button>
             </div>
           }
-          <button (click)="confirmAdd()">Add</button>
-          <button (click)="showAddModal = false">Cancel</button>
+
+          <div class="modal-actions">
+            <button type="button" class="action-btn" (click)="confirmAdd()">Add</button>
+            <button type="button" class="action-btn ghost" (click)="showAddModal = false">Cancel</button>
+          </div>
         </div>
       </div>
     }
   `,
   styles: [`
-    .today-container {
-      padding: 1rem;
-      max-width: 480px;
-      margin: 0 auto;
+    .today-page {
+      display: grid;
+      gap: 0.75rem;
     }
-    .header {
-      text-align: center;
-      margin-bottom: 2rem;
-    }
-    .totals {
-      display: flex;
-      justify-content: space-around;
-      margin-top: 1rem;
-    }
-    .macro {
-      font-weight: bold;
-    }
-    .big-add-btn {
-      width: 100%;
-      padding: 2rem;
-      background: #667eea;
-      color: white;
-      border: none;
-      border-radius: 20px;
+
+    .header-panel h1 {
       font-size: 2rem;
-      cursor: pointer;
+      margin-top: 0.2rem;
     }
-    .tabs {
-      display: flex;
-      margin-bottom: 1rem;
+
+    .orbs {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.55rem;
+      margin-top: 0.65rem;
     }
-    .tabs button {
-      flex: 1;
-      padding: 1rem;
-      border: none;
-      background: #f0f0f0;
-      cursor: pointer;
+
+    .orb {
+      border: 2px solid #2f1f15;
+      border-radius: 999px;
+      padding: 0.5rem;
+      background: radial-gradient(circle at 30% 20%, #ffe9bf 0%, #f9bb54 100%);
+      text-align: center;
+      box-shadow: 0 3px 0 #2f1f15;
     }
-    .tabs button.active {
-      background: #667eea;
-      color: white;
+
+    .label {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 800;
+      color: #4a2f1d;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
     }
-    .items-list {
-      margin-bottom: 2rem;
+
+    .orb strong {
+      display: block;
+      margin-top: 0.15rem;
+      font-size: 1rem;
     }
-    .item-card {
-      background: #f9f9f9;
-      padding: 1rem;
-      border-radius: 10px;
-      margin-bottom: 0.5rem;
-      cursor: pointer;
+
+    .add-trigger {
+      width: 100%;
+      font-size: 1rem;
     }
+
+    .items-list,
     .entries-list {
-      margin-bottom: 2rem;
+      display: grid;
+      gap: 0.5rem;
+      margin-top: 0.7rem;
     }
+
+    .quick-card {
+      width: 100%;
+      text-align: left;
+      background: linear-gradient(180deg, #fffaf0 0%, #f7e2b8 100%);
+    }
+
     .entry-card {
+      align-items: flex-start;
+    }
+
+    .entry-main {
+      display: grid;
+      gap: 0.25rem;
+    }
+
+    .entry-sub {
+      font-size: 0.85rem;
+      color: #5a4638;
+      font-weight: 700;
+    }
+
+    .entry-actions {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: #fff;
-      padding: 1rem;
-      border-radius: 10px;
-      margin-bottom: 0.5rem;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      gap: 0.4rem;
     }
-    .repeat-btn {
-      width: 100%;
-      padding: 1rem;
-      background: #28a745;
-      color: white;
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
+
+    .mini-btn {
+      border: 2px solid #2f1f15;
+      border-radius: 999px;
+      background: #ffe4b1;
+      padding: 0.3rem 0.6rem;
+      font-weight: 800;
+      color: #321d11;
     }
-    .modal {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.5);
-      display: flex;
-      justify-content: center;
-      align-items: center;
+
+    .mini-btn.danger {
+      background: #f6c4b9;
+      color: #6b1818;
     }
-    .modal-content {
-      background: white;
-      padding: 2rem;
-      border-radius: 20px;
-      width: 90%;
-      max-width: 400px;
+
+    .empty {
+      margin: 0;
+      text-align: center;
+      color: #5c4433;
+      font-weight: 700;
     }
-    .add-tabs {
-      display: flex;
-      margin-bottom: 1rem;
+
+    .add-type {
+      margin: 0.7rem 0;
+      grid-template-columns: repeat(2, 1fr) auto;
     }
-    .add-tabs button {
-      flex: 1;
-      padding: 0.5rem;
-      border: none;
-      background: #f0f0f0;
-      cursor: pointer;
+
+    .spacer {
+      width: 0;
     }
-    .add-tabs button.active {
-      background: #667eea;
-      color: white;
+
+    label {
+      margin-top: 0.35rem;
+      display: block;
+      font-weight: 800;
+      color: #3f2b1d;
     }
-    select, input {
-      width: 100%;
-      padding: 0.5rem;
-      margin-bottom: 1rem;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-    }
+
     .presets {
+      margin-top: 0.55rem;
+      display: flex;
+      gap: 0.45rem;
+    }
+
+    .servings {
+      margin-top: 0.65rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      font-weight: 800;
+    }
+
+    .modal-actions {
+      margin-top: 0.95rem;
       display: flex;
       gap: 0.5rem;
-      margin-bottom: 1rem;
     }
-    .presets button {
+
+    .modal-actions button {
       flex: 1;
-      padding: 0.5rem;
-      border: 1px solid #ccc;
-      background: white;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    .servings {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      margin-bottom: 1rem;
-    }
-    .servings button {
-      padding: 0.5rem 1rem;
-      border: 1px solid #ccc;
-      background: white;
-      border-radius: 5px;
-      cursor: pointer;
     }
   `]
 })
@@ -266,7 +301,6 @@ export class TodayComponent implements OnInit {
 
     const today = new Date().toISOString().split('T')[0];
 
-    // Load entries
     const { data: entriesData } = await this.supabaseService.client
       .from('log_entries')
       .select('*')
@@ -276,7 +310,6 @@ export class TodayComponent implements OnInit {
 
     this.entries.set(entriesData || []);
 
-    // Load summary
     const { data: summaryData } = await this.supabaseService.client
       .from('daily_summaries')
       .select('*')
@@ -287,7 +320,6 @@ export class TodayComponent implements OnInit {
 
     this.summary.set(summaryData);
 
-    // Load ingredients and meals
     const { data: ingredientsData } = await this.supabaseService.client
       .from('ingredients')
       .select('*')
@@ -305,10 +337,8 @@ export class TodayComponent implements OnInit {
 
   get displayedItems() {
     if (this.activeTab === 'favorites') {
-      // For MVP, show all ingredients and meals
       return signal([...this.ingredients(), ...this.meals()]);
     }
-    // Implement recent and search later
     return signal([]);
   }
 
@@ -318,7 +348,6 @@ export class TodayComponent implements OnInit {
   }
 
   async addItem(item: Ingredient | Meal) {
-    // Quick add with default values
     const user = this.authService.user();
     if (!user) return;
 
@@ -328,8 +357,7 @@ export class TodayComponent implements OnInit {
     const today = new Date().toISOString().split('T')[0];
 
     if ('kcal_per_100' in item) {
-      // Ingredient
-      const quantity = 100; // default grams
+      const quantity = 100;
       const factor = quantity / 100;
       await this.supabaseService.client
         .from('log_entries')
@@ -346,11 +374,7 @@ export class TodayComponent implements OnInit {
           fat: item.fat_per_100 * factor
         });
     } else {
-      // Meal - need to calculate totals
-      // For MVP, assume 1 serving
       const quantity = 1;
-      // Calculate meal macros (would need meal_items join)
-      // Placeholder
       await this.supabaseService.client
         .from('log_entries')
         .insert({
@@ -360,7 +384,7 @@ export class TodayComponent implements OnInit {
           entry_type: 'meal',
           ref_id: item.id,
           quantity,
-          kcal: 0, // calculate
+          kcal: 0,
           protein: 0,
           carbs: 0,
           fat: 0
@@ -371,13 +395,12 @@ export class TodayComponent implements OnInit {
   }
 
   async confirmAdd() {
-    // Similar to addItem but with modal values
     this.showAddModal = false;
     this.loadData();
   }
 
   async editEntry(entry: LogEntry) {
-    // Implement edit modal
+    console.log('Edit entry', entry.id);
   }
 
   async deleteEntry(entry: LogEntry) {
@@ -391,7 +414,7 @@ export class TodayComponent implements OnInit {
 
   async repeatLast() {
     if (!this.lastEntry) return;
-    // Copy last entry with new timestamp
+
     const user = this.authService.user();
     if (!user) return;
 

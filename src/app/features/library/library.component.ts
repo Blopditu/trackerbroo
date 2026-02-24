@@ -3,78 +3,88 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SupabaseService } from '../../core/supabase.service';
 import { AuthService } from '../../core/auth.service';
-import { Ingredient, Meal, MealItem } from '../../core/types';
+import { Ingredient, Meal } from '../../core/types';
 
 @Component({
   selector: 'app-library',
-  standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="library-container">
-      <h1>Library</h1>
-      <div class="tabs">
-        <button [class.active]="activeTab === 'ingredients'" (click)="activeTab = 'ingredients'">Ingredients</button>
-        <button [class.active]="activeTab === 'meals'" (click)="activeTab = 'meals'">Meals</button>
-      </div>
+    <main class="page library-page">
+      <header class="panel">
+        <p class="title-font">Academy Archive</p>
+        <h1>Library</h1>
+      </header>
 
-      @if (activeTab === 'ingredients') {
-        <button class="add-btn" (click)="showIngredientModal = true">+ Add Ingredient</button>
-        <div class="items-list">
-          @for (item of ingredients(); track item.id) {
-            <div class="item-card">
-              <div>
-                <strong>{{ item.name }}</strong>
-                <div>{{ item.kcal_per_100 }} kcal/100g</div>
-              </div>
-              <button (click)="editIngredient(item)">Edit</button>
-              <button (click)="deleteIngredient(item)">Delete</button>
-            </div>
-          }
+      <section class="panel">
+        <div class="segmented" role="tablist" aria-label="Library tabs">
+          <button type="button" role="tab" [attr.aria-selected]="activeTab === 'ingredients'" [class.active]="activeTab === 'ingredients'" (click)="activeTab = 'ingredients'">Ingredients</button>
+          <button type="button" role="tab" [attr.aria-selected]="activeTab === 'meals'" [class.active]="activeTab === 'meals'" (click)="activeTab = 'meals'">Meals</button>
+          <span class="tab-spacer" aria-hidden="true"></span>
         </div>
-      }
 
-      @if (activeTab === 'meals') {
-        <button class="add-btn" (click)="showMealModal = true">+ Add Meal</button>
-        <div class="items-list">
-          @for (item of meals(); track item.id) {
-            <div class="item-card">
-              <div>
-                <strong>{{ item.name }}</strong>
-              </div>
-              <button (click)="editMeal(item)">Edit</button>
-              <button (click)="deleteMeal(item)">Delete</button>
-            </div>
-          }
-        </div>
-      }
-    </div>
+        @if (activeTab === 'ingredients') {
+          <button class="action-btn add" (click)="showIngredientModal = true" type="button">+ Add Ingredient</button>
+          <div class="items-list">
+            @for (item of ingredients(); track item.id) {
+              <article class="list-card">
+                <div>
+                  <strong>{{ item.name }}</strong>
+                  <div class="sub">{{ item.kcal_per_100 }} kcal / 100g</div>
+                </div>
+                <div class="actions">
+                  <button type="button" class="mini-btn" (click)="editIngredient(item)">Edit</button>
+                  <button type="button" class="mini-btn danger" (click)="deleteIngredient(item)">Delete</button>
+                </div>
+              </article>
+            }
+          </div>
+        }
 
-    <!-- Ingredient Modal -->
+        @if (activeTab === 'meals') {
+          <button class="action-btn add alt" (click)="showMealModal = true" type="button">+ Add Meal</button>
+          <div class="items-list">
+            @for (item of meals(); track item.id) {
+              <article class="list-card">
+                <div>
+                  <strong>{{ item.name }}</strong>
+                </div>
+                <div class="actions">
+                  <button type="button" class="mini-btn" (click)="editMeal(item)">Edit</button>
+                  <button type="button" class="mini-btn danger" (click)="deleteMeal(item)">Delete</button>
+                </div>
+              </article>
+            }
+          </div>
+        }
+      </section>
+    </main>
+
     @if (showIngredientModal) {
-      <div class="modal">
-        <div class="modal-content">
-          <h2>{{ editingIngredient ? 'Edit' : 'Add' }} Ingredient</h2>
-          <form (ngSubmit)="saveIngredient()" #ingForm="ngForm">
+      <div class="modal" role="dialog" aria-modal="true" aria-label="Ingredient editor">
+        <div class="modal-card">
+          <h2 class="title-font">{{ editingIngredient ? 'Edit' : 'Add' }} Ingredient</h2>
+          <form (ngSubmit)="saveIngredient()" #ingForm="ngForm" class="stack-form">
             <input type="text" [(ngModel)]="ingredientForm.name" name="name" placeholder="Name" required>
-            <input type="number" [(ngModel)]="ingredientForm.kcal_per_100" name="kcal" placeholder="Kcal per 100g" required>
-            <input type="number" [(ngModel)]="ingredientForm.protein_per_100" name="protein" placeholder="Protein per 100g" required>
-            <input type="number" [(ngModel)]="ingredientForm.carbs_per_100" name="carbs" placeholder="Carbs per 100g" required>
-            <input type="number" [(ngModel)]="ingredientForm.fat_per_100" name="fat" placeholder="Fat per 100g" required>
+            <input type="number" [(ngModel)]="ingredientForm.kcal_per_100" name="kcal" placeholder="Kcal / 100g" required>
+            <input type="number" [(ngModel)]="ingredientForm.protein_per_100" name="protein" placeholder="Protein / 100g" required>
+            <input type="number" [(ngModel)]="ingredientForm.carbs_per_100" name="carbs" placeholder="Carbs / 100g" required>
+            <input type="number" [(ngModel)]="ingredientForm.fat_per_100" name="fat" placeholder="Fat / 100g" required>
             <input type="text" [(ngModel)]="ingredientForm.brand" name="brand" placeholder="Brand (optional)">
-            <button type="submit" [disabled]="!ingForm.valid">Save</button>
-            <button type="button" (click)="showIngredientModal = false">Cancel</button>
+            <div class="modal-actions">
+              <button type="submit" class="action-btn" [disabled]="!ingForm.valid">Save</button>
+              <button type="button" class="action-btn ghost" (click)="showIngredientModal = false">Cancel</button>
+            </div>
           </form>
         </div>
       </div>
     }
 
-    <!-- Meal Modal -->
     @if (showMealModal) {
-      <div class="modal">
-        <div class="modal-content">
-          <h2>{{ editingMeal ? 'Edit' : 'Add' }} Meal</h2>
-          <form (ngSubmit)="saveMeal()" #mealForm="ngForm">
-            <input type="text" [(ngModel)]="mealForm.name" name="name" placeholder="Name" required>
+      <div class="modal" role="dialog" aria-modal="true" aria-label="Meal editor">
+        <div class="modal-card">
+          <h2 class="title-font">{{ editingMeal ? 'Edit' : 'Add' }} Meal</h2>
+          <form (ngSubmit)="saveMeal()" #mealFormRef="ngForm" class="stack-form">
+            <input type="text" [(ngModel)]="mealForm.name" name="name" placeholder="Meal name" required>
             <div class="meal-items">
               @for (item of mealItems; track $index) {
                 <div class="meal-item">
@@ -84,110 +94,101 @@ import { Ingredient, Meal, MealItem } from '../../core/types';
                     }
                   </select>
                   <input type="number" [(ngModel)]="item.grams" [name]="'grams' + $index" placeholder="Grams">
-                  <button type="button" (click)="removeMealItem($index)">Remove</button>
+                  <button type="button" class="mini-btn danger" (click)="removeMealItem($index)">Remove</button>
                 </div>
               }
-              <button type="button" (click)="addMealItem()">+ Add Ingredient</button>
             </div>
-            <button type="submit" [disabled]="!mealForm.valid">Save</button>
-            <button type="button" (click)="showMealModal = false">Cancel</button>
+            <button type="button" class="action-btn ghost" (click)="addMealItem()">+ Add Ingredient</button>
+            <div class="modal-actions">
+              <button type="submit" class="action-btn" [disabled]="!mealFormRef.valid">Save</button>
+              <button type="button" class="action-btn ghost" (click)="showMealModal = false">Cancel</button>
+            </div>
           </form>
         </div>
       </div>
     }
   `,
   styles: [`
-    .library-container {
-      padding: 1rem;
-      max-width: 480px;
-      margin: 0 auto;
+    .library-page {
+      display: grid;
+      gap: 0.75rem;
     }
-    .tabs {
-      display: flex;
-      margin-bottom: 1rem;
+
+    h1 {
+      font-size: 2rem;
+      margin-top: 0.2rem;
     }
-    .tabs button {
-      flex: 1;
-      padding: 1rem;
-      border: none;
-      background: #f0f0f0;
-      cursor: pointer;
+
+    .segmented {
+      grid-template-columns: repeat(2, 1fr) auto;
     }
-    .tabs button.active {
-      background: #667eea;
-      color: white;
+
+    .tab-spacer {
+      width: 0;
     }
-    .add-btn {
+
+    .add {
       width: 100%;
-      padding: 1rem;
-      background: #28a745;
-      color: white;
-      border: none;
-      border-radius: 10px;
-      margin-bottom: 1rem;
-      cursor: pointer;
+      margin-top: 0.7rem;
     }
+
     .items-list {
-      margin-bottom: 2rem;
+      margin-top: 0.75rem;
+      display: grid;
+      gap: 0.5rem;
     }
-    .item-card {
+
+    .sub {
+      margin-top: 0.2rem;
+      color: #5e4935;
+      font-weight: 700;
+      font-size: 0.88rem;
+    }
+
+    .actions {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: #fff;
-      padding: 1rem;
-      border-radius: 10px;
-      margin-bottom: 0.5rem;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      gap: 0.35rem;
     }
-    .modal {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.5);
-      display: flex;
-      justify-content: center;
-      align-items: center;
+
+    .mini-btn {
+      border: 2px solid #2f1f15;
+      border-radius: 999px;
+      background: #ffe4b1;
+      padding: 0.3rem 0.6rem;
+      font-weight: 800;
+      color: #321d11;
     }
-    .modal-content {
-      background: white;
-      padding: 2rem;
-      border-radius: 20px;
-      width: 90%;
-      max-width: 400px;
+
+    .mini-btn.danger {
+      background: #f6c4b9;
+      color: #6b1818;
     }
-    form {
-      display: flex;
-      flex-direction: column;
+
+    .stack-form {
+      display: grid;
+      gap: 0.55rem;
+      margin-top: 0.7rem;
     }
-    input, select {
-      padding: 0.5rem;
-      margin-bottom: 1rem;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-    }
-    button {
-      padding: 0.5rem;
-      margin-bottom: 0.5rem;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    button[type="submit"] {
-      background: #007bff;
-      color: white;
-    }
+
     .meal-items {
-      margin-bottom: 1rem;
+      display: grid;
+      gap: 0.5rem;
     }
+
     .meal-item {
+      display: grid;
+      grid-template-columns: 1fr 100px auto;
+      gap: 0.45rem;
+      align-items: center;
+    }
+
+    .modal-actions {
       display: flex;
       gap: 0.5rem;
-      margin-bottom: 0.5rem;
+      margin-top: 0.3rem;
     }
-    .meal-item select, .meal-item input {
+
+    .modal-actions button {
       flex: 1;
     }
   `]
@@ -292,7 +293,6 @@ export class LibraryComponent implements OnInit {
   editMeal(meal: Meal) {
     this.editingMeal = meal;
     this.mealForm.name = meal.name;
-    // Load meal items
     this.loadMealItems(meal.id);
     this.showMealModal = true;
   }
@@ -334,7 +334,6 @@ export class LibraryComponent implements OnInit {
       mealId = data.id;
     }
 
-    // Save meal items
     await this.supabaseService.client
       .from('meal_items')
       .delete()
