@@ -38,8 +38,8 @@ A mobile-first macro tracking web app built with Angular and Supabase. Track you
 ## Deployment to GitHub Pages
 
 1. Push to GitHub main branch
-2. Enable GitHub Pages in repository settings (deploy from gh-pages branch)
-3. The GitHub Actions workflow will automatically build and deploy on push
+2. In GitHub: `Settings -> Pages -> Build and deployment -> Source`, choose `GitHub Actions`
+3. The workflow at `.github/workflows/deploy-pages.yml` will build and deploy automatically on every push to `main` (it sets `base-href` from your repository name)
 
 ## Usage
 
