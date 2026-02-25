@@ -11,21 +11,21 @@ import { Group } from '../core/types';
   imports: [CommonModule],
   template: `
     <header class="top-bar">
-      <button type="button" class="brand" (click)="goToday()" aria-label="Go to today">
+      <button type="button" class="brand" (click)="goToday()" aria-label="Zu Heute wechseln">
         <span>Tracker Broo</span>
       </button>
 
       <div class="group-picker">
-        <label for="group-select" class="sr-only">Active group</label>
+        <label for="group-select" class="sr-only">Aktive Gruppe</label>
         <select id="group-select" [value]="activeGroupId()" (change)="onGroupChange($event)">
-          <option value="">No group</option>
+          <option value="">Keine Gruppe</option>
           @for (group of groups(); track group.id) {
             <option [value]="group.id">{{ group.name }}</option>
           }
         </select>
       </div>
 
-      <button type="button" class="manage" (click)="openGroupPage()">Manage</button>
+      <button type="button" class="manage" (click)="openGroupPage()">Verwalten</button>
     </header>
   `,
   styles: [`

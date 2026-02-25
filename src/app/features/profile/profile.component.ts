@@ -23,22 +23,22 @@ import { Profile, WeightLog } from '../../core/types';
         <div class="profile-head">
           <div class="avatar-wrap">
             @if (avatarPreview()) {
-              <img [src]="avatarPreview() || ''" alt="Profile preview" class="avatar-image">
+              <img [src]="avatarPreview() || ''" alt="Profilvorschau" class="avatar-image">
             } @else {
               <div class="avatar-fallback" aria-hidden="true">◉</div>
             }
           </div>
           <div>
-            <p class="title-font">Profile</p>
-            <h1>{{ profileForm.value.display_name || 'Your Profile' }}</h1>
-            <p class="sub">Update your baseline and log weight quickly.</p>
+            <p class="title-font">Profil</p>
+            <h1>{{ profileForm.value.display_name || 'Dein Profil' }}</h1>
+            <p class="sub">Pflege deine Basisdaten und logge dein Gewicht schnell.</p>
           </div>
         </div>
 
         <div class="gym-target">
-          <span>Weekly gym target</span>
+          <span>Wöchentliches Gym-Ziel</span>
           <strong>{{ gymProgressLabel() }}</strong>
-          <span class="mono-badge">PIXEL BADGE</span>
+          <span class="mono-badge">PIXEL-ABZEICHEN</span>
         </div>
       </section>
 
@@ -49,48 +49,48 @@ import { Profile, WeightLog } from '../../core/types';
         </section>
       } @else {
         <section class="panel" aria-labelledby="profile-form-title">
-          <div id="profile-form-title" class="scroll-header">Profile Details</div>
+          <div id="profile-form-title" class="scroll-header">Profil-Details</div>
           <form class="stack-form" [formGroup]="profileForm" (ngSubmit)="saveProfile()">
-            <label for="avatar">Profile photo</label>
+            <label for="avatar">Profilfoto</label>
             <input id="avatar" type="file" accept="image/*" (change)="onAvatarSelected($event)">
 
-            <label for="display-name">Display name</label>
-            <input id="display-name" type="text" formControlName="display_name" placeholder="Your name">
+            <label for="display-name">Anzeigename</label>
+            <input id="display-name" type="text" formControlName="display_name" placeholder="Dein Name">
 
-            <label for="bio">Short bio</label>
-            <textarea id="bio" formControlName="bio" rows="3" placeholder="Optional note about your goal"></textarea>
+            <label for="bio">Kurzbeschreibung</label>
+            <textarea id="bio" formControlName="bio" rows="3" placeholder="Optionale Notiz zu deinem Ziel"></textarea>
 
             <div class="grid-two">
               <div>
-                <label for="height">Height (cm)</label>
+                <label for="height">Größe (cm)</label>
                 <input id="height" type="number" min="80" max="260" formControlName="height_cm">
               </div>
               <div>
-                <label for="weekly-target">Gym target / week</label>
+                <label for="weekly-target">Gym-Ziel / Woche</label>
                 <input id="weekly-target" type="number" min="1" max="14" formControlName="weekly_gym_target">
               </div>
             </div>
 
             <div class="grid-two">
               <div>
-                <label for="current-weight">Current weight (kg)</label>
+                <label for="current-weight">Aktuelles Gewicht (kg)</label>
                 <input id="current-weight" type="number" min="20" step="0.1" formControlName="current_weight_kg">
               </div>
               <div>
-                <label for="target-weight">Target weight (kg)</label>
+                <label for="target-weight">Zielgewicht (kg)</label>
                 <input id="target-weight" type="number" min="20" step="0.1" formControlName="target_weight_kg">
               </div>
             </div>
 
-            <label for="activity-level">Activity level</label>
+            <label for="activity-level">Aktivitätslevel</label>
             <select id="activity-level" formControlName="activity_level">
-              <option value="low">Low</option>
-              <option value="moderate">Moderate</option>
-              <option value="high">High</option>
+              <option value="low">Niedrig</option>
+              <option value="moderate">Mittel</option>
+              <option value="high">Hoch</option>
             </select>
 
             <button type="submit" class="action-btn" [disabled]="savingProfile() || profileForm.invalid">
-              {{ savingProfile() ? 'Saving...' : 'Save Profile' }}
+              {{ savingProfile() ? 'Wird gespeichert...' : 'Profil speichern' }}
             </button>
           </form>
         </section>
@@ -98,38 +98,38 @@ import { Profile, WeightLog } from '../../core/types';
 
       <section class="panel" aria-labelledby="weight-log-title">
         <div id="weight-log-title" class="section-head">
-          <div class="scroll-header">Daily Weight</div>
-          <span class="mono-badge">Latest {{ latestWeightLabel() }}</span>
+          <div class="scroll-header">Tägliches Gewicht</div>
+          <span class="mono-badge">Zuletzt {{ latestWeightLabel() }}</span>
         </div>
 
-        <div class="sparkline-wrap" aria-label="7-day trend">
+        <div class="sparkline-wrap" aria-label="7-Tage-Trend">
           <svg viewBox="0 0 100 28" preserveAspectRatio="none" class="sparkline">
             <polyline [attr.points]="sparklinePoints()" />
           </svg>
-          <div class="trend-note">7-day change: {{ weeklyTrendLabel() }}</div>
+          <div class="trend-note">7-Tage-Veränderung: {{ weeklyTrendLabel() }}</div>
         </div>
 
         <form class="stack-form" [formGroup]="weightForm" (ngSubmit)="saveWeightLog()">
           <div class="grid-two">
             <div>
-              <label for="logged-on">Date</label>
+              <label for="logged-on">Datum</label>
               <input id="logged-on" type="date" formControlName="logged_on">
             </div>
             <div>
-              <label for="weight-kg">Weight (kg)</label>
+              <label for="weight-kg">Gewicht (kg)</label>
               <input id="weight-kg" type="number" step="0.1" min="20" formControlName="weight_kg">
             </div>
           </div>
 
-          <label for="weight-note">Note (optional)</label>
-          <textarea id="weight-note" formControlName="note" rows="2" placeholder="Any context for this weigh-in"></textarea>
+          <label for="weight-note">Notiz (optional)</label>
+          <textarea id="weight-note" formControlName="note" rows="2" placeholder="Kontext zu diesem Wiegen"></textarea>
 
           <button type="submit" class="action-btn alt" [disabled]="savingWeight() || weightForm.invalid">
-            {{ savingWeight() ? 'Saving...' : 'Save Weight Entry' }}
+            {{ savingWeight() ? 'Wird gespeichert...' : 'Gewichtseintrag speichern' }}
           </button>
         </form>
 
-        <div class="entries-list" aria-label="Recent weight logs">
+        <div class="entries-list" aria-label="Letzte Gewichtseinträge">
           @for (entry of weightLogs(); track entry.id) {
             <article class="list-card">
               <div>
@@ -142,7 +142,7 @@ import { Profile, WeightLog } from '../../core/types';
             </article>
           }
           @if (weightLogs().length === 0) {
-            <p class="empty-state">No weight entries yet.</p>
+            <p class="empty-state">Noch keine Gewichtseinträge.</p>
           }
         </div>
       </section>
@@ -552,10 +552,10 @@ export class ProfileComponent implements OnInit {
       }
 
       this.avatarFile = null;
-      this.successMessage.set('Profile saved.');
+      this.successMessage.set('Profil gespeichert.');
       await this.loadAll();
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Could not save profile.';
+      const errorMessage = error instanceof Error ? error.message : 'Profil konnte nicht gespeichert werden.';
       this.errorMessage.set(errorMessage);
     } finally {
       this.savingProfile.set(false);
@@ -609,10 +609,10 @@ export class ProfileComponent implements OnInit {
           { onConflict: 'user_id' }
         );
 
-      this.successMessage.set('Weight entry saved.');
+      this.successMessage.set('Gewichtseintrag gespeichert.');
       await this.loadAll();
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Could not save weight entry.';
+      const errorMessage = error instanceof Error ? error.message : 'Gewichtseintrag konnte nicht gespeichert werden.';
       this.errorMessage.set(errorMessage);
     } finally {
       this.savingWeight.set(false);

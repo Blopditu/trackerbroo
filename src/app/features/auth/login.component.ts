@@ -16,32 +16,32 @@ import { AuthService } from '../../core/auth.service';
 
       <section class="panel halftone hero" aria-labelledby="login-title">
         <p class="title-font crest">TRACKER BROO</p>
-        <h1 id="login-title">Train Together. Eat Better.</h1>
-        <p class="manga-bubble">Your squad log for protein, gym check-ins, and consistency streaks.</p>
+        <h1 id="login-title">Gemeinsam trainieren. Besser essen.</h1>
+        <p class="manga-bubble">Dein Gruppen-Log für Protein, Gym-Check-ins und Streaks.</p>
       </section>
 
-      <section class="panel auth-panel" aria-label="Sign in">
+      <section class="panel auth-panel" aria-label="Anmelden">
         <button type="button" class="action-btn ghost provider" (click)="signInWithGoogle()" [disabled]="loading">
-          Sign in with Google
+          Mit Google anmelden
         </button>
 
-        <div class="divider" role="separator" aria-label="or">or</div>
+        <div class="divider" role="separator" aria-label="oder">oder</div>
 
         <form (ngSubmit)="onSubmit()" #loginForm="ngForm" class="stack">
-          <label for="email" class="label">Email</label>
+          <label for="email" class="label">E-Mail</label>
           <input
             id="email"
             type="email"
             [(ngModel)]="email"
             name="email"
-            placeholder="name@village.com"
+            placeholder="name@beispiel.de"
             required
             email
             autocomplete="email"
           >
 
           <button type="submit" class="action-btn" [disabled]="!loginForm.valid || loading">
-            {{ loading ? 'Sending link...' : 'Send Magic Link' }}
+            {{ loading ? 'Link wird gesendet...' : 'Anmeldelink senden' }}
           </button>
         </form>
       </section>
@@ -129,10 +129,10 @@ export class LoginComponent implements OnInit {
     this.isError = false;
     try {
       await this.authService.signIn(this.email);
-      this.message = 'Check your email for the magic link.';
+      this.message = 'Prüfe deine E-Mails für den Anmeldelink.';
     } catch (error: unknown) {
       this.isError = true;
-      this.message = error instanceof Error ? error.message : 'Sign-in failed.';
+      this.message = error instanceof Error ? error.message : 'Anmeldung fehlgeschlagen.';
     } finally {
       this.loading = false;
     }
@@ -145,7 +145,7 @@ export class LoginComponent implements OnInit {
       await this.authService.signInWithGoogle();
     } catch (error: unknown) {
       this.isError = true;
-      this.message = error instanceof Error ? error.message : 'Google sign-in failed.';
+      this.message = error instanceof Error ? error.message : 'Google-Anmeldung fehlgeschlagen.';
     }
   }
 }

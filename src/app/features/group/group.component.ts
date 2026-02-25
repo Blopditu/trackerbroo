@@ -17,14 +17,14 @@ import { Group } from '../../core/types';
       }
 
       <header class="panel halftone">
-        <p class="title-font">Squad Setup</p>
-        <h1>Choose Active Group</h1>
-        <p class="lead">Create or join a group, then select it as your active context.</p>
+        <p class="title-font">Gruppen-Setup</p>
+        <h1>Aktive Gruppe wählen</h1>
+        <p class="lead">Erstelle oder tritt einer Gruppe bei und setze sie als aktiv.</p>
       </header>
 
-      <section class="panel" aria-label="Your groups">
+      <section class="panel" aria-label="Deine Gruppen">
         <div class="section-head">
-          <div class="scroll-header">Your Groups</div>
+          <div class="scroll-header">Deine Gruppen</div>
           <span class="mono-badge">{{ groups().length }}</span>
         </div>
 
@@ -32,23 +32,23 @@ import { Group } from '../../core/types';
           <div class="skeleton card"></div>
           <div class="skeleton card"></div>
         } @else if (groups().length === 0) {
-          <p class="empty-state">No groups yet. Create one below.</p>
+          <p class="empty-state">Noch keine Gruppen. Erstelle unten eine.</p>
         } @else {
           <div class="group-list">
             @for (group of groups(); track group.id) {
               <button type="button" class="list-card group-card" (click)="selectGroup(group)">
                 <span>{{ group.name }}</span>
-                <span class="mono-badge">Set Active</span>
+                <span class="mono-badge">Aktiv setzen</span>
               </button>
             }
           </div>
         }
       </section>
 
-      <section class="panel" aria-label="Create group">
-        <div class="scroll-header">Create Group</div>
+      <section class="panel" aria-label="Gruppe erstellen">
+        <div class="scroll-header">Gruppe erstellen</div>
         <form (ngSubmit)="createGroup()" #groupForm="ngForm" class="stack-form">
-          <label for="group-name" class="label">Group name</label>
+          <label for="group-name" class="label">Gruppenname</label>
           <input
             id="group-name"
             type="text"
@@ -58,25 +58,25 @@ import { Group } from '../../core/types';
             required
           >
           <button type="submit" class="action-btn" [disabled]="!groupForm.valid || loading">
-            {{ loading ? 'Creating...' : 'Create Group' }}
+            {{ loading ? 'Wird erstellt...' : 'Gruppe erstellen' }}
           </button>
         </form>
       </section>
 
-      <section class="panel" aria-label="Join group">
-        <div class="scroll-header">Join Group</div>
+      <section class="panel" aria-label="Gruppe beitreten">
+        <div class="scroll-header">Gruppe beitreten</div>
         <form (ngSubmit)="joinGroup()" #joinForm="ngForm" class="stack-form">
-          <label for="invite-code" class="label">Invite code (group id)</label>
+          <label for="invite-code" class="label">Einladungscode (Gruppen-ID)</label>
           <input
             id="invite-code"
             type="text"
             [(ngModel)]="inviteCode"
             name="inviteCode"
-            placeholder="Paste invite code"
+            placeholder="Einladungscode einfügen"
             required
           >
           <button type="submit" class="action-btn alt" [disabled]="!joinForm.valid || loading">
-            {{ loading ? 'Joining...' : 'Join Group' }}
+            {{ loading ? 'Wird beigetreten...' : 'Gruppe beitreten' }}
           </button>
         </form>
       </section>
@@ -196,7 +196,7 @@ export class GroupComponent implements OnInit {
 
       this.selectGroup(data);
     } catch (error) {
-      this.errorMessage.set(error instanceof Error ? error.message : 'Could not create group.');
+      this.errorMessage.set(error instanceof Error ? error.message : 'Gruppe konnte nicht erstellt werden.');
     } finally {
       this.loading = false;
     }
@@ -222,7 +222,7 @@ export class GroupComponent implements OnInit {
 
       await this.router.navigate(['/today']);
     } catch (error) {
-      this.errorMessage.set(error instanceof Error ? error.message : 'Could not join group.');
+      this.errorMessage.set(error instanceof Error ? error.message : 'Gruppe konnte nicht beigetreten werden.');
     } finally {
       this.loading = false;
     }

@@ -7,21 +7,21 @@ import { RouterModule } from '@angular/router';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, RouterModule],
   template: `
-    <nav class="bottom-nav" aria-label="Primary">
+    <nav class="bottom-nav" aria-label="Hauptnavigation">
       <a routerLink="/today" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
-        <span>Today</span>
+        <span>Heute</span>
       </a>
       <a routerLink="/library" routerLinkActive="active">
-        <span>Library</span>
+        <span>Bibliothek</span>
       </a>
       <a routerLink="/dashboard" routerLinkActive="active">
-        <span>Stats</span>
+        <span>Statistik</span>
       </a>
       <a routerLink="/community" routerLinkActive="active">
-        <span>Community</span>
+        <span>Gruppe</span>
       </a>
       <a routerLink="/profile" routerLinkActive="active">
-        <span>Profile</span>
+        <span>Profil</span>
       </a>
     </nav>
   `,

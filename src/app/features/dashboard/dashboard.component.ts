@@ -14,15 +14,15 @@ import { DailySummary } from '../../core/types';
       }
 
       <header class="panel halftone">
-        <p class="title-font">Stats</p>
-        <h1>Squad Snapshot</h1>
-        <p class="lead">Daily summary cards and 7-day calories trend.</p>
+        <p class="title-font">Statistik</p>
+        <h1>Gruppenübersicht</h1>
+        <p class="lead">Tageszusammenfassungen und 7-Tage-Kalorientrend.</p>
       </header>
 
       <section class="panel">
         <div class="section-head">
-          <div class="scroll-header">Today</div>
-          <span class="mono-badge">Protein-hit days: {{ proteinHitDays() }}</span>
+          <div class="scroll-header">Heute</div>
+          <span class="mono-badge">Protein-Zieltage: {{ proteinHitDays() }}</span>
         </div>
 
         @if (loading()) {
@@ -36,7 +36,7 @@ import { DailySummary } from '../../core/types';
                   <strong>{{ getUserName(summary.owner_id) }}</strong>
                   <div class="sub">{{ summary.kcal }} kcal</div>
                 </div>
-                <div class="macro-line" aria-label="Macros">
+                <div class="macro-line" aria-label="Makros">
                   <span class="mono-badge">P {{ summary.protein }}g</span>
                   <span class="mono-badge">C {{ summary.carbs }}g</span>
                   <span class="mono-badge">F {{ summary.fat }}g</span>
@@ -44,7 +44,7 @@ import { DailySummary } from '../../core/types';
               </article>
             }
             @if (todaySummaries().length === 0) {
-              <p class="empty-state">No summaries for today yet.</p>
+              <p class="empty-state">Für heute gibt es noch keine Zusammenfassungen.</p>
             }
           </div>
         }
@@ -52,14 +52,14 @@ import { DailySummary } from '../../core/types';
 
       <section class="panel">
         <div class="section-head">
-          <div class="scroll-header">Weekly Calories</div>
-          <span class="manga-badge">STREAK</span>
+          <div class="scroll-header">Wöchentliche Kalorien</div>
+          <span class="manga-badge">SERIE</span>
         </div>
 
         @if (loading()) {
           <div class="skeleton card"></div>
         } @else {
-          <div class="week-chart" role="list" aria-label="Weekly calories">
+          <div class="week-chart" role="list" aria-label="Wöchentliche Kalorien">
             @for (day of weekDays; track day.date) {
               <div class="bar-col" role="listitem">
                 <div class="bar-wrap">
@@ -206,7 +206,7 @@ export class DashboardComponent implements OnInit {
       date.setDate(today.getDate() - i);
       this.weekDays.push({
         date: date.toISOString().split('T')[0],
-        label: date.toLocaleDateString('en', { weekday: 'short' })
+        label: date.toLocaleDateString('de-DE', { weekday: 'short' })
       });
     }
   }

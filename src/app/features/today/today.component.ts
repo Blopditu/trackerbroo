@@ -20,15 +20,15 @@ type QuickItem = Ingredient | Meal;
       <header class="panel halftone header-panel">
         <div class="head-row">
           <div>
-            <p class="title-font">Today Log</p>
-            <h1>Protein Mission</h1>
+            <p class="title-font">Heutiges Log</p>
+            <h1>Protein-Mission</h1>
           </div>
           <div class="mascot" aria-hidden="true">◉</div>
         </div>
 
         <div class="manga-bubble mascot-bubble">{{ mascotMessage() }}</div>
 
-        <div class="macro-grid" role="list" aria-label="Macro summary">
+        <div class="macro-grid" role="list" aria-label="Makro-Übersicht">
           <article class="macro-card" role="listitem">
             <span>Kcal</span>
             <strong>{{ summary()?.kcal || 0 }}</strong>
@@ -49,13 +49,13 @@ type QuickItem = Ingredient | Meal;
       </header>
 
       <section class="panel">
-        <div class="segmented" role="tablist" aria-label="Quick list filter">
-          <button type="button" role="tab" [attr.aria-selected]="activeTab() === 'favorites'" [class.active]="activeTab() === 'favorites'" (click)="activeTab.set('favorites')">Favorites</button>
-          <button type="button" role="tab" [attr.aria-selected]="activeTab() === 'recent'" [class.active]="activeTab() === 'recent'" (click)="activeTab.set('recent')">Recent</button>
-          <button type="button" role="tab" [attr.aria-selected]="activeTab() === 'search'" [class.active]="activeTab() === 'search'" (click)="activeTab.set('search')">Search</button>
+        <div class="segmented" role="tablist" aria-label="Schnellfilter">
+          <button type="button" role="tab" [attr.aria-selected]="activeTab() === 'favorites'" [class.active]="activeTab() === 'favorites'" (click)="activeTab.set('favorites')">Favoriten</button>
+          <button type="button" role="tab" [attr.aria-selected]="activeTab() === 'recent'" [class.active]="activeTab() === 'recent'" (click)="activeTab.set('recent')">Zuletzt</button>
+          <button type="button" role="tab" [attr.aria-selected]="activeTab() === 'search'" [class.active]="activeTab() === 'search'" (click)="activeTab.set('search')">Suche</button>
         </div>
 
-        <input type="search" [(ngModel)]="quickSearch" placeholder="Search ingredients and meals" aria-label="Search entries">
+        <input type="search" [(ngModel)]="quickSearch" placeholder="Zutaten und Mahlzeiten suchen" aria-label="Einträge suchen">
 
         @if (loading()) {
           <div class="skeleton card"></div>
@@ -65,11 +65,11 @@ type QuickItem = Ingredient | Meal;
             @for (item of displayedItems(); track item.id) {
               <button type="button" class="list-card quick-card" (click)="addItem(item)">
                 <span>{{ item.name }}</span>
-                <span class="mono-badge">Quick Add</span>
+                <span class="mono-badge">Schnell hinzufügen</span>
               </button>
             }
             @if (displayedItems().length === 0) {
-              <p class="empty-state">No quick items found.</p>
+              <p class="empty-state">Keine Schnell-Einträge gefunden.</p>
             }
           </div>
         }
@@ -77,8 +77,8 @@ type QuickItem = Ingredient | Meal;
 
       <section class="panel">
         <div class="section-head">
-          <div class="scroll-header">Today's Entries</div>
-          <button type="button" class="action-btn ghost small" (click)="repeatLast()">Repeat Last</button>
+          <div class="scroll-header">Heutige Einträge</div>
+          <button type="button" class="action-btn ghost small" (click)="repeatLast()">Letzten wiederholen</button>
         </div>
 
         @if (loading()) {
@@ -90,36 +90,36 @@ type QuickItem = Ingredient | Meal;
               <article class="list-card entry-card">
                 <div class="entry-main">
                   <strong>{{ entry.entry_type === 'ingredient' ? getIngredientName(entry.ref_id) : getMealName(entry.ref_id) }}</strong>
-                  <span class="entry-sub">{{ entry.quantity }}{{ entry.entry_type === 'ingredient' ? 'g' : ' servings' }}</span>
+                  <span class="entry-sub">{{ entry.quantity }}{{ entry.entry_type === 'ingredient' ? 'g' : ' Portionen' }}</span>
                 </div>
-                <button type="button" class="delete-btn" (click)="deleteEntry(entry)" aria-label="Delete entry">Delete</button>
+                <button type="button" class="delete-btn" (click)="deleteEntry(entry)" aria-label="Eintrag löschen">Löschen</button>
               </article>
             }
             @if (entries().length === 0) {
-              <p class="empty-state">No entries yet. Tap + to add your first one.</p>
+              <p class="empty-state">Noch keine Einträge. Tippe auf +, um den ersten hinzuzufügen.</p>
             }
           </div>
         }
       </section>
 
-      <button class="app-fab" type="button" (click)="showAddModal.set(true)" aria-label="Add entry">+</button>
+      <button class="app-fab" type="button" (click)="showAddModal.set(true)" aria-label="Eintrag hinzufügen">+</button>
     </main>
 
     @if (showAddModal()) {
-      <div class="modal" role="dialog" aria-modal="true" aria-label="Add entry">
+      <div class="modal" role="dialog" aria-modal="true" aria-label="Eintrag hinzufügen">
         <div class="modal-card">
-          <h2 class="title-font">Quick Add</h2>
-          <div class="segmented add-type" role="tablist" aria-label="Entry type">
-            <button type="button" role="tab" [attr.aria-selected]="addTab() === 'ingredient'" [class.active]="addTab() === 'ingredient'" (click)="addTab.set('ingredient')">Ingredient</button>
-            <button type="button" role="tab" [attr.aria-selected]="addTab() === 'meal'" [class.active]="addTab() === 'meal'" (click)="addTab.set('meal')">Meal</button>
+          <h2 class="title-font">Schnell hinzufügen</h2>
+          <div class="segmented add-type" role="tablist" aria-label="Eintragstyp">
+            <button type="button" role="tab" [attr.aria-selected]="addTab() === 'ingredient'" [class.active]="addTab() === 'ingredient'" (click)="addTab.set('ingredient')">Zutat</button>
+            <button type="button" role="tab" [attr.aria-selected]="addTab() === 'meal'" [class.active]="addTab() === 'meal'" (click)="addTab.set('meal')">Mahlzeit</button>
             <span aria-hidden="true"></span>
           </div>
 
           @if (addTab() === 'ingredient') {
-            <label for="ingredient-select">Ingredient</label>
+            <label for="ingredient-select">Zutat</label>
             <select id="ingredient-select" [(ngModel)]="selectedIngredientId" [disabled]="ingredients().length === 0">
               @if (ingredients().length === 0) {
-                <option value="">No ingredients yet</option>
+                <option value="">Noch keine Zutaten</option>
               } @else {
                 @for (ing of ingredients(); track ing.id) {
                   <option [value]="ing.id">{{ ing.name }}</option>
@@ -127,9 +127,9 @@ type QuickItem = Ingredient | Meal;
               }
             </select>
 
-            <label for="grams-input">Grams</label>
-            <input id="grams-input" type="number" [(ngModel)]="grams" placeholder="Grams">
-            <div class="presets" role="group" aria-label="Common gram values">
+            <label for="grams-input">Gramm</label>
+            <input id="grams-input" type="number" [(ngModel)]="grams" placeholder="Gramm">
+            <div class="presets" role="group" aria-label="Häufige Grammwerte">
               @for (preset of [50, 100, 150, 200]; track preset) {
                 <button type="button" class="action-btn ghost preset-btn" (click)="grams = preset">{{ preset }}g</button>
               }
@@ -137,10 +137,10 @@ type QuickItem = Ingredient | Meal;
           }
 
           @if (addTab() === 'meal') {
-            <label for="meal-select">Meal</label>
+            <label for="meal-select">Mahlzeit</label>
             <select id="meal-select" [(ngModel)]="selectedMealId" [disabled]="meals().length === 0">
               @if (meals().length === 0) {
-                <option value="">No meals yet</option>
+                <option value="">Noch keine Mahlzeiten</option>
               } @else {
                 @for (meal of meals(); track meal.id) {
                   <option [value]="meal.id">{{ meal.name }}</option>
@@ -148,7 +148,7 @@ type QuickItem = Ingredient | Meal;
               }
             </select>
 
-            <div class="servings" role="group" aria-label="Servings">
+            <div class="servings" role="group" aria-label="Portionen">
               <button type="button" class="action-btn ghost" (click)="decreaseServings()">-</button>
               <span>{{ servings }}</span>
               <button type="button" class="action-btn ghost" (click)="increaseServings()">+</button>
@@ -156,8 +156,8 @@ type QuickItem = Ingredient | Meal;
           }
 
           <div class="modal-actions">
-            <button type="button" class="action-btn" (click)="confirmAdd()">Save Entry</button>
-            <button type="button" class="action-btn ghost" (click)="showAddModal.set(false)">Cancel</button>
+            <button type="button" class="action-btn" (click)="confirmAdd()">Eintrag speichern</button>
+            <button type="button" class="action-btn ghost" (click)="showAddModal.set(false)">Abbrechen</button>
           </div>
         </div>
       </div>
@@ -359,12 +359,12 @@ export class TodayComponent implements OnInit {
   mascotMessage = computed(() => {
     const protein = Number(this.summary()?.protein || 0);
     if (protein >= 120) {
-      return 'Power mode: protein goal crushed.';
+      return 'Power-Modus: Proteinziel geknackt.';
     }
     if (protein >= 80) {
-      return 'Solid pace. One more high-protein meal.';
+      return 'Starkes Tempo. Noch eine proteinreiche Mahlzeit.';
     }
-    return 'Start strong: add your first protein source.';
+    return 'Stark starten: Füge deine erste Proteinquelle hinzu.';
   });
 
   ngOnInit() {
@@ -505,13 +505,13 @@ export class TodayComponent implements OnInit {
   async confirmAdd() {
     const user = this.authService.user();
     if (!user) {
-      this.showAddModal.set(false);
+      this.errorMessage.set('Bitte melde dich erneut an.');
       return;
     }
 
     const group = this.getActiveGroup();
     if (!group) {
-      this.showAddModal.set(false);
+      this.errorMessage.set('Wähle zuerst oben eine aktive Gruppe.');
       return;
     }
 
@@ -520,12 +520,12 @@ export class TodayComponent implements OnInit {
     if (this.addTab() === 'ingredient') {
       const ingredient = this.ingredients().find(item => item.id === this.selectedIngredientId);
       if (!ingredient || this.grams <= 0) {
-        this.showAddModal.set(false);
+        this.errorMessage.set('Wähle eine Zutat und gib mehr als 0 Gramm ein.');
         return;
       }
 
       const factor = this.grams / 100;
-      await this.supabaseService.client
+      const { error } = await this.supabaseService.client
         .from('log_entries')
         .insert({
           owner_id: user.id,
@@ -539,14 +539,19 @@ export class TodayComponent implements OnInit {
           carbs: ingredient.carbs_per_100 * factor,
           fat: ingredient.fat_per_100 * factor
         });
+
+      if (error) {
+        this.errorMessage.set(error.message || 'Zutaten-Eintrag konnte nicht hinzugefügt werden.');
+        return;
+      }
     } else {
       const meal = this.meals().find(item => item.id === this.selectedMealId);
       if (!meal || this.servings <= 0) {
-        this.showAddModal.set(false);
+        this.errorMessage.set('Wähle eine Mahlzeit und setze Portionen größer als 0.');
         return;
       }
 
-      await this.supabaseService.client
+      const { error } = await this.supabaseService.client
         .from('log_entries')
         .insert({
           owner_id: user.id,
@@ -560,8 +565,14 @@ export class TodayComponent implements OnInit {
           carbs: 0,
           fat: 0
         });
+
+      if (error) {
+        this.errorMessage.set(error.message || 'Mahlzeiten-Eintrag konnte nicht hinzugefügt werden.');
+        return;
+      }
     }
 
+    this.errorMessage.set(null);
     this.showAddModal.set(false);
     await this.loadData();
   }
@@ -599,11 +610,11 @@ export class TodayComponent implements OnInit {
   }
 
   getIngredientName(id: string) {
-    return this.ingredients().find(i => i.id === id)?.name || 'Unknown';
+    return this.ingredients().find(i => i.id === id)?.name || 'Unbekannt';
   }
 
   getMealName(id: string) {
-    return this.meals().find(m => m.id === id)?.name || 'Unknown';
+    return this.meals().find(m => m.id === id)?.name || 'Unbekannt';
   }
 
   decreaseServings() {

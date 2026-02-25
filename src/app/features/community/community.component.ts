@@ -31,53 +31,53 @@ interface LeaderboardRow {
       }
 
       <header class="panel halftone">
-        <p class="title-font">Community</p>
-        <h1>Squad Feed</h1>
-        <p class="sub">Check-ins, leaderboard, and consistency ranking.</p>
+        <p class="title-font">Gemeinschaft</p>
+        <h1>Gruppen-Feed</h1>
+        <p class="sub">Check-ins, Rangliste und Konstanz im Überblick.</p>
       </header>
 
       @if (!hasGroup()) {
         <section class="panel">
-          <p class="empty-state">Select an active group first to use community tracking.</p>
+          <p class="empty-state">Wähle zuerst eine aktive Gruppe, um das Gruppen-Tracking zu nutzen.</p>
         </section>
       } @else {
         <section class="panel" aria-labelledby="gym-checkin-title">
           <div id="gym-checkin-title" class="section-head">
-            <div class="scroll-header">Gym Check-In</div>
+            <div class="scroll-header">Gym-Check-in</div>
             <span class="mono-badge">{{ myProgressLabel() }}</span>
           </div>
 
           <form class="stack-form" [formGroup]="checkinForm" (ngSubmit)="submitCheckin()">
             <div class="grid-two">
               <div>
-                <label for="checkin-date">Date</label>
+                <label for="checkin-date">Datum</label>
                 <input id="checkin-date" type="date" formControlName="checkin_date">
               </div>
               <div>
-                <label for="checkin-photo">Photo (optional)</label>
+                <label for="checkin-photo">Foto (optional)</label>
                 <input id="checkin-photo" type="file" accept="image/*" (change)="onCheckinPhotoSelected($event)">
               </div>
             </div>
 
-            <label for="checkin-note">Note</label>
-            <textarea id="checkin-note" rows="2" formControlName="note" placeholder="2/3 done, upper body today"></textarea>
+            <label for="checkin-note">Notiz</label>
+            <textarea id="checkin-note" rows="2" formControlName="note" placeholder="2/3 geschafft, heute Oberkörper"></textarea>
 
             <button type="submit" class="action-btn alt" [disabled]="savingCheckin() || checkinForm.invalid">
-              {{ savingCheckin() ? 'Posting...' : 'Post Check-In' }}
+              {{ savingCheckin() ? 'Wird gepostet...' : 'Check-in posten' }}
             </button>
           </form>
         </section>
 
         <section class="panel" aria-labelledby="leaderboard-title">
           <div id="leaderboard-title" class="section-head">
-            <div class="scroll-header">Leaderboard</div>
-            <span class="mono-badge">{{ selectedWindowDays() }} days</span>
+            <div class="scroll-header">Rangliste</div>
+            <span class="mono-badge">{{ selectedWindowDays() }} Tage</span>
           </div>
 
-          <div class="segmented window-tabs" role="tablist" aria-label="Leaderboard window">
-            <button type="button" role="tab" [attr.aria-selected]="selectedWindowDays() === 7" [class.active]="selectedWindowDays() === 7" (click)="setWindowDays(7)">7 Days</button>
-            <button type="button" role="tab" [attr.aria-selected]="selectedWindowDays() === 14" [class.active]="selectedWindowDays() === 14" (click)="setWindowDays(14)">14 Days</button>
-            <button type="button" role="tab" [attr.aria-selected]="selectedWindowDays() === 30" [class.active]="selectedWindowDays() === 30" (click)="setWindowDays(30)">30 Days</button>
+          <div class="segmented window-tabs" role="tablist" aria-label="Ranglisten-Zeitraum">
+            <button type="button" role="tab" [attr.aria-selected]="selectedWindowDays() === 7" [class.active]="selectedWindowDays() === 7" (click)="setWindowDays(7)">7 Tage</button>
+            <button type="button" role="tab" [attr.aria-selected]="selectedWindowDays() === 14" [class.active]="selectedWindowDays() === 14" (click)="setWindowDays(14)">14 Tage</button>
+            <button type="button" role="tab" [attr.aria-selected]="selectedWindowDays() === 30" [class.active]="selectedWindowDays() === 30" (click)="setWindowDays(30)">30 Tage</button>
           </div>
 
           @if (loading()) {
@@ -91,26 +91,26 @@ interface LeaderboardRow {
                     <div class="avatar">{{ initials(row.displayName) }}</div>
                     <div class="row-main">
                       <strong>{{ row.displayName }}</strong>
-                      <div class="row-sub">Gym {{ row.gymSessions }}/{{ row.gymTarget }} · Protein {{ row.proteinHitDays }}/{{ selectedWindowDays() }} days</div>
+                      <div class="row-sub">Gym {{ row.gymSessions }}/{{ row.gymTarget }} · Protein {{ row.proteinHitDays }}/{{ selectedWindowDays() }} Tage</div>
                     </div>
                   </div>
                   <div class="score-wrap">
                     <div class="score-bar-bg">
                       <div class="score-bar" [style.width.%]="row.score"></div>
                     </div>
-                    <span class="mono-badge">{{ row.score }} pts</span>
+                    <span class="mono-badge">{{ row.score }} Pkt</span>
                   </div>
                 </article>
               }
               @if (leaderboard().length === 0) {
-                <p class="empty-state">No leaderboard data in this range yet.</p>
+                <p class="empty-state">Noch keine Ranglisten-Daten in diesem Zeitraum.</p>
               }
             </div>
           }
         </section>
 
         <section class="panel" aria-labelledby="feed-title">
-          <div id="feed-title" class="scroll-header">Recent Check-Ins</div>
+          <div id="feed-title" class="scroll-header">Letzte Check-ins</div>
 
           @if (loading()) {
             <div class="skeleton card"></div>
@@ -132,15 +132,15 @@ interface LeaderboardRow {
                   }
 
                   @if (item.photo_url) {
-                    <img [src]="item.photo_url" alt="Gym check-in photo" class="feed-photo">
+                    <img [src]="item.photo_url" alt="Gym-Check-in-Foto" class="feed-photo">
                   }
 
-                  <div class="reaction-placeholder">Reactions coming soon</div>
+                  <div class="reaction-placeholder">Reaktionen kommen bald</div>
                 </article>
               }
 
               @if (checkins().length === 0) {
-                <p class="empty-state">No check-ins yet. Post your first update.</p>
+                <p class="empty-state">Noch keine Check-ins. Poste dein erstes Update.</p>
               }
             </div>
           }
@@ -413,7 +413,7 @@ export class CommunityComponent implements OnInit {
     ]);
 
     if (membersError || checkinsError || summariesError) {
-      const message = membersError?.message || checkinsError?.message || summariesError?.message || 'Could not load community data.';
+      const message = membersError?.message || checkinsError?.message || summariesError?.message || 'Gruppen-Daten konnten nicht geladen werden.';
       this.errorMessage.set(message);
       this.loading.set(false);
       return;
@@ -468,7 +468,7 @@ export class CommunityComponent implements OnInit {
     const user = this.authService.user();
     const groupId = this.getActiveGroupId();
     if (!user || !groupId) {
-      this.errorMessage.set('You need an active group to check in.');
+      this.errorMessage.set('Du brauchst eine aktive Gruppe für den Check-in.');
       return;
     }
 
@@ -500,12 +500,12 @@ export class CommunityComponent implements OnInit {
         throw error;
       }
 
-      this.successMessage.set('Check-in posted.');
+      this.successMessage.set('Check-in gepostet.');
       this.selectedCheckinPhoto = null;
       this.checkinForm.patchValue({ note: '' });
       await this.loadCommunityData();
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Could not save check-in.';
+      const message = error instanceof Error ? error.message : 'Check-in konnte nicht gespeichert werden.';
       this.errorMessage.set(message);
     } finally {
       this.savingCheckin.set(false);

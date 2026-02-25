@@ -16,23 +16,23 @@ import { Ingredient, Meal } from '../../core/types';
       }
 
       <header class="panel halftone">
-        <p class="title-font">Library</p>
-        <h1>Ingredients & Meals</h1>
-        <p class="lead">Build your meal components once, log faster every day.</p>
+        <p class="title-font">Bibliothek</p>
+        <h1>Zutaten & Mahlzeiten</h1>
+        <p class="lead">Baue deine Komponenten einmal und logge täglich schneller.</p>
       </header>
 
       <section class="panel">
-        <div class="segmented" role="tablist" aria-label="Library tabs">
-          <button type="button" role="tab" [attr.aria-selected]="activeTab() === 'ingredients'" [class.active]="activeTab() === 'ingredients'" (click)="activeTab.set('ingredients')">Ingredients</button>
-          <button type="button" role="tab" [attr.aria-selected]="activeTab() === 'meals'" [class.active]="activeTab() === 'meals'" (click)="activeTab.set('meals')">Meals</button>
+        <div class="segmented" role="tablist" aria-label="Bibliothek-Tabs">
+          <button type="button" role="tab" [attr.aria-selected]="activeTab() === 'ingredients'" [class.active]="activeTab() === 'ingredients'" (click)="activeTab.set('ingredients')">Zutaten</button>
+          <button type="button" role="tab" [attr.aria-selected]="activeTab() === 'meals'" [class.active]="activeTab() === 'meals'" (click)="activeTab.set('meals')">Mahlzeiten</button>
           <span aria-hidden="true"></span>
         </div>
 
         @if (activeTab() === 'ingredients') {
           <div class="toolbar">
-            <input type="search" [(ngModel)]="ingredientSearch" placeholder="Search ingredient" aria-label="Search ingredients">
-            <select [(ngModel)]="marketFilter" aria-label="Filter by market">
-              <option value="">All markets</option>
+            <input type="search" [(ngModel)]="ingredientSearch" placeholder="Zutat suchen" aria-label="Zutaten suchen">
+            <select [(ngModel)]="marketFilter" aria-label="Nach Markt filtern">
+              <option value="">Alle Märkte</option>
               @for (market of marketSuggestions(); track market) {
                 <option [value]="market">{{ market }}</option>
               }
@@ -50,20 +50,20 @@ import { Ingredient, Meal } from '../../core/types';
                     <strong>{{ item.name }}</strong>
                     <div class="sub">{{ item.kcal_per_100 }} kcal / 100g</div>
                     @if (item.cost_per_100 !== null && item.cost_per_100 !== undefined) {
-                      <div class="sub">Cost: {{ item.cost_per_100 }} / 100g</div>
+                      <div class="sub">Kosten: {{ item.cost_per_100 }} / 100g</div>
                     }
                     @if (item.market_name) {
-                      <div class="sub">Market: {{ item.market_name }}</div>
+                      <div class="sub">Markt: {{ item.market_name }}</div>
                     }
                   </div>
                   <div class="actions">
-                    <button type="button" class="action-btn ghost mini" (click)="editIngredient(item)">Edit</button>
-                    <button type="button" class="action-btn ghost mini danger" (click)="deleteIngredient(item)">Delete</button>
+                    <button type="button" class="action-btn ghost mini" (click)="editIngredient(item)">Bearbeiten</button>
+                    <button type="button" class="action-btn ghost mini danger" (click)="deleteIngredient(item)">Löschen</button>
                   </div>
                 </article>
               }
               @if (filteredIngredients().length === 0) {
-                <p class="empty-state">No ingredients match your filters.</p>
+                <p class="empty-state">Keine Zutaten passen zu deinen Filtern.</p>
               }
             </div>
           }
@@ -79,16 +79,16 @@ import { Ingredient, Meal } from '../../core/types';
                 <article class="list-card meal-card">
                   <div>
                     <strong>{{ item.name }}</strong>
-                    <div class="sub">Estimated cost: {{ getMealCostLabel(item.id) }}</div>
+                    <div class="sub">Geschätzte Kosten: {{ getMealCostLabel(item.id) }}</div>
                   </div>
                   <div class="actions">
-                    <button type="button" class="action-btn ghost mini" (click)="editMeal(item)">Edit</button>
-                    <button type="button" class="action-btn ghost mini danger" (click)="deleteMeal(item)">Delete</button>
+                    <button type="button" class="action-btn ghost mini" (click)="editMeal(item)">Bearbeiten</button>
+                    <button type="button" class="action-btn ghost mini danger" (click)="deleteMeal(item)">Löschen</button>
                   </div>
                 </article>
               }
               @if (meals().length === 0) {
-                <p class="empty-state">No meals yet. Build one from ingredients.</p>
+                <p class="empty-state">Noch keine Mahlzeiten. Erstelle eine aus Zutaten.</p>
               }
             </div>
           }
@@ -98,7 +98,7 @@ import { Ingredient, Meal } from '../../core/types';
       <button
         class="app-fab"
         type="button"
-        [attr.aria-label]="activeTab() === 'ingredients' ? 'Add ingredient' : 'Add meal'"
+        [attr.aria-label]="activeTab() === 'ingredients' ? 'Zutat hinzufügen' : 'Mahlzeit hinzufügen'"
         (click)="openCreateModal()"
       >
         +
@@ -106,9 +106,9 @@ import { Ingredient, Meal } from '../../core/types';
     </main>
 
     @if (showIngredientModal()) {
-      <div class="modal" role="dialog" aria-modal="true" aria-label="Ingredient editor">
+      <div class="modal" role="dialog" aria-modal="true" aria-label="Zutateneditor">
         <div class="modal-card">
-          <h2 class="title-font">{{ editingIngredient() ? 'Edit' : 'Add' }} Ingredient</h2>
+          <h2 class="title-font">{{ editingIngredient() ? 'Zutat bearbeiten' : 'Zutat hinzufügen' }}</h2>
           <form (ngSubmit)="saveIngredient()" #ingForm="ngForm" class="stack-form">
             <label for="ing-name">Name</label>
             <input id="ing-name" type="text" [(ngModel)]="ingredientForm.name" name="name" required>
@@ -116,10 +116,10 @@ import { Ingredient, Meal } from '../../core/types';
             <label for="ing-kcal">Kcal / 100g</label>
             <input id="ing-kcal" type="number" [(ngModel)]="ingredientForm.kcal_per_100" name="kcal" required>
 
-            <label for="ing-cost">Cost / 100g (optional)</label>
+            <label for="ing-cost">Kosten / 100g (optional)</label>
             <input id="ing-cost" type="number" [(ngModel)]="ingredientForm.cost_per_100" name="cost" min="0" step="0.01">
 
-            <label for="ing-market">Market (optional)</label>
+            <label for="ing-market">Markt (optional)</label>
             <input id="ing-market" type="text" [(ngModel)]="ingredientForm.market_name" name="market" list="market-suggestions">
             <datalist id="market-suggestions">
               @for (market of marketSuggestions(); track market) {
@@ -130,18 +130,18 @@ import { Ingredient, Meal } from '../../core/types';
             <label for="ing-protein">Protein / 100g</label>
             <input id="ing-protein" type="number" [(ngModel)]="ingredientForm.protein_per_100" name="protein" required>
 
-            <label for="ing-carbs">Carbs / 100g</label>
+            <label for="ing-carbs">Kohlenhydrate / 100g</label>
             <input id="ing-carbs" type="number" [(ngModel)]="ingredientForm.carbs_per_100" name="carbs" required>
 
-            <label for="ing-fat">Fat / 100g</label>
+            <label for="ing-fat">Fett / 100g</label>
             <input id="ing-fat" type="number" [(ngModel)]="ingredientForm.fat_per_100" name="fat" required>
 
-            <label for="ing-brand">Brand (optional)</label>
+            <label for="ing-brand">Marke (optional)</label>
             <input id="ing-brand" type="text" [(ngModel)]="ingredientForm.brand" name="brand">
 
             <div class="modal-actions">
-              <button type="submit" class="action-btn" [disabled]="!ingForm.valid">Save</button>
-              <button type="button" class="action-btn ghost" (click)="showIngredientModal.set(false)">Cancel</button>
+              <button type="submit" class="action-btn" [disabled]="!ingForm.valid">Speichern</button>
+              <button type="button" class="action-btn ghost" (click)="showIngredientModal.set(false)">Abbrechen</button>
             </div>
           </form>
         </div>
@@ -149,11 +149,11 @@ import { Ingredient, Meal } from '../../core/types';
     }
 
     @if (showMealModal()) {
-      <div class="modal" role="dialog" aria-modal="true" aria-label="Meal editor">
+      <div class="modal" role="dialog" aria-modal="true" aria-label="Mahlzeiteneditor">
         <div class="modal-card">
-          <h2 class="title-font">{{ editingMeal() ? 'Edit' : 'Add' }} Meal</h2>
+          <h2 class="title-font">{{ editingMeal() ? 'Mahlzeit bearbeiten' : 'Mahlzeit hinzufügen' }}</h2>
           <form (ngSubmit)="saveMeal()" #mealFormRef="ngForm" class="stack-form">
-            <label for="meal-name">Meal name</label>
+            <label for="meal-name">Mahlzeitenname</label>
             <input id="meal-name" type="text" [(ngModel)]="mealForm.name" name="name" required>
 
             <div class="meal-items">
@@ -164,18 +164,18 @@ import { Ingredient, Meal } from '../../core/types';
                       <option [value]="ing.id">{{ ing.name }}</option>
                     }
                   </select>
-                  <input type="number" [(ngModel)]="item.grams" [name]="'grams' + $index" placeholder="Grams">
-                  <button type="button" class="action-btn ghost mini danger" (click)="removeMealItem($index)">Remove</button>
+                  <input type="number" [(ngModel)]="item.grams" [name]="'grams' + $index" placeholder="Gramm">
+                  <button type="button" class="action-btn ghost mini danger" (click)="removeMealItem($index)">Entfernen</button>
                 </div>
               }
             </div>
 
-            <p class="cost-preview">Estimated meal cost: {{ draftMealCostLabel() }}</p>
-            <button type="button" class="action-btn ghost" (click)="addMealItem()">+ Add Ingredient</button>
+            <p class="cost-preview">Geschätzte Mahlzeitenkosten: {{ draftMealCostLabel() }}</p>
+            <button type="button" class="action-btn ghost" (click)="addMealItem()">+ Zutat hinzufügen</button>
 
             <div class="modal-actions">
-              <button type="submit" class="action-btn" [disabled]="!mealFormRef.valid">Save</button>
-              <button type="button" class="action-btn ghost" (click)="showMealModal.set(false)">Cancel</button>
+              <button type="submit" class="action-btn" [disabled]="!mealFormRef.valid">Speichern</button>
+              <button type="button" class="action-btn ghost" (click)="showMealModal.set(false)">Abbrechen</button>
             </div>
           </form>
         </div>
@@ -568,6 +568,6 @@ export class LibraryComponent implements OnInit {
   }
 
   private formatCurrency(value: number) {
-    return `$${value.toFixed(2)}`;
+    return `${value.toFixed(2)} €`;
   }
 }
