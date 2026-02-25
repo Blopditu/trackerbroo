@@ -1,128 +1,163 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SupabaseService } from '../../core/supabase.service';
 import { AuthService } from '../../core/auth.service';
 import { Ingredient, Meal, LogEntry, DailySummary } from '../../core/types';
 
+type QuickItem = Ingredient | Meal;
+
 @Component({
   selector: 'app-today',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule],
   template: `
     <main class="page today-page">
-      <header class="panel header-panel">
-        <p class="title-font">Mission Log</p>
-        <h1>Today</h1>
-        <div class="orbs" role="list" aria-label="Macro summary">
-          <div class="orb" role="listitem">
-            <span class="label">Kcal</span>
+      @if (errorMessage()) {
+        <p class="toast error" aria-live="polite">{{ errorMessage() }}</p>
+      }
+
+      <header class="panel halftone header-panel">
+        <div class="head-row">
+          <div>
+            <p class="title-font">Today Log</p>
+            <h1>Protein Mission</h1>
+          </div>
+          <div class="mascot" aria-hidden="true">◉</div>
+        </div>
+
+        <div class="manga-bubble mascot-bubble">{{ mascotMessage() }}</div>
+
+        <div class="macro-grid" role="list" aria-label="Macro summary">
+          <article class="macro-card" role="listitem">
+            <span>Kcal</span>
             <strong>{{ summary()?.kcal || 0 }}</strong>
-          </div>
-          <div class="orb" role="listitem">
-            <span class="label">Protein</span>
+          </article>
+          <article class="macro-card protein" role="listitem">
+            <span>Protein</span>
             <strong>{{ summary()?.protein || 0 }}g</strong>
-          </div>
-          <div class="orb" role="listitem">
-            <span class="label">Carbs</span>
+          </article>
+          <article class="macro-card" role="listitem">
+            <span>Carbs</span>
             <strong>{{ summary()?.carbs || 0 }}g</strong>
-          </div>
-          <div class="orb" role="listitem">
-            <span class="label">Fat</span>
+          </article>
+          <article class="macro-card" role="listitem">
+            <span>Fat</span>
             <strong>{{ summary()?.fat || 0 }}g</strong>
-          </div>
+          </article>
         </div>
       </header>
 
       <section class="panel">
-        <button class="action-btn add-trigger" (click)="showAddModal = true" type="button">
-          + Add New Entry
-        </button>
+        <div class="segmented" role="tablist" aria-label="Quick list filter">
+          <button type="button" role="tab" [attr.aria-selected]="activeTab() === 'favorites'" [class.active]="activeTab() === 'favorites'" (click)="activeTab.set('favorites')">Favorites</button>
+          <button type="button" role="tab" [attr.aria-selected]="activeTab() === 'recent'" [class.active]="activeTab() === 'recent'" (click)="activeTab.set('recent')">Recent</button>
+          <button type="button" role="tab" [attr.aria-selected]="activeTab() === 'search'" [class.active]="activeTab() === 'search'" (click)="activeTab.set('search')">Search</button>
+        </div>
+
+        <input type="search" [(ngModel)]="quickSearch" placeholder="Search ingredients and meals" aria-label="Search entries">
+
+        @if (loading()) {
+          <div class="skeleton card"></div>
+          <div class="skeleton card"></div>
+        } @else {
+          <div class="items-list">
+            @for (item of displayedItems(); track item.id) {
+              <button type="button" class="list-card quick-card" (click)="addItem(item)">
+                <span>{{ item.name }}</span>
+                <span class="mono-badge">Quick Add</span>
+              </button>
+            }
+            @if (displayedItems().length === 0) {
+              <p class="empty-state">No quick items found.</p>
+            }
+          </div>
+        }
       </section>
 
       <section class="panel">
-        <div class="segmented" role="tablist" aria-label="Library filter">
-          <button type="button" role="tab" [attr.aria-selected]="activeTab === 'favorites'" [class.active]="activeTab === 'favorites'" (click)="activeTab = 'favorites'">Favorites</button>
-          <button type="button" role="tab" [attr.aria-selected]="activeTab === 'recent'" [class.active]="activeTab === 'recent'" (click)="activeTab = 'recent'">Recent</button>
-          <button type="button" role="tab" [attr.aria-selected]="activeTab === 'search'" [class.active]="activeTab === 'search'" (click)="activeTab = 'search'">Search</button>
+        <div class="section-head">
+          <div class="scroll-header">Today's Entries</div>
+          <button type="button" class="action-btn ghost small" (click)="repeatLast()">Repeat Last</button>
         </div>
 
-        <div class="items-list">
-          @for (item of displayedItems(); track item.id || item.name) {
-            <button type="button" class="list-card quick-card" (click)="addItem(item)">
-              <span>{{ item.name }}</span>
-              <span class="mono-badge">Quick Add</span>
-            </button>
-          }
-        </div>
+        @if (loading()) {
+          <div class="skeleton card"></div>
+          <div class="skeleton card"></div>
+        } @else {
+          <div class="entries-list">
+            @for (entry of entries(); track entry.id) {
+              <article class="list-card entry-card">
+                <div class="entry-main">
+                  <strong>{{ entry.entry_type === 'ingredient' ? getIngredientName(entry.ref_id) : getMealName(entry.ref_id) }}</strong>
+                  <span class="entry-sub">{{ entry.quantity }}{{ entry.entry_type === 'ingredient' ? 'g' : ' servings' }}</span>
+                </div>
+                <button type="button" class="delete-btn" (click)="deleteEntry(entry)" aria-label="Delete entry">Delete</button>
+              </article>
+            }
+            @if (entries().length === 0) {
+              <p class="empty-state">No entries yet. Tap + to add your first one.</p>
+            }
+          </div>
+        }
       </section>
 
-      <section class="panel">
-        <div class="scroll-header title-font">Today's Entries</div>
-        <div class="entries-list">
-          @for (entry of entries(); track entry.id) {
-            <article class="list-card entry-card">
-              <div class="entry-main">
-                <strong>{{ entry.entry_type === 'ingredient' ? getIngredientName(entry.ref_id) : getMealName(entry.ref_id) }}</strong>
-                <span class="entry-sub">{{ entry.quantity }}{{ entry.entry_type === 'ingredient' ? 'g' : ' servings' }}</span>
-              </div>
-              <div class="entry-actions">
-                <button type="button" class="mini-btn" (click)="editEntry(entry)">Edit</button>
-                <button type="button" class="mini-btn danger" (click)="deleteEntry(entry)">Delete</button>
-              </div>
-            </article>
-          }
-          @if (entries().length === 0) {
-            <p class="empty">No entries yet. Add your first meal.</p>
-          }
-        </div>
-      </section>
-
-      <button class="action-btn alt" type="button" (click)="repeatLast()">Repeat Last</button>
+      <button class="app-fab" type="button" (click)="showAddModal.set(true)" aria-label="Add entry">+</button>
     </main>
 
-    @if (showAddModal) {
+    @if (showAddModal()) {
       <div class="modal" role="dialog" aria-modal="true" aria-label="Add entry">
         <div class="modal-card">
-          <h2 class="title-font">Add Entry</h2>
+          <h2 class="title-font">Quick Add</h2>
           <div class="segmented add-type" role="tablist" aria-label="Entry type">
-            <button type="button" role="tab" [attr.aria-selected]="addTab === 'ingredient'" [class.active]="addTab === 'ingredient'" (click)="addTab = 'ingredient'">Ingredient</button>
-            <button type="button" role="tab" [attr.aria-selected]="addTab === 'meal'" [class.active]="addTab === 'meal'" (click)="addTab = 'meal'">Meal</button>
-            <span class="spacer" aria-hidden="true"></span>
+            <button type="button" role="tab" [attr.aria-selected]="addTab() === 'ingredient'" [class.active]="addTab() === 'ingredient'" (click)="addTab.set('ingredient')">Ingredient</button>
+            <button type="button" role="tab" [attr.aria-selected]="addTab() === 'meal'" [class.active]="addTab() === 'meal'" (click)="addTab.set('meal')">Meal</button>
+            <span aria-hidden="true"></span>
           </div>
 
-          @if (addTab === 'ingredient') {
+          @if (addTab() === 'ingredient') {
             <label for="ingredient-select">Ingredient</label>
-            <select id="ingredient-select" [(ngModel)]="selectedIngredientId">
-              @for (ing of ingredients(); track ing.id) {
-                <option [value]="ing.id">{{ ing.name }}</option>
+            <select id="ingredient-select" [(ngModel)]="selectedIngredientId" [disabled]="ingredients().length === 0">
+              @if (ingredients().length === 0) {
+                <option value="">No ingredients yet</option>
+              } @else {
+                @for (ing of ingredients(); track ing.id) {
+                  <option [value]="ing.id">{{ ing.name }}</option>
+                }
               }
             </select>
+
             <label for="grams-input">Grams</label>
             <input id="grams-input" type="number" [(ngModel)]="grams" placeholder="Grams">
             <div class="presets" role="group" aria-label="Common gram values">
-              @for (preset of [50, 100, 200]; track preset) {
-                <button type="button" class="mini-btn" (click)="grams = preset">{{ preset }}g</button>
+              @for (preset of [50, 100, 150, 200]; track preset) {
+                <button type="button" class="action-btn ghost preset-btn" (click)="grams = preset">{{ preset }}g</button>
               }
             </div>
           }
 
-          @if (addTab === 'meal') {
+          @if (addTab() === 'meal') {
             <label for="meal-select">Meal</label>
-            <select id="meal-select" [(ngModel)]="selectedMealId">
-              @for (meal of meals(); track meal.id) {
-                <option [value]="meal.id">{{ meal.name }}</option>
+            <select id="meal-select" [(ngModel)]="selectedMealId" [disabled]="meals().length === 0">
+              @if (meals().length === 0) {
+                <option value="">No meals yet</option>
+              } @else {
+                @for (meal of meals(); track meal.id) {
+                  <option [value]="meal.id">{{ meal.name }}</option>
+                }
               }
             </select>
+
             <div class="servings" role="group" aria-label="Servings">
-              <button type="button" class="mini-btn" (click)="decreaseServings()">-</button>
+              <button type="button" class="action-btn ghost" (click)="decreaseServings()">-</button>
               <span>{{ servings }}</span>
-              <button type="button" class="mini-btn" (click)="increaseServings()">+</button>
+              <button type="button" class="action-btn ghost" (click)="increaseServings()">+</button>
             </div>
           }
 
           <div class="modal-actions">
-            <button type="button" class="action-btn" (click)="confirmAdd()">Add</button>
-            <button type="button" class="action-btn ghost" (click)="showAddModal = false">Cancel</button>
+            <button type="button" class="action-btn" (click)="confirmAdd()">Save Entry</button>
+            <button type="button" class="action-btn ghost" (click)="showAddModal.set(false)">Cancel</button>
           </div>
         </div>
       </div>
@@ -130,49 +165,57 @@ import { Ingredient, Meal, LogEntry, DailySummary } from '../../core/types';
   `,
   styles: [`
     .today-page {
-      display: grid;
       gap: 0.75rem;
     }
 
-    .header-panel h1 {
-      font-size: 2rem;
+    h1 {
       margin-top: 0.2rem;
+      font-size: 1.7rem;
     }
 
-    .orbs {
+    .head-row {
+      display: flex;
+      align-items: start;
+      justify-content: space-between;
+      gap: 0.7rem;
+    }
+
+    .mascot-bubble {
+      margin-top: 0.55rem;
+    }
+
+    .macro-grid {
+      margin-top: 0.7rem;
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 0.55rem;
-      margin-top: 0.65rem;
     }
 
-    .orb {
-      border: 2px solid #2f1f15;
-      border-radius: 999px;
-      padding: 0.5rem;
-      background: radial-gradient(circle at 30% 20%, #ffe9bf 0%, #f9bb54 100%);
-      text-align: center;
-      box-shadow: 0 3px 0 #2f1f15;
+    .macro-card {
+      border: 2px solid var(--border-strong);
+      border-radius: 12px;
+      background: #fff;
+      padding: 0.55rem;
+      box-shadow: 0 3px 0 var(--border-strong);
+      display: grid;
+      gap: 0.15rem;
     }
 
-    .label {
-      display: block;
-      font-size: 0.72rem;
-      font-weight: 800;
-      color: #4a2f1d;
+    .macro-card span {
+      font-size: var(--text-xs);
+      color: var(--ink-500);
+      font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.05em;
     }
 
-    .orb strong {
-      display: block;
-      margin-top: 0.15rem;
-      font-size: 1rem;
+    .macro-card strong {
+      font-size: 1.15rem;
     }
 
-    .add-trigger {
-      width: 100%;
-      font-size: 1rem;
+    .macro-card.protein {
+      background: var(--accent-soft);
+      border-color: #0369a1;
     }
 
     .items-list,
@@ -185,11 +228,12 @@ import { Ingredient, Meal, LogEntry, DailySummary } from '../../core/types';
     .quick-card {
       width: 100%;
       text-align: left;
-      background: linear-gradient(180deg, #fffaf0 0%, #f7e2b8 100%);
+      min-height: 52px;
     }
 
     .entry-card {
       align-items: flex-start;
+      gap: 0.65rem;
     }
 
     .entry-main {
@@ -198,57 +242,53 @@ import { Ingredient, Meal, LogEntry, DailySummary } from '../../core/types';
     }
 
     .entry-sub {
-      font-size: 0.85rem;
-      color: #5a4638;
+      font-size: var(--text-sm);
+      color: var(--ink-500);
       font-weight: 700;
     }
 
-    .entry-actions {
-      display: flex;
-      gap: 0.4rem;
-    }
-
-    .mini-btn {
-      border: 2px solid #2f1f15;
+    .delete-btn {
+      min-height: 44px;
+      border: 2px solid var(--danger-500);
       border-radius: 999px;
-      background: #ffe4b1;
-      padding: 0.3rem 0.6rem;
+      padding: 0 0.75rem;
+      background: #fee2e2;
+      color: #991b1b;
       font-weight: 800;
-      color: #321d11;
     }
 
-    .mini-btn.danger {
-      background: #f6c4b9;
-      color: #6b1818;
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
     }
 
-    .empty {
-      margin: 0;
-      text-align: center;
-      color: #5c4433;
-      font-weight: 700;
-    }
-
-    .add-type {
-      margin: 0.7rem 0;
-      grid-template-columns: repeat(2, 1fr) auto;
-    }
-
-    .spacer {
-      width: 0;
+    .small {
+      min-height: 40px;
+      padding: 0.45rem 0.75rem;
+      font-size: var(--text-xs);
     }
 
     label {
       margin-top: 0.35rem;
       display: block;
-      font-weight: 800;
-      color: #3f2b1d;
+      font-weight: 700;
+      color: var(--ink-700);
+      font-size: var(--text-sm);
     }
 
     .presets {
       margin-top: 0.55rem;
-      display: flex;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 0.45rem;
+    }
+
+    .preset-btn {
+      min-height: 40px;
+      font-size: var(--text-xs);
+      padding: 0.35rem;
     }
 
     .servings {
@@ -258,6 +298,10 @@ import { Ingredient, Meal, LogEntry, DailySummary } from '../../core/types';
       justify-content: center;
       gap: 0.75rem;
       font-weight: 800;
+    }
+
+    .servings button {
+      min-width: 44px;
     }
 
     .modal-actions {
@@ -276,39 +320,125 @@ export class TodayComponent implements OnInit {
   summary = signal<DailySummary | null>(null);
   ingredients = signal<Ingredient[]>([]);
   meals = signal<Meal[]>([]);
-  activeTab = 'favorites';
-  showAddModal = false;
-  addTab = 'ingredient';
+  activeTab = signal<'favorites' | 'recent' | 'search'>('favorites');
+  showAddModal = signal(false);
+  addTab = signal<'ingredient' | 'meal'>('ingredient');
+  quickSearch = '';
   selectedIngredientId = '';
   selectedMealId = '';
   grams = 100;
   servings = 1;
   lastEntry: LogEntry | null = null;
+  loading = signal(false);
+  errorMessage = signal<string | null>(null);
 
   private supabaseService = inject(SupabaseService);
   private authService = inject(AuthService);
 
+  displayedItems = computed(() => {
+    const query = this.quickSearch.trim().toLowerCase();
+    let base: QuickItem[] = [];
+
+    if (this.activeTab() === 'favorites') {
+      base = [...this.ingredients(), ...this.meals()];
+    } else if (this.activeTab() === 'recent') {
+      const itemIds = this.entries().map(entry => entry.ref_id);
+      const ingredients = this.ingredients().filter(ingredient => itemIds.includes(ingredient.id));
+      const meals = this.meals().filter(meal => itemIds.includes(meal.id));
+      base = [...ingredients, ...meals];
+    } else {
+      base = [...this.ingredients(), ...this.meals()];
+    }
+
+    if (!query) {
+      return base.slice(0, 20);
+    }
+
+    return base.filter(item => item.name.toLowerCase().includes(query)).slice(0, 20);
+  });
+
+  mascotMessage = computed(() => {
+    const protein = Number(this.summary()?.protein || 0);
+    if (protein >= 120) {
+      return 'Power mode: protein goal crushed.';
+    }
+    if (protein >= 80) {
+      return 'Solid pace. One more high-protein meal.';
+    }
+    return 'Start strong: add your first protein source.';
+  });
+
   ngOnInit() {
-    this.loadData();
+    void this.loadData();
   }
 
   async loadData() {
     const user = this.authService.user();
     if (!user) return;
 
+    this.loading.set(true);
+    this.errorMessage.set(null);
+
+    const { data: ingredientsData, error: ingredientsError } = await this.supabaseService.client
+      .from('ingredients')
+      .select('*')
+      .eq('owner_id', user.id);
+
+    if (ingredientsError) {
+      this.errorMessage.set(ingredientsError.message);
+      this.loading.set(false);
+      return;
+    }
+
+    this.ingredients.set((ingredientsData || []) as Ingredient[]);
+
+    const { data: mealsData, error: mealsError } = await this.supabaseService.client
+      .from('meals')
+      .select('*')
+      .eq('owner_id', user.id);
+
+    if (mealsError) {
+      this.errorMessage.set(mealsError.message);
+      this.loading.set(false);
+      return;
+    }
+
+    this.meals.set((mealsData || []) as Meal[]);
+
+    if (!this.selectedIngredientId || !this.ingredients().some(ingredient => ingredient.id === this.selectedIngredientId)) {
+      this.selectedIngredientId = this.ingredients()[0]?.id || '';
+    }
+
+    if (!this.selectedMealId || !this.meals().some(meal => meal.id === this.selectedMealId)) {
+      this.selectedMealId = this.meals()[0]?.id || '';
+    }
+
     const group = this.getActiveGroup();
-    if (!group) return;
+    if (!group) {
+      this.entries.set([]);
+      this.summary.set(null);
+      this.loading.set(false);
+      return;
+    }
 
     const today = new Date().toISOString().split('T')[0];
 
-    const { data: entriesData } = await this.supabaseService.client
+    const { data: entriesData, error: entriesError } = await this.supabaseService.client
       .from('log_entries')
       .select('*')
       .eq('owner_id', user.id)
       .eq('group_id', group.id)
       .eq('day', today);
 
-    this.entries.set(entriesData || []);
+    if (entriesError) {
+      this.errorMessage.set(entriesError.message);
+      this.loading.set(false);
+      return;
+    }
+
+    const resolvedEntries = (entriesData || []) as LogEntry[];
+    this.entries.set(resolvedEntries);
+    this.lastEntry = resolvedEntries[0] || null;
 
     const { data: summaryData } = await this.supabaseService.client
       .from('daily_summaries')
@@ -319,27 +449,7 @@ export class TodayComponent implements OnInit {
       .single();
 
     this.summary.set(summaryData);
-
-    const { data: ingredientsData } = await this.supabaseService.client
-      .from('ingredients')
-      .select('*')
-      .eq('owner_id', user.id);
-
-    this.ingredients.set(ingredientsData || []);
-
-    const { data: mealsData } = await this.supabaseService.client
-      .from('meals')
-      .select('*')
-      .eq('owner_id', user.id);
-
-    this.meals.set(mealsData || []);
-  }
-
-  get displayedItems() {
-    if (this.activeTab === 'favorites') {
-      return signal([...this.ingredients(), ...this.meals()]);
-    }
-    return signal([]);
+    this.loading.set(false);
   }
 
   getActiveGroup() {
@@ -374,7 +484,6 @@ export class TodayComponent implements OnInit {
           fat: item.fat_per_100 * factor
         });
     } else {
-      const quantity = 1;
       await this.supabaseService.client
         .from('log_entries')
         .insert({
@@ -383,7 +492,7 @@ export class TodayComponent implements OnInit {
           day: today,
           entry_type: 'meal',
           ref_id: item.id,
-          quantity,
+          quantity: 1,
           kcal: 0,
           protein: 0,
           carbs: 0,
@@ -391,16 +500,71 @@ export class TodayComponent implements OnInit {
         });
     }
 
-    this.loadData();
+    await this.loadData();
   }
 
   async confirmAdd() {
-    this.showAddModal = false;
-    this.loadData();
-  }
+    const user = this.authService.user();
+    if (!user) {
+      this.showAddModal.set(false);
+      return;
+    }
 
-  async editEntry(entry: LogEntry) {
-    console.log('Edit entry', entry.id);
+    const group = this.getActiveGroup();
+    if (!group) {
+      this.showAddModal.set(false);
+      return;
+    }
+
+    const today = new Date().toISOString().split('T')[0];
+
+    if (this.addTab() === 'ingredient') {
+      const ingredient = this.ingredients().find(item => item.id === this.selectedIngredientId);
+      if (!ingredient || this.grams <= 0) {
+        this.showAddModal.set(false);
+        return;
+      }
+
+      const factor = this.grams / 100;
+      await this.supabaseService.client
+        .from('log_entries')
+        .insert({
+          owner_id: user.id,
+          group_id: group.id,
+          day: today,
+          entry_type: 'ingredient',
+          ref_id: ingredient.id,
+          quantity: this.grams,
+          kcal: ingredient.kcal_per_100 * factor,
+          protein: ingredient.protein_per_100 * factor,
+          carbs: ingredient.carbs_per_100 * factor,
+          fat: ingredient.fat_per_100 * factor
+        });
+    } else {
+      const meal = this.meals().find(item => item.id === this.selectedMealId);
+      if (!meal || this.servings <= 0) {
+        this.showAddModal.set(false);
+        return;
+      }
+
+      await this.supabaseService.client
+        .from('log_entries')
+        .insert({
+          owner_id: user.id,
+          group_id: group.id,
+          day: today,
+          entry_type: 'meal',
+          ref_id: meal.id,
+          quantity: this.servings,
+          kcal: 0,
+          protein: 0,
+          carbs: 0,
+          fat: 0
+        });
+    }
+
+    this.showAddModal.set(false);
+    await this.loadData();
   }
 
   async deleteEntry(entry: LogEntry) {
@@ -409,7 +573,7 @@ export class TodayComponent implements OnInit {
       .delete()
       .eq('id', entry.id);
 
-    this.loadData();
+    await this.loadData();
   }
 
   async repeatLast() {
@@ -432,7 +596,7 @@ export class TodayComponent implements OnInit {
         day: today
       });
 
-    this.loadData();
+    await this.loadData();
   }
 
   getIngredientName(id: string) {

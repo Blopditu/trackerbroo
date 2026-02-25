@@ -1,68 +1,77 @@
-import { Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-bottom-nav',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, RouterModule],
   template: `
     <nav class="bottom-nav" aria-label="Primary">
       <a routerLink="/today" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
-        <span class="icon" aria-hidden="true">🍜</span>
+        <span class="icon" aria-hidden="true">▣</span>
         <span>Today</span>
       </a>
       <a routerLink="/library" routerLinkActive="active">
-        <span class="icon" aria-hidden="true">📚</span>
+        <span class="icon" aria-hidden="true">▤</span>
         <span>Library</span>
       </a>
       <a routerLink="/dashboard" routerLinkActive="active">
-        <span class="icon" aria-hidden="true">📜</span>
+        <span class="icon" aria-hidden="true">▥</span>
         <span>Stats</span>
+      </a>
+      <a routerLink="/community" routerLinkActive="active">
+        <span class="icon" aria-hidden="true">▦</span>
+        <span>Community</span>
+      </a>
+      <a routerLink="/profile" routerLinkActive="active">
+        <span class="icon" aria-hidden="true">▧</span>
+        <span>Profile</span>
       </a>
     </nav>
   `,
   styles: [`
     .bottom-nav {
       position: fixed;
-      bottom: 0;
       left: 50%;
+      bottom: 0;
       transform: translateX(-50%);
       width: min(100%, 480px);
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 0.5rem;
-      padding: 0.55rem 0.75rem calc(0.75rem + env(safe-area-inset-bottom));
-      border-top: 3px solid #2f1f15;
-      background: linear-gradient(180deg, #7f4e2a 0%, #593117 100%);
-      box-shadow: 0 -6px 14px rgba(0, 0, 0, 0.25);
-      z-index: 15;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 0.3rem;
+      padding: 0.45rem 0.65rem calc(0.7rem + env(safe-area-inset-bottom));
+      border-top: 2px solid #1f2937;
+      background: linear-gradient(180deg, #f8fbff 0%, #e9f2ff 100%);
+      z-index: 27;
     }
 
     a {
+      min-height: 52px;
+      border: 2px solid #1f2937;
+      border-radius: 12px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 0.2rem;
-      min-height: 52px;
-      border-radius: 12px;
-      border: 2px solid #2f1f15;
+      gap: 0.15rem;
       text-decoration: none;
-      color: #ffe5b5;
-      background: linear-gradient(180deg, #9a6438 0%, #7a4a26 100%);
-      font-size: 0.78rem;
-      font-weight: 800;
-      transition: transform 0.15s ease, background 0.15s ease;
+      color: #334155;
+      font-weight: 700;
+      font-size: 0.68rem;
+      background: #fff;
+      box-shadow: 0 2px 0 #1f2937;
     }
 
     a.active {
-      background: linear-gradient(180deg, #f78a1d 0%, #e1680e 100%);
-      color: #ffffff;
+      background: linear-gradient(180deg, #0ea5e9, #0284c7);
+      color: #fff;
       transform: translateY(-1px);
     }
 
     .icon {
-      font-size: 1.1rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+      font-size: 0.9rem;
       line-height: 1;
     }
   `]

@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -8,32 +8,47 @@ import { Group } from '../../core/types';
 
 @Component({
   selector: 'app-group',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule],
   template: `
     <main class="page group-page">
-      <header class="panel">
-        <p class="title-font">Village Selection</p>
-        <h1 class="group-title">Choose Your Squad</h1>
+      @if (errorMessage()) {
+        <p class="toast error" aria-live="polite">{{ errorMessage() }}</p>
+      }
+
+      <header class="panel halftone">
+        <p class="title-font">Squad Setup</p>
+        <h1>Choose Active Group</h1>
+        <p class="lead">Create or join a group, then select it as your active context.</p>
       </header>
 
-      @if (groups().length > 0) {
-        <section class="panel" aria-label="Your groups">
-          <div class="scroll-header title-font">Your Groups</div>
+      <section class="panel" aria-label="Your groups">
+        <div class="section-head">
+          <div class="scroll-header">Your Groups</div>
+          <span class="mono-badge">{{ groups().length }}</span>
+        </div>
+
+        @if (loadingGroups()) {
+          <div class="skeleton card"></div>
+          <div class="skeleton card"></div>
+        } @else if (groups().length === 0) {
+          <p class="empty-state">No groups yet. Create one below.</p>
+        } @else {
           <div class="group-list">
             @for (group of groups(); track group.id) {
               <button type="button" class="list-card group-card" (click)="selectGroup(group)">
                 <span>{{ group.name }}</span>
-                <span class="mono-badge">Enter</span>
+                <span class="mono-badge">Set Active</span>
               </button>
             }
           </div>
-        </section>
-      }
+        }
+      </section>
 
       <section class="panel" aria-label="Create group">
-        <div class="scroll-header title-font">Create Group</div>
+        <div class="scroll-header">Create Group</div>
         <form (ngSubmit)="createGroup()" #groupForm="ngForm" class="stack-form">
-          <label for="group-name" class="sr-only">Group name</label>
+          <label for="group-name" class="label">Group name</label>
           <input
             id="group-name"
             type="text"
@@ -49,9 +64,9 @@ import { Group } from '../../core/types';
       </section>
 
       <section class="panel" aria-label="Join group">
-        <div class="scroll-header title-font">Join Group</div>
+        <div class="scroll-header">Join Group</div>
         <form (ngSubmit)="joinGroup()" #joinForm="ngForm" class="stack-form">
-          <label for="invite-code" class="sr-only">Invite code</label>
+          <label for="invite-code" class="label">Invite code (group id)</label>
           <input
             id="invite-code"
             type="text"
@@ -70,16 +85,30 @@ import { Group } from '../../core/types';
   styles: [`
     .group-page {
       display: grid;
-      gap: 0.8rem;
+      gap: 0.75rem;
     }
 
-    .group-title {
+    h1 {
+      font-size: 1.7rem;
       margin-top: 0.2rem;
-      font-size: 1.8rem;
     }
 
-    .group-list {
-      margin-top: 0.75rem;
+    .lead {
+      margin: 0.35rem 0 0;
+      color: var(--ink-500);
+      font-size: var(--text-sm);
+      font-weight: 600;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.65rem;
+    }
+
+    .group-list,
+    .stack-form {
       display: grid;
       gap: 0.55rem;
     }
@@ -87,25 +116,13 @@ import { Group } from '../../core/types';
     .group-card {
       width: 100%;
       text-align: left;
-      background: linear-gradient(180deg, #fff9eb 0%, #f7e0b8 100%);
+      min-height: 56px;
     }
 
-    .stack-form {
-      margin-top: 0.75rem;
-      display: grid;
-      gap: 0.65rem;
-    }
-
-    .sr-only {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      padding: 0;
-      margin: -1px;
-      overflow: hidden;
-      clip: rect(0, 0, 0, 0);
-      white-space: nowrap;
-      border: 0;
+    .label {
+      font-size: var(--text-sm);
+      color: var(--ink-700);
+      font-weight: 700;
     }
   `]
 })
@@ -114,18 +131,23 @@ export class GroupComponent implements OnInit {
   groupName = '';
   inviteCode = '';
   loading = false;
+  loadingGroups = signal(false);
+  errorMessage = signal<string | null>(null);
 
   private supabaseService = inject(SupabaseService);
   private authService = inject(AuthService);
   private router = inject(Router);
 
   ngOnInit() {
-    this.loadGroups();
+    void this.loadGroups();
   }
 
   async loadGroups() {
     const user = this.authService.user();
     if (!user) return;
+
+    this.loadingGroups.set(true);
+    this.errorMessage.set(null);
 
     const { data, error } = await this.supabaseService.client
       .from('group_members')
@@ -133,7 +155,8 @@ export class GroupComponent implements OnInit {
       .eq('user_id', user.id);
 
     if (error) {
-      console.error(error);
+      this.errorMessage.set(error.message);
+      this.loadingGroups.set(false);
       return;
     }
 
@@ -142,6 +165,7 @@ export class GroupComponent implements OnInit {
       .filter((group): group is Group => Boolean(group));
 
     this.groups.set(resolvedGroups);
+    this.loadingGroups.set(false);
   }
 
   async createGroup() {
@@ -149,6 +173,7 @@ export class GroupComponent implements OnInit {
     if (!user) return;
 
     this.loading = true;
+    this.errorMessage.set(null);
     try {
       const { data, error } = await this.supabaseService.client
         .from('groups')
@@ -171,7 +196,7 @@ export class GroupComponent implements OnInit {
 
       this.selectGroup(data);
     } catch (error) {
-      console.error(error);
+      this.errorMessage.set(error instanceof Error ? error.message : 'Could not create group.');
     } finally {
       this.loading = false;
     }
@@ -182,6 +207,8 @@ export class GroupComponent implements OnInit {
     if (!user) return;
 
     this.loading = true;
+    this.errorMessage.set(null);
+
     try {
       const { error } = await this.supabaseService.client
         .from('group_members')
@@ -193,9 +220,9 @@ export class GroupComponent implements OnInit {
 
       if (error) throw error;
 
-      this.router.navigate(['/today']);
+      await this.router.navigate(['/today']);
     } catch (error) {
-      console.error(error);
+      this.errorMessage.set(error instanceof Error ? error.message : 'Could not join group.');
     } finally {
       this.loading = false;
     }
@@ -203,6 +230,6 @@ export class GroupComponent implements OnInit {
 
   selectGroup(group: Group) {
     localStorage.setItem('activeGroup', JSON.stringify(group));
-    this.router.navigate(['/today']);
+    void this.router.navigate(['/today']);
   }
 }

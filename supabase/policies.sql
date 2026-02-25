@@ -71,6 +71,56 @@ CREATE POLICY "Group members can view summaries" ON daily_summaries
 CREATE POLICY "Users can upsert their own summaries" ON daily_summaries
   FOR ALL USING (auth.uid() = owner_id);
 
+-- Profiles policies
+CREATE POLICY "Users can view own or groupmate profiles" ON profiles
+  FOR SELECT USING (
+    auth.uid() = user_id
+    OR EXISTS (
+      SELECT 1
+      FROM group_members self_member
+      JOIN group_members target_member
+        ON self_member.group_id = target_member.group_id
+      WHERE self_member.user_id = auth.uid()
+        AND target_member.user_id = profiles.user_id
+    )
+  );
+
+CREATE POLICY "Users can insert their own profile" ON profiles
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own profile" ON profiles
+  FOR UPDATE USING (auth.uid() = user_id);
+
+-- Weight logs policies
+CREATE POLICY "Users can CRUD their own weight logs" ON weight_logs
+  FOR ALL USING (auth.uid() = user_id);
+
+-- Gym check-ins policies
+CREATE POLICY "Group members can view check-ins in their groups" ON gym_checkins
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM group_members
+      WHERE group_members.group_id = gym_checkins.group_id
+        AND group_members.user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Users can create check-ins for their own groups" ON gym_checkins
+  FOR INSERT WITH CHECK (
+    auth.uid() = user_id
+    AND EXISTS (
+      SELECT 1 FROM group_members
+      WHERE group_members.group_id = gym_checkins.group_id
+        AND group_members.user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Users can update their own check-ins" ON gym_checkins
+  FOR UPDATE USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own check-ins" ON gym_checkins
+  FOR DELETE USING (auth.uid() = user_id);
+
 -- Function to update daily summaries
 CREATE OR REPLACE FUNCTION update_daily_summary()
 RETURNS TRIGGER AS $$

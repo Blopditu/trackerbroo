@@ -1,4 +1,7 @@
 <div class="app-surface">
+  @if (showTopBar()) {
+    <app-top-bar></app-top-bar>
+  }
   <router-outlet></router-outlet>
   @if (showNav()) {
     <app-bottom-nav></app-bottom-nav>

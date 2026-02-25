@@ -17,6 +17,8 @@ export interface Ingredient {
   owner_id: string;
   name: string;
   kcal_per_100: number;
+  cost_per_100?: number | null;
+  market_name?: string | null;
   protein_per_100: number;
   carbs_per_100: number;
   fat_per_100: number;
@@ -66,4 +68,37 @@ export interface DailySummary {
 export interface User {
   id: string;
   email: string;
+}
+
+export interface Profile {
+  user_id: string;
+  display_name: string | null;
+  bio: string | null;
+  avatar_url: string | null;
+  height_cm: number | null;
+  current_weight_kg: number | null;
+  target_weight_kg: number | null;
+  weekly_gym_target: number;
+  activity_level: 'low' | 'moderate' | 'high' | null;
+  updated_at: string;
+}
+
+export interface WeightLog {
+  id: string;
+  user_id: string;
+  logged_on: string;
+  weight_kg: number;
+  note: string | null;
+  created_at: string;
+}
+
+export interface GymCheckin {
+  id: string;
+  group_id: string;
+  user_id: string;
+  checkin_date: string;
+  week_start: string;
+  note: string | null;
+  photo_url: string | null;
+  created_at: string;
 }

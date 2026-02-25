@@ -31,6 +31,16 @@ export const routes: Routes = [
     canActivate: [AuthGuard]
   },
   {
+    path: 'community',
+    loadComponent: () => import('./features/community/community.component').then(m => m.CommunityComponent),
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'profile',
+    loadComponent: () => import('./features/profile/profile.component').then(m => m.ProfileComponent),
+    canActivate: [AuthGuard]
+  },
+  {
     path: '',
     redirectTo: '/today',
     pathMatch: 'full'

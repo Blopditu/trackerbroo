@@ -1,55 +1,76 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SupabaseService } from '../../core/supabase.service';
 import { DailySummary } from '../../core/types';
 
 @Component({
   selector: 'app-dashboard',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule],
   template: `
     <main class="page dashboard-page">
-      <header class="panel">
-        <p class="title-font">Shinobi Board</p>
-        <h1>Squad Stats</h1>
+      @if (errorMessage()) {
+        <p class="toast error" aria-live="polite">{{ errorMessage() }}</p>
+      }
+
+      <header class="panel halftone">
+        <p class="title-font">Stats</p>
+        <h1>Squad Snapshot</h1>
+        <p class="lead">Daily summary cards and 7-day calories trend.</p>
       </header>
 
       <section class="panel">
-        <div class="scroll-header title-font">Today</div>
-        <div class="today-cards">
-          @for (summary of todaySummaries(); track summary.owner_id) {
-            <article class="list-card summary-card">
-              <div>
-                <strong>{{ getUserName(summary.owner_id) }}</strong>
-                <div class="sub">{{ summary.kcal }} kcal</div>
-              </div>
-              <div class="macro-line" aria-label="Macros">
-                <span class="mono-badge">P {{ summary.protein }}g</span>
-                <span class="mono-badge">C {{ summary.carbs }}g</span>
-                <span class="mono-badge">F {{ summary.fat }}g</span>
-              </div>
-            </article>
-          }
-          @if (todaySummaries().length === 0) {
-            <p class="empty">No summaries for today yet.</p>
-          }
+        <div class="section-head">
+          <div class="scroll-header">Today</div>
+          <span class="mono-badge">Protein-hit days: {{ proteinHitDays() }}</span>
         </div>
+
+        @if (loading()) {
+          <div class="skeleton card"></div>
+          <div class="skeleton card"></div>
+        } @else {
+          <div class="today-cards">
+            @for (summary of todaySummaries(); track summary.owner_id) {
+              <article class="list-card summary-card">
+                <div>
+                  <strong>{{ getUserName(summary.owner_id) }}</strong>
+                  <div class="sub">{{ summary.kcal }} kcal</div>
+                </div>
+                <div class="macro-line" aria-label="Macros">
+                  <span class="mono-badge">P {{ summary.protein }}g</span>
+                  <span class="mono-badge">C {{ summary.carbs }}g</span>
+                  <span class="mono-badge">F {{ summary.fat }}g</span>
+                </div>
+              </article>
+            }
+            @if (todaySummaries().length === 0) {
+              <p class="empty-state">No summaries for today yet.</p>
+            }
+          </div>
+        }
       </section>
 
       <section class="panel">
-        <div class="scroll-header title-font">This Week</div>
-        <div class="week-view" role="list" aria-label="Weekly calories">
-          @for (day of weekDays; track day.date) {
-            <div class="day-column" role="listitem">
-              <div class="day-label">{{ day.label }}</div>
-              @for (summary of getSummariesForDay(day.date); track summary.owner_id + summary.day) {
-                <div class="day-bar">
-                  <div class="bar" [style.height.%]="getBarHeight(summary.kcal)"></div>
-                  <div class="user-label">{{ getUserName(summary.owner_id) }}</div>
-                </div>
-              }
-            </div>
-          }
+        <div class="section-head">
+          <div class="scroll-header">Weekly Calories</div>
+          <span class="manga-badge">STREAK</span>
         </div>
+
+        @if (loading()) {
+          <div class="skeleton card"></div>
+        } @else {
+          <div class="week-chart" role="list" aria-label="Weekly calories">
+            @for (day of weekDays; track day.date) {
+              <div class="bar-col" role="listitem">
+                <div class="bar-wrap">
+                  <div class="bar" [style.height.%]="barHeight(day.date)"></div>
+                </div>
+                <span class="day">{{ day.label }}</span>
+                <span class="val">{{ dayTotal(day.date) }}</span>
+              </div>
+            }
+          </div>
+        }
       </section>
     </main>
   `,
@@ -60,12 +81,38 @@ import { DailySummary } from '../../core/types';
     }
 
     h1 {
-      font-size: 2rem;
       margin-top: 0.2rem;
+      font-size: 1.7rem;
+    }
+
+    .lead {
+      margin: 0.35rem 0 0;
+      color: var(--ink-500);
+      font-size: var(--text-sm);
+      font-weight: 600;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.45rem;
+      margin-bottom: 0.65rem;
+    }
+
+    .manga-badge {
+      border: 2px solid var(--border-strong);
+      border-radius: 999px;
+      background: #f0f9ff;
+      color: #0369a1;
+      padding: 0.2rem 0.55rem;
+      font-size: var(--text-xs);
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      box-shadow: 0 2px 0 var(--border-strong);
     }
 
     .today-cards {
-      margin-top: 0.75rem;
       display: grid;
       gap: 0.5rem;
     }
@@ -77,8 +124,9 @@ import { DailySummary } from '../../core/types';
 
     .sub {
       margin-top: 0.2rem;
-      color: #5d4734;
+      color: var(--ink-500);
       font-weight: 700;
+      font-size: var(--text-sm);
     }
 
     .macro-line {
@@ -88,60 +136,44 @@ import { DailySummary } from '../../core/types';
       flex-wrap: wrap;
     }
 
-    .week-view {
-      margin-top: 0.75rem;
+    .week-chart {
       display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 0.35rem;
-      min-height: 190px;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 0.4rem;
+      min-height: 196px;
+      align-items: end;
     }
 
-    .day-column {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-end;
-      border: 2px solid #2f1f15;
-      border-radius: 10px;
-      background: linear-gradient(180deg, #fff9eb 0%, #f7e2b8 100%);
-      padding: 0.3rem;
-      gap: 0.25rem;
-    }
-
-    .day-label {
-      font-weight: 800;
-      color: #4f3724;
-      font-size: 0.78rem;
-      margin-bottom: auto;
-    }
-
-    .day-bar {
-      width: 100%;
+    .bar-col {
       display: grid;
+      gap: 0.22rem;
       justify-items: center;
-      gap: 0.2rem;
+    }
+
+    .bar-wrap {
+      width: 100%;
+      height: 132px;
+      border: 2px solid var(--border-strong);
+      border-radius: 10px;
+      background: #eef5ff;
+      display: flex;
+      align-items: end;
+      padding: 0.18rem;
     }
 
     .bar {
-      width: 70%;
-      min-height: 14px;
-      border: 2px solid #2f1f15;
-      border-radius: 999px;
-      background: linear-gradient(180deg, #f78a1d, #e1680e);
+      width: 100%;
+      border-radius: 7px;
+      min-height: 10px;
+      background: linear-gradient(180deg, #22d3ee, #0284c7);
+      border: 2px solid #075985;
     }
 
-    .user-label {
-      font-size: 0.68rem;
-      font-weight: 800;
-      color: #4f3724;
-      text-align: center;
-    }
-
-    .empty {
-      margin: 0;
-      text-align: center;
-      color: #5c4433;
+    .day,
+    .val {
+      font-size: var(--text-xs);
       font-weight: 700;
+      color: var(--ink-500);
     }
   `]
 })
@@ -149,12 +181,23 @@ export class DashboardComponent implements OnInit {
   todaySummaries = signal<DailySummary[]>([]);
   weekSummaries = signal<DailySummary[]>([]);
   weekDays: { date: string; label: string }[] = [];
+  loading = signal(false);
+  errorMessage = signal<string | null>(null);
+
+  proteinHitDays = computed(() => {
+    const uniqueDays = new Set(
+      this.weekSummaries()
+        .filter(item => Number(item.protein) >= 100)
+        .map(item => item.day)
+    );
+    return uniqueDays.size;
+  });
 
   private supabaseService = inject(SupabaseService);
 
   ngOnInit() {
     this.generateWeekDays();
-    this.loadData();
+    void this.loadData();
   }
 
   generateWeekDays() {
@@ -173,24 +216,40 @@ export class DashboardComponent implements OnInit {
     const group = this.getActiveGroup();
     if (!group) return;
 
+    this.loading.set(true);
+    this.errorMessage.set(null);
+
     const today = new Date().toISOString().split('T')[0];
 
-    const { data: todayData } = await this.supabaseService.client
+    const { data: todayData, error: todayError } = await this.supabaseService.client
       .from('daily_summaries')
       .select('*')
       .eq('group_id', group.id)
       .eq('day', today);
 
-    this.todaySummaries.set(todayData || []);
+    if (todayError) {
+      this.errorMessage.set(todayError.message);
+      this.loading.set(false);
+      return;
+    }
+
+    this.todaySummaries.set((todayData || []) as DailySummary[]);
 
     const weekStart = this.weekDays[0].date;
-    const { data: weekData } = await this.supabaseService.client
+    const { data: weekData, error: weekError } = await this.supabaseService.client
       .from('daily_summaries')
       .select('*')
       .eq('group_id', group.id)
       .gte('day', weekStart);
 
-    this.weekSummaries.set(weekData || []);
+    if (weekError) {
+      this.errorMessage.set(weekError.message);
+      this.loading.set(false);
+      return;
+    }
+
+    this.weekSummaries.set((weekData || []) as DailySummary[]);
+    this.loading.set(false);
   }
 
   getActiveGroup() {
@@ -198,12 +257,17 @@ export class DashboardComponent implements OnInit {
     return groupStr ? JSON.parse(groupStr) : null;
   }
 
-  getSummariesForDay(date: string) {
-    return this.weekSummaries().filter(s => s.day === date);
+  dayTotal(date: string) {
+    return Math.round(
+      this.weekSummaries()
+        .filter(item => item.day === date)
+        .reduce((sum, item) => sum + Number(item.kcal), 0)
+    );
   }
 
-  getBarHeight(kcal: number) {
-    return Math.min((kcal / 3000) * 100, 100);
+  barHeight(date: string) {
+    const maxKcal = Math.max(...this.weekDays.map(day => this.dayTotal(day.date)), 1);
+    return Math.min((this.dayTotal(date) / maxKcal) * 100, 100);
   }
 
   getUserName(userId: string) {
