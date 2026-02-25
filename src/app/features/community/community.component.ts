@@ -135,7 +135,7 @@ interface LeaderboardRow {
                     <img [src]="item.photo_url" alt="Gym check-in photo" class="feed-photo">
                   }
 
-                  <div class="reaction-placeholder">💬 Reactions coming soon</div>
+                  <div class="reaction-placeholder">Reactions coming soon</div>
                 </article>
               }
 
@@ -207,8 +207,8 @@ interface LeaderboardRow {
     }
 
     .board-row.you {
-      border-color: #0369a1;
-      background: #e0f2fe;
+      border-color: var(--accent-500);
+      background: var(--accent-soft);
     }
 
     .row-head {
@@ -221,10 +221,10 @@ interface LeaderboardRow {
       width: 34px;
       height: 34px;
       border-radius: 50%;
-      border: 2px solid var(--border-strong);
+      border: 1px solid var(--border-strong);
       display: grid;
       place-items: center;
-      background: #e2e8f0;
+      background: #1a2738;
       font-size: var(--text-xs);
       font-weight: 800;
     }
@@ -249,15 +249,15 @@ interface LeaderboardRow {
     .score-bar-bg {
       width: 100%;
       height: 10px;
-      border: 2px solid var(--border-strong);
+      border: 1px solid var(--border-strong);
       border-radius: 999px;
-      background: #dbeafe;
+      background: #142335;
       overflow: hidden;
     }
 
     .score-bar {
       height: 100%;
-      background: linear-gradient(180deg, #22d3ee, #0284c7);
+      background: var(--accent-500);
     }
 
     .feed-item {

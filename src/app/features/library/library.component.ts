@@ -239,8 +239,8 @@ import { Ingredient, Meal } from '../../core/types';
 
     .danger {
       border-color: var(--danger-500);
-      color: #991b1b;
-      background: #fee2e2;
+      color: #f0b1bf;
+      background: #2a1720;
     }
 
     .stack-form {

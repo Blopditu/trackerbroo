@@ -192,11 +192,10 @@ type QuickItem = Ingredient | Meal;
     }
 
     .macro-card {
-      border: 2px solid var(--border-strong);
+      border: 1px solid var(--border-strong);
       border-radius: 12px;
-      background: #fff;
+      background: var(--bg-surface-2);
       padding: 0.55rem;
-      box-shadow: 0 3px 0 var(--border-strong);
       display: grid;
       gap: 0.15rem;
     }
@@ -215,7 +214,7 @@ type QuickItem = Ingredient | Meal;
 
     .macro-card.protein {
       background: var(--accent-soft);
-      border-color: #0369a1;
+      border-color: var(--accent-500);
     }
 
     .items-list,
@@ -249,11 +248,11 @@ type QuickItem = Ingredient | Meal;
 
     .delete-btn {
       min-height: 44px;
-      border: 2px solid var(--danger-500);
+      border: 1px solid var(--danger-500);
       border-radius: 999px;
       padding: 0 0.75rem;
-      background: #fee2e2;
-      color: #991b1b;
+      background: #2a1720;
+      color: #f0b1bf;
       font-weight: 800;
     }
 

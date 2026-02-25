@@ -101,15 +101,14 @@ import { DailySummary } from '../../core/types';
     }
 
     .manga-badge {
-      border: 2px solid var(--border-strong);
+      border: 1px solid var(--border-strong);
       border-radius: 999px;
-      background: #f0f9ff;
-      color: #0369a1;
+      background: var(--bg-muted);
+      color: var(--ink-700);
       padding: 0.2rem 0.55rem;
       font-size: var(--text-xs);
       font-weight: 800;
       letter-spacing: 0.05em;
-      box-shadow: 0 2px 0 var(--border-strong);
     }
 
     .today-cards {
@@ -153,9 +152,9 @@ import { DailySummary } from '../../core/types';
     .bar-wrap {
       width: 100%;
       height: 132px;
-      border: 2px solid var(--border-strong);
+      border: 1px solid var(--border-strong);
       border-radius: 10px;
-      background: #eef5ff;
+      background: #111a27;
       display: flex;
       align-items: end;
       padding: 0.18rem;
@@ -165,8 +164,8 @@ import { DailySummary } from '../../core/types';
       width: 100%;
       border-radius: 7px;
       min-height: 10px;
-      background: linear-gradient(180deg, #22d3ee, #0284c7);
-      border: 2px solid #075985;
+      background: var(--accent-500);
+      border: 1px solid var(--accent-600);
     }
 
     .day,

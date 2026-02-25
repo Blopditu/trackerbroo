@@ -12,7 +12,6 @@ import { Group } from '../core/types';
   template: `
     <header class="top-bar">
       <button type="button" class="brand" (click)="goToday()" aria-label="Go to today">
-        <span class="brand-mark" aria-hidden="true">▦</span>
         <span>Tracker Broo</span>
       </button>
 
@@ -42,16 +41,16 @@ import { Group } from '../core/types';
       align-items: center;
       gap: 0.45rem;
       padding: 0.6rem 0.75rem;
-      background: linear-gradient(180deg, #ffffff 0%, #f0f6ff 100%);
-      border-bottom: 2px solid #1f2937;
+      background: var(--bg-shell);
+      border-bottom: 1px solid var(--border-strong);
       z-index: 28;
     }
 
     .brand {
-      border: 2px solid #1f2937;
+      border: 1px solid var(--border-strong);
       border-radius: 999px;
-      background: #e0f2fe;
-      color: #0c4a6e;
+      background: var(--bg-surface-2);
+      color: var(--ink-700);
       min-height: 40px;
       display: inline-flex;
       align-items: center;
@@ -59,12 +58,6 @@ import { Group } from '../core/types';
       padding: 0 0.6rem;
       font-weight: 800;
       font-size: 0.78rem;
-      box-shadow: 0 2px 0 #1f2937;
-    }
-
-    .brand-mark {
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
-      font-size: 0.85rem;
     }
 
     .group-picker select {
@@ -77,15 +70,14 @@ import { Group } from '../core/types';
     }
 
     .manage {
-      border: 2px solid #1f2937;
+      border: 1px solid var(--border-strong);
       border-radius: 999px;
       min-height: 40px;
       padding: 0 0.7rem;
-      background: #f5f7ff;
-      color: #334155;
+      background: var(--bg-surface-2);
+      color: var(--ink-700);
       font-size: 0.78rem;
       font-weight: 800;
-      box-shadow: 0 2px 0 #1f2937;
     }
 
     .sr-only {

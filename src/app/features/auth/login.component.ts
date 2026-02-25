@@ -17,10 +17,7 @@ import { AuthService } from '../../core/auth.service';
       <section class="panel halftone hero" aria-labelledby="login-title">
         <p class="title-font crest">TRACKER BROO</p>
         <h1 id="login-title">Train Together. Eat Better.</h1>
-        <div class="hero-note">
-          <div class="mascot" aria-hidden="true">◉</div>
-          <p class="manga-bubble">Your squad log for protein, gym check-ins, and consistency streaks.</p>
-        </div>
+        <p class="manga-bubble">Your squad log for protein, gym check-ins, and consistency streaks.</p>
       </section>
 
       <section class="panel auth-panel" aria-label="Sign in">
@@ -63,20 +60,13 @@ import { AuthService } from '../../core/auth.service';
     }
 
     .crest {
-      color: #0369a1;
+      color: var(--accent-500);
       font-size: 1rem;
     }
 
     h1 {
       font-size: 1.8rem;
       line-height: 1.1;
-    }
-
-    .hero-note {
-      display: grid;
-      grid-template-columns: auto 1fr;
-      gap: 0.55rem;
-      align-items: center;
     }
 
     .auth-panel {

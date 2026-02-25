@@ -178,9 +178,8 @@ import { Profile, WeightLog } from '../../core/types';
       width: 76px;
       height: 76px;
       border-radius: 16px;
-      border: 2px solid var(--border-strong);
-      box-shadow: 0 3px 0 var(--border-strong);
-      background: #dbeafe;
+      border: 1px solid var(--border-strong);
+      background: #1a2738;
     }
 
     .avatar-image {
@@ -192,14 +191,14 @@ import { Profile, WeightLog } from '../../core/types';
       place-items: center;
       font-size: 1.3rem;
       font-weight: 800;
-      color: #1e3a8a;
+      color: var(--ink-700);
     }
 
     .gym-target {
       margin-top: 0.7rem;
-      border: 2px solid var(--border-strong);
+      border: 1px solid var(--border-strong);
       border-radius: 12px;
-      background: #eff6ff;
+      background: #121f2f;
       padding: 0.55rem;
       display: flex;
       align-items: center;
@@ -235,9 +234,9 @@ import { Profile, WeightLog } from '../../core/types';
     }
 
     .sparkline-wrap {
-      border: 2px solid var(--border-strong);
+      border: 1px solid var(--border-strong);
       border-radius: 12px;
-      background: #f8fbff;
+      background: #111a27;
       padding: 0.5rem;
       margin-bottom: 0.65rem;
     }
@@ -249,7 +248,7 @@ import { Profile, WeightLog } from '../../core/types';
 
     .sparkline polyline {
       fill: none;
-      stroke: #0284c7;
+      stroke: var(--accent-500);
       stroke-width: 2;
       stroke-linecap: round;
       stroke-linejoin: round;
