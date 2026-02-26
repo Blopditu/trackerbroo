@@ -2,6 +2,10 @@ export interface Group {
   id: string;
   name: string;
   created_by: string;
+  period_end?: string | null;
+  motto?: string | null;
+  yellow_card_rules?: string | null;
+  red_card_consequence?: string | null;
   created_at: string;
 }
 
@@ -42,7 +46,7 @@ export interface MealItem {
 export interface LogEntry {
   id: string;
   owner_id: string;
-  group_id: string;
+  group_id: string | null;
   day: string; // YYYY-MM-DD
   entry_type: 'ingredient' | 'meal';
   ref_id: string;
@@ -56,7 +60,7 @@ export interface LogEntry {
 
 export interface DailySummary {
   owner_id: string;
-  group_id: string;
+  group_id: string | null;
   day: string;
   kcal: number;
   protein: number;
@@ -98,6 +102,20 @@ export interface GymCheckin {
   user_id: string;
   checkin_date: string;
   week_start: string;
+  note: string | null;
+  photo_url: string | null;
+  created_at: string;
+}
+
+export interface GroupActivity {
+  id: string;
+  group_id: string;
+  user_id: string;
+  day: string;
+  gym_done: boolean;
+  sleep_done: boolean;
+  protein_done: boolean;
+  confirm_done: boolean;
   note: string | null;
   photo_url: string | null;
   created_at: string;

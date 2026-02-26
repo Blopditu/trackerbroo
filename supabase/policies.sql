@@ -55,21 +55,106 @@ CREATE POLICY "Users can CRUD meal items for their meals" ON meal_items
   );
 
 -- Log entries policies
-CREATE POLICY "Users can CRUD their own log entries" ON log_entries
-  FOR ALL USING (auth.uid() = owner_id);
+DROP POLICY IF EXISTS "Users can CRUD their own log entries" ON log_entries;
+CREATE POLICY "Users can read own log entries" ON log_entries
+  FOR SELECT USING (auth.uid() = owner_id);
 
--- Daily summaries policies
-CREATE POLICY "Group members can view summaries" ON daily_summaries
-  FOR SELECT USING (
-    EXISTS (
-      SELECT 1 FROM group_members
-      WHERE group_members.group_id = daily_summaries.group_id
-      AND group_members.user_id = auth.uid()
+CREATE POLICY "Users can insert own log entries for private or joined groups" ON log_entries
+  FOR INSERT WITH CHECK (
+    auth.uid() = owner_id
+    AND (
+      group_id IS NULL
+      OR EXISTS (
+        SELECT 1 FROM group_members
+        WHERE group_members.group_id = log_entries.group_id
+          AND group_members.user_id = auth.uid()
+      )
     )
   );
 
-CREATE POLICY "Users can upsert their own summaries" ON daily_summaries
-  FOR ALL USING (auth.uid() = owner_id);
+CREATE POLICY "Users can update own log entries for private or joined groups" ON log_entries
+  FOR UPDATE USING (
+    auth.uid() = owner_id
+    AND (
+      group_id IS NULL
+      OR EXISTS (
+        SELECT 1 FROM group_members
+        WHERE group_members.group_id = log_entries.group_id
+          AND group_members.user_id = auth.uid()
+      )
+    )
+  )
+  WITH CHECK (
+    auth.uid() = owner_id
+    AND (
+      group_id IS NULL
+      OR EXISTS (
+        SELECT 1 FROM group_members
+        WHERE group_members.group_id = log_entries.group_id
+          AND group_members.user_id = auth.uid()
+      )
+    )
+  );
+
+CREATE POLICY "Users can delete own log entries" ON log_entries
+  FOR DELETE USING (auth.uid() = owner_id);
+
+-- Daily summaries policies
+DROP POLICY IF EXISTS "Group members can view summaries" ON daily_summaries;
+DROP POLICY IF EXISTS "Users can upsert their own summaries" ON daily_summaries;
+
+CREATE POLICY "Users can read own or group summaries" ON daily_summaries
+  FOR SELECT USING (
+    auth.uid() = owner_id
+    OR (
+      group_id IS NOT NULL
+      AND EXISTS (
+        SELECT 1 FROM group_members
+        WHERE group_members.group_id = daily_summaries.group_id
+          AND group_members.user_id = auth.uid()
+      )
+    )
+  );
+
+CREATE POLICY "Users can insert own summaries for private or joined groups" ON daily_summaries
+  FOR INSERT WITH CHECK (
+    auth.uid() = owner_id
+    AND (
+      group_id IS NULL
+      OR EXISTS (
+        SELECT 1 FROM group_members
+        WHERE group_members.group_id = daily_summaries.group_id
+          AND group_members.user_id = auth.uid()
+      )
+    )
+  );
+
+CREATE POLICY "Users can update own summaries for private or joined groups" ON daily_summaries
+  FOR UPDATE USING (
+    auth.uid() = owner_id
+    AND (
+      group_id IS NULL
+      OR EXISTS (
+        SELECT 1 FROM group_members
+        WHERE group_members.group_id = daily_summaries.group_id
+          AND group_members.user_id = auth.uid()
+      )
+    )
+  )
+  WITH CHECK (
+    auth.uid() = owner_id
+    AND (
+      group_id IS NULL
+      OR EXISTS (
+        SELECT 1 FROM group_members
+        WHERE group_members.group_id = daily_summaries.group_id
+          AND group_members.user_id = auth.uid()
+      )
+    )
+  );
+
+CREATE POLICY "Users can delete own summaries" ON daily_summaries
+  FOR DELETE USING (auth.uid() = owner_id);
 
 -- Profiles policies
 CREATE POLICY "Users can view own or groupmate profiles" ON profiles
@@ -121,32 +206,101 @@ CREATE POLICY "Users can update their own check-ins" ON gym_checkins
 CREATE POLICY "Users can delete their own check-ins" ON gym_checkins
   FOR DELETE USING (auth.uid() = user_id);
 
+-- Group ritual activities policies
+CREATE POLICY "Group members can view activities in their groups" ON group_activities
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM group_members
+      WHERE group_members.group_id = group_activities.group_id
+        AND group_members.user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Users can create activity for their own groups" ON group_activities
+  FOR INSERT WITH CHECK (
+    auth.uid() = user_id
+    AND EXISTS (
+      SELECT 1 FROM group_members
+      WHERE group_members.group_id = group_activities.group_id
+        AND group_members.user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Users can update their own activities" ON group_activities
+  FOR UPDATE USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own activities" ON group_activities
+  FOR DELETE USING (auth.uid() = user_id);
+
 -- Function to update daily summaries
 CREATE OR REPLACE FUNCTION update_daily_summary()
 RETURNS TRIGGER AS $$
+DECLARE
+  target_owner_id UUID := COALESCE(NEW.owner_id, OLD.owner_id);
+  target_group_id UUID := COALESCE(NEW.group_id, OLD.group_id);
+  target_day DATE := COALESCE(NEW.day, OLD.day);
+  has_entries BOOLEAN := FALSE;
+  total_kcal DECIMAL(10,2) := 0;
+  total_protein DECIMAL(10,2) := 0;
+  total_carbs DECIMAL(10,2) := 0;
+  total_fat DECIMAL(10,2) := 0;
 BEGIN
-  -- Insert or update daily summary
-  INSERT INTO daily_summaries (owner_id, group_id, day, kcal, protein, carbs, fat, updated_at)
   SELECT
-    NEW.owner_id,
-    NEW.group_id,
-    NEW.day,
     COALESCE(SUM(kcal), 0),
     COALESCE(SUM(protein), 0),
     COALESCE(SUM(carbs), 0),
-    COALESCE(SUM(fat), 0),
-    NOW()
+    COALESCE(SUM(fat), 0)
+  INTO total_kcal, total_protein, total_carbs, total_fat
   FROM log_entries
-  WHERE owner_id = NEW.owner_id AND group_id = NEW.group_id AND day = NEW.day
-  ON CONFLICT (owner_id, group_id, day)
-  DO UPDATE SET
-    kcal = EXCLUDED.kcal,
-    protein = EXCLUDED.protein,
-    carbs = EXCLUDED.carbs,
-    fat = EXCLUDED.fat,
-    updated_at = EXCLUDED.updated_at;
+  WHERE owner_id = target_owner_id
+    AND day = target_day
+    AND (
+      (group_id IS NULL AND target_group_id IS NULL)
+      OR group_id = target_group_id
+    );
 
-  RETURN NEW;
+  SELECT EXISTS (
+    SELECT 1
+    FROM log_entries
+    WHERE owner_id = target_owner_id
+      AND day = target_day
+      AND (
+        (group_id IS NULL AND target_group_id IS NULL)
+        OR group_id = target_group_id
+      )
+  ) INTO has_entries;
+
+  IF NOT has_entries THEN
+    DELETE FROM daily_summaries
+    WHERE owner_id = target_owner_id
+      AND day = target_day
+      AND (
+        (group_id IS NULL AND target_group_id IS NULL)
+        OR group_id = target_group_id
+      );
+  ELSE
+    INSERT INTO daily_summaries (owner_id, group_id, day, kcal, protein, carbs, fat, updated_at)
+    VALUES (
+      target_owner_id,
+      target_group_id,
+      target_day,
+      total_kcal,
+      total_protein,
+      total_carbs,
+      total_fat,
+      NOW()
+    )
+    ON CONFLICT (owner_id, group_id, day)
+    DO UPDATE SET
+      kcal = EXCLUDED.kcal,
+      protein = EXCLUDED.protein,
+      carbs = EXCLUDED.carbs,
+      fat = EXCLUDED.fat,
+      updated_at = EXCLUDED.updated_at;
+  END IF;
+
+  RETURN COALESCE(NEW, OLD);
 END;
 $$ LANGUAGE plpgsql;
 

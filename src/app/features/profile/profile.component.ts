@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthService } from '../../core/auth.service';
 import { SupabaseService } from '../../core/supabase.service';
+import { ActiveGroupService } from '../../core/active-group.service';
 import { Profile, WeightLog } from '../../core/types';
 
 @Component({
@@ -284,6 +285,7 @@ import { Profile, WeightLog } from '../../core/types';
 export class ProfileComponent implements OnInit {
   private readonly supabaseService = inject(SupabaseService);
   private readonly authService = inject(AuthService);
+  private readonly activeGroupService = inject(ActiveGroupService);
   private readonly formBuilder = inject(FormBuilder);
 
   readonly savingProfile = signal(false);
@@ -475,19 +477,17 @@ export class ProfileComponent implements OnInit {
       return;
     }
 
-    const groupRaw = localStorage.getItem('activeGroup');
-    if (!groupRaw) {
+    const groupId = this.activeGroupService.activeGroupId();
+    if (!groupId) {
       this.gymWeekSessions.set(0);
       return;
     }
-
-    const group = JSON.parse(groupRaw) as { id: string };
     const weekStart = this.getWeekStart(this.formatDate(new Date()));
 
     const { data } = await this.supabaseService.client
       .from('gym_checkins')
       .select('checkin_date')
-      .eq('group_id', group.id)
+      .eq('group_id', groupId)
       .eq('user_id', user.id)
       .eq('week_start', weekStart);
 

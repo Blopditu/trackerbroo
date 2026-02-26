@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { SupabaseService } from '../../core/supabase.service';
 import { AuthService } from '../../core/auth.service';
+import { ActiveGroupService } from '../../core/active-group.service';
 import { Group } from '../../core/types';
 
 @Component({
@@ -136,6 +137,7 @@ export class GroupComponent implements OnInit {
 
   private supabaseService = inject(SupabaseService);
   private authService = inject(AuthService);
+  private activeGroupService = inject(ActiveGroupService);
   private router = inject(Router);
 
   ngOnInit() {
@@ -220,6 +222,16 @@ export class GroupComponent implements OnInit {
 
       if (error) throw error;
 
+      const { data: joinedGroupData } = await this.supabaseService.client
+        .from('groups')
+        .select('*')
+        .eq('id', this.inviteCode)
+        .maybeSingle();
+
+      if (joinedGroupData) {
+        this.activeGroupService.setActiveGroup(joinedGroupData as Group);
+      }
+
       await this.router.navigate(['/today']);
     } catch (error) {
       this.errorMessage.set(error instanceof Error ? error.message : 'Gruppe konnte nicht beigetreten werden.');
@@ -229,7 +241,7 @@ export class GroupComponent implements OnInit {
   }
 
   selectGroup(group: Group) {
-    localStorage.setItem('activeGroup', JSON.stringify(group));
+    this.activeGroupService.setActiveGroup(group);
     void this.router.navigate(['/today']);
   }
 }

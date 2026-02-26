@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { SupabaseService } from '../core/supabase.service';
 import { AuthService } from '../core/auth.service';
+import { ActiveGroupService } from '../core/active-group.service';
 import { Group } from '../core/types';
 
 @Component({
@@ -99,6 +100,7 @@ export class TopBarComponent implements OnInit {
 
   private readonly supabaseService = inject(SupabaseService);
   private readonly authService = inject(AuthService);
+  private readonly activeGroupService = inject(ActiveGroupService);
   private readonly router = inject(Router);
 
   ngOnInit(): void {
@@ -131,7 +133,7 @@ export class TopBarComponent implements OnInit {
 
     const id = (event.target as HTMLSelectElement).value;
     if (!id) {
-      localStorage.removeItem('activeGroup');
+      this.activeGroupService.clearActiveGroup();
       this.activeGroupId.set('');
       return;
     }
@@ -141,7 +143,7 @@ export class TopBarComponent implements OnInit {
       return;
     }
 
-    localStorage.setItem('activeGroup', JSON.stringify(group));
+    this.activeGroupService.setActiveGroup(group);
     this.activeGroupId.set(group.id);
     void this.router.navigate(['/today']);
   }
@@ -155,23 +157,8 @@ export class TopBarComponent implements OnInit {
   }
 
   private syncActiveGroup(): void {
-    if (!this.hasBrowserStorage()) {
-      this.activeGroupId.set('');
-      return;
-    }
-
-    const groupRaw = localStorage.getItem('activeGroup');
-    if (!groupRaw) {
-      this.activeGroupId.set('');
-      return;
-    }
-
-    try {
-      const group = JSON.parse(groupRaw) as Group;
-      this.activeGroupId.set(group.id);
-    } catch {
-      this.activeGroupId.set('');
-    }
+    this.activeGroupService.syncFromStorage();
+    this.activeGroupId.set(this.activeGroupService.activeGroupId() ?? '');
   }
 
   private hasBrowserStorage(): boolean {

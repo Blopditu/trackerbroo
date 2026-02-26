@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { SupabaseService } from './supabase.service';
 import { User } from './types';
@@ -7,32 +7,16 @@ import { User } from './types';
   providedIn: 'root'
 })
 export class AuthService {
-  user = signal<User | null>(null);
+  readonly user = signal<User | null>(null);
+  private readonly supabaseService = inject(SupabaseService);
+  private readonly router = inject(Router);
+  private restoreSessionPromise: Promise<void> | null = null;
 
-  constructor(
-    private supabaseService: SupabaseService,
-    private router: Router
-  ) {
-    this.supabaseService.client.auth.onAuthStateChange((event, session) => {
-      if (session?.user) {
-        this.user.set({
-          id: session.user.id,
-          email: session.user.email || ''
-        });
-      } else {
-        this.user.set(null);
-      }
+  constructor() {
+    this.supabaseService.client.auth.onAuthStateChange((_, session) => {
+      this.applySession(session);
     });
-
-    // Check for existing session
-    this.supabaseService.client.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        this.user.set({
-          id: session.user.id,
-          email: session.user.email || ''
-        });
-      }
-    });
+    void this.restoreSession();
   }
 
   async signIn(email: string) {
@@ -63,8 +47,45 @@ export class AuthService {
     this.router.navigate(['/login']);
   }
 
+  async restoreSession(): Promise<void> {
+    if (this.restoreSessionPromise) {
+      await this.restoreSessionPromise;
+      return;
+    }
+
+    this.restoreSessionPromise = this.supabaseService.client.auth
+      .getSession()
+      .then(({ data: { session } }) => {
+        this.applySession(session);
+      })
+      .finally(() => {
+        this.restoreSessionPromise = null;
+      });
+
+    await this.restoreSessionPromise;
+  }
+
+  async isUserAuthenticated(): Promise<boolean> {
+    if (!this.user()) {
+      await this.restoreSession();
+    }
+    return this.user() !== null;
+  }
+
   get isAuthenticated() {
     return this.user() !== null;
+  }
+
+  private applySession(session: { user?: { id: string; email?: string | null } } | null): void {
+    if (!session?.user) {
+      this.user.set(null);
+      return;
+    }
+
+    this.user.set({
+      id: session.user.id,
+      email: session.user.email || ''
+    });
   }
 
   private getAuthCallbackUrl(): string {

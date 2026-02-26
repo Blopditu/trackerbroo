@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SupabaseService } from '../../core/supabase.service';
+import { AuthService } from '../../core/auth.service';
+import { ActiveGroupService } from '../../core/active-group.service';
 import { DailySummary } from '../../core/types';
 
 @Component({
@@ -193,6 +195,8 @@ export class DashboardComponent implements OnInit {
   });
 
   private supabaseService = inject(SupabaseService);
+  private authService = inject(AuthService);
+  private activeGroupService = inject(ActiveGroupService);
 
   ngOnInit() {
     this.generateWeekDays();
@@ -212,19 +216,28 @@ export class DashboardComponent implements OnInit {
   }
 
   async loadData() {
-    const group = this.getActiveGroup();
-    if (!group) return;
+    const user = this.authService.user();
+    if (!user) {
+      return;
+    }
+
+    const groupId = this.activeGroupService.activeGroupId();
 
     this.loading.set(true);
     this.errorMessage.set(null);
 
     const today = new Date().toISOString().split('T')[0];
 
-    const { data: todayData, error: todayError } = await this.supabaseService.client
+    let todayQuery = this.supabaseService.client
       .from('daily_summaries')
       .select('*')
-      .eq('group_id', group.id)
       .eq('day', today);
+
+    todayQuery = groupId
+      ? todayQuery.eq('group_id', groupId)
+      : todayQuery.eq('owner_id', user.id).is('group_id', null);
+
+    const { data: todayData, error: todayError } = await todayQuery;
 
     if (todayError) {
       this.errorMessage.set(todayError.message);
@@ -235,11 +248,16 @@ export class DashboardComponent implements OnInit {
     this.todaySummaries.set((todayData || []) as DailySummary[]);
 
     const weekStart = this.weekDays[0].date;
-    const { data: weekData, error: weekError } = await this.supabaseService.client
+    let weekQuery = this.supabaseService.client
       .from('daily_summaries')
       .select('*')
-      .eq('group_id', group.id)
       .gte('day', weekStart);
+
+    weekQuery = groupId
+      ? weekQuery.eq('group_id', groupId)
+      : weekQuery.eq('owner_id', user.id).is('group_id', null);
+
+    const { data: weekData, error: weekError } = await weekQuery;
 
     if (weekError) {
       this.errorMessage.set(weekError.message);
@@ -249,11 +267,6 @@ export class DashboardComponent implements OnInit {
 
     this.weekSummaries.set((weekData || []) as DailySummary[]);
     this.loading.set(false);
-  }
-
-  getActiveGroup() {
-    const groupStr = localStorage.getItem('activeGroup');
-    return groupStr ? JSON.parse(groupStr) : null;
   }
 
   dayTotal(date: string) {

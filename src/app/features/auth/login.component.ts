@@ -1,7 +1,7 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, ActivatedRoute } from '@angular/router';
+import { Router } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
 
 @Component({
@@ -105,22 +105,17 @@ export class LoginComponent implements OnInit {
 
   private authService = inject(AuthService);
   private router = inject(Router);
-  private route = inject(ActivatedRoute);
 
-  ngOnInit() {
-    this.route.fragment.subscribe(fragment => {
-      if (fragment && fragment.includes('access_token')) {
-        setTimeout(() => {
-          if (this.authService.user()) {
-            void this.router.navigate(['/today']);
-          }
-        }, 100);
+  constructor() {
+    effect(() => {
+      if (this.authService.user()) {
+        void this.router.navigate(['/today']);
       }
     });
+  }
 
-    if (this.authService.user()) {
-      void this.router.navigate(['/today']);
-    }
+  ngOnInit() {
+    void this.authService.restoreSession();
   }
 
   async onSubmit() {

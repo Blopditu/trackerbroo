@@ -1,25 +1,20 @@
 import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
 import { SupabaseService } from '../../core/supabase.service';
-import { DailySummary, GymCheckin, Profile } from '../../core/types';
-
-interface LeaderboardRow {
-  userId: string;
-  displayName: string;
-  avatarUrl: string | null;
-  gymSessions: number;
-  gymTarget: number;
-  proteinHitDays: number;
-  proteinTotal: number;
-  score: number;
-}
+import { ActiveGroupService } from '../../core/active-group.service';
+import { DailySummary, GroupActivity, GymCheckin, Profile } from '../../core/types';
+import { HabitGridComponent, HabitState } from '../../ui/minimal/habit-grid.component';
+import { ListRowComponent } from '../../ui/minimal/list-row.component';
+import { BottomSheetComponent } from '../../ui/minimal/bottom-sheet.component';
+import { MinimalMetricComponent } from '../../ui/minimal/minimal-metric.component';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-community',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, FormsModule, HabitGridComponent, ListRowComponent, BottomSheetComponent, MinimalMetricComponent],
   template: `
     <main class="page community-page">
       @if (errorMessage()) {
@@ -30,546 +25,499 @@ interface LeaderboardRow {
         <p class="toast success" aria-live="polite">{{ successMessage() }}</p>
       }
 
-      <header class="panel halftone">
-        <p class="title-font">Gemeinschaft</p>
-        <h1>Gruppen-Feed</h1>
-        <p class="sub">Check-ins, Rangliste und Konstanz im Überblick.</p>
-      </header>
+      <section class="hero">
+        <p class="period"><i class="fa-regular fa-calendar icon" aria-hidden="true"></i> Periode bis {{ periodEndLabel() }}</p>
+        <h1>Gruppen-Pakt</h1>
+        <p class="motto">{{ groupMotto() }}</p>
+      </section>
 
       @if (!hasGroup()) {
-        <section class="panel">
-          <p class="empty-state">Wähle zuerst eine aktive Gruppe, um das Gruppen-Tracking zu nutzen.</p>
+        <section class="section">
+          <p class="muted">No active group. Join or create one.</p>
+          <button type="button" class="btn" (click)="goToGroupSetup()"><i class="fa-solid fa-people-group icon" aria-hidden="true"></i> 🤝 Join/Create Group</button>
         </section>
       } @else {
-        <section class="panel" aria-labelledby="gym-checkin-title">
-          <div id="gym-checkin-title" class="section-head">
-            <div class="scroll-header">Gym-Check-in</div>
-            <span class="mono-badge">{{ myProgressLabel() }}</span>
+        <section class="section">
+          <h2><i class="fa-solid fa-shield-heart icon" aria-hidden="true"></i> My Status</h2>
+          <div class="metric-row">
+            <app-minimal-metric label="Training" [value]="trainingCount() + '/3'" />
+            <app-minimal-metric label="Protein" [value]="proteinDaysCount() + '/7'" />
+            <app-minimal-metric label="Sleep" [value]="sleepCount() + '/5'" />
           </div>
-
-          <form class="stack-form" [formGroup]="checkinForm" (ngSubmit)="submitCheckin()">
-            <div class="grid-two">
-              <div>
-                <label for="checkin-date">Datum</label>
-                <input id="checkin-date" type="date" formControlName="checkin_date">
-              </div>
-              <div>
-                <label for="checkin-photo">Foto (optional)</label>
-                <input id="checkin-photo" type="file" accept="image/*" (change)="onCheckinPhotoSelected($event)">
-              </div>
-            </div>
-
-            <label for="checkin-note">Notiz</label>
-            <textarea id="checkin-note" rows="2" formControlName="note" placeholder="2/3 geschafft, heute Oberkörper"></textarea>
-
-            <button type="submit" class="action-btn alt" [disabled]="savingCheckin() || checkinForm.invalid">
-              {{ savingCheckin() ? 'Wird gepostet...' : 'Check-in posten' }}
-            </button>
-          </form>
+          <p class="card" [class.yellow]="cardStatus() === 'yellow'" [class.red]="cardStatus() === 'red'">Card status: {{ cardLabel() }}</p>
         </section>
 
-        <section class="panel" aria-labelledby="leaderboard-title">
-          <div id="leaderboard-title" class="section-head">
-            <div class="scroll-header">Rangliste</div>
-            <span class="mono-badge">{{ selectedWindowDays() }} Tage</span>
-          </div>
+        <section class="section">
+          <h2><i class="fa-solid fa-chart-simple icon" aria-hidden="true"></i> Group Consistency</h2>
+          <app-habit-grid label="Consistency" [states]="groupConsistencyStates()" [targetPerWeek]="7" />
+        </section>
 
-          <div class="segmented window-tabs" role="tablist" aria-label="Ranglisten-Zeitraum">
-            <button type="button" role="tab" [attr.aria-selected]="selectedWindowDays() === 7" [class.active]="selectedWindowDays() === 7" (click)="setWindowDays(7)">7 Tage</button>
-            <button type="button" role="tab" [attr.aria-selected]="selectedWindowDays() === 14" [class.active]="selectedWindowDays() === 14" (click)="setWindowDays(14)">14 Tage</button>
-            <button type="button" role="tab" [attr.aria-selected]="selectedWindowDays() === 30" [class.active]="selectedWindowDays() === 30" (click)="setWindowDays(30)">30 Tage</button>
-          </div>
-
-          @if (loading()) {
-            <div class="skeleton card"></div>
-            <div class="skeleton card"></div>
-          } @else {
-            <div class="board-list">
-              @for (row of leaderboard(); track row.userId) {
-                <article class="list-card board-row" [class.you]="row.userId === currentUserId()">
-                  <div class="row-head">
-                    <div class="avatar">{{ initials(row.displayName) }}</div>
-                    <div class="row-main">
-                      <strong>{{ row.displayName }}</strong>
-                      <div class="row-sub">Gym {{ row.gymSessions }}/{{ row.gymTarget }} · Protein {{ row.proteinHitDays }}/{{ selectedWindowDays() }} Tage</div>
-                    </div>
-                  </div>
-                  <div class="score-wrap">
-                    <div class="score-bar-bg">
-                      <div class="score-bar" [style.width.%]="row.score"></div>
-                    </div>
-                    <span class="mono-badge">{{ row.score }} Pkt</span>
-                  </div>
-                </article>
+        <section class="section">
+          <h2><i class="fa-solid fa-stream icon" aria-hidden="true"></i> Activity Feed</h2>
+          @for (item of streamItems(); track item.id) {
+            <app-list-row [title]="displayName(item.user_id)" [subtitle]="streamBadges(item) + (item.note ? ' · ' + item.note : '')" [meta]="item.day" />
+            @if (item.photo_url) {
+              <button type="button" class="photo-toggle" (click)="togglePhoto(item.id)">
+                {{ expandedPhotoId() === item.id ? 'Hide photo' : 'Show photo' }}
+              </button>
+              @if (expandedPhotoId() === item.id) {
+                <img [src]="item.photo_url" alt="Check-in photo" class="photo">
               }
-              @if (leaderboard().length === 0) {
-                <p class="empty-state">Noch keine Ranglisten-Daten in diesem Zeitraum.</p>
-              }
-            </div>
+            }
+          }
+          @if (streamItems().length === 0) {
+            <p class="muted">No activity yet.</p>
           }
         </section>
 
-        <section class="panel" aria-labelledby="feed-title">
-          <div id="feed-title" class="scroll-header">Letzte Check-ins</div>
-
-          @if (loading()) {
-            <div class="skeleton card"></div>
-            <div class="skeleton card"></div>
-          } @else {
-            <div class="feed-list">
-              @for (item of checkins(); track item.id) {
-                <article class="list-card feed-item">
-                  <div class="feed-head">
-                    <div class="avatar">{{ initials(displayName(item.user_id)) }}</div>
-                    <div>
-                      <strong>{{ displayName(item.user_id) }}</strong>
-                      <div class="entry-sub">{{ item.checkin_date }} · {{ getWeeklyProgressLabel(item.user_id, item.week_start) }}</div>
-                    </div>
-                  </div>
-
-                  @if (item.note) {
-                    <p class="feed-note">{{ item.note }}</p>
-                  }
-
-                  @if (item.photo_url) {
-                    <img [src]="item.photo_url" alt="Gym-Check-in-Foto" class="feed-photo">
-                  }
-
-                  <div class="reaction-placeholder">Reaktionen kommen bald</div>
-                </article>
-              }
-
-              @if (checkins().length === 0) {
-                <p class="empty-state">Noch keine Check-ins. Poste dein erstes Update.</p>
-              }
-            </div>
-          }
+        <section class="section">
+          <h2><i class="fa-solid fa-triangle-exclamation icon" aria-hidden="true"></i> Yellow / Red Rules</h2>
+          <p class="muted">{{ yellowCardRule() }}</p>
+          <p class="danger">{{ redCardConsequence() }}</p>
         </section>
+
+        <button class="group-fab" type="button" (click)="showCheckinSheet.set(true)" aria-label="Ritual check-in"><i class="fa-solid fa-plus" aria-hidden="true"></i></button>
       }
     </main>
+
+    <app-bottom-sheet [open]="showCheckinSheet()" title="Ritual Check-in" (closed)="closeCheckinSheet()">
+      <div class="toggle-grid">
+        <button type="button" class="toggle" [class.active]="checkinGym()" (click)="checkinGym.set(!checkinGym())"><i class="fa-solid fa-dumbbell icon" aria-hidden="true"></i> 🏋️ Gym gemacht</button>
+        <button type="button" class="toggle" [class.active]="checkinProtein()" (click)="checkinProtein.set(!checkinProtein())"><i class="fa-solid fa-drumstick-bite icon" aria-hidden="true"></i> 🍗 100g Protein</button>
+        <button type="button" class="toggle" [class.active]="checkinSleep()" (click)="checkinSleep.set(!checkinSleep())"><i class="fa-solid fa-moon icon" aria-hidden="true"></i> 😴 8h Schlaf</button>
+      </div>
+
+      <label for="checkin-note">Note (optional)</label>
+      <textarea id="checkin-note" rows="2" [(ngModel)]="checkinNote" placeholder="Optional context"></textarea>
+
+      <label for="checkin-photo">Photo (optional)</label>
+      <input id="checkin-photo" type="file" accept="image/*" (change)="onCheckinPhotoSelected($event)">
+
+      <button type="button" class="btn" [disabled]="savingCheckin()" (click)="submitCheckin()"><i class="fa-solid fa-paper-plane icon" aria-hidden="true"></i> {{ savingCheckin() ? 'Saving...' : 'Post Check-in' }}</button>
+    </app-bottom-sheet>
   `,
   styles: [`
     .community-page {
+      background: #0F1115;
+      color: #E6E8EC;
+      gap: 16px;
+      padding: 16px;
+    }
+
+    .hero,
+    .section {
       display: grid;
-      gap: 0.75rem;
+      gap: 12px;
+      background: #151922;
+      border: 1px solid #1B202B;
+      padding: 16px;
+    }
+
+    .period {
+      margin: 0;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #A4A9B6;
+      font-weight: 700;
+    }
+
+    .icon {
+      margin-right: 8px;
     }
 
     h1 {
-      margin-top: 0.2rem;
-      font-size: 1.7rem;
-    }
-
-    .sub {
-      margin: 0.35rem 0 0;
-      color: var(--ink-500);
+      margin: 0;
+      font-size: 20px;
       font-weight: 600;
-      font-size: var(--text-sm);
     }
 
-    .section-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 0.45rem;
-      margin-bottom: 0.65rem;
+    h2 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 600;
     }
 
-    .stack-form {
+    .motto,
+    .muted {
+      margin: 0;
+      font-size: 13px;
+      color: #A4A9B6;
+      font-weight: 600;
+    }
+
+    .metric-row {
       display: grid;
-      gap: 0.55rem;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .card {
+      margin: 0;
+      font-size: 13px;
+      color: #A4A9B6;
+      font-weight: 600;
+    }
+
+    .card.yellow { color: #F4B740; }
+    .card.red { color: #E35D5D; }
+
+    .danger {
+      margin: 0;
+      color: #E35D5D;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .photo-toggle,
+    .btn,
+    .toggle {
+      min-height: 44px;
+      border: 1px solid #1B202B;
+      background: #0F1115;
+      color: #E6E8EC;
+      padding: 0 12px;
+      font-size: 16px;
+      font-weight: 600;
+      text-align: left;
+    }
+
+    .toggle-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .toggle.active {
+      border-color: #3DBB78;
+      color: #3DBB78;
+    }
+
+    .photo {
+      width: 100%;
+      border: 1px solid #1B202B;
+    }
+
+    .group-fab {
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: calc(96px + env(safe-area-inset-bottom));
+      width: 56px;
+      height: 56px;
+      border: 1px solid #1B202B;
+      background: #5B8CFF;
+      color: #0F1115;
+      font-size: 24px;
+      font-weight: 700;
+      z-index: 30;
     }
 
     label {
-      font-size: var(--text-sm);
-      color: var(--ink-700);
-      font-weight: 700;
-    }
-
-    .grid-two {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 0.55rem;
-    }
-
-    .window-tabs {
-      margin-bottom: 0.65rem;
-    }
-
-    .board-list,
-    .feed-list {
-      display: grid;
-      gap: 0.5rem;
-    }
-
-    .board-row {
-      display: grid;
-      gap: 0.55rem;
-    }
-
-    .board-row.you {
-      border-color: var(--accent-500);
-      background: var(--accent-soft);
-    }
-
-    .row-head {
-      display: flex;
-      gap: 0.55rem;
-      align-items: center;
-    }
-
-    .avatar {
-      width: 34px;
-      height: 34px;
-      border-radius: 50%;
-      border: 1px solid var(--border-strong);
-      display: grid;
-      place-items: center;
-      background: #1a2738;
-      font-size: var(--text-xs);
-      font-weight: 800;
-    }
-
-    .row-main {
-      display: grid;
-      gap: 0.15rem;
-    }
-
-    .row-sub {
-      font-size: var(--text-sm);
-      color: var(--ink-500);
-      font-weight: 700;
-    }
-
-    .score-wrap {
-      width: 100%;
-      display: grid;
-      gap: 0.25rem;
-    }
-
-    .score-bar-bg {
-      width: 100%;
-      height: 10px;
-      border: 1px solid var(--border-strong);
-      border-radius: 999px;
-      background: #142335;
-      overflow: hidden;
-    }
-
-    .score-bar {
-      height: 100%;
-      background: var(--accent-500);
-    }
-
-    .feed-item {
-      align-items: flex-start;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-
-    .feed-head {
-      display: flex;
-      align-items: center;
-      gap: 0.55rem;
-    }
-
-    .entry-sub {
-      font-size: var(--text-xs);
-      color: var(--ink-500);
-      font-weight: 700;
-    }
-
-    .feed-note {
-      margin: 0;
-      color: var(--ink-700);
+      font-size: 13px;
+      color: #A4A9B6;
       font-weight: 600;
     }
 
-    .feed-photo {
+    input,
+    textarea {
       width: 100%;
-      border-radius: 10px;
-      border: 2px solid var(--border-strong);
-      object-fit: cover;
-      max-height: 240px;
+      border: 1px solid #1B202B;
+      background: #0F1115;
+      color: #E6E8EC;
+      padding: 12px;
+      font-size: 16px;
+      margin-bottom: 8px;
     }
 
-    .reaction-placeholder {
-      font-size: var(--text-xs);
-      color: var(--ink-500);
-      font-weight: 700;
-    }
+    textarea { min-height: 88px; }
   `]
 })
 export class CommunityComponent implements OnInit {
-  private readonly supabaseService = inject(SupabaseService);
-  private readonly authService = inject(AuthService);
-  private readonly formBuilder = inject(FormBuilder);
-
-  readonly selectedWindowDays = signal<7 | 14 | 30>(7);
-  readonly checkins = signal<GymCheckin[]>([]);
+  readonly activities = signal<GroupActivity[]>([]);
   readonly summaries = signal<DailySummary[]>([]);
   readonly memberIds = signal<string[]>([]);
   readonly profiles = signal<Record<string, Profile>>({});
+  readonly loading = signal(false);
   readonly savingCheckin = signal(false);
   readonly successMessage = signal<string | null>(null);
   readonly errorMessage = signal<string | null>(null);
-  readonly loading = signal(false);
+  readonly expandedPhotoId = signal<string | null>(null);
 
-  private selectedCheckinPhoto: File | null = null;
+  readonly showCheckinSheet = signal(false);
+  readonly checkinGym = signal(false);
+  readonly checkinProtein = signal(false);
+  readonly checkinSleep = signal(false);
+  checkinNote = '';
+  private checkinPhoto: File | null = null;
 
-  readonly checkinForm = this.formBuilder.nonNullable.group({
-    checkin_date: [this.formatDate(new Date()), [Validators.required]],
-    note: ['']
+  private readonly authService = inject(AuthService);
+  private readonly supabaseService = inject(SupabaseService);
+  private readonly activeGroupService = inject(ActiveGroupService);
+  private readonly router = inject(Router);
+
+  readonly hasGroup = computed(() => this.activeGroupService.activeGroupId() !== null);
+  readonly today = signal(this.formatDate(new Date()));
+
+  readonly weekDays = computed(() => {
+    const monday = this.getWeekStartDate(new Date(`${this.today()}T00:00:00`));
+    const days: string[] = [];
+    for (let index = 0; index < 7; index += 1) {
+      const date = new Date(monday);
+      date.setDate(monday.getDate() + index);
+      days.push(this.formatDate(date));
+    }
+    return days;
   });
 
-  readonly hasGroup = computed(() => this.getActiveGroupId() !== null);
-  readonly currentUserId = computed(() => this.authService.user()?.id || '');
-
-  readonly myProgressLabel = computed(() => {
-    const userId = this.currentUserId();
-    if (!userId) {
-      return '0/3';
+  readonly myDayState = computed(() => {
+    const userId = this.authService.user()?.id;
+    const state: Record<string, { gym: boolean; sleep: boolean; protein: boolean }> = {};
+    for (const day of this.weekDays()) {
+      state[day] = { gym: false, sleep: false, protein: false };
     }
 
-    const weekStart = this.getWeekStart(this.formatDate(new Date()));
-    const gymTarget = this.getWeeklyTarget(userId);
-    const sessions = this.getUniqueGymDays(userId, weekStart);
-    return `${sessions}/${gymTarget}`;
+    if (!userId) return state;
+
+    for (const activity of this.activities()) {
+      if (activity.user_id !== userId || !state[activity.day]) continue;
+      state[activity.day].gym = state[activity.day].gym || activity.gym_done;
+      state[activity.day].sleep = state[activity.day].sleep || activity.sleep_done;
+      state[activity.day].protein = state[activity.day].protein || activity.protein_done;
+    }
+
+    for (const summary of this.summaries()) {
+      if (summary.owner_id === userId && state[summary.day] && Number(summary.protein) >= 100) {
+        state[summary.day].protein = true;
+      }
+    }
+
+    return state;
   });
 
-  readonly leaderboard = computed(() => {
-    const proteinGoalGrams = 100;
-    const rows: LeaderboardRow[] = this.memberIds().map(userId => {
-      const weekStart = this.getWeekStart(this.formatDate(new Date()));
-      const gymTarget = this.getWeeklyTarget(userId);
-      const gymSessions = this.getUniqueGymDays(userId, weekStart);
-      const userSummaries = this.summaries().filter(summary => summary.owner_id === userId);
-      const proteinHitDays = userSummaries.filter(summary => Number(summary.protein) >= proteinGoalGrams).length;
-      const proteinTotal = userSummaries.reduce((sum, summary) => sum + Number(summary.protein), 0);
+  readonly trainingCount = computed(() => this.countDays('gym'));
+  readonly sleepCount = computed(() => this.countDays('sleep'));
+  readonly proteinDaysCount = computed(() => this.countDays('protein'));
 
-      const gymScore = Math.min(gymSessions / gymTarget, 1);
-      const proteinScore = proteinHitDays / this.selectedWindowDays();
-      const score = Math.round((gymScore * 0.55 + proteinScore * 0.45) * 100);
+  readonly cardStatus = computed<'none' | 'yellow' | 'red'>(() => {
+    const reached = [this.trainingCount() >= 3, this.sleepCount() >= 5, this.proteinDaysCount() >= 7].filter(Boolean).length;
+    if (reached === 3) return 'none';
+    if (reached === 2) return 'yellow';
+    return 'red';
+  });
 
-      return {
-        userId,
-        displayName: this.displayName(userId),
-        avatarUrl: this.profiles()[userId]?.avatar_url || null,
-        gymSessions,
-        gymTarget,
-        proteinHitDays,
-        proteinTotal,
-        score
-      };
+  readonly groupConsistencyStates = computed<HabitState[]>(() => {
+    const days = this.weekDays();
+    const memberCount = Math.max(this.memberIds().length, 1);
+
+    return days.map(day => {
+      const activities = this.activities().filter(item => item.day === day);
+      if (activities.length === 0) return 'empty';
+
+      const activeUsers = new Set(activities.map(item => item.user_id)).size;
+      const ratio = activeUsers / memberCount;
+      return ratio >= 0.6 ? 'complete' : 'missed';
     });
-
-    return rows.sort((a, b) => b.score - a.score || b.proteinTotal - a.proteinTotal);
   });
+
+  readonly streamItems = computed(() =>
+    [...this.activities()].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 30)
+  );
+
+  readonly groupMotto = computed(() => this.activeGroupService.activeGroup()?.motto || 'Consistency over ego.');
+  readonly periodEndLabel = computed(() => this.activeGroupService.activeGroup()?.period_end || '31.08.25');
+  readonly yellowCardRule = computed(() => this.activeGroupService.activeGroup()?.yellow_card_rules || 'Miss weekly targets = yellow card.');
+  readonly redCardConsequence = computed(() => this.activeGroupService.activeGroup()?.red_card_consequence || 'Repeated misses trigger red card consequence.');
 
   ngOnInit(): void {
     void this.loadCommunityData();
   }
 
-  async setWindowDays(days: 7 | 14 | 30): Promise<void> {
-    this.selectedWindowDays.set(days);
-    await this.loadCommunityData();
-  }
-
   async loadCommunityData(): Promise<void> {
     this.errorMessage.set(null);
     const user = this.authService.user();
-    const groupId = this.getActiveGroupId();
+    const groupId = this.activeGroupService.activeGroupId();
 
     if (!user || !groupId) {
-      this.checkins.set([]);
+      this.activities.set([]);
       this.summaries.set([]);
       this.memberIds.set([]);
       return;
     }
 
     this.loading.set(true);
+    const weekStart = this.weekDays()[0];
+    const weekEnd = this.weekDays()[6];
 
-    const endDate = this.formatDate(new Date());
-    const startDate = this.shiftDate(endDate, -(this.selectedWindowDays() - 1));
-
-    const [{ data: membersData, error: membersError }, { data: checkinsData, error: checkinsError }, { data: summariesData, error: summariesError }] = await Promise.all([
+    const [{ data: membersData, error: membersError }, { data: activitiesData, error: activityError }, { data: summariesData, error: summaryError }] = await Promise.all([
+      this.supabaseService.client.from('group_members').select('user_id').eq('group_id', groupId),
       this.supabaseService.client
-        .from('group_members')
-        .select('user_id')
-        .eq('group_id', groupId),
-      this.supabaseService.client
-        .from('gym_checkins')
+        .from('group_activities')
         .select('*')
         .eq('group_id', groupId)
-        .gte('checkin_date', startDate)
-        .lte('checkin_date', endDate)
+        .gte('day', weekStart)
+        .lte('day', weekEnd)
         .order('created_at', { ascending: false })
-        .limit(120),
+        .limit(240),
       this.supabaseService.client
         .from('daily_summaries')
         .select('*')
         .eq('group_id', groupId)
-        .gte('day', startDate)
-        .lte('day', endDate)
+        .gte('day', weekStart)
+        .lte('day', weekEnd)
     ]);
 
-    if (membersError || checkinsError || summariesError) {
-      const message = membersError?.message || checkinsError?.message || summariesError?.message || 'Gruppen-Daten konnten nicht geladen werden.';
-      this.errorMessage.set(message);
+    if (membersError || activityError || summaryError) {
+      this.errorMessage.set('Could not load group data.');
       this.loading.set(false);
       return;
     }
 
-    const memberIds = (membersData || []).map(member => member.user_id);
+    const memberIds = (membersData || []).map(member => String(member.user_id));
     this.memberIds.set(memberIds);
-    this.checkins.set((checkinsData || []) as GymCheckin[]);
+    this.activities.set((activitiesData || []) as GroupActivity[]);
     this.summaries.set((summariesData || []) as DailySummary[]);
 
-    if (memberIds.length === 0) {
-      this.profiles.set({});
-      this.loading.set(false);
-      return;
+    if (memberIds.length > 0) {
+      const { data: profilesData } = await this.supabaseService.client.from('profiles').select('*').in('user_id', memberIds);
+      const profileMap: Record<string, Profile> = {};
+      for (const profile of profilesData || []) {
+        const cast = profile as Profile;
+        profileMap[cast.user_id] = cast;
+      }
+      this.profiles.set(profileMap);
     }
 
-    const { data: profilesData, error: profilesError } = await this.supabaseService.client
-      .from('profiles')
-      .select('*')
-      .in('user_id', memberIds);
-
-    if (profilesError) {
-      this.errorMessage.set(profilesError.message);
-      this.loading.set(false);
-      return;
-    }
-
-    const profileMap: Record<string, Profile> = {};
-    for (const profile of profilesData || []) {
-      const castProfile = profile as Profile;
-      profileMap[castProfile.user_id] = castProfile;
-    }
-
-    this.profiles.set(profileMap);
     this.loading.set(false);
-  }
-
-  onCheckinPhotoSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    this.selectedCheckinPhoto = input.files?.[0] || null;
   }
 
   async submitCheckin(): Promise<void> {
     this.successMessage.set(null);
     this.errorMessage.set(null);
 
-    if (this.checkinForm.invalid) {
-      this.checkinForm.markAllAsTouched();
+    const user = this.authService.user();
+    const groupId = this.activeGroupService.activeGroupId();
+    if (!user || !groupId) {
+      this.errorMessage.set('You need an active group.');
       return;
     }
 
-    const user = this.authService.user();
-    const groupId = this.getActiveGroupId();
-    if (!user || !groupId) {
-      this.errorMessage.set('Du brauchst eine aktive Gruppe für den Check-in.');
+    if (!this.checkinGym() && !this.checkinProtein() && !this.checkinSleep() && !this.checkinNote.trim() && !this.checkinPhoto) {
+      this.errorMessage.set('Select at least one ritual.');
       return;
     }
 
     this.savingCheckin.set(true);
 
     try {
-      const formValue = this.checkinForm.getRawValue();
-      const checkinDate = formValue.checkin_date;
-      const weekStart = this.getWeekStart(checkinDate);
-      const note = formValue.note.trim();
-      let photoUrl: string | null = null;
+      const day = this.today();
+      const { data: existing } = await this.supabaseService.client
+        .from('group_activities')
+        .select('*')
+        .eq('group_id', groupId)
+        .eq('user_id', user.id)
+        .eq('day', day)
+        .maybeSingle();
 
-      if (this.selectedCheckinPhoto) {
-        photoUrl = await this.uploadImage(this.selectedCheckinPhoto, 'gym-checkins', user.id);
+      let photoUrl: string | null = existing?.photo_url || null;
+      if (this.checkinPhoto) {
+        photoUrl = await this.uploadImage(this.checkinPhoto, 'gym-checkins', user.id);
       }
 
       const { error } = await this.supabaseService.client
-        .from('gym_checkins')
-        .insert({
-          group_id: groupId,
-          user_id: user.id,
-          checkin_date: checkinDate,
-          week_start: weekStart,
-          note: note || null,
-          photo_url: photoUrl
-        });
+        .from('group_activities')
+        .upsert(
+          {
+            group_id: groupId,
+            user_id: user.id,
+            day,
+            gym_done: this.checkinGym() || Boolean(existing?.gym_done),
+            protein_done: this.checkinProtein() || Boolean(existing?.protein_done),
+            sleep_done: this.checkinSleep() || Boolean(existing?.sleep_done),
+            confirm_done: Boolean(existing?.confirm_done),
+            note: this.checkinNote.trim() || existing?.note || null,
+            photo_url: photoUrl
+          },
+          { onConflict: 'group_id,user_id,day' }
+        );
 
       if (error) {
         throw error;
       }
 
-      this.successMessage.set('Check-in gepostet.');
-      this.selectedCheckinPhoto = null;
-      this.checkinForm.patchValue({ note: '' });
+      if (this.checkinGym()) {
+        await this.supabaseService.client.from('gym_checkins').insert({
+          group_id: groupId,
+          user_id: user.id,
+          checkin_date: day,
+          week_start: this.weekDays()[0],
+          note: this.checkinNote.trim() || null,
+          photo_url: photoUrl
+        } as Omit<GymCheckin, 'id' | 'created_at'>);
+      }
+
+      this.successMessage.set('Check-in posted.');
+      this.closeCheckinSheet();
       await this.loadCommunityData();
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Check-in konnte nicht gespeichert werden.';
-      this.errorMessage.set(message);
+    } catch {
+      this.errorMessage.set('Could not post check-in.');
     } finally {
       this.savingCheckin.set(false);
     }
   }
 
+  closeCheckinSheet(): void {
+    this.showCheckinSheet.set(false);
+    this.checkinGym.set(false);
+    this.checkinProtein.set(false);
+    this.checkinSleep.set(false);
+    this.checkinNote = '';
+    this.checkinPhoto = null;
+  }
+
+  onCheckinPhotoSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.checkinPhoto = input.files?.[0] || null;
+  }
+
   displayName(userId: string): string {
-    const profile = this.profiles()[userId];
-    if (!profile) {
-      return userId.slice(0, 8);
-    }
-
-    return profile.display_name || userId.slice(0, 8);
+    return this.profiles()[userId]?.display_name || userId.slice(0, 8);
   }
 
-  initials(name: string): string {
-    return name.slice(0, 2).toUpperCase();
+  cardLabel(): string {
+    if (this.cardStatus() === 'yellow') return 'yellow';
+    if (this.cardStatus() === 'red') return 'red';
+    return 'none';
   }
 
-  getWeeklyProgressLabel(userId: string, weekStart: string): string {
-    const target = this.getWeeklyTarget(userId);
-    const sessions = this.getUniqueGymDays(userId, weekStart);
-    return `${sessions}/${target}`;
+  streamBadges(item: GroupActivity): string {
+    const badges: string[] = [];
+    if (item.gym_done) badges.push('Gym');
+    if (item.protein_done) badges.push('Protein');
+    if (item.sleep_done) badges.push('Sleep');
+    return badges.join(' · ') || 'Update';
   }
 
-  private getWeeklyTarget(userId: string): number {
-    const profile = this.profiles()[userId];
-    return Number(profile?.weekly_gym_target || 3);
+  togglePhoto(activityId: string): void {
+    this.expandedPhotoId.set(this.expandedPhotoId() === activityId ? null : activityId);
   }
 
-  private getUniqueGymDays(userId: string, weekStart: string): number {
-    const checkinDays = this.checkins()
-      .filter(checkin => checkin.user_id === userId && checkin.week_start === weekStart)
-      .map(checkin => checkin.checkin_date);
-
-    return new Set(checkinDays).size;
+  goToGroupSetup(): void {
+    void this.router.navigate(['/group']);
   }
 
-  private getActiveGroupId(): string | null {
-    const groupRaw = localStorage.getItem('activeGroup');
-    if (!groupRaw) {
-      return null;
-    }
-
-    try {
-      const group = JSON.parse(groupRaw) as { id?: string };
-      return group.id || null;
-    } catch {
-      return null;
-    }
+  private countDays(type: 'gym' | 'sleep' | 'protein'): number {
+    const state = this.myDayState();
+    return this.weekDays().filter(day => state[day]?.[type]).length;
   }
 
-  private getWeekStart(dateInput: string): string {
-    const date = new Date(`${dateInput}T00:00:00`);
-    const day = date.getDay();
+  private getWeekStartDate(date: Date): Date {
+    const cloned = new Date(date);
+    const day = cloned.getDay();
     const daysSinceMonday = (day + 6) % 7;
-    date.setDate(date.getDate() - daysSinceMonday);
-    return this.formatDate(date);
-  }
-
-  private shiftDate(dateInput: string, deltaDays: number): string {
-    const date = new Date(`${dateInput}T00:00:00`);
-    date.setDate(date.getDate() + deltaDays);
-    return this.formatDate(date);
+    cloned.setDate(cloned.getDate() - daysSinceMonday);
+    return cloned;
   }
 
   private formatDate(date: Date): string {
@@ -588,10 +536,7 @@ export class CommunityComponent implements OnInit {
       throw uploadError;
     }
 
-    const { data } = this.supabaseService.client.storage
-      .from(bucketName)
-      .getPublicUrl(filePath);
-
+    const { data } = this.supabaseService.client.storage.from(bucketName).getPublicUrl(filePath);
     return data.publicUrl;
   }
 }
