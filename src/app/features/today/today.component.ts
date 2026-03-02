@@ -1,6 +1,19 @@
 import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import {
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+  ChartLine,
+  Clock3,
+  Dumbbell,
+  ListChecks,
+  LucideAngularModule,
+  Plus,
+  Utensils,
+  Weight
+} from 'lucide-angular';
 import { SupabaseService } from '../../core/supabase.service';
 import { AuthService } from '../../core/auth.service';
 import { DailySummary, Ingredient, LogEntry, Meal, WeightLog } from '../../core/types';
@@ -23,6 +36,7 @@ interface MealMacroMap {
   imports: [
     CommonModule,
     FormsModule,
+    LucideAngularModule,
     AmountPickerSheetComponent,
     HeroRingComponent,
     MacroBarComponent,
@@ -40,12 +54,16 @@ interface MealMacroMap {
       }
 
       <section class="hero">
-        <p class="date-label"><i class="fa-regular fa-calendar icon" aria-hidden="true"></i> {{ todayLabel() }}</p>
+        <p class="date-label"><lucide-icon [img]="icons.calendar" class="icon" aria-hidden="true"></lucide-icon> {{ todayLabel() }}</p>
 
         <div class="day-nav">
-          <button type="button" class="nav-btn" (click)="goPreviousDay()" aria-label="Vorheriger Tag">←</button>
+          <button type="button" class="nav-btn" (click)="goPreviousDay()" aria-label="Vorheriger Tag">
+            <lucide-icon [img]="icons.chevronLeft" aria-hidden="true"></lucide-icon>
+          </button>
           <input type="date" class="day-input" [ngModel]="today()" (ngModelChange)="onDayPicked($event)">
-          <button type="button" class="nav-btn" (click)="goNextDay()" [disabled]="today() >= realToday" aria-label="Nächster Tag">→</button>
+          <button type="button" class="nav-btn" (click)="goNextDay()" [disabled]="today() >= realToday" aria-label="Nächster Tag">
+            <lucide-icon [img]="icons.chevronRight" aria-hidden="true"></lucide-icon>
+          </button>
         </div>
 
         <app-hero-ring [value]="proteinToday()" [target]="proteinGoal" accentColor="#5B8CFF" />
@@ -57,14 +75,14 @@ interface MealMacroMap {
         </div>
 
         <div class="weight-row">
-          <span><i class="fa-solid fa-weight-scale icon" aria-hidden="true"></i> Gewicht</span>
+          <span><lucide-icon [img]="icons.weight" class="icon" aria-hidden="true"></lucide-icon> Gewicht</span>
           <strong>{{ weightValueLabel() }}</strong>
           <span class="delta">{{ weightDeltaLabel() }}</span>
         </div>
       </section>
 
       <section class="section">
-        <h2><i class="fa-solid fa-chart-line icon" aria-hidden="true"></i> Gewichtstrend</h2>
+        <h2><lucide-icon [img]="icons.chartLine" class="icon" aria-hidden="true"></lucide-icon> Gewichtstrend</h2>
         <div class="sparkline-wrap" aria-label="Gewichtstrend">
           <svg viewBox="0 0 100 28" preserveAspectRatio="none" class="sparkline">
             <polyline [attr.points]="weightSparklinePoints()" />
@@ -86,13 +104,13 @@ interface MealMacroMap {
       </section>
 
       <section class="section">
-        <h2><i class="fa-solid fa-list-check icon" aria-hidden="true"></i> Gewohnheiten</h2>
+        <h2><lucide-icon [img]="icons.listChecks" class="icon" aria-hidden="true"></lucide-icon> Gewohnheiten</h2>
         <app-habit-grid label="Gym" [states]="gymHabitStates()" [targetPerWeek]="3" />
         <app-habit-grid label="Protein" [states]="proteinHabitStates()" [targetPerWeek]="7" />
       </section>
 
       <section class="section">
-        <h2><i class="fa-regular fa-clock icon" aria-hidden="true"></i> Geloggt am {{ today() }}</h2>
+        <h2><lucide-icon [img]="icons.clock3" class="icon" aria-hidden="true"></lucide-icon> Geloggt am {{ today() }}</h2>
         @for (entry of todayEntries(); track entry.id) {
           <article class="entry-card">
             <div class="entry-main">
@@ -119,15 +137,17 @@ interface MealMacroMap {
         }
       </section>
 
-      <button class="today-fab" type="button" (click)="openActions()" aria-label="Schnellaktionen"><i class="fa-solid fa-plus" aria-hidden="true"></i></button>
+      <button class="today-fab" type="button" (click)="openActions()" aria-label="Schnellaktionen">
+        <lucide-icon [img]="icons.plus" class="fab-icon" aria-hidden="true"></lucide-icon>
+      </button>
     </main>
 
     <app-bottom-sheet [open]="showActionSheet()" [title]="sheetTitle()" (closed)="closeActions()">
       @if (sheetMode() === 'menu') {
         <div class="action-list">
-          <button type="button" class="menu-btn" (click)="setSheetMode('food')"><i class="fa-solid fa-utensils icon" aria-hidden="true"></i> 🍗 Essen hinzufügen</button>
-          <button type="button" class="menu-btn" (click)="setSheetMode('weight')"><i class="fa-solid fa-weight-scale icon" aria-hidden="true"></i> ⚖️ Gewicht eintragen</button>
-          <button type="button" class="menu-btn" (click)="setSheetMode('gym')"><i class="fa-solid fa-dumbbell icon" aria-hidden="true"></i> 🏋️ Gym erledigt</button>
+          <button type="button" class="menu-btn" (click)="setSheetMode('food')"><lucide-icon [img]="icons.utensils" class="icon" aria-hidden="true"></lucide-icon> Essen hinzufügen</button>
+          <button type="button" class="menu-btn" (click)="setSheetMode('weight')"><lucide-icon [img]="icons.weight" class="icon" aria-hidden="true"></lucide-icon> Gewicht eintragen</button>
+          <button type="button" class="menu-btn" (click)="setSheetMode('gym')"><lucide-icon [img]="icons.dumbbell" class="icon" aria-hidden="true"></lucide-icon> Gym erledigt</button>
         </div>
       }
 
@@ -223,8 +243,16 @@ interface MealMacroMap {
       border: 1px solid #1B202B;
       background: #0F1115;
       color: #E6E8EC;
-      font-size: 18px;
-      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      line-height: 1;
+    }
+
+    .nav-btn lucide-icon {
+      width: 18px;
+      height: 18px;
     }
 
     .day-input {
@@ -237,7 +265,19 @@ interface MealMacroMap {
     }
 
     .icon {
+      width: 16px;
+      height: 16px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 16px;
       margin-right: 8px;
+      vertical-align: middle;
+    }
+
+    .fab-icon {
+      width: 24px;
+      height: 24px;
     }
 
     .bars {
@@ -384,6 +424,11 @@ interface MealMacroMap {
       font-size: 24px;
       font-weight: 700;
       z-index: 30;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      line-height: 1;
     }
 
     .action-list,
@@ -404,6 +449,14 @@ interface MealMacroMap {
       display: grid;
       gap: 2px;
       align-content: center;
+    }
+
+    .action-list .menu-btn {
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 12px;
     }
 
     .food-name {
@@ -454,6 +507,19 @@ interface MealMacroMap {
   `]
 })
 export class TodayComponent implements OnInit {
+  readonly icons = {
+    calendar: Calendar,
+    chevronLeft: ChevronLeft,
+    chevronRight: ChevronRight,
+    weight: Weight,
+    chartLine: ChartLine,
+    listChecks: ListChecks,
+    clock3: Clock3,
+    plus: Plus,
+    utensils: Utensils,
+    dumbbell: Dumbbell
+  };
+
   readonly proteinGoal = 100;
   readonly fatGoal = 70;
   readonly carbGoal = 250;

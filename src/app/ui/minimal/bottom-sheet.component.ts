@@ -1,17 +1,20 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { LucideAngularModule, X } from 'lucide-angular';
 
 @Component({
   selector: 'app-bottom-sheet',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule],
+  imports: [CommonModule, LucideAngularModule],
   template: `
     @if (open()) {
       <div class="overlay" (click)="closed.emit()">
         <section class="sheet" role="dialog" aria-modal="true" [attr.aria-label]="title()" (click)="$event.stopPropagation()">
           <div class="head">
             <h2>{{ title() }}</h2>
-            <button type="button" class="close" (click)="closed.emit()" aria-label="Schließen">✕</button>
+            <button type="button" class="close" (click)="closed.emit()" aria-label="Schließen">
+              <lucide-icon [img]="icons.x" aria-hidden="true"></lucide-icon>
+            </button>
           </div>
           <ng-content />
         </section>
@@ -63,6 +66,10 @@ import { CommonModule } from '@angular/common';
   `]
 })
 export class BottomSheetComponent {
+  readonly icons = {
+    x: X
+  };
+
   readonly open = input.required<boolean>();
   readonly title = input.required<string>();
   readonly closed = output<void>();

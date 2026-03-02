@@ -12,6 +12,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { LucideAngularModule, Plus } from 'lucide-angular';
 import { AuthService } from '../../core/auth.service';
 import { SupabaseService } from '../../core/supabase.service';
 import { CommunityComment, CommunityPost, LogEntry, Profile } from '../../core/types';
@@ -26,7 +27,7 @@ interface DayGroup {
 @Component({
   selector: 'app-community',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, BottomSheetComponent],
+  imports: [CommonModule, FormsModule, LucideAngularModule, BottomSheetComponent],
   template: `
     <main class="page community-page">
       @if (errorMessage()) {
@@ -131,7 +132,9 @@ interface DayGroup {
         }
       </section>
 
-      <button class="community-fab" type="button" (click)="openGymSheet()" aria-label="Gym-Post erstellen">+</button>
+      <button class="community-fab" type="button" (click)="openGymSheet()" aria-label="Gym-Post erstellen">
+        <lucide-icon [img]="icons.plus" class="fab-icon" aria-hidden="true"></lucide-icon>
+      </button>
     </main>
 
     <app-bottom-sheet [open]="showGymSheet()" title="Gym posten" (closed)="closeGymSheet()">
@@ -273,9 +276,17 @@ interface DayGroup {
       border: 1px solid #1B202B;
       background: #5B8CFF;
       color: #0F1115;
-      font-size: 28px;
-      font-weight: 700;
       z-index: 30;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      line-height: 1;
+    }
+
+    .fab-icon {
+      width: 24px;
+      height: 24px;
     }
 
     input,
@@ -298,6 +309,10 @@ interface DayGroup {
   `]
 })
 export class CommunityComponent implements OnInit, AfterViewInit, OnDestroy {
+  readonly icons = {
+    plus: Plus
+  };
+
   private readonly pageSize = 15;
 
   readonly posts = signal<CommunityPost[]>([]);

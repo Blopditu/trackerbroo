@@ -1,23 +1,28 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { House, Library, LucideAngularModule, User, Users } from 'lucide-angular';
 
 @Component({
   selector: 'app-bottom-nav',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, LucideAngularModule],
   template: `
     <nav class="bottom-nav" aria-label="Hauptnavigation">
       <a routerLink="/today" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+        <lucide-icon [img]="icons.house" class="nav-icon" aria-hidden="true"></lucide-icon>
         <span>Heute</span>
       </a>
       <a routerLink="/library" routerLinkActive="active">
+        <lucide-icon [img]="icons.library" class="nav-icon" aria-hidden="true"></lucide-icon>
         <span>Bibliothek</span>
       </a>
       <a routerLink="/community" routerLinkActive="active">
+        <lucide-icon [img]="icons.users" class="nav-icon" aria-hidden="true"></lucide-icon>
         <span>Community</span>
       </a>
       <a routerLink="/profile" routerLinkActive="active">
+        <lucide-icon [img]="icons.user" class="nav-icon" aria-hidden="true"></lucide-icon>
         <span>Profil</span>
       </a>
     </nav>
@@ -43,15 +48,23 @@ import { RouterModule } from '@angular/router';
       border: 1px solid var(--border-strong);
       border-radius: 12px;
       display: flex;
-      flex-direction: row;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 0.15rem;
+      gap: 0.2rem;
       text-decoration: none;
       color: var(--ink-500);
       font-weight: 700;
       font-size: 0.7rem;
+      line-height: 1;
       background: var(--bg-surface-2);
+    }
+
+    .nav-icon {
+      width: 16px;
+      height: 16px;
+      display: block;
+      flex: 0 0 16px;
     }
 
     a.active {
@@ -61,4 +74,11 @@ import { RouterModule } from '@angular/router';
     }
   `]
 })
-export class BottomNavComponent {}
+export class BottomNavComponent {
+  readonly icons = {
+    house: House,
+    library: Library,
+    users: Users,
+    user: User
+  };
+}
