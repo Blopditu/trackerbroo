@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
 import { SupabaseService } from '../../core/supabase.service';
 import { ActiveGroupService } from '../../core/active-group.service';
@@ -147,6 +148,17 @@ import { Profile, WeightLog } from '../../core/types';
           }
         </div>
       </section>
+
+      <section class="panel danger-zone" aria-labelledby="reset-onboarding-title">
+        <div id="reset-onboarding-title" class="scroll-header">Onboarding zurücksetzen</div>
+        <p class="subtle">
+          Setzt nur Profildaten zurück und startet das Onboarding neu. Zutaten, Mahlzeiten und Bibliothekseinträge
+          bleiben erhalten.
+        </p>
+        <button type="button" class="action-btn ghost danger-btn" (click)="resetOnboarding()" [disabled]="savingProfile()">
+          Onboarding neu starten
+        </button>
+      </section>
     </main>
   `,
   styles: [`
@@ -280,6 +292,24 @@ import { Profile, WeightLog } from '../../core/types';
       font-size: var(--text-sm);
       color: var(--ink-700);
     }
+
+    .danger-zone {
+      border-color: #5c202a;
+      background: #1a1114;
+    }
+
+    .subtle {
+      margin: 0.45rem 0 0.65rem;
+      color: var(--ink-500);
+      font-size: var(--text-sm);
+      font-weight: 600;
+    }
+
+    .danger-btn {
+      border-color: #a34a5a;
+      color: #f3bdc7;
+      background: #2a151c;
+    }
   `]
 })
 export class ProfileComponent implements OnInit {
@@ -287,6 +317,7 @@ export class ProfileComponent implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly activeGroupService = inject(ActiveGroupService);
   private readonly formBuilder = inject(FormBuilder);
+  private readonly router = inject(Router);
 
   readonly savingProfile = signal(false);
   readonly savingWeight = signal(false);
@@ -408,11 +439,15 @@ export class ProfileComponent implements OnInit {
       display_name: '',
       bio: '',
       avatar_url: '',
+      age: null,
       height_cm: 170,
       current_weight_kg: 70,
       target_weight_kg: 70,
       weekly_gym_target: 3,
       activity_level: 'moderate',
+      onboarding_completed: false,
+      track_nutrition: true,
+      track_gym: true,
       updated_at: new Date().toISOString()
     };
 
@@ -423,11 +458,15 @@ export class ProfileComponent implements OnInit {
           user_id: user.id,
           display_name: '',
           bio: '',
+          age: null,
           height_cm: 170,
           current_weight_kg: 70,
           target_weight_kg: 70,
           weekly_gym_target: 3,
-          activity_level: 'moderate'
+          activity_level: 'moderate',
+          onboarding_completed: false,
+          track_nutrition: true,
+          track_gym: true
         });
 
       if (insertError) {
@@ -616,6 +655,71 @@ export class ProfileComponent implements OnInit {
       this.errorMessage.set(errorMessage);
     } finally {
       this.savingWeight.set(false);
+    }
+  }
+
+  async resetOnboarding(): Promise<void> {
+    this.successMessage.set(null);
+    this.errorMessage.set(null);
+
+    if (typeof window !== 'undefined') {
+      const shouldReset = window.confirm(
+        'Onboarding neu starten? Profildaten und Gewichtsverlauf werden zurückgesetzt. Zutaten und Mahlzeiten bleiben erhalten.'
+      );
+      if (!shouldReset) {
+        return;
+      }
+    }
+
+    const user = this.authService.user();
+    if (!user) {
+      return;
+    }
+
+    this.savingProfile.set(true);
+
+    try {
+      const { error: profileError } = await this.supabaseService.client
+        .from('profiles')
+        .upsert(
+          {
+            user_id: user.id,
+            display_name: null,
+            bio: null,
+            avatar_url: null,
+            age: null,
+            height_cm: null,
+            current_weight_kg: null,
+            target_weight_kg: null,
+            weekly_gym_target: 3,
+            activity_level: 'moderate',
+            onboarding_completed: false,
+            track_nutrition: true,
+            track_gym: true,
+            updated_at: new Date().toISOString()
+          },
+          { onConflict: 'user_id' }
+        );
+
+      if (profileError) {
+        throw profileError;
+      }
+
+      const { error: weightsError } = await this.supabaseService.client
+        .from('weight_logs')
+        .delete()
+        .eq('user_id', user.id);
+
+      if (weightsError) {
+        throw weightsError;
+      }
+
+      await this.router.navigate(['/onboarding']);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Onboarding konnte nicht zurückgesetzt werden.';
+      this.errorMessage.set(errorMessage);
+    } finally {
+      this.savingProfile.set(false);
     }
   }
 

@@ -18,8 +18,8 @@ export class App {
   private currentRoute = signal('/');
 
   // Use computed signal to determine if nav should be shown
-  showNav = computed(() => !this.currentRoute().includes('/login'));
-  showTopBar = computed(() => !this.currentRoute().includes('/login'));
+  showNav = computed(() => !this.currentRoute().includes('/login') && !this.currentRoute().includes('/onboarding'));
+  showTopBar = computed(() => !this.currentRoute().includes('/login') && !this.currentRoute().includes('/onboarding'));
 
   constructor() {
     // Listen to router events to update current route

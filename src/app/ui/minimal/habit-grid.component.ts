@@ -10,10 +10,10 @@ export type HabitState = 'empty' | 'complete' | 'missed';
   template: `
     <div class="top">
       <span class="name">{{ label() }}</span>
-      <span class="count">{{ completeCount() }}/{{ targetPerWeek() }} this week</span>
+      <span class="count">{{ completeCount() }}/{{ targetPerWeek() }} diese Woche</span>
     </div>
 
-    <div class="days" role="list" aria-label="{{ label() }} weekly grid">
+    <div class="days" role="list" aria-label="{{ label() }} Wochenraster">
       @for (day of dayLabels(); track day) {
         <span class="day-label">{{ day }}</span>
       }
@@ -82,7 +82,7 @@ export class HabitGridComponent {
   readonly states = input.required<HabitState[]>();
   readonly targetPerWeek = input.required<number>();
 
-  readonly dayLabels = input(['M', 'T', 'W', 'T', 'F', 'S', 'S']);
+  readonly dayLabels = input(['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']);
 
   readonly completeCount = computed(() => this.states().filter(state => state === 'complete').length);
 }

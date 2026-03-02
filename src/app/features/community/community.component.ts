@@ -33,67 +33,67 @@ import { FormsModule } from '@angular/forms';
 
       @if (!hasGroup()) {
         <section class="section">
-          <p class="muted">No active group. Join or create one.</p>
-          <button type="button" class="btn" (click)="goToGroupSetup()"><i class="fa-solid fa-people-group icon" aria-hidden="true"></i> 🤝 Join/Create Group</button>
+          <p class="muted">Keine aktive Gruppe. Tritt einer Gruppe bei oder erstelle eine.</p>
+          <button type="button" class="btn" (click)="goToGroupSetup()"><i class="fa-solid fa-people-group icon" aria-hidden="true"></i> 🤝 Gruppe beitreten/erstellen</button>
         </section>
       } @else {
         <section class="section">
-          <h2><i class="fa-solid fa-shield-heart icon" aria-hidden="true"></i> My Status</h2>
+          <h2><i class="fa-solid fa-shield-heart icon" aria-hidden="true"></i> Mein Status</h2>
           <div class="metric-row">
             <app-minimal-metric label="Training" [value]="trainingCount() + '/3'" />
             <app-minimal-metric label="Protein" [value]="proteinDaysCount() + '/7'" />
-            <app-minimal-metric label="Sleep" [value]="sleepCount() + '/5'" />
+            <app-minimal-metric label="Schlaf" [value]="sleepCount() + '/5'" />
           </div>
-          <p class="card" [class.yellow]="cardStatus() === 'yellow'" [class.red]="cardStatus() === 'red'">Card status: {{ cardLabel() }}</p>
+          <p class="card" [class.yellow]="cardStatus() === 'yellow'" [class.red]="cardStatus() === 'red'">Kartenstatus: {{ cardLabel() }}</p>
         </section>
 
         <section class="section">
-          <h2><i class="fa-solid fa-chart-simple icon" aria-hidden="true"></i> Group Consistency</h2>
-          <app-habit-grid label="Consistency" [states]="groupConsistencyStates()" [targetPerWeek]="7" />
+          <h2><i class="fa-solid fa-chart-simple icon" aria-hidden="true"></i> Gruppenkonstanz</h2>
+          <app-habit-grid label="Konstanz" [states]="groupConsistencyStates()" [targetPerWeek]="7" />
         </section>
 
         <section class="section">
-          <h2><i class="fa-solid fa-stream icon" aria-hidden="true"></i> Activity Feed</h2>
+          <h2><i class="fa-solid fa-stream icon" aria-hidden="true"></i> Aktivitätsfeed</h2>
           @for (item of streamItems(); track item.id) {
             <app-list-row [title]="displayName(item.user_id)" [subtitle]="streamBadges(item) + (item.note ? ' · ' + item.note : '')" [meta]="item.day" />
             @if (item.photo_url) {
               <button type="button" class="photo-toggle" (click)="togglePhoto(item.id)">
-                {{ expandedPhotoId() === item.id ? 'Hide photo' : 'Show photo' }}
+                {{ expandedPhotoId() === item.id ? 'Foto ausblenden' : 'Foto anzeigen' }}
               </button>
               @if (expandedPhotoId() === item.id) {
-                <img [src]="item.photo_url" alt="Check-in photo" class="photo">
+                <img [src]="item.photo_url" alt="Check-in-Foto" class="photo">
               }
             }
           }
           @if (streamItems().length === 0) {
-            <p class="muted">No activity yet.</p>
+            <p class="muted">Noch keine Aktivität.</p>
           }
         </section>
 
         <section class="section">
-          <h2><i class="fa-solid fa-triangle-exclamation icon" aria-hidden="true"></i> Yellow / Red Rules</h2>
+          <h2><i class="fa-solid fa-triangle-exclamation icon" aria-hidden="true"></i> Gelb/Rot-Regeln</h2>
           <p class="muted">{{ yellowCardRule() }}</p>
           <p class="danger">{{ redCardConsequence() }}</p>
         </section>
 
-        <button class="group-fab" type="button" (click)="showCheckinSheet.set(true)" aria-label="Ritual check-in"><i class="fa-solid fa-plus" aria-hidden="true"></i></button>
+        <button class="group-fab" type="button" (click)="showCheckinSheet.set(true)" aria-label="Ritual-Check-in"><i class="fa-solid fa-plus" aria-hidden="true"></i></button>
       }
     </main>
 
-    <app-bottom-sheet [open]="showCheckinSheet()" title="Ritual Check-in" (closed)="closeCheckinSheet()">
+    <app-bottom-sheet [open]="showCheckinSheet()" title="Ritual-Check-in" (closed)="closeCheckinSheet()">
       <div class="toggle-grid">
         <button type="button" class="toggle" [class.active]="checkinGym()" (click)="checkinGym.set(!checkinGym())"><i class="fa-solid fa-dumbbell icon" aria-hidden="true"></i> 🏋️ Gym gemacht</button>
         <button type="button" class="toggle" [class.active]="checkinProtein()" (click)="checkinProtein.set(!checkinProtein())"><i class="fa-solid fa-drumstick-bite icon" aria-hidden="true"></i> 🍗 100g Protein</button>
         <button type="button" class="toggle" [class.active]="checkinSleep()" (click)="checkinSleep.set(!checkinSleep())"><i class="fa-solid fa-moon icon" aria-hidden="true"></i> 😴 8h Schlaf</button>
       </div>
 
-      <label for="checkin-note">Note (optional)</label>
-      <textarea id="checkin-note" rows="2" [(ngModel)]="checkinNote" placeholder="Optional context"></textarea>
+      <label for="checkin-note">Notiz (optional)</label>
+      <textarea id="checkin-note" rows="2" [(ngModel)]="checkinNote" placeholder="Optionaler Kontext"></textarea>
 
-      <label for="checkin-photo">Photo (optional)</label>
+      <label for="checkin-photo">Foto (optional)</label>
       <input id="checkin-photo" type="file" accept="image/*" (change)="onCheckinPhotoSelected($event)">
 
-      <button type="button" class="btn" [disabled]="savingCheckin()" (click)="submitCheckin()"><i class="fa-solid fa-paper-plane icon" aria-hidden="true"></i> {{ savingCheckin() ? 'Saving...' : 'Post Check-in' }}</button>
+      <button type="button" class="btn" [disabled]="savingCheckin()" (click)="submitCheckin()"><i class="fa-solid fa-paper-plane icon" aria-hidden="true"></i> {{ savingCheckin() ? 'Wird gespeichert...' : 'Check-in posten' }}</button>
     </app-bottom-sheet>
   `,
   styles: [`
@@ -325,10 +325,10 @@ export class CommunityComponent implements OnInit {
     [...this.activities()].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 30)
   );
 
-  readonly groupMotto = computed(() => this.activeGroupService.activeGroup()?.motto || 'Consistency over ego.');
+  readonly groupMotto = computed(() => this.activeGroupService.activeGroup()?.motto || 'Konstanz vor Ego.');
   readonly periodEndLabel = computed(() => this.activeGroupService.activeGroup()?.period_end || '31.08.25');
-  readonly yellowCardRule = computed(() => this.activeGroupService.activeGroup()?.yellow_card_rules || 'Miss weekly targets = yellow card.');
-  readonly redCardConsequence = computed(() => this.activeGroupService.activeGroup()?.red_card_consequence || 'Repeated misses trigger red card consequence.');
+  readonly yellowCardRule = computed(() => this.activeGroupService.activeGroup()?.yellow_card_rules || 'Wöchentliche Ziele verfehlt = gelbe Karte.');
+  readonly redCardConsequence = computed(() => this.activeGroupService.activeGroup()?.red_card_consequence || 'Wiederholtes Verfehlen führt zur roten Karte.');
 
   ngOnInit(): void {
     void this.loadCommunityData();
@@ -369,7 +369,7 @@ export class CommunityComponent implements OnInit {
     ]);
 
     if (membersError || activityError || summaryError) {
-      this.errorMessage.set('Could not load group data.');
+      this.errorMessage.set('Gruppendaten konnten nicht geladen werden.');
       this.loading.set(false);
       return;
     }
@@ -399,12 +399,12 @@ export class CommunityComponent implements OnInit {
     const user = this.authService.user();
     const groupId = this.activeGroupService.activeGroupId();
     if (!user || !groupId) {
-      this.errorMessage.set('You need an active group.');
+      this.errorMessage.set('Du brauchst eine aktive Gruppe.');
       return;
     }
 
     if (!this.checkinGym() && !this.checkinProtein() && !this.checkinSleep() && !this.checkinNote.trim() && !this.checkinPhoto) {
-      this.errorMessage.set('Select at least one ritual.');
+      this.errorMessage.set('Wähle mindestens ein Ritual aus.');
       return;
     }
 
@@ -457,11 +457,11 @@ export class CommunityComponent implements OnInit {
         } as Omit<GymCheckin, 'id' | 'created_at'>);
       }
 
-      this.successMessage.set('Check-in posted.');
+      this.successMessage.set('Check-in gepostet.');
       this.closeCheckinSheet();
       await this.loadCommunityData();
     } catch {
-      this.errorMessage.set('Could not post check-in.');
+      this.errorMessage.set('Check-in konnte nicht gepostet werden.');
     } finally {
       this.savingCheckin.set(false);
     }
@@ -486,17 +486,17 @@ export class CommunityComponent implements OnInit {
   }
 
   cardLabel(): string {
-    if (this.cardStatus() === 'yellow') return 'yellow';
-    if (this.cardStatus() === 'red') return 'red';
-    return 'none';
+    if (this.cardStatus() === 'yellow') return 'Gelb';
+    if (this.cardStatus() === 'red') return 'Rot';
+    return 'Keine';
   }
 
   streamBadges(item: GroupActivity): string {
     const badges: string[] = [];
     if (item.gym_done) badges.push('Gym');
     if (item.protein_done) badges.push('Protein');
-    if (item.sleep_done) badges.push('Sleep');
-    return badges.join(' · ') || 'Update';
+    if (item.sleep_done) badges.push('Schlaf');
+    return badges.join(' · ') || 'Aktualisierung';
   }
 
   togglePhoto(activityId: string): void {

@@ -17,9 +17,9 @@ export interface PactCheckinPayload {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="sheet-overlay" role="dialog" aria-modal="true" aria-label="Ritual Check-in">
+    <div class="sheet-overlay" role="dialog" aria-modal="true" aria-label="Ritual-Check-in">
       <div class="sheet-card">
-        <h2 class="title-font">Ritual Check-in</h2>
+        <h2 class="title-font">Ritual-Check-in</h2>
 
         <label for="checkin-day">Tag</label>
         <input id="checkin-day" type="date" [(ngModel)]="day">
@@ -38,7 +38,7 @@ export interface PactCheckinPayload {
         <input id="checkin-photo" type="file" accept="image/*" (change)="onPhotoSelected($event)">
 
         <div class="actions">
-          <button type="button" class="action-btn" [disabled]="saving()" (click)="submit()">{{ saving() ? 'Posting...' : 'Posten' }}</button>
+          <button type="button" class="action-btn" [disabled]="saving()" (click)="submit()">{{ saving() ? 'Wird gepostet...' : 'Posten' }}</button>
           <button type="button" class="action-btn ghost" [disabled]="saving()" (click)="closed.emit()">Abbrechen</button>
         </div>
       </div>

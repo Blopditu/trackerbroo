@@ -42,7 +42,7 @@ export interface AmountPickResult {
         </div>
 
         <div class="actions">
-          <button type="button" class="action-btn" (click)="confirm()">Add</button>
+          <button type="button" class="action-btn" (click)="confirm()">Hinzufügen</button>
           <button type="button" class="action-btn ghost" (click)="closed.emit()">Abbrechen</button>
         </div>
       </div>

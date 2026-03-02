@@ -44,6 +44,10 @@ ALTER TABLE groups ADD COLUMN IF NOT EXISTS period_end DATE;
 ALTER TABLE groups ADD COLUMN IF NOT EXISTS motto TEXT;
 ALTER TABLE groups ADD COLUMN IF NOT EXISTS yellow_card_rules TEXT;
 ALTER TABLE groups ADD COLUMN IF NOT EXISTS red_card_consequence TEXT;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS age INTEGER;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS onboarding_completed BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS track_nutrition BOOLEAN NOT NULL DEFAULT TRUE;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS track_gym BOOLEAN NOT NULL DEFAULT TRUE;
 
 -- Meals
 CREATE TABLE IF NOT EXISTS meals (
@@ -99,11 +103,15 @@ CREATE TABLE IF NOT EXISTS profiles (
   display_name TEXT,
   bio TEXT,
   avatar_url TEXT,
+  age INTEGER CHECK (age IS NULL OR (age >= 10 AND age <= 120)),
   height_cm DECIMAL(6,2),
   current_weight_kg DECIMAL(6,2),
   target_weight_kg DECIMAL(6,2),
   weekly_gym_target INTEGER NOT NULL DEFAULT 3 CHECK (weekly_gym_target BETWEEN 1 AND 14),
   activity_level TEXT CHECK (activity_level IN ('low', 'moderate', 'high')),
+  onboarding_completed BOOLEAN NOT NULL DEFAULT FALSE,
+  track_nutrition BOOLEAN NOT NULL DEFAULT TRUE,
+  track_gym BOOLEAN NOT NULL DEFAULT TRUE,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 

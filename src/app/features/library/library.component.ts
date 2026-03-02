@@ -48,6 +48,10 @@ import { Ingredient, Meal } from '../../core/types';
                 <article class="list-card ingredient-card">
                   <div>
                     <strong>{{ item.name }}</strong>
+                    <div class="sub">Quelle: {{ getSourceTypeLabel(item.source_type) }}</div>
+                    @if (item.source_type === 'custom_product' && item.base_ingredient_id) {
+                      <div class="sub">BLV-Basis: {{ getIngredientName(item.base_ingredient_id) }}</div>
+                    }
                     <div class="sub">{{ item.kcal_per_100 }} kcal / 100g</div>
                     @if (item.cost_per_100 !== null && item.cost_per_100 !== undefined) {
                       <div class="sub">Kosten: {{ item.cost_per_100 }} / 100g</div>
@@ -110,6 +114,37 @@ import { Ingredient, Meal } from '../../core/types';
         <div class="modal-card">
           <h2 class="title-font">{{ editingIngredient() ? 'Zutat bearbeiten' : 'Zutat hinzufügen' }}</h2>
           <form (ngSubmit)="saveIngredient()" #ingForm="ngForm" class="stack-form">
+            <label for="ing-source">Quelle</label>
+            <select
+              id="ing-source"
+              [(ngModel)]="ingredientForm.source_type"
+              name="source_type"
+              (ngModelChange)="onIngredientSourceTypeChange()"
+              required
+            >
+              <option value="manual">Manuell</option>
+              <option value="custom_product">Konkretes Produkt</option>
+              <option value="blv_generic">BLV generisch</option>
+            </select>
+
+            @if (ingredientForm.source_type === 'custom_product') {
+              <label for="ing-base">BLV-Basiszutat</label>
+              <select
+                id="ing-base"
+                [(ngModel)]="ingredientForm.base_ingredient_id"
+                name="base_ingredient_id"
+                [required]="ingredientForm.source_type === 'custom_product'"
+              >
+                <option [ngValue]="null">Bitte wählen</option>
+                @for (item of baseIngredientOptions(); track item.id) {
+                  <option [ngValue]="item.id">{{ item.name }}</option>
+                }
+              </select>
+              <button type="button" class="action-btn ghost mini" (click)="copyNutritionFromBaseIngredient()">
+                BLV-Werte übernehmen
+              </button>
+            }
+
             <label for="ing-name">Name</label>
             <input id="ing-name" type="text" [(ngModel)]="ingredientForm.name" name="name" required>
 
@@ -299,6 +334,8 @@ export class LibraryComponent implements OnInit {
   marketFilter = '';
 
   ingredientForm = {
+    source_type: 'manual' as 'manual' | 'blv_generic' | 'custom_product',
+    base_ingredient_id: null as string | null,
     name: '',
     kcal_per_100: 0,
     cost_per_100: null as number | null,
@@ -334,6 +371,12 @@ export class LibraryComponent implements OnInit {
       return matchesQuery && matchesMarket;
     });
   });
+
+  baseIngredientOptions = computed(() =>
+    this.ingredients()
+      .filter(ingredient => ingredient.source_type === 'blv_generic')
+      .sort((a, b) => a.name.localeCompare(b.name))
+  );
 
   ngOnInit() {
     void this.loadData();
@@ -418,6 +461,8 @@ export class LibraryComponent implements OnInit {
   editIngredient(ingredient: Ingredient) {
     this.editingIngredient.set(ingredient);
     this.ingredientForm = {
+      source_type: ingredient.source_type || 'manual',
+      base_ingredient_id: ingredient.base_ingredient_id ?? null,
       name: ingredient.name,
       kcal_per_100: ingredient.kcal_per_100,
       cost_per_100: ingredient.cost_per_100 ?? null,
@@ -439,10 +484,14 @@ export class LibraryComponent implements OnInit {
       this.ingredientForm.cost_per_100 === null || this.ingredientForm.cost_per_100 === undefined
         ? null
         : Number(this.ingredientForm.cost_per_100);
+    const normalizedBaseIngredientId =
+      this.ingredientForm.source_type === 'custom_product' ? this.ingredientForm.base_ingredient_id : null;
+
     const payload = {
       ...this.ingredientForm,
       cost_per_100: Number.isFinite(normalizedCost) ? normalizedCost : null,
-      market_name: marketName || null
+      market_name: marketName || null,
+      base_ingredient_id: normalizedBaseIngredientId
     };
 
     if (this.editingIngredient()) {
@@ -459,6 +508,8 @@ export class LibraryComponent implements OnInit {
     this.showIngredientModal.set(false);
     this.editingIngredient.set(null);
     this.ingredientForm = {
+      source_type: 'manual',
+      base_ingredient_id: null,
       name: '',
       kcal_per_100: 0,
       cost_per_100: null,
@@ -565,6 +616,36 @@ export class LibraryComponent implements OnInit {
 
   getMealCostLabel(mealId: string) {
     return this.formatCurrency(this.mealCosts()[mealId] || 0);
+  }
+
+  getIngredientName(ingredientId: string) {
+    const ingredient = this.ingredients().find(entry => entry.id === ingredientId);
+    return ingredient?.name || 'Unbekannt';
+  }
+
+  getSourceTypeLabel(sourceType?: Ingredient['source_type']) {
+    if (sourceType === 'blv_generic') return 'BLV generisch';
+    if (sourceType === 'custom_product') return 'Konkretes Produkt';
+    return 'Manuell';
+  }
+
+  onIngredientSourceTypeChange() {
+    if (this.ingredientForm.source_type !== 'custom_product') {
+      this.ingredientForm.base_ingredient_id = null;
+    }
+  }
+
+  copyNutritionFromBaseIngredient() {
+    if (!this.ingredientForm.base_ingredient_id) return;
+    const baseIngredient = this.ingredients().find(
+      ingredient => ingredient.id === this.ingredientForm.base_ingredient_id
+    );
+    if (!baseIngredient) return;
+
+    this.ingredientForm.kcal_per_100 = baseIngredient.kcal_per_100;
+    this.ingredientForm.protein_per_100 = baseIngredient.protein_per_100;
+    this.ingredientForm.carbs_per_100 = baseIngredient.carbs_per_100;
+    this.ingredientForm.fat_per_100 = baseIngredient.fat_per_100;
   }
 
   private formatCurrency(value: number) {

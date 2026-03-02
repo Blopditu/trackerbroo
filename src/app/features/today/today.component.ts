@@ -48,26 +48,26 @@ interface MealMacroMap {
 
         <div class="bars">
           <app-macro-bar label="Protein" [value]="proteinToday()" [target]="proteinGoal" color="#5B8CFF" />
-          <app-macro-bar label="Fat" [value]="fatToday()" [target]="fatGoal" color="#F4B740" />
-          <app-macro-bar label="Carbs" [value]="carbsToday()" [target]="carbGoal" color="#3DBB78" />
+          <app-macro-bar label="Fett" [value]="fatToday()" [target]="fatGoal" color="#F4B740" />
+          <app-macro-bar label="Kohlenhydrate" [value]="carbsToday()" [target]="carbGoal" color="#3DBB78" />
         </div>
 
         <div class="weight-row">
-          <span><i class="fa-solid fa-weight-scale icon" aria-hidden="true"></i> Weight</span>
+          <span><i class="fa-solid fa-weight-scale icon" aria-hidden="true"></i> Gewicht</span>
           <strong>{{ weightValueLabel() }}</strong>
           <span class="delta">{{ weightDeltaLabel() }}</span>
         </div>
       </section>
 
       <section class="section">
-        <h2><i class="fa-solid fa-list-check icon" aria-hidden="true"></i> Habits</h2>
+        <h2><i class="fa-solid fa-list-check icon" aria-hidden="true"></i> Gewohnheiten</h2>
         <app-habit-grid label="Gym" [states]="gymHabitStates()" [targetPerWeek]="3" />
         <app-habit-grid label="Protein" [states]="proteinHabitStates()" [targetPerWeek]="7" />
-        <app-habit-grid label="Sleep" [states]="sleepHabitStates()" [targetPerWeek]="5" />
+        <app-habit-grid label="Schlaf" [states]="sleepHabitStates()" [targetPerWeek]="5" />
       </section>
 
       <section class="section">
-        <h2><i class="fa-regular fa-clock icon" aria-hidden="true"></i> Recent Activity</h2>
+        <h2><i class="fa-regular fa-clock icon" aria-hidden="true"></i> Letzte Aktivitäten</h2>
         @for (entry of recentEntries(); track entry.id) {
           <app-list-row
             [title]="entry.entry_type === 'ingredient' ? getIngredientName(entry.ref_id) : getMealName(entry.ref_id)"
@@ -76,7 +76,7 @@ interface MealMacroMap {
           />
         }
         @if (recentEntries().length === 0) {
-          <p class="muted">No activity yet today.</p>
+          <p class="muted">Heute noch keine Einträge.</p>
         }
       </section>
 
@@ -86,15 +86,15 @@ interface MealMacroMap {
     <app-bottom-sheet [open]="showActionSheet()" [title]="sheetTitle()" (closed)="closeActions()">
       @if (sheetMode() === 'menu') {
         <div class="action-list">
-          <button type="button" class="menu-btn" (click)="setSheetMode('food')"><i class="fa-solid fa-utensils icon" aria-hidden="true"></i> 🍗 Add Food</button>
-          <button type="button" class="menu-btn" (click)="setSheetMode('weight')"><i class="fa-solid fa-weight-scale icon" aria-hidden="true"></i> ⚖️ Add Weight</button>
-          <button type="button" class="menu-btn" (click)="quickRitual('gym')"><i class="fa-solid fa-dumbbell icon" aria-hidden="true"></i> 🏋️ Gym Done</button>
-          <button type="button" class="menu-btn" (click)="quickRitual('sleep')"><i class="fa-solid fa-moon icon" aria-hidden="true"></i> 😴 Sleep Done</button>
+          <button type="button" class="menu-btn" (click)="setSheetMode('food')"><i class="fa-solid fa-utensils icon" aria-hidden="true"></i> 🍗 Essen hinzufügen</button>
+          <button type="button" class="menu-btn" (click)="setSheetMode('weight')"><i class="fa-solid fa-weight-scale icon" aria-hidden="true"></i> ⚖️ Gewicht eintragen</button>
+          <button type="button" class="menu-btn" (click)="quickRitual('gym')"><i class="fa-solid fa-dumbbell icon" aria-hidden="true"></i> 🏋️ Gym erledigt</button>
+          <button type="button" class="menu-btn" (click)="quickRitual('sleep')"><i class="fa-solid fa-moon icon" aria-hidden="true"></i> 😴 Schlaf erledigt</button>
         </div>
       }
 
       @if (sheetMode() === 'food') {
-        <input type="search" [(ngModel)]="foodSearch" placeholder="Search food" aria-label="Food search">
+        <input type="search" [(ngModel)]="foodSearch" placeholder="Lebensmittel suchen" aria-label="Lebensmittel suchen">
         <div class="food-list">
           @for (item of quickFoodItems(); track item.id) {
             <button type="button" class="menu-btn" (click)="openAmountPicker(item)">{{ item.name }}</button>
@@ -103,9 +103,9 @@ interface MealMacroMap {
       }
 
       @if (sheetMode() === 'weight') {
-        <label for="weight-input">Weight (kg)</label>
+        <label for="weight-input">Gewicht (kg)</label>
         <input id="weight-input" type="number" min="20" step="0.1" [(ngModel)]="weightInput">
-        <button type="button" class="menu-btn" (click)="saveWeight()">Save Weight</button>
+        <button type="button" class="menu-btn" (click)="saveWeight()">Gewicht speichern</button>
       }
     </app-bottom-sheet>
 
@@ -341,7 +341,7 @@ export class TodayComponent implements OnInit {
     ]);
 
     if (ingredientError || mealError) {
-      this.errorMessage.set('Could not load food library.');
+      this.errorMessage.set('Lebensmittel-Bibliothek konnte nicht geladen werden.');
       this.loading.set(false);
       return;
     }
@@ -365,7 +365,7 @@ export class TodayComponent implements OnInit {
     const { data: entryData, error: entryError } = await entryQuery;
 
     if (entryError) {
-      this.errorMessage.set('Could not load entries.');
+      this.errorMessage.set('Einträge konnten nicht geladen werden.');
       this.loading.set(false);
       return;
     }
@@ -429,9 +429,9 @@ export class TodayComponent implements OnInit {
   }
 
   sheetTitle(): string {
-    if (this.sheetMode() === 'food') return 'Add Food';
-    if (this.sheetMode() === 'weight') return 'Add Weight';
-    return 'Quick Actions';
+    if (this.sheetMode() === 'food') return 'Essen hinzufügen';
+    if (this.sheetMode() === 'weight') return 'Gewicht eintragen';
+    return 'Schnellaktionen';
   }
 
   isIngredient(item: QuickItem): item is Ingredient {
@@ -467,7 +467,7 @@ export class TodayComponent implements OnInit {
       return;
     }
 
-    this.successMessage.set(`${item.name} added.`);
+    this.successMessage.set(`${item.name} hinzugefügt.`);
     this.selectedItem.set(null);
     this.closeActions();
     await this.loadData();
@@ -476,7 +476,7 @@ export class TodayComponent implements OnInit {
   async saveWeight(): Promise<void> {
     const user = this.authService.user();
     if (!user || this.weightInput <= 0) {
-      this.errorMessage.set('Please enter a valid weight.');
+      this.errorMessage.set('Bitte gib ein gültiges Gewicht ein.');
       return;
     }
 
@@ -493,11 +493,11 @@ export class TodayComponent implements OnInit {
       );
 
     if (error) {
-      this.errorMessage.set('Could not save weight.');
+      this.errorMessage.set('Gewicht konnte nicht gespeichert werden.');
       return;
     }
 
-    this.successMessage.set('Weight saved.');
+    this.successMessage.set('Gewicht gespeichert.');
     this.closeActions();
     await this.loadData();
   }
@@ -507,7 +507,7 @@ export class TodayComponent implements OnInit {
     const groupId = this.activeGroupService.activeGroupId();
 
     if (!user || !groupId) {
-      this.errorMessage.set('Join or create a group for ritual check-ins.');
+      this.errorMessage.set('Tritt einer Gruppe bei oder erstelle eine für Ritual-Check-ins.');
       return;
     }
 
@@ -548,7 +548,7 @@ export class TodayComponent implements OnInit {
       );
 
     if (error) {
-      this.errorMessage.set('Ritual could not be saved.');
+      this.errorMessage.set('Ritual konnte nicht gespeichert werden.');
       return;
     }
 
@@ -564,17 +564,17 @@ export class TodayComponent implements OnInit {
       });
     }
 
-    this.successMessage.set(type === 'gym' ? 'Gym ritual saved.' : 'Sleep ritual saved.');
+    this.successMessage.set(type === 'gym' ? 'Gym-Ritual gespeichert.' : 'Schlaf-Ritual gespeichert.');
     this.closeActions();
     await this.loadData();
   }
 
   getIngredientName(id: string): string {
-    return this.ingredients().find(item => item.id === id)?.name || 'Unknown';
+    return this.ingredients().find(item => item.id === id)?.name || 'Unbekannt';
   }
 
   getMealName(id: string): string {
-    return this.meals().find(item => item.id === id)?.name || 'Unknown';
+    return this.meals().find(item => item.id === id)?.name || 'Unbekannt';
   }
 
   weightValueLabel(): string {
@@ -678,8 +678,8 @@ export class TodayComponent implements OnInit {
 
   private formatWriteError(message: string): string {
     if (message.includes('group_id') && message.includes('null value')) {
-      return 'Private mode migration is missing.';
+      return 'Private-Mode-Migration fehlt.';
     }
-    return 'Could not save entry.';
+    return 'Eintrag konnte nicht gespeichert werden.';
   }
 }

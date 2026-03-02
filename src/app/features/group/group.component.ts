@@ -55,7 +55,7 @@ import { Group } from '../../core/types';
             type="text"
             [(ngModel)]="groupName"
             name="groupName"
-            placeholder="Leaf Village"
+            placeholder="z. B. Team Alpen"
             required
           >
           <button type="submit" class="action-btn" [disabled]="!groupForm.valid || loading">

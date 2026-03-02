@@ -20,6 +20,13 @@ export interface Ingredient {
   id: string;
   owner_id: string;
   name: string;
+  source_type?: 'manual' | 'blv_generic' | 'custom_product';
+  blv_food_id?: string | null;
+  swissfir_id?: string | null;
+  category?: string | null;
+  reference_unit?: string | null;
+  source_dataset?: string | null;
+  base_ingredient_id?: string | null;
   kcal_per_100: number;
   cost_per_100?: number | null;
   market_name?: string | null;
@@ -79,11 +86,15 @@ export interface Profile {
   display_name: string | null;
   bio: string | null;
   avatar_url: string | null;
+  age: number | null;
   height_cm: number | null;
   current_weight_kg: number | null;
   target_weight_kg: number | null;
   weekly_gym_target: number;
   activity_level: 'low' | 'moderate' | 'high' | null;
+  onboarding_completed: boolean;
+  track_nutrition: boolean;
+  track_gym: boolean;
   updated_at: string;
 }
 

@@ -6,8 +6,8 @@ import { CommonModule } from '@angular/common';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule],
   template: `
-    <div class="hero-wrap" aria-label="Protein progress">
-      <svg viewBox="0 0 120 120" class="ring" role="img" aria-label="{{ value() }} of {{ target() }} grams">
+    <div class="hero-wrap" aria-label="Proteinfortschritt">
+      <svg viewBox="0 0 120 120" class="ring" role="img" aria-label="{{ value() }} von {{ target() }} Gramm">
         <circle class="track" cx="60" cy="60" r="50"></circle>
         <circle class="progress" cx="60" cy="60" r="50" [style.stroke]="accentColor()" [style.stroke-dashoffset]="dashOffset()"></circle>
       </svg>
@@ -94,6 +94,6 @@ export class HeroRingComponent {
 
   readonly leftText = computed(() => {
     const left = Math.max(this.target() - this.value(), 0);
-    return left > 0 ? `${left}g left today` : 'Goal reached today';
+    return left > 0 ? `Heute noch ${left}g offen` : 'Tagesziel erreicht';
   });
 }
