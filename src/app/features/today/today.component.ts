@@ -11,6 +11,7 @@ import { MacroBarComponent } from '../../ui/minimal/macro-bar.component';
 import { HabitGridComponent, HabitState } from '../../ui/minimal/habit-grid.component';
 import { ListRowComponent } from '../../ui/minimal/list-row.component';
 import { BottomSheetComponent } from '../../ui/minimal/bottom-sheet.component';
+import { formatAppError } from '../../core/error-format';
 
 type QuickItem = Ingredient | Meal;
 
@@ -63,7 +64,6 @@ interface MealMacroMap {
         <h2><i class="fa-solid fa-list-check icon" aria-hidden="true"></i> Gewohnheiten</h2>
         <app-habit-grid label="Gym" [states]="gymHabitStates()" [targetPerWeek]="3" />
         <app-habit-grid label="Protein" [states]="proteinHabitStates()" [targetPerWeek]="7" />
-        <app-habit-grid label="Schlaf" [states]="sleepHabitStates()" [targetPerWeek]="5" />
       </section>
 
       <section class="section">
@@ -89,12 +89,17 @@ interface MealMacroMap {
           <button type="button" class="menu-btn" (click)="setSheetMode('food')"><i class="fa-solid fa-utensils icon" aria-hidden="true"></i> 🍗 Essen hinzufügen</button>
           <button type="button" class="menu-btn" (click)="setSheetMode('weight')"><i class="fa-solid fa-weight-scale icon" aria-hidden="true"></i> ⚖️ Gewicht eintragen</button>
           <button type="button" class="menu-btn" (click)="quickRitual('gym')"><i class="fa-solid fa-dumbbell icon" aria-hidden="true"></i> 🏋️ Gym erledigt</button>
-          <button type="button" class="menu-btn" (click)="quickRitual('sleep')"><i class="fa-solid fa-moon icon" aria-hidden="true"></i> 😴 Schlaf erledigt</button>
         </div>
       }
 
       @if (sheetMode() === 'food') {
-        <input type="search" [(ngModel)]="foodSearch" placeholder="Lebensmittel suchen" aria-label="Lebensmittel suchen">
+        <input
+          type="search"
+          [ngModel]="foodSearch()"
+          (ngModelChange)="foodSearch.set($event)"
+          placeholder="Lebensmittel suchen"
+          aria-label="Lebensmittel suchen"
+        >
         <div class="food-list">
           @for (item of quickFoodItems(); track item.id) {
             <button type="button" class="menu-btn" (click)="openAmountPicker(item)">{{ item.name }}</button>
@@ -261,7 +266,7 @@ export class TodayComponent implements OnInit {
 
   readonly showActionSheet = signal(false);
   readonly sheetMode = signal<'menu' | 'food' | 'weight'>('menu');
-  foodSearch = '';
+  readonly foodSearch = signal('');
   weightInput = 70;
 
   private mealMacros: MealMacroMap = {};
@@ -279,7 +284,7 @@ export class TodayComponent implements OnInit {
   readonly recentEntries = computed(() => this.entries().slice(0, 3));
 
   readonly quickFoodItems = computed(() => {
-    const query = this.foodSearch.trim().toLowerCase();
+    const query = this.foodSearch().trim().toLowerCase();
     const recentIds = this.entries().map(entry => entry.ref_id);
     const recentIngredients = this.ingredients().filter(item => recentIds.includes(item.id));
     const recentMeals = this.meals().filter(item => recentIds.includes(item.id));
@@ -312,7 +317,6 @@ export class TodayComponent implements OnInit {
   });
 
   readonly gymHabitStates = computed(() => this.toHabitStates('gym_done'));
-  readonly sleepHabitStates = computed(() => this.toHabitStates('sleep_done'));
   readonly proteinHabitStates = computed(() => {
     const states = this.toHabitStates('protein_done');
     const dayIndex = this.getCurrentWeekDayIndex();
@@ -341,7 +345,7 @@ export class TodayComponent implements OnInit {
     ]);
 
     if (ingredientError || mealError) {
-      this.errorMessage.set('Lebensmittel-Bibliothek konnte nicht geladen werden.');
+      this.errorMessage.set(formatAppError(ingredientError || mealError, 'Lebensmittel-Bibliothek konnte nicht geladen werden'));
       this.loading.set(false);
       return;
     }
@@ -365,7 +369,7 @@ export class TodayComponent implements OnInit {
     const { data: entryData, error: entryError } = await entryQuery;
 
     if (entryError) {
-      this.errorMessage.set('Einträge konnten nicht geladen werden.');
+      this.errorMessage.set(formatAppError(entryError, 'Einträge konnten nicht geladen werden'));
       this.loading.set(false);
       return;
     }
@@ -422,6 +426,7 @@ export class TodayComponent implements OnInit {
   closeActions(): void {
     this.showActionSheet.set(false);
     this.sheetMode.set('menu');
+    this.foodSearch.set('');
   }
 
   setSheetMode(mode: 'menu' | 'food' | 'weight'): void {
@@ -463,7 +468,7 @@ export class TodayComponent implements OnInit {
     });
 
     if (error) {
-      this.errorMessage.set(this.formatWriteError(error.message));
+      this.errorMessage.set(this.formatWriteError(error));
       return;
     }
 
@@ -493,7 +498,7 @@ export class TodayComponent implements OnInit {
       );
 
     if (error) {
-      this.errorMessage.set('Gewicht konnte nicht gespeichert werden.');
+      this.errorMessage.set(formatAppError(error, 'Gewicht konnte nicht gespeichert werden'));
       return;
     }
 
@@ -502,7 +507,7 @@ export class TodayComponent implements OnInit {
     await this.loadData();
   }
 
-  async quickRitual(type: 'gym' | 'sleep'): Promise<void> {
+  async quickRitual(type: 'gym'): Promise<void> {
     const user = this.authService.user();
     const groupId = this.activeGroupService.activeGroupId();
 
@@ -512,18 +517,6 @@ export class TodayComponent implements OnInit {
     }
 
     const day = this.today();
-    const payload = {
-      group_id: groupId,
-      user_id: user.id,
-      day,
-      gym_done: type === 'gym',
-      sleep_done: type === 'sleep',
-      protein_done: false,
-      confirm_done: false,
-      note: null,
-      photo_url: null
-    };
-
     const { data: existing } = await this.supabaseService.client
       .from('group_activities')
       .select('*')
@@ -536,9 +529,11 @@ export class TodayComponent implements OnInit {
       .from('group_activities')
       .upsert(
         {
-          ...payload,
+          group_id: groupId,
+          user_id: user.id,
+          day,
           gym_done: type === 'gym' || Boolean(existing?.gym_done),
-          sleep_done: type === 'sleep' || Boolean(existing?.sleep_done),
+          sleep_done: Boolean(existing?.sleep_done),
           protein_done: Boolean(existing?.protein_done),
           confirm_done: Boolean(existing?.confirm_done),
           note: existing?.note || null,
@@ -548,7 +543,7 @@ export class TodayComponent implements OnInit {
       );
 
     if (error) {
-      this.errorMessage.set('Ritual konnte nicht gespeichert werden.');
+      this.errorMessage.set(formatAppError(error, 'Ritual konnte nicht gespeichert werden'));
       return;
     }
 
@@ -564,7 +559,7 @@ export class TodayComponent implements OnInit {
       });
     }
 
-    this.successMessage.set(type === 'gym' ? 'Gym-Ritual gespeichert.' : 'Schlaf-Ritual gespeichert.');
+    this.successMessage.set('Gym-Ritual gespeichert.');
     this.closeActions();
     await this.loadData();
   }
@@ -609,7 +604,7 @@ export class TodayComponent implements OnInit {
     return (now.getDay() + 6) % 7;
   }
 
-  private toHabitStates(field: 'gym_done' | 'sleep_done' | 'protein_done'): HabitState[] {
+  private toHabitStates(field: 'gym_done' | 'protein_done'): HabitState[] {
     const states: HabitState[] = Array.from({ length: 7 }, () => 'empty');
     const week = this.getCurrentWeekRange();
     const days: string[] = [];
@@ -676,10 +671,11 @@ export class TodayComponent implements OnInit {
     return date.toISOString().split('T')[0];
   }
 
-  private formatWriteError(message: string): string {
+  private formatWriteError(error: unknown): string {
+    const message = String((error as { message?: unknown } | null)?.message || '');
     if (message.includes('group_id') && message.includes('null value')) {
-      return 'Private-Mode-Migration fehlt.';
+      return `${formatAppError(error, 'Eintrag konnte nicht gespeichert werden')}\nHinweis: Private-Mode-Migration fehlt.`;
     }
-    return 'Eintrag konnte nicht gespeichert werden.';
+    return formatAppError(error, 'Eintrag konnte nicht gespeichert werden');
   }
 }

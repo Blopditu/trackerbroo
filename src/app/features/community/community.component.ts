@@ -10,6 +10,7 @@ import { ListRowComponent } from '../../ui/minimal/list-row.component';
 import { BottomSheetComponent } from '../../ui/minimal/bottom-sheet.component';
 import { MinimalMetricComponent } from '../../ui/minimal/minimal-metric.component';
 import { FormsModule } from '@angular/forms';
+import { formatAppError } from '../../core/error-format';
 
 @Component({
   selector: 'app-community',
@@ -42,7 +43,6 @@ import { FormsModule } from '@angular/forms';
           <div class="metric-row">
             <app-minimal-metric label="Training" [value]="trainingCount() + '/3'" />
             <app-minimal-metric label="Protein" [value]="proteinDaysCount() + '/7'" />
-            <app-minimal-metric label="Schlaf" [value]="sleepCount() + '/5'" />
           </div>
           <p class="card" [class.yellow]="cardStatus() === 'yellow'" [class.red]="cardStatus() === 'red'">Kartenstatus: {{ cardLabel() }}</p>
         </section>
@@ -56,12 +56,12 @@ import { FormsModule } from '@angular/forms';
           <h2><i class="fa-solid fa-stream icon" aria-hidden="true"></i> Aktivitätsfeed</h2>
           @for (item of streamItems(); track item.id) {
             <app-list-row [title]="displayName(item.user_id)" [subtitle]="streamBadges(item) + (item.note ? ' · ' + item.note : '')" [meta]="item.day" />
-            @if (item.photo_url) {
+            @if (getPhotoSrc(item)) {
               <button type="button" class="photo-toggle" (click)="togglePhoto(item.id)">
                 {{ expandedPhotoId() === item.id ? 'Foto ausblenden' : 'Foto anzeigen' }}
               </button>
               @if (expandedPhotoId() === item.id) {
-                <img [src]="item.photo_url" alt="Check-in-Foto" class="photo">
+                <img [src]="getPhotoSrc(item) || ''" alt="Check-in-Foto" class="photo">
               }
             }
           }
@@ -84,7 +84,6 @@ import { FormsModule } from '@angular/forms';
       <div class="toggle-grid">
         <button type="button" class="toggle" [class.active]="checkinGym()" (click)="checkinGym.set(!checkinGym())"><i class="fa-solid fa-dumbbell icon" aria-hidden="true"></i> 🏋️ Gym gemacht</button>
         <button type="button" class="toggle" [class.active]="checkinProtein()" (click)="checkinProtein.set(!checkinProtein())"><i class="fa-solid fa-drumstick-bite icon" aria-hidden="true"></i> 🍗 100g Protein</button>
-        <button type="button" class="toggle" [class.active]="checkinSleep()" (click)="checkinSleep.set(!checkinSleep())"><i class="fa-solid fa-moon icon" aria-hidden="true"></i> 😴 8h Schlaf</button>
       </div>
 
       <label for="checkin-note">Notiz (optional)</label>
@@ -148,7 +147,7 @@ import { FormsModule } from '@angular/forms';
 
     .metric-row {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 8px;
     }
 
@@ -244,11 +243,11 @@ export class CommunityComponent implements OnInit {
   readonly successMessage = signal<string | null>(null);
   readonly errorMessage = signal<string | null>(null);
   readonly expandedPhotoId = signal<string | null>(null);
+  readonly photoSrcMap = signal<Record<string, string>>({});
 
   readonly showCheckinSheet = signal(false);
   readonly checkinGym = signal(false);
   readonly checkinProtein = signal(false);
-  readonly checkinSleep = signal(false);
   checkinNote = '';
   private checkinPhoto: File | null = null;
 
@@ -273,9 +272,9 @@ export class CommunityComponent implements OnInit {
 
   readonly myDayState = computed(() => {
     const userId = this.authService.user()?.id;
-    const state: Record<string, { gym: boolean; sleep: boolean; protein: boolean }> = {};
+    const state: Record<string, { gym: boolean; protein: boolean }> = {};
     for (const day of this.weekDays()) {
-      state[day] = { gym: false, sleep: false, protein: false };
+      state[day] = { gym: false, protein: false };
     }
 
     if (!userId) return state;
@@ -283,7 +282,6 @@ export class CommunityComponent implements OnInit {
     for (const activity of this.activities()) {
       if (activity.user_id !== userId || !state[activity.day]) continue;
       state[activity.day].gym = state[activity.day].gym || activity.gym_done;
-      state[activity.day].sleep = state[activity.day].sleep || activity.sleep_done;
       state[activity.day].protein = state[activity.day].protein || activity.protein_done;
     }
 
@@ -297,13 +295,12 @@ export class CommunityComponent implements OnInit {
   });
 
   readonly trainingCount = computed(() => this.countDays('gym'));
-  readonly sleepCount = computed(() => this.countDays('sleep'));
   readonly proteinDaysCount = computed(() => this.countDays('protein'));
 
   readonly cardStatus = computed<'none' | 'yellow' | 'red'>(() => {
-    const reached = [this.trainingCount() >= 3, this.sleepCount() >= 5, this.proteinDaysCount() >= 7].filter(Boolean).length;
-    if (reached === 3) return 'none';
-    if (reached === 2) return 'yellow';
+    const reached = [this.trainingCount() >= 3, this.proteinDaysCount() >= 7].filter(Boolean).length;
+    if (reached === 2) return 'none';
+    if (reached === 1) return 'yellow';
     return 'red';
   });
 
@@ -343,6 +340,7 @@ export class CommunityComponent implements OnInit {
       this.activities.set([]);
       this.summaries.set([]);
       this.memberIds.set([]);
+      this.photoSrcMap.set({});
       return;
     }
 
@@ -369,7 +367,7 @@ export class CommunityComponent implements OnInit {
     ]);
 
     if (membersError || activityError || summaryError) {
-      this.errorMessage.set('Gruppendaten konnten nicht geladen werden.');
+      this.errorMessage.set(formatAppError(membersError || activityError || summaryError, 'Gruppendaten konnten nicht geladen werden'));
       this.loading.set(false);
       return;
     }
@@ -377,6 +375,7 @@ export class CommunityComponent implements OnInit {
     const memberIds = (membersData || []).map(member => String(member.user_id));
     this.memberIds.set(memberIds);
     this.activities.set((activitiesData || []) as GroupActivity[]);
+    await this.resolveActivityPhotoUrls(this.activities());
     this.summaries.set((summariesData || []) as DailySummary[]);
 
     if (memberIds.length > 0) {
@@ -403,7 +402,7 @@ export class CommunityComponent implements OnInit {
       return;
     }
 
-    if (!this.checkinGym() && !this.checkinProtein() && !this.checkinSleep() && !this.checkinNote.trim() && !this.checkinPhoto) {
+    if (!this.checkinGym() && !this.checkinProtein() && !this.checkinNote.trim() && !this.checkinPhoto) {
       this.errorMessage.set('Wähle mindestens ein Ritual aus.');
       return;
     }
@@ -434,7 +433,7 @@ export class CommunityComponent implements OnInit {
             day,
             gym_done: this.checkinGym() || Boolean(existing?.gym_done),
             protein_done: this.checkinProtein() || Boolean(existing?.protein_done),
-            sleep_done: this.checkinSleep() || Boolean(existing?.sleep_done),
+            sleep_done: Boolean(existing?.sleep_done),
             confirm_done: Boolean(existing?.confirm_done),
             note: this.checkinNote.trim() || existing?.note || null,
             photo_url: photoUrl
@@ -460,8 +459,8 @@ export class CommunityComponent implements OnInit {
       this.successMessage.set('Check-in gepostet.');
       this.closeCheckinSheet();
       await this.loadCommunityData();
-    } catch {
-      this.errorMessage.set('Check-in konnte nicht gepostet werden.');
+    } catch (error: unknown) {
+      this.errorMessage.set(formatAppError(error, 'Check-in konnte nicht gepostet werden'));
     } finally {
       this.savingCheckin.set(false);
     }
@@ -471,7 +470,6 @@ export class CommunityComponent implements OnInit {
     this.showCheckinSheet.set(false);
     this.checkinGym.set(false);
     this.checkinProtein.set(false);
-    this.checkinSleep.set(false);
     this.checkinNote = '';
     this.checkinPhoto = null;
   }
@@ -495,7 +493,6 @@ export class CommunityComponent implements OnInit {
     const badges: string[] = [];
     if (item.gym_done) badges.push('Gym');
     if (item.protein_done) badges.push('Protein');
-    if (item.sleep_done) badges.push('Schlaf');
     return badges.join(' · ') || 'Aktualisierung';
   }
 
@@ -503,11 +500,15 @@ export class CommunityComponent implements OnInit {
     this.expandedPhotoId.set(this.expandedPhotoId() === activityId ? null : activityId);
   }
 
+  getPhotoSrc(item: GroupActivity): string | null {
+    return this.photoSrcMap()[item.id] || null;
+  }
+
   goToGroupSetup(): void {
     void this.router.navigate(['/group']);
   }
 
-  private countDays(type: 'gym' | 'sleep' | 'protein'): number {
+  private countDays(type: 'gym' | 'protein'): number {
     const state = this.myDayState();
     return this.weekDays().filter(day => state[day]?.[type]).length;
   }
@@ -536,7 +537,81 @@ export class CommunityComponent implements OnInit {
       throw uploadError;
     }
 
-    const { data } = this.supabaseService.client.storage.from(bucketName).getPublicUrl(filePath);
-    return data.publicUrl;
+    return filePath;
+  }
+
+  private async resolveActivityPhotoUrls(activities: GroupActivity[]): Promise<void> {
+    const resolvedEntries = await Promise.all(
+      activities.map(async activity => {
+        const resolvedUrl = await this.resolvePhotoUrl(activity.photo_url, 'gym-checkins');
+        return [activity.id, resolvedUrl] as const;
+      })
+    );
+
+    const map: Record<string, string> = {};
+    for (const [id, url] of resolvedEntries) {
+      if (url) {
+        map[id] = url;
+      }
+    }
+
+    this.photoSrcMap.set(map);
+  }
+
+  private async resolvePhotoUrl(photoUrlOrPath: string | null, bucketName: string): Promise<string | null> {
+    if (!photoUrlOrPath) {
+      return null;
+    }
+
+    if (/^https?:\/\//i.test(photoUrlOrPath)) {
+      if (photoUrlOrPath.includes(`/storage/v1/object/public/${bucketName}/`)) {
+        return photoUrlOrPath;
+      }
+
+      const extractedPath = this.extractStoragePath(photoUrlOrPath, bucketName);
+      if (!extractedPath) {
+        return photoUrlOrPath;
+      }
+
+      const { data, error } = await this.supabaseService.client.storage
+        .from(bucketName)
+        .createSignedUrl(extractedPath, 60 * 60);
+
+      if (error || !data?.signedUrl) {
+        return photoUrlOrPath;
+      }
+
+      return data.signedUrl;
+    }
+
+    const { data, error } = await this.supabaseService.client.storage
+      .from(bucketName)
+      .createSignedUrl(photoUrlOrPath, 60 * 60);
+
+    if (!error && data?.signedUrl) {
+      return data.signedUrl;
+    }
+
+    const { data: publicData } = this.supabaseService.client.storage.from(bucketName).getPublicUrl(photoUrlOrPath);
+    return publicData.publicUrl || null;
+  }
+
+  private extractStoragePath(url: string, bucketName: string): string | null {
+    const markers = [
+      `/storage/v1/object/sign/${bucketName}/`,
+      `/storage/v1/object/authenticated/${bucketName}/`,
+      `/storage/v1/object/public/${bucketName}/`
+    ];
+
+    for (const marker of markers) {
+      const markerIndex = url.indexOf(marker);
+      if (markerIndex === -1) {
+        continue;
+      }
+      const path = url.slice(markerIndex + marker.length).split('?')[0];
+      return path || null;
+    }
+
+    return null;
   }
 }

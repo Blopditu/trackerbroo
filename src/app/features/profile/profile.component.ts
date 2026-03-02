@@ -6,6 +6,7 @@ import { AuthService } from '../../core/auth.service';
 import { SupabaseService } from '../../core/supabase.service';
 import { ActiveGroupService } from '../../core/active-group.service';
 import { Profile, WeightLog } from '../../core/types';
+import { formatAppError } from '../../core/error-format';
 
 @Component({
   selector: 'app-profile',
@@ -430,7 +431,7 @@ export class ProfileComponent implements OnInit {
       .maybeSingle();
 
     if (error) {
-      this.errorMessage.set(error.message);
+      this.errorMessage.set(formatAppError(error, 'Profil konnte nicht geladen werden'));
       return;
     }
 
@@ -470,7 +471,7 @@ export class ProfileComponent implements OnInit {
         });
 
       if (insertError) {
-        this.errorMessage.set(insertError.message);
+        this.errorMessage.set(formatAppError(insertError, 'Profil konnte nicht initialisiert werden'));
       }
     }
 
@@ -503,7 +504,7 @@ export class ProfileComponent implements OnInit {
       .limit(30);
 
     if (error) {
-      this.errorMessage.set(error.message);
+      this.errorMessage.set(formatAppError(error, 'Gewichtseinträge konnten nicht geladen werden'));
       return;
     }
 
@@ -594,8 +595,7 @@ export class ProfileComponent implements OnInit {
       this.successMessage.set('Profil gespeichert.');
       await this.loadAll();
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Profil konnte nicht gespeichert werden.';
-      this.errorMessage.set(errorMessage);
+      this.errorMessage.set(formatAppError(error, 'Profil konnte nicht gespeichert werden'));
     } finally {
       this.savingProfile.set(false);
     }
@@ -651,8 +651,7 @@ export class ProfileComponent implements OnInit {
       this.successMessage.set('Gewichtseintrag gespeichert.');
       await this.loadAll();
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Gewichtseintrag konnte nicht gespeichert werden.';
-      this.errorMessage.set(errorMessage);
+      this.errorMessage.set(formatAppError(error, 'Gewichtseintrag konnte nicht gespeichert werden'));
     } finally {
       this.savingWeight.set(false);
     }
@@ -716,8 +715,7 @@ export class ProfileComponent implements OnInit {
 
       await this.router.navigate(['/onboarding']);
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Onboarding konnte nicht zurückgesetzt werden.';
-      this.errorMessage.set(errorMessage);
+      this.errorMessage.set(formatAppError(error, 'Onboarding konnte nicht zurückgesetzt werden'));
     } finally {
       this.savingProfile.set(false);
     }

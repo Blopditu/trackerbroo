@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { SupabaseService } from '../../core/supabase.service';
 import { AuthService } from '../../core/auth.service';
 import { Ingredient, Meal } from '../../core/types';
+import { formatAppError } from '../../core/error-format';
 
 @Component({
   selector: 'app-library',
@@ -395,7 +396,7 @@ export class LibraryComponent implements OnInit {
       .eq('owner_id', user.id);
 
     if (ingredientError) {
-      this.errorMessage.set(ingredientError.message);
+      this.errorMessage.set(formatAppError(ingredientError, 'Zutaten konnten nicht geladen werden'));
       this.loading.set(false);
       return;
     }
@@ -408,7 +409,7 @@ export class LibraryComponent implements OnInit {
       .eq('owner_id', user.id);
 
     if (mealsError) {
-      this.errorMessage.set(mealsError.message);
+      this.errorMessage.set(formatAppError(mealsError, 'Mahlzeiten konnten nicht geladen werden'));
       this.loading.set(false);
       return;
     }

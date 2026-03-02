@@ -6,6 +6,7 @@ import { SupabaseService } from '../../core/supabase.service';
 import { AuthService } from '../../core/auth.service';
 import { ActiveGroupService } from '../../core/active-group.service';
 import { Group } from '../../core/types';
+import { formatAppError } from '../../core/error-format';
 
 @Component({
   selector: 'app-group',
@@ -157,7 +158,7 @@ export class GroupComponent implements OnInit {
       .eq('user_id', user.id);
 
     if (error) {
-      this.errorMessage.set(error.message);
+      this.errorMessage.set(formatAppError(error, 'Gruppen konnten nicht geladen werden'));
       this.loadingGroups.set(false);
       return;
     }
@@ -198,7 +199,7 @@ export class GroupComponent implements OnInit {
 
       this.selectGroup(data);
     } catch (error) {
-      this.errorMessage.set(error instanceof Error ? error.message : 'Gruppe konnte nicht erstellt werden.');
+      this.errorMessage.set(formatAppError(error, 'Gruppe konnte nicht erstellt werden'));
     } finally {
       this.loading = false;
     }
@@ -234,7 +235,7 @@ export class GroupComponent implements OnInit {
 
       await this.router.navigate(['/today']);
     } catch (error) {
-      this.errorMessage.set(error instanceof Error ? error.message : 'Gruppe konnte nicht beigetreten werden.');
+      this.errorMessage.set(formatAppError(error, 'Gruppe konnte nicht beigetreten werden'));
     } finally {
       this.loading = false;
     }

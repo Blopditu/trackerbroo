@@ -269,6 +269,9 @@ textarea {
   font-size: var(--text-sm);
   font-weight: 700;
   box-shadow: var(--shadow-soft);
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.35;
 }
 
 .toast.error {

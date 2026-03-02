@@ -4,6 +4,7 @@ import { SupabaseService } from '../../core/supabase.service';
 import { AuthService } from '../../core/auth.service';
 import { ActiveGroupService } from '../../core/active-group.service';
 import { DailySummary } from '../../core/types';
+import { formatAppError } from '../../core/error-format';
 
 @Component({
   selector: 'app-dashboard',
@@ -240,7 +241,7 @@ export class DashboardComponent implements OnInit {
     const { data: todayData, error: todayError } = await todayQuery;
 
     if (todayError) {
-      this.errorMessage.set(todayError.message);
+      this.errorMessage.set(formatAppError(todayError, 'Heute-Zusammenfassungen konnten nicht geladen werden'));
       this.loading.set(false);
       return;
     }
@@ -260,7 +261,7 @@ export class DashboardComponent implements OnInit {
     const { data: weekData, error: weekError } = await weekQuery;
 
     if (weekError) {
-      this.errorMessage.set(weekError.message);
+      this.errorMessage.set(formatAppError(weekError, 'Wochen-Zusammenfassungen konnten nicht geladen werden'));
       this.loading.set(false);
       return;
     }

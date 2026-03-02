@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
+import { formatAppError } from '../../core/error-format';
 
 @Component({
   selector: 'app-login',
@@ -127,7 +128,7 @@ export class LoginComponent implements OnInit {
       this.message = 'Prüfe deine E-Mails für den Anmeldelink.';
     } catch (error: unknown) {
       this.isError = true;
-      this.message = error instanceof Error ? error.message : 'Anmeldung fehlgeschlagen.';
+      this.message = formatAppError(error, 'Anmeldung fehlgeschlagen');
     } finally {
       this.loading = false;
     }
@@ -140,7 +141,7 @@ export class LoginComponent implements OnInit {
       await this.authService.signInWithGoogle();
     } catch (error: unknown) {
       this.isError = true;
-      this.message = error instanceof Error ? error.message : 'Google-Anmeldung fehlgeschlagen.';
+      this.message = formatAppError(error, 'Google-Anmeldung fehlgeschlagen');
     }
   }
 }

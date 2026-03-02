@@ -26,7 +26,6 @@ export interface PactCheckinPayload {
 
         <div class="toggles" role="group" aria-label="Rituale">
           <button type="button" class="toggle" [class.active]="gymDone" (click)="gymDone = !gymDone">Gym gemacht</button>
-          <button type="button" class="toggle" [class.active]="sleepDone" (click)="sleepDone = !sleepDone">8h Schlaf</button>
           <button type="button" class="toggle" [class.active]="proteinDone" (click)="proteinDone = !proteinDone">100g Protein</button>
           <button type="button" class="toggle" [class.active]="confirmDone" (click)="confirmDone = !confirmDone">Morgen-Abend Meldung</button>
         </div>
@@ -108,7 +107,6 @@ export class CheckinSheetComponent {
 
   day = '';
   gymDone = false;
-  sleepDone = false;
   proteinDone = false;
   confirmDone = false;
   note = '';
@@ -129,7 +127,7 @@ export class CheckinSheetComponent {
     this.submitted.emit({
       day: this.day,
       gym_done: this.gymDone,
-      sleep_done: this.sleepDone,
+      sleep_done: false,
       protein_done: this.proteinDone,
       confirm_done: this.confirmDone,
       note: this.note.trim(),

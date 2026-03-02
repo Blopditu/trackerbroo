@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
 import { SupabaseService } from '../../core/supabase.service';
 import { Profile } from '../../core/types';
+import { formatAppError } from '../../core/error-format';
 
 @Component({
   selector: 'app-onboarding',
@@ -216,7 +217,7 @@ export class OnboardingComponent implements OnInit {
       .maybeSingle();
 
     if (error) {
-      this.errorMessage.set(error.message);
+      this.errorMessage.set(formatAppError(error, 'Onboarding-Profil konnte nicht geladen werden'));
       this.loading.set(false);
       return;
     }
@@ -288,7 +289,7 @@ export class OnboardingComponent implements OnInit {
 
       await this.router.navigate(['/today']);
     } catch (error: unknown) {
-      this.errorMessage.set(error instanceof Error ? error.message : 'Onboarding konnte nicht gespeichert werden.');
+      this.errorMessage.set(formatAppError(error, 'Onboarding konnte nicht gespeichert werden'));
     } finally {
       this.saving.set(false);
     }
