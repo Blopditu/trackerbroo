@@ -1,21 +1,32 @@
-import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
+import {
+  AfterViewInit,
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  OnDestroy,
+  OnInit,
+  ViewChild,
+  computed,
+  inject,
+  signal
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/auth.service';
 import { SupabaseService } from '../../core/supabase.service';
-import { ActiveGroupService } from '../../core/active-group.service';
-import { DailySummary, GroupActivity, GymCheckin, Profile } from '../../core/types';
-import { HabitGridComponent, HabitState } from '../../ui/minimal/habit-grid.component';
-import { ListRowComponent } from '../../ui/minimal/list-row.component';
-import { BottomSheetComponent } from '../../ui/minimal/bottom-sheet.component';
-import { MinimalMetricComponent } from '../../ui/minimal/minimal-metric.component';
-import { FormsModule } from '@angular/forms';
+import { CommunityComment, CommunityPost, LogEntry, Profile } from '../../core/types';
 import { formatAppError } from '../../core/error-format';
+import { BottomSheetComponent } from '../../ui/minimal/bottom-sheet.component';
+
+interface DayGroup {
+  day: string;
+  posts: CommunityPost[];
+}
 
 @Component({
   selector: 'app-community',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, HabitGridComponent, ListRowComponent, BottomSheetComponent, MinimalMetricComponent],
+  imports: [CommonModule, FormsModule, BottomSheetComponent],
   template: `
     <main class="page community-page">
       @if (errorMessage()) {
@@ -27,72 +38,112 @@ import { formatAppError } from '../../core/error-format';
       }
 
       <section class="hero">
-        <p class="period"><i class="fa-regular fa-calendar icon" aria-hidden="true"></i> Periode bis {{ periodEndLabel() }}</p>
-        <h1>Gruppen-Pakt</h1>
-        <p class="motto">{{ groupMotto() }}</p>
+        <p class="period">Community</p>
+        <h1>Aktivitätsfeed</h1>
+        <p class="motto">Gym-Check-ins und 100g-Protein-Milestones für alle.</p>
       </section>
 
-      @if (!hasGroup()) {
-        <section class="section">
-          <p class="muted">Keine aktive Gruppe. Tritt einer Gruppe bei oder erstelle eine.</p>
-          <button type="button" class="btn" (click)="goToGroupSetup()"><i class="fa-solid fa-people-group icon" aria-hidden="true"></i> 🤝 Gruppe beitreten/erstellen</button>
-        </section>
-      } @else {
-        <section class="section">
-          <h2><i class="fa-solid fa-shield-heart icon" aria-hidden="true"></i> Mein Status</h2>
-          <div class="metric-row">
-            <app-minimal-metric label="Training" [value]="trainingCount() + '/3'" />
-            <app-minimal-metric label="Protein" [value]="proteinDaysCount() + '/7'" />
-          </div>
-          <p class="card" [class.yellow]="cardStatus() === 'yellow'" [class.red]="cardStatus() === 'red'">Kartenstatus: {{ cardLabel() }}</p>
-        </section>
+      <section class="section">
+        <h2>Feed</h2>
 
-        <section class="section">
-          <h2><i class="fa-solid fa-chart-simple icon" aria-hidden="true"></i> Gruppenkonstanz</h2>
-          <app-habit-grid label="Konstanz" [states]="groupConsistencyStates()" [targetPerWeek]="7" />
-        </section>
+        @if (loadingInitial()) {
+          <p class="muted">Lädt...</p>
+        } @else {
+          @for (group of groupedPosts(); track group.day) {
+            <div class="day-divider">{{ dayLabel(group.day) }}</div>
 
-        <section class="section">
-          <h2><i class="fa-solid fa-stream icon" aria-hidden="true"></i> Aktivitätsfeed</h2>
-          @for (item of streamItems(); track item.id) {
-            <app-list-row [title]="displayName(item.user_id)" [subtitle]="streamBadges(item) + (item.note ? ' · ' + item.note : '')" [meta]="item.day" />
-            @if (getPhotoSrc(item)) {
-              <button type="button" class="photo-toggle" (click)="togglePhoto(item.id)">
-                {{ expandedPhotoId() === item.id ? 'Foto ausblenden' : 'Foto anzeigen' }}
-              </button>
-              @if (expandedPhotoId() === item.id) {
-                <img [src]="getPhotoSrc(item) || ''" alt="Check-in-Foto" class="photo">
-              }
+            @for (post of group.posts; track post.id) {
+              <article class="post-card">
+                <div class="post-head">
+                  <strong>{{ displayName(post.user_id) }}</strong>
+                  <div class="post-actions">
+                    <span class="post-meta">{{ post.day }}</span>
+                    @if (isOwnPost(post)) {
+                      <button type="button" class="btn-inline danger" (click)="deletePost(post.id)">Löschen</button>
+                    }
+                  </div>
+                </div>
+
+                <p class="post-type">{{ postTypeLabel(post) }}</p>
+
+                @if (post.note) {
+                  <p class="post-note">{{ post.note }}</p>
+                }
+
+                @if (post.post_type === 'protein_milestone') {
+                  <p class="post-summary">{{ proteinSummary(post) }}</p>
+                }
+
+                @if (foodSummary(post).length > 0) {
+                  <p class="post-foods">{{ foodSummary(post) }}</p>
+                }
+
+                @if (getPhotoSrc(post)) {
+                  <img
+                    [src]="getPhotoSrc(post) || ''"
+                    alt="Post-Foto"
+                    class="photo"
+                    loading="lazy"
+                    decoding="async"
+                  >
+                }
+
+                <div class="comment-list">
+                  @for (comment of commentsByPost()[post.id] || []; track comment.id) {
+                    <p class="comment-item">
+                      <strong>{{ displayName(comment.user_id) }}:</strong>
+                      <span>{{ comment.comment_text }}</span>
+                    </p>
+                  }
+                </div>
+
+                <div class="compose-row">
+                  <input
+                    type="text"
+                    [ngModel]="commentInputs()[post.id] || ''"
+                    (ngModelChange)="setCommentInput(post.id, $event)"
+                    placeholder="Kommentar"
+                    [attr.aria-label]="'Kommentar für Post von ' + displayName(post.user_id)"
+                  >
+                  <button type="button" class="btn-inline" (click)="submitComment(post.id)">Senden</button>
+                </div>
+              </article>
             }
           }
-          @if (streamItems().length === 0) {
-            <p class="muted">Noch keine Aktivität.</p>
+
+          @if (posts().length === 0) {
+            <p class="muted">Noch keine Posts.</p>
           }
-        </section>
 
-        <section class="section">
-          <h2><i class="fa-solid fa-triangle-exclamation icon" aria-hidden="true"></i> Gelb/Rot-Regeln</h2>
-          <p class="muted">{{ yellowCardRule() }}</p>
-          <p class="danger">{{ redCardConsequence() }}</p>
-        </section>
+          <div #loadMoreAnchor class="load-anchor" aria-hidden="true"></div>
 
-        <button class="group-fab" type="button" (click)="showCheckinSheet.set(true)" aria-label="Ritual-Check-in"><i class="fa-solid fa-plus" aria-hidden="true"></i></button>
-      }
+          @if (loadingMore()) {
+            <p class="muted">Weitere Posts werden geladen...</p>
+          }
+
+          @if (hasMore()) {
+            <button type="button" class="btn load-more" (click)="loadMore()" [disabled]="loadingMore()">
+              Mehr laden
+            </button>
+          } @else if (posts().length > 0) {
+            <p class="muted">Ende des Feeds.</p>
+          }
+        }
+      </section>
+
+      <button class="community-fab" type="button" (click)="openGymSheet()" aria-label="Gym-Post erstellen">+</button>
     </main>
 
-    <app-bottom-sheet [open]="showCheckinSheet()" title="Ritual-Check-in" (closed)="closeCheckinSheet()">
-      <div class="toggle-grid">
-        <button type="button" class="toggle" [class.active]="checkinGym()" (click)="checkinGym.set(!checkinGym())"><i class="fa-solid fa-dumbbell icon" aria-hidden="true"></i> 🏋️ Gym gemacht</button>
-        <button type="button" class="toggle" [class.active]="checkinProtein()" (click)="checkinProtein.set(!checkinProtein())"><i class="fa-solid fa-drumstick-bite icon" aria-hidden="true"></i> 🍗 100g Protein</button>
-      </div>
+    <app-bottom-sheet [open]="showGymSheet()" title="Gym posten" (closed)="closeGymSheet()">
+      <label for="gym-note">Notiz (optional)</label>
+      <textarea id="gym-note" rows="2" [(ngModel)]="gymNote" placeholder="Was lief heute gut?"></textarea>
 
-      <label for="checkin-note">Notiz (optional)</label>
-      <textarea id="checkin-note" rows="2" [(ngModel)]="checkinNote" placeholder="Optionaler Kontext"></textarea>
+      <label for="gym-photo">Foto (optional)</label>
+      <input id="gym-photo" type="file" accept="image/*" (change)="onGymPhotoSelected($event)">
 
-      <label for="checkin-photo">Foto (optional)</label>
-      <input id="checkin-photo" type="file" accept="image/*" (change)="onCheckinPhotoSelected($event)">
-
-      <button type="button" class="btn" [disabled]="savingCheckin()" (click)="submitCheckin()"><i class="fa-solid fa-paper-plane icon" aria-hidden="true"></i> {{ savingCheckin() ? 'Wird gespeichert...' : 'Check-in posten' }}</button>
+      <button type="button" class="btn" [disabled]="savingPost()" (click)="submitGymPost()">
+        {{ savingPost() ? 'Wird gepostet...' : 'Gym-Check-in posten' }}
+      </button>
     </app-bottom-sheet>
   `,
   styles: [`
@@ -104,7 +155,8 @@ import { formatAppError } from '../../core/error-format';
     }
 
     .hero,
-    .section {
+    .section,
+    .post-card {
       display: grid;
       gap: 12px;
       background: #151922;
@@ -112,93 +164,106 @@ import { formatAppError } from '../../core/error-format';
       padding: 16px;
     }
 
-    .period {
-      margin: 0;
-      font-size: 11px;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: #A4A9B6;
-      font-weight: 700;
-    }
-
-    .icon {
-      margin-right: 8px;
-    }
-
-    h1 {
+    .hero h1,
+    .section h2 {
       margin: 0;
       font-size: 20px;
       font-weight: 600;
     }
 
-    h2 {
-      margin: 0;
-      font-size: 20px;
-      font-weight: 600;
-    }
-
+    .period,
     .motto,
-    .muted {
+    .muted,
+    .post-meta,
+    .post-type,
+    .post-summary,
+    .post-foods {
       margin: 0;
-      font-size: 13px;
       color: #A4A9B6;
+      font-size: 13px;
       font-weight: 600;
     }
 
-    .metric-row {
+    .day-divider {
+      margin-top: 8px;
+      padding: 6px 10px;
+      border: 1px solid #1B202B;
+      background: #0F1115;
+      font-size: 12px;
+      font-weight: 700;
+      color: #A4A9B6;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .post-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .post-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .post-note,
+    .comment-item {
+      margin: 0;
+      color: #E6E8EC;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .comment-list {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 8px;
     }
 
-    .card {
-      margin: 0;
-      font-size: 13px;
-      color: #A4A9B6;
-      font-weight: 600;
+    .compose-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: center;
     }
 
-    .card.yellow { color: #F4B740; }
-    .card.red { color: #E35D5D; }
-
-    .danger {
-      margin: 0;
-      color: #E35D5D;
-      font-size: 13px;
-      font-weight: 600;
-    }
-
-    .photo-toggle,
     .btn,
-    .toggle {
+    .btn-inline {
       min-height: 44px;
       border: 1px solid #1B202B;
       background: #0F1115;
       color: #E6E8EC;
       padding: 0 12px;
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 600;
       text-align: left;
     }
 
-    .toggle-grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 8px;
-      margin-bottom: 12px;
+    .btn-inline {
+      min-width: 78px;
+      text-align: center;
     }
 
-    .toggle.active {
-      border-color: #3DBB78;
-      color: #3DBB78;
+    .danger {
+      border-color: #7f2a37;
+      color: #f3bdc7;
+      background: #2a151c;
     }
 
-    .photo {
+    .load-more {
       width: 100%;
-      border: 1px solid #1B202B;
+      text-align: center;
+      margin-top: 8px;
     }
 
-    .group-fab {
+    .load-anchor {
+      width: 100%;
+      height: 1px;
+    }
+
+    .community-fab {
       position: fixed;
       left: 50%;
       transform: translateX(-50%);
@@ -208,15 +273,9 @@ import { formatAppError } from '../../core/error-format';
       border: 1px solid #1B202B;
       background: #5B8CFF;
       color: #0F1115;
-      font-size: 24px;
+      font-size: 28px;
       font-weight: 700;
       z-index: 30;
-    }
-
-    label {
-      font-size: 13px;
-      color: #A4A9B6;
-      font-weight: 600;
     }
 
     input,
@@ -227,302 +286,457 @@ import { formatAppError } from '../../core/error-format';
       color: #E6E8EC;
       padding: 12px;
       font-size: 16px;
-      margin-bottom: 8px;
     }
 
-    textarea { min-height: 88px; }
+    .photo {
+      width: 100%;
+      border: 1px solid #1B202B;
+      background: #0F1115;
+      min-height: 120px;
+      object-fit: cover;
+    }
   `]
 })
-export class CommunityComponent implements OnInit {
-  readonly activities = signal<GroupActivity[]>([]);
-  readonly summaries = signal<DailySummary[]>([]);
-  readonly memberIds = signal<string[]>([]);
-  readonly profiles = signal<Record<string, Profile>>({});
-  readonly loading = signal(false);
-  readonly savingCheckin = signal(false);
-  readonly successMessage = signal<string | null>(null);
-  readonly errorMessage = signal<string | null>(null);
-  readonly expandedPhotoId = signal<string | null>(null);
-  readonly photoSrcMap = signal<Record<string, string>>({});
+export class CommunityComponent implements OnInit, AfterViewInit, OnDestroy {
+  private readonly pageSize = 15;
 
-  readonly showCheckinSheet = signal(false);
-  readonly checkinGym = signal(false);
-  readonly checkinProtein = signal(false);
-  checkinNote = '';
-  private checkinPhoto: File | null = null;
+  readonly posts = signal<CommunityPost[]>([]);
+  readonly commentsByPost = signal<Record<string, CommunityComment[]>>({});
+  readonly profiles = signal<Record<string, Profile>>({});
+  readonly photoSrcMap = signal<Record<string, string>>({});
+  readonly commentInputs = signal<Record<string, string>>({});
+
+  readonly loadingInitial = signal(false);
+  readonly loadingMore = signal(false);
+  readonly hasMore = signal(true);
+  readonly nextOffset = signal(0);
+
+  readonly savingPost = signal(false);
+  readonly errorMessage = signal<string | null>(null);
+  readonly successMessage = signal<string | null>(null);
+  readonly showGymSheet = signal(false);
+
+  readonly groupedPosts = computed<DayGroup[]>(() => {
+    const groups = new Map<string, CommunityPost[]>();
+    for (const post of this.posts()) {
+      if (!groups.has(post.day)) {
+        groups.set(post.day, []);
+      }
+      groups.get(post.day)?.push(post);
+    }
+
+    return Array.from(groups.entries())
+      .sort((a, b) => new Date(b[0]).getTime() - new Date(a[0]).getTime())
+      .map(([day, dayPosts]) => ({ day, posts: dayPosts }));
+  });
+
+  gymNote = '';
+  private gymPhoto: File | null = null;
 
   private readonly authService = inject(AuthService);
   private readonly supabaseService = inject(SupabaseService);
-  private readonly activeGroupService = inject(ActiveGroupService);
-  private readonly router = inject(Router);
 
-  readonly hasGroup = computed(() => this.activeGroupService.activeGroupId() !== null);
-  readonly today = signal(this.formatDate(new Date()));
+  @ViewChild('loadMoreAnchor') loadMoreAnchor?: ElementRef<HTMLElement>;
+  private loadObserver: IntersectionObserver | null = null;
 
-  readonly weekDays = computed(() => {
-    const monday = this.getWeekStartDate(new Date(`${this.today()}T00:00:00`));
-    const days: string[] = [];
-    for (let index = 0; index < 7; index += 1) {
-      const date = new Date(monday);
-      date.setDate(monday.getDate() + index);
-      days.push(this.formatDate(date));
-    }
-    return days;
-  });
-
-  readonly myDayState = computed(() => {
-    const userId = this.authService.user()?.id;
-    const state: Record<string, { gym: boolean; protein: boolean }> = {};
-    for (const day of this.weekDays()) {
-      state[day] = { gym: false, protein: false };
-    }
-
-    if (!userId) return state;
-
-    for (const activity of this.activities()) {
-      if (activity.user_id !== userId || !state[activity.day]) continue;
-      state[activity.day].gym = state[activity.day].gym || activity.gym_done;
-      state[activity.day].protein = state[activity.day].protein || activity.protein_done;
-    }
-
-    for (const summary of this.summaries()) {
-      if (summary.owner_id === userId && state[summary.day] && Number(summary.protein) >= 100) {
-        state[summary.day].protein = true;
-      }
-    }
-
-    return state;
-  });
-
-  readonly trainingCount = computed(() => this.countDays('gym'));
-  readonly proteinDaysCount = computed(() => this.countDays('protein'));
-
-  readonly cardStatus = computed<'none' | 'yellow' | 'red'>(() => {
-    const reached = [this.trainingCount() >= 3, this.proteinDaysCount() >= 7].filter(Boolean).length;
-    if (reached === 2) return 'none';
-    if (reached === 1) return 'yellow';
-    return 'red';
-  });
-
-  readonly groupConsistencyStates = computed<HabitState[]>(() => {
-    const days = this.weekDays();
-    const memberCount = Math.max(this.memberIds().length, 1);
-
-    return days.map(day => {
-      const activities = this.activities().filter(item => item.day === day);
-      if (activities.length === 0) return 'empty';
-
-      const activeUsers = new Set(activities.map(item => item.user_id)).size;
-      const ratio = activeUsers / memberCount;
-      return ratio >= 0.6 ? 'complete' : 'missed';
-    });
-  });
-
-  readonly streamItems = computed(() =>
-    [...this.activities()].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 30)
-  );
-
-  readonly groupMotto = computed(() => this.activeGroupService.activeGroup()?.motto || 'Konstanz vor Ego.');
-  readonly periodEndLabel = computed(() => this.activeGroupService.activeGroup()?.period_end || '31.08.25');
-  readonly yellowCardRule = computed(() => this.activeGroupService.activeGroup()?.yellow_card_rules || 'Wöchentliche Ziele verfehlt = gelbe Karte.');
-  readonly redCardConsequence = computed(() => this.activeGroupService.activeGroup()?.red_card_consequence || 'Wiederholtes Verfehlen führt zur roten Karte.');
+  readonly today = computed(() => this.formatDate(new Date()));
 
   ngOnInit(): void {
-    void this.loadCommunityData();
+    void this.loadInitial();
   }
 
-  async loadCommunityData(): Promise<void> {
-    this.errorMessage.set(null);
-    const user = this.authService.user();
-    const groupId = this.activeGroupService.activeGroupId();
-
-    if (!user || !groupId) {
-      this.activities.set([]);
-      this.summaries.set([]);
-      this.memberIds.set([]);
-      this.photoSrcMap.set({});
-      return;
-    }
-
-    this.loading.set(true);
-    const weekStart = this.weekDays()[0];
-    const weekEnd = this.weekDays()[6];
-
-    const [{ data: membersData, error: membersError }, { data: activitiesData, error: activityError }, { data: summariesData, error: summaryError }] = await Promise.all([
-      this.supabaseService.client.from('group_members').select('user_id').eq('group_id', groupId),
-      this.supabaseService.client
-        .from('group_activities')
-        .select('*')
-        .eq('group_id', groupId)
-        .gte('day', weekStart)
-        .lte('day', weekEnd)
-        .order('created_at', { ascending: false })
-        .limit(240),
-      this.supabaseService.client
-        .from('daily_summaries')
-        .select('*')
-        .eq('group_id', groupId)
-        .gte('day', weekStart)
-        .lte('day', weekEnd)
-    ]);
-
-    if (membersError || activityError || summaryError) {
-      this.errorMessage.set(formatAppError(membersError || activityError || summaryError, 'Gruppendaten konnten nicht geladen werden'));
-      this.loading.set(false);
-      return;
-    }
-
-    const memberIds = (membersData || []).map(member => String(member.user_id));
-    this.memberIds.set(memberIds);
-    this.activities.set((activitiesData || []) as GroupActivity[]);
-    await this.resolveActivityPhotoUrls(this.activities());
-    this.summaries.set((summariesData || []) as DailySummary[]);
-
-    if (memberIds.length > 0) {
-      const { data: profilesData } = await this.supabaseService.client.from('profiles').select('*').in('user_id', memberIds);
-      const profileMap: Record<string, Profile> = {};
-      for (const profile of profilesData || []) {
-        const cast = profile as Profile;
-        profileMap[cast.user_id] = cast;
-      }
-      this.profiles.set(profileMap);
-    }
-
-    this.loading.set(false);
+  ngAfterViewInit(): void {
+    this.setupInfiniteObserver();
   }
 
-  async submitCheckin(): Promise<void> {
-    this.successMessage.set(null);
+  ngOnDestroy(): void {
+    this.loadObserver?.disconnect();
+  }
+
+  async loadInitial(): Promise<void> {
     this.errorMessage.set(null);
 
     const user = this.authService.user();
-    const groupId = this.activeGroupService.activeGroupId();
-    if (!user || !groupId) {
-      this.errorMessage.set('Du brauchst eine aktive Gruppe.');
+    if (!user) {
       return;
     }
 
-    if (!this.checkinGym() && !this.checkinProtein() && !this.checkinNote.trim() && !this.checkinPhoto) {
-      this.errorMessage.set('Wähle mindestens ein Ritual aus.');
-      return;
-    }
-
-    this.savingCheckin.set(true);
+    this.loadingInitial.set(true);
+    this.posts.set([]);
+    this.commentsByPost.set({});
+    this.profiles.set({});
+    this.photoSrcMap.set({});
+    this.nextOffset.set(0);
+    this.hasMore.set(true);
 
     try {
-      const day = this.today();
-      const { data: existing } = await this.supabaseService.client
-        .from('group_activities')
-        .select('*')
-        .eq('group_id', groupId)
-        .eq('user_id', user.id)
-        .eq('day', day)
-        .maybeSingle();
+      await this.ensureProteinMilestonePost(user.id, this.today());
+      await this.fetchNextPage();
+    } catch (error: unknown) {
+      this.errorMessage.set(formatAppError(error, 'Community-Daten konnten nicht geladen werden'));
+    } finally {
+      this.loadingInitial.set(false);
+    }
+  }
 
-      let photoUrl: string | null = existing?.photo_url || null;
-      if (this.checkinPhoto) {
-        photoUrl = await this.uploadImage(this.checkinPhoto, 'gym-checkins', user.id);
+  async loadMore(): Promise<void> {
+    if (!this.hasMore() || this.loadingInitial() || this.loadingMore()) {
+      return;
+    }
+
+    this.loadingMore.set(true);
+    try {
+      await this.fetchNextPage();
+    } catch (error: unknown) {
+      this.errorMessage.set(formatAppError(error, 'Weitere Posts konnten nicht geladen werden'));
+    } finally {
+      this.loadingMore.set(false);
+    }
+  }
+
+  async submitGymPost(): Promise<void> {
+    this.errorMessage.set(null);
+    this.successMessage.set(null);
+
+    const user = this.authService.user();
+    if (!user) {
+      return;
+    }
+
+    this.savingPost.set(true);
+
+    try {
+      let photoUrl: string | null = null;
+      if (this.gymPhoto) {
+        photoUrl = await this.uploadImage(this.gymPhoto, 'gym-checkins', user.id);
       }
 
       const { error } = await this.supabaseService.client
-        .from('group_activities')
+        .from('community_posts')
         .upsert(
           {
-            group_id: groupId,
             user_id: user.id,
-            day,
-            gym_done: this.checkinGym() || Boolean(existing?.gym_done),
-            protein_done: this.checkinProtein() || Boolean(existing?.protein_done),
-            sleep_done: Boolean(existing?.sleep_done),
-            confirm_done: Boolean(existing?.confirm_done),
-            note: this.checkinNote.trim() || existing?.note || null,
+            post_type: 'gym_checkin',
+            day: this.today(),
+            note: this.gymNote.trim() || null,
+            summary: null,
             photo_url: photoUrl
           },
-          { onConflict: 'group_id,user_id,day' }
+          { onConflict: 'user_id,day,post_type' }
         );
 
       if (error) {
         throw error;
       }
 
-      if (this.checkinGym()) {
-        await this.supabaseService.client.from('gym_checkins').insert({
-          group_id: groupId,
-          user_id: user.id,
-          checkin_date: day,
-          week_start: this.weekDays()[0],
-          note: this.checkinNote.trim() || null,
-          photo_url: photoUrl
-        } as Omit<GymCheckin, 'id' | 'created_at'>);
-      }
-
-      this.successMessage.set('Check-in gepostet.');
-      this.closeCheckinSheet();
-      await this.loadCommunityData();
+      this.gymNote = '';
+      this.gymPhoto = null;
+      this.showGymSheet.set(false);
+      this.successMessage.set('Gym-Check-in gepostet.');
+      await this.loadInitial();
     } catch (error: unknown) {
-      this.errorMessage.set(formatAppError(error, 'Check-in konnte nicht gepostet werden'));
+      this.errorMessage.set(formatAppError(error, 'Gym-Check-in konnte nicht gepostet werden'));
     } finally {
-      this.savingCheckin.set(false);
+      this.savingPost.set(false);
     }
   }
 
-  closeCheckinSheet(): void {
-    this.showCheckinSheet.set(false);
-    this.checkinGym.set(false);
-    this.checkinProtein.set(false);
-    this.checkinNote = '';
-    this.checkinPhoto = null;
+  async submitComment(postId: string): Promise<void> {
+    const user = this.authService.user();
+    if (!user) {
+      return;
+    }
+
+    const text = (this.commentInputs()[postId] || '').trim();
+    if (!text) {
+      this.errorMessage.set('Kommentar darf nicht leer sein.');
+      return;
+    }
+
+    const { error } = await this.supabaseService.client
+      .from('community_comments')
+      .insert({
+        post_id: postId,
+        user_id: user.id,
+        comment_text: text
+      });
+
+    if (error) {
+      this.errorMessage.set(formatAppError(error, 'Kommentar konnte nicht gespeichert werden'));
+      return;
+    }
+
+    this.setCommentInput(postId, '');
+
+    const { data: commentsData } = await this.supabaseService.client
+      .from('community_comments')
+      .select('*')
+      .eq('post_id', postId)
+      .order('created_at', { ascending: true });
+
+    if (commentsData) {
+      this.commentsByPost.update(current => ({
+        ...current,
+        [postId]: commentsData as CommunityComment[]
+      }));
+    }
   }
 
-  onCheckinPhotoSelected(event: Event): void {
+  async deletePost(postId: string): Promise<void> {
+    this.errorMessage.set(null);
+    this.successMessage.set(null);
+
+    const user = this.authService.user();
+    if (!user) {
+      return;
+    }
+
+    const { error } = await this.supabaseService.client
+      .from('community_posts')
+      .delete()
+      .eq('id', postId)
+      .eq('user_id', user.id);
+
+    if (error) {
+      this.errorMessage.set(formatAppError(error, 'Post konnte nicht gelöscht werden'));
+      return;
+    }
+
+    this.successMessage.set('Post gelöscht.');
+    await this.loadInitial();
+  }
+
+  openGymSheet(): void {
+    this.showGymSheet.set(true);
+  }
+
+  closeGymSheet(): void {
+    this.showGymSheet.set(false);
+  }
+
+  onGymPhotoSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
-    this.checkinPhoto = input.files?.[0] || null;
+    this.gymPhoto = input.files?.[0] || null;
+  }
+
+  setCommentInput(postId: string, value: string): void {
+    this.commentInputs.update(current => ({ ...current, [postId]: value }));
+  }
+
+  isOwnPost(post: CommunityPost): boolean {
+    const currentUserId = this.authService.user()?.id;
+    return Boolean(currentUserId && post.user_id === currentUserId);
   }
 
   displayName(userId: string): string {
     return this.profiles()[userId]?.display_name || userId.slice(0, 8);
   }
 
-  cardLabel(): string {
-    if (this.cardStatus() === 'yellow') return 'Gelb';
-    if (this.cardStatus() === 'red') return 'Rot';
-    return 'Keine';
+  dayLabel(day: string): string {
+    const today = this.today();
+    if (day === today) {
+      return 'Heute';
+    }
+
+    const yesterday = new Date(`${today}T00:00:00`);
+    yesterday.setDate(yesterday.getDate() - 1);
+    if (day === this.formatDate(yesterday)) {
+      return 'Gestern';
+    }
+
+    return new Date(`${day}T00:00:00`).toLocaleDateString('de-DE', {
+      weekday: 'long',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
   }
 
-  streamBadges(item: GroupActivity): string {
-    const badges: string[] = [];
-    if (item.gym_done) badges.push('Gym');
-    if (item.protein_done) badges.push('Protein');
-    return badges.join(' · ') || 'Aktualisierung';
+  postTypeLabel(post: CommunityPost): string {
+    if (post.post_type === 'gym_checkin') {
+      return 'Gym-Check-in';
+    }
+    if (post.post_type === 'protein_milestone') {
+      return '100g Protein erreicht';
+    }
+    return 'Update';
   }
 
-  togglePhoto(activityId: string): void {
-    this.expandedPhotoId.set(this.expandedPhotoId() === activityId ? null : activityId);
+  proteinSummary(post: CommunityPost): string {
+    const summary = post.summary as { protein?: number; kcal?: number; carbs?: number; fat?: number } | null;
+    const totalProtein = Number(summary?.protein || 0);
+    const totalKcal = Number(summary?.kcal || 0);
+    const totalCarbs = Number(summary?.carbs || 0);
+    const totalFat = Number(summary?.fat || 0);
+    if (!totalProtein && !totalKcal && !totalCarbs && !totalFat) {
+      return '';
+    }
+    return `Protein: ${totalProtein.toFixed(1)}g · KH: ${totalCarbs.toFixed(1)}g · Fett: ${totalFat.toFixed(1)}g · kcal: ${totalKcal.toFixed(0)}`;
   }
 
-  getPhotoSrc(item: GroupActivity): string | null {
-    return this.photoSrcMap()[item.id] || null;
+  foodSummary(post: CommunityPost): string {
+    const foods = (post.summary as { foods?: string[] } | null)?.foods;
+    if (!foods || foods.length === 0) {
+      return '';
+    }
+    return `Essen: ${foods.join(', ')}`;
   }
 
-  goToGroupSetup(): void {
-    void this.router.navigate(['/group']);
+  getPhotoSrc(post: CommunityPost): string | null {
+    return this.photoSrcMap()[post.id] || null;
   }
 
-  private countDays(type: 'gym' | 'protein'): number {
-    const state = this.myDayState();
-    return this.weekDays().filter(day => state[day]?.[type]).length;
+  private async fetchNextPage(): Promise<void> {
+    const from = this.nextOffset();
+    const to = from + this.pageSize - 1;
+
+    const { data: postsData, error: postsError } = await this.supabaseService.client
+      .from('community_posts')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .range(from, to);
+
+    if (postsError) {
+      throw postsError;
+    }
+
+    const newPosts = (postsData || []) as CommunityPost[];
+
+    this.posts.update(current => [...current, ...newPosts]);
+    this.nextOffset.set(from + newPosts.length);
+
+    if (newPosts.length < this.pageSize) {
+      this.hasMore.set(false);
+    }
+
+    if (newPosts.length === 0) {
+      return;
+    }
+
+    await Promise.all([this.mergeComments(newPosts), this.mergeProfiles(newPosts), this.resolvePostPhotoUrls(newPosts)]);
   }
 
-  private getWeekStartDate(date: Date): Date {
-    const cloned = new Date(date);
-    const day = cloned.getDay();
-    const daysSinceMonday = (day + 6) % 7;
-    cloned.setDate(cloned.getDate() - daysSinceMonday);
-    return cloned;
+  private async mergeComments(newPosts: CommunityPost[]): Promise<void> {
+    const postIds = newPosts.map(post => post.id);
+    const { data: commentsData, error } = await this.supabaseService.client
+      .from('community_comments')
+      .select('*')
+      .in('post_id', postIds)
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      throw error;
+    }
+
+    const grouped: Record<string, CommunityComment[]> = {};
+    for (const comment of (commentsData || []) as CommunityComment[]) {
+      if (!grouped[comment.post_id]) {
+        grouped[comment.post_id] = [];
+      }
+      grouped[comment.post_id].push(comment);
+    }
+
+    this.commentsByPost.update(current => ({ ...current, ...grouped }));
   }
 
-  private formatDate(date: Date): string {
-    return date.toISOString().split('T')[0];
+  private async mergeProfiles(newPosts: CommunityPost[]): Promise<void> {
+    const commentAuthors = Object.values(this.commentsByPost())
+      .flat()
+      .map(comment => comment.user_id);
+
+    const userIds = Array.from(new Set([...newPosts.map(post => post.user_id), ...commentAuthors]));
+
+    if (userIds.length === 0) {
+      return;
+    }
+
+    const { data: profilesData } = await this.supabaseService.client
+      .from('profiles')
+      .select('*')
+      .in('user_id', userIds);
+
+    if (!profilesData) {
+      return;
+    }
+
+    const merged: Record<string, Profile> = {};
+    for (const row of profilesData) {
+      const profile = row as Profile;
+      merged[profile.user_id] = profile;
+    }
+
+    this.profiles.update(current => ({ ...current, ...merged }));
+  }
+
+  private async ensureProteinMilestonePost(userId: string, day: string): Promise<void> {
+    const { data: summaryData } = await this.supabaseService.client
+      .from('daily_summaries')
+      .select('*')
+      .eq('owner_id', userId)
+      .is('group_id', null)
+      .eq('day', day)
+      .maybeSingle();
+
+    const summary = summaryData as { protein?: number; kcal?: number; carbs?: number; fat?: number } | null;
+    if (!summary || Number(summary.protein || 0) < 100) {
+      return;
+    }
+
+    const { data: entriesData } = await this.supabaseService.client
+      .from('log_entries')
+      .select('*')
+      .eq('owner_id', userId)
+      .is('group_id', null)
+      .eq('day', day)
+      .order('protein', { ascending: false })
+      .limit(20);
+
+    const entries = (entriesData || []) as LogEntry[];
+    const ingredientIds = Array.from(new Set(entries.filter(entry => entry.entry_type === 'ingredient').map(entry => entry.ref_id)));
+    const mealIds = Array.from(new Set(entries.filter(entry => entry.entry_type === 'meal').map(entry => entry.ref_id)));
+
+    const [ingredientsRes, mealsRes] = await Promise.all([
+      ingredientIds.length
+        ? this.supabaseService.client.from('ingredients').select('id,name').in('id', ingredientIds)
+        : Promise.resolve({ data: [] as Array<{ id: string; name: string }> }),
+      mealIds.length
+        ? this.supabaseService.client.from('meals').select('id,name').in('id', mealIds)
+        : Promise.resolve({ data: [] as Array<{ id: string; name: string }> })
+    ]);
+
+    const nameMap = new Map<string, string>();
+    for (const row of ingredientsRes.data || []) {
+      nameMap.set(row.id, row.name);
+    }
+    for (const row of mealsRes.data || []) {
+      nameMap.set(row.id, row.name);
+    }
+
+    const foods = entries
+      .slice(0, 4)
+      .map(entry => {
+        const name = nameMap.get(entry.ref_id) || 'Unbekannt';
+        const protein = Number(entry.protein || 0);
+        return `${name} (${protein.toFixed(1)}g)`;
+      });
+
+    await this.supabaseService.client.from('community_posts').upsert(
+      {
+        user_id: userId,
+        post_type: 'protein_milestone',
+        day,
+        note: '100g Protein erreicht.',
+        summary: {
+          protein: Number(summary.protein || 0),
+          carbs: Number(summary.carbs || 0),
+          fat: Number(summary.fat || 0),
+          kcal: Number(summary.kcal || 0),
+          foods
+        },
+        photo_url: null
+      },
+      { onConflict: 'user_id,day,post_type' }
+    );
   }
 
   private async uploadImage(file: File, bucketName: string, userId: string): Promise<string> {
@@ -540,22 +754,22 @@ export class CommunityComponent implements OnInit {
     return filePath;
   }
 
-  private async resolveActivityPhotoUrls(activities: GroupActivity[]): Promise<void> {
+  private async resolvePostPhotoUrls(posts: CommunityPost[]): Promise<void> {
     const resolvedEntries = await Promise.all(
-      activities.map(async activity => {
-        const resolvedUrl = await this.resolvePhotoUrl(activity.photo_url, 'gym-checkins');
-        return [activity.id, resolvedUrl] as const;
+      posts.map(async post => {
+        const resolvedUrl = await this.resolvePhotoUrl(post.photo_url, 'gym-checkins');
+        return [post.id, resolvedUrl] as const;
       })
     );
 
-    const map: Record<string, string> = {};
+    const toMerge: Record<string, string> = {};
     for (const [id, url] of resolvedEntries) {
       if (url) {
-        map[id] = url;
+        toMerge[id] = url;
       }
     }
 
-    this.photoSrcMap.set(map);
+    this.photoSrcMap.update(current => ({ ...current, ...toMerge }));
   }
 
   private async resolvePhotoUrl(photoUrlOrPath: string | null, bucketName: string): Promise<string | null> {
@@ -592,7 +806,10 @@ export class CommunityComponent implements OnInit {
       return data.signedUrl;
     }
 
-    const { data: publicData } = this.supabaseService.client.storage.from(bucketName).getPublicUrl(photoUrlOrPath);
+    const { data: publicData } = this.supabaseService.client.storage
+      .from(bucketName)
+      .getPublicUrl(photoUrlOrPath);
+
     return publicData.publicUrl || null;
   }
 
@@ -613,5 +830,29 @@ export class CommunityComponent implements OnInit {
     }
 
     return null;
+  }
+
+  private setupInfiniteObserver(): void {
+    if (typeof window === 'undefined' || !('IntersectionObserver' in window) || !this.loadMoreAnchor) {
+      return;
+    }
+
+    this.loadObserver = new IntersectionObserver(
+      entries => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            void this.loadMore();
+            break;
+          }
+        }
+      },
+      { root: null, rootMargin: '600px 0px 600px 0px' }
+    );
+
+    this.loadObserver.observe(this.loadMoreAnchor.nativeElement);
+  }
+
+  private formatDate(date: Date): string {
+    return date.toISOString().split('T')[0];
   }
 }

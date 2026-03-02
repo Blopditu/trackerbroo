@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -173,29 +173,19 @@ export class OnboardingComponent implements OnInit {
 
   private existingProfile = signal<Profile | null>(null);
 
-  readonly onboardingForm = this.formBuilder.group({
-    display_name: ['', [Validators.required, Validators.minLength(2)]],
-    age: [null as number | null, [Validators.required, Validators.min(10), Validators.max(120)]],
-    height_cm: [null as number | null, [Validators.required, Validators.min(80), Validators.max(260)]],
-    current_weight_kg: [null as number | null, [Validators.required, Validators.min(20)]],
-    weekly_gym_target: [3, [Validators.required, Validators.min(1), Validators.max(14)]],
-    activity_level: ['moderate' as 'low' | 'moderate' | 'high', [Validators.required]],
-    track_nutrition: [true, [Validators.required]],
-    track_gym: [true, [Validators.required]]
-  });
-
-  readonly canGoNext = computed(() => {
-    if (this.step() === 0) return true;
-    if (this.step() === 1) {
-      return this.isValid(['display_name', 'age', 'height_cm', 'current_weight_kg']);
-    }
-    if (this.step() === 2) {
-      return this.isValid(['weekly_gym_target', 'activity_level']);
-    }
-    return this.isValid(['track_nutrition', 'track_gym']);
-  });
-
-  readonly canFinish = computed(() => this.onboardingForm.valid);
+  readonly onboardingForm = this.formBuilder.group(
+    {
+      display_name: ['', [Validators.required, Validators.minLength(2)]],
+      age: [null as number | null, [Validators.required, Validators.min(10), Validators.max(120)]],
+      height_cm: [null as number | null, [Validators.required, Validators.min(80), Validators.max(260)]],
+      current_weight_kg: [null as number | null, [Validators.required, Validators.min(20)]],
+      weekly_gym_target: [3, [Validators.required, Validators.min(1), Validators.max(14)]],
+      activity_level: ['moderate' as 'low' | 'moderate' | 'high', [Validators.required]],
+      track_nutrition: [true, [Validators.required]],
+      track_gym: [true, [Validators.required]]
+    },
+    { updateOn: 'change' }
+  );
 
   async ngOnInit(): Promise<void> {
     await this.loadProfile();
@@ -245,7 +235,13 @@ export class OnboardingComponent implements OnInit {
   }
 
   nextStep(): void {
-    if (!this.canGoNext()) return;
+    this.errorMessage.set(null);
+    this.onboardingForm.updateValueAndValidity({ emitEvent: false });
+    if (!this.canGoNext()) {
+      this.onboardingForm.markAllAsTouched();
+      this.errorMessage.set('Bitte prüfe deine Eingaben in diesem Schritt.');
+      return;
+    }
     this.step.update(value => Math.min(value + 1, this.totalSteps - 1));
   }
 
@@ -297,5 +293,20 @@ export class OnboardingComponent implements OnInit {
 
   private isValid(controlNames: string[]): boolean {
     return controlNames.every(name => this.onboardingForm.controls[name as keyof typeof this.onboardingForm.controls].valid);
+  }
+
+  canGoNext(): boolean {
+    if (this.step() === 0) return true;
+    if (this.step() === 1) {
+      return this.isValid(['display_name', 'age', 'height_cm', 'current_weight_kg']);
+    }
+    if (this.step() === 2) {
+      return this.isValid(['weekly_gym_target', 'activity_level']);
+    }
+    return this.isValid(['track_nutrition', 'track_gym']);
+  }
+
+  canFinish(): boolean {
+    return this.onboardingForm.valid;
   }
 }

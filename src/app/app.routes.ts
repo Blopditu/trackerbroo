@@ -17,8 +17,8 @@ export const routes: Routes = [
   },
   {
     path: 'group',
-    loadComponent: () => import('./features/group/group.component').then(m => m.GroupComponent),
-    canActivate: [AuthGuard]
+    redirectTo: 'community',
+    pathMatch: 'full'
   },
   {
     path: 'today',
@@ -32,8 +32,8 @@ export const routes: Routes = [
   },
   {
     path: 'dashboard',
-    loadComponent: () => import('./features/dashboard/dashboard.component').then(m => m.DashboardComponent),
-    canActivate: [AuthGuard]
+    redirectTo: 'community',
+    pathMatch: 'full'
   },
   {
     path: 'community',

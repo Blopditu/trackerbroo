@@ -14,11 +14,8 @@ import { RouterModule } from '@angular/router';
       <a routerLink="/library" routerLinkActive="active">
         <span>Bibliothek</span>
       </a>
-      <a routerLink="/dashboard" routerLinkActive="active">
-        <span>Statistik</span>
-      </a>
       <a routerLink="/community" routerLinkActive="active">
-        <span>Gruppe</span>
+        <span>Community</span>
       </a>
       <a routerLink="/profile" routerLinkActive="active">
         <span>Profil</span>
@@ -33,7 +30,7 @@ import { RouterModule } from '@angular/router';
       transform: translateX(-50%);
       width: min(100%, 480px);
       display: grid;
-      grid-template-columns: repeat(5, minmax(0, 1fr));
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 0.3rem;
       padding: 0.45rem 0.65rem calc(0.7rem + env(safe-area-inset-bottom));
       border-top: 1px solid var(--border-strong);

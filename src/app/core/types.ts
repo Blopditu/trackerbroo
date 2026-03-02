@@ -131,3 +131,32 @@ export interface GroupActivity {
   photo_url: string | null;
   created_at: string;
 }
+
+export type CommunityPostType = 'gym_checkin' | 'protein_milestone' | 'custom';
+
+export interface CommunityPost {
+  id: string;
+  user_id: string;
+  post_type: CommunityPostType;
+  day: string;
+  note: string | null;
+  summary: Record<string, unknown> | null;
+  photo_url: string | null;
+  created_at: string;
+}
+
+export interface CommunityComment {
+  id: string;
+  post_id: string;
+  user_id: string;
+  comment_text: string;
+  created_at: string;
+}
+
+export interface CommunityReaction {
+  id: string;
+  post_id: string;
+  user_id: string;
+  gif_url: string;
+  created_at: string;
+}

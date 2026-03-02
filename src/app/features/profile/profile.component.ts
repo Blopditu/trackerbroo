@@ -4,7 +4,6 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
 import { SupabaseService } from '../../core/supabase.service';
-import { ActiveGroupService } from '../../core/active-group.service';
 import { Profile, WeightLog } from '../../core/types';
 import { formatAppError } from '../../core/error-format';
 
@@ -316,7 +315,6 @@ import { formatAppError } from '../../core/error-format';
 export class ProfileComponent implements OnInit {
   private readonly supabaseService = inject(SupabaseService);
   private readonly authService = inject(AuthService);
-  private readonly activeGroupService = inject(ActiveGroupService);
   private readonly formBuilder = inject(FormBuilder);
   private readonly router = inject(Router);
 
@@ -517,21 +515,18 @@ export class ProfileComponent implements OnInit {
       return;
     }
 
-    const groupId = this.activeGroupService.activeGroupId();
-    if (!groupId) {
-      this.gymWeekSessions.set(0);
-      return;
-    }
     const weekStart = this.getWeekStart(this.formatDate(new Date()));
+    const weekEnd = this.formatDate(new Date(new Date(`${weekStart}T00:00:00`).getTime() + 6 * 24 * 60 * 60 * 1000));
 
     const { data } = await this.supabaseService.client
-      .from('gym_checkins')
-      .select('checkin_date')
-      .eq('group_id', groupId)
+      .from('community_posts')
+      .select('day')
       .eq('user_id', user.id)
-      .eq('week_start', weekStart);
+      .eq('post_type', 'gym_checkin')
+      .gte('day', weekStart)
+      .lte('day', weekEnd);
 
-    const uniqueDays = new Set((data || []).map(entry => entry.checkin_date));
+    const uniqueDays = new Set((data || []).map(entry => String(entry.day)));
     this.gymWeekSessions.set(uniqueDays.size);
   }
 
