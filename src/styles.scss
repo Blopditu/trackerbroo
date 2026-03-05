@@ -59,6 +59,7 @@ body {
   font-family: var(--font-body);
   color: var(--ink-900);
   background: var(--bg-page);
+  background-image: radial-gradient(circle at 20% -20%, #1c283a 0%, transparent 46%);
 }
 
 h1,
@@ -100,6 +101,67 @@ a:focus-visible {
   background: var(--bg-shell);
   border-left: 1px solid var(--border-soft);
   border-right: 1px solid var(--border-soft);
+}
+
+a,
+button,
+.panel,
+.list-card,
+.modal-card {
+  transition: transform 180ms ease, background-color 180ms ease, border-color 180ms ease, opacity 180ms ease;
+}
+
+button:active {
+  transform: translateY(1px) scale(0.99);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 260ms;
+    animation-timing-function: ease;
+  }
+
+  ::view-transition-old(root) {
+    animation-name: app-vt-old;
+  }
+
+  ::view-transition-new(root) {
+    animation-name: app-vt-new;
+  }
+}
+
+@keyframes app-vt-old {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+}
+
+@keyframes app-vt-new {
+  from {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .page {

@@ -2,7 +2,12 @@
   @if (showTopBar()) {
     <app-top-bar></app-top-bar>
   }
-  <router-outlet></router-outlet>
+  @if (showOfflineBanner()) {
+    <p class="offline-banner" role="status" aria-live="polite">Offline-Modus: zuletzt synchronisierte Daten werden angezeigt.</p>
+  }
+  <section class="route-host">
+    <router-outlet></router-outlet>
+  </section>
   @if (showNav()) {
     <app-bottom-nav></app-bottom-nav>
   }

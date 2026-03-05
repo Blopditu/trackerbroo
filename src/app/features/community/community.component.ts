@@ -18,11 +18,15 @@ import { SupabaseService } from '../../core/supabase.service';
 import { CommunityComment, CommunityPost, LogEntry, Profile } from '../../core/types';
 import { formatAppError } from '../../core/error-format';
 import { BottomSheetComponent } from '../../ui/minimal/bottom-sheet.component';
+import { LibraryDataService } from '../../core/library-data.service';
+import { QueryCacheService } from '../../core/query-cache.service';
 
 interface DayGroup {
   day: string;
   posts: CommunityPost[];
 }
+
+type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_url'>;
 
 @Component({
   selector: 'app-community',
@@ -317,7 +321,7 @@ export class CommunityComponent implements OnInit, AfterViewInit, OnDestroy {
 
   readonly posts = signal<CommunityPost[]>([]);
   readonly commentsByPost = signal<Record<string, CommunityComment[]>>({});
-  readonly profiles = signal<Record<string, Profile>>({});
+  readonly profiles = signal<Record<string, ProfileDirectoryEntry>>({});
   readonly photoSrcMap = signal<Record<string, string>>({});
   readonly commentInputs = signal<Record<string, string>>({});
 
@@ -350,6 +354,8 @@ export class CommunityComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private readonly authService = inject(AuthService);
   private readonly supabaseService = inject(SupabaseService);
+  private readonly libraryDataService = inject(LibraryDataService);
+  private readonly queryCache = inject(QueryCacheService);
 
   @ViewChild('loadMoreAnchor') loadMoreAnchor?: ElementRef<HTMLElement>;
   private loadObserver: IntersectionObserver | null = null;
@@ -468,13 +474,15 @@ export class CommunityComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    const { error } = await this.supabaseService.client
+    const { data, error } = await this.supabaseService.client
       .from('community_comments')
       .insert({
         post_id: postId,
         user_id: user.id,
         comment_text: text
-      });
+      })
+      .select('*')
+      .single();
 
     if (error) {
       this.errorMessage.set(formatAppError(error, 'Kommentar konnte nicht gespeichert werden'));
@@ -483,18 +491,17 @@ export class CommunityComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.setCommentInput(postId, '');
 
-    const { data: commentsData } = await this.supabaseService.client
-      .from('community_comments')
-      .select('*')
-      .eq('post_id', postId)
-      .order('created_at', { ascending: true });
-
-    if (commentsData) {
-      this.commentsByPost.update(current => ({
-        ...current,
-        [postId]: commentsData as CommunityComment[]
-      }));
+    if (!data) {
+      return;
     }
+
+    this.commentsByPost.update(current => {
+      const existing = current[postId] || [];
+      return {
+        ...current,
+        [postId]: [...existing, data as CommunityComment]
+      };
+    });
   }
 
   async deletePost(postId: string): Promise<void> {
@@ -601,6 +608,10 @@ export class CommunityComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.photoSrcMap()[post.id] || null;
   }
 
+  private getProteinMilestoneCacheKey(userId: string, day: string): string {
+    return `protein-posted:${userId}:${day}`;
+  }
+
   private async fetchNextPage(): Promise<void> {
     const from = this.nextOffset();
     const to = from + this.pageSize - 1;
@@ -660,23 +671,25 @@ export class CommunityComponent implements OnInit, AfterViewInit, OnDestroy {
       .map(comment => comment.user_id);
 
     const userIds = Array.from(new Set([...newPosts.map(post => post.user_id), ...commentAuthors]));
+    const knownUserIds = new Set(Object.keys(this.profiles()));
+    const missingUserIds = userIds.filter(userId => !knownUserIds.has(userId));
 
-    if (userIds.length === 0) {
+    if (missingUserIds.length === 0) {
       return;
     }
 
     const { data: profilesData } = await this.supabaseService.client
       .from('profiles')
-      .select('*')
-      .in('user_id', userIds);
+      .select('user_id,display_name,avatar_url')
+      .in('user_id', missingUserIds);
 
     if (!profilesData) {
       return;
     }
 
-    const merged: Record<string, Profile> = {};
+    const merged: Record<string, ProfileDirectoryEntry> = {};
     for (const row of profilesData) {
-      const profile = row as Profile;
+      const profile = row as ProfileDirectoryEntry;
       merged[profile.user_id] = profile;
     }
 
@@ -684,6 +697,11 @@ export class CommunityComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private async ensureProteinMilestonePost(userId: string, day: string): Promise<void> {
+    const markerKey = this.getProteinMilestoneCacheKey(userId, day);
+    if (this.queryCache.getFresh<boolean>(markerKey)) {
+      return;
+    }
+
     const { data: summaryData } = await this.supabaseService.client
       .from('daily_summaries')
       .select('*')
@@ -707,24 +725,13 @@ export class CommunityComponent implements OnInit, AfterViewInit, OnDestroy {
       .limit(20);
 
     const entries = (entriesData || []) as LogEntry[];
-    const ingredientIds = Array.from(new Set(entries.filter(entry => entry.entry_type === 'ingredient').map(entry => entry.ref_id)));
-    const mealIds = Array.from(new Set(entries.filter(entry => entry.entry_type === 'meal').map(entry => entry.ref_id)));
-
-    const [ingredientsRes, mealsRes] = await Promise.all([
-      ingredientIds.length
-        ? this.supabaseService.client.from('ingredients').select('id,name').in('id', ingredientIds)
-        : Promise.resolve({ data: [] as Array<{ id: string; name: string }> }),
-      mealIds.length
-        ? this.supabaseService.client.from('meals').select('id,name').in('id', mealIds)
-        : Promise.resolve({ data: [] as Array<{ id: string; name: string }> })
-    ]);
-
+    const library = await this.libraryDataService.loadLibrary(userId, { allowStaleOnError: true });
     const nameMap = new Map<string, string>();
-    for (const row of ingredientsRes.data || []) {
-      nameMap.set(row.id, row.name);
+    for (const ingredient of library.ingredients) {
+      nameMap.set(ingredient.id, ingredient.name);
     }
-    for (const row of mealsRes.data || []) {
-      nameMap.set(row.id, row.name);
+    for (const meal of library.meals) {
+      nameMap.set(meal.id, meal.name);
     }
 
     const foods = entries
@@ -752,6 +759,8 @@ export class CommunityComponent implements OnInit, AfterViewInit, OnDestroy {
       },
       { onConflict: 'user_id,day,post_type' }
     );
+
+    this.queryCache.set(markerKey, true, 1000 * 60 * 60 * 6);
   }
 
   private async uploadImage(file: File, bucketName: string, userId: string): Promise<string> {

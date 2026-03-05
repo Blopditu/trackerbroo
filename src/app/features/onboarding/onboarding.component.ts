@@ -216,9 +216,12 @@ export class OnboardingComponent implements OnInit {
     this.existingProfile.set(profile);
 
     if (profile?.onboarding_completed) {
+      this.authService.setOnboardingCompleted(true);
       await this.router.navigate(['/today']);
       return;
     }
+
+    this.authService.setOnboardingCompleted(false);
 
     this.onboardingForm.patchValue({
       display_name: profile?.display_name || '',
@@ -283,6 +286,7 @@ export class OnboardingComponent implements OnInit {
 
       if (error) throw error;
 
+      this.authService.setOnboardingCompleted(true);
       await this.router.navigate(['/today']);
     } catch (error: unknown) {
       this.errorMessage.set(formatAppError(error, 'Onboarding konnte nicht gespeichert werden'));

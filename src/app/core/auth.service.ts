@@ -8,6 +8,7 @@ import { User } from './types';
 })
 export class AuthService {
   readonly user = signal<User | null>(null);
+  readonly onboardingCompleted = signal<boolean | null>(null);
   private readonly supabaseService = inject(SupabaseService);
   private readonly router = inject(Router);
   private restoreSessionPromise: Promise<void> | null = null;
@@ -44,6 +45,11 @@ export class AuthService {
   async signOut() {
     const { error } = await this.supabaseService.client.auth.signOut();
     if (error) throw error;
+    const userId = this.user()?.id;
+    if (userId && typeof localStorage !== 'undefined') {
+      localStorage.removeItem(this.onboardingStorageKey(userId));
+    }
+    this.onboardingCompleted.set(null);
     this.router.navigate(['/login']);
   }
 
@@ -76,9 +82,25 @@ export class AuthService {
     return this.user() !== null;
   }
 
+  setOnboardingCompleted(value: boolean | null): void {
+    this.onboardingCompleted.set(value);
+    const userId = this.user()?.id;
+    if (!userId || typeof localStorage === 'undefined') {
+      return;
+    }
+
+    if (value === null) {
+      localStorage.removeItem(this.onboardingStorageKey(userId));
+      return;
+    }
+
+    localStorage.setItem(this.onboardingStorageKey(userId), value ? '1' : '0');
+  }
+
   private applySession(session: { user?: { id: string; email?: string | null } } | null): void {
     if (!session?.user) {
       this.user.set(null);
+      this.onboardingCompleted.set(null);
       return;
     }
 
@@ -86,6 +108,8 @@ export class AuthService {
       id: session.user.id,
       email: session.user.email || ''
     });
+
+    this.onboardingCompleted.set(this.readOnboardingFlag(session.user.id));
   }
 
   private getAuthCallbackUrl(): string {
@@ -97,5 +121,24 @@ export class AuthService {
           : 'http://localhost:4200/';
 
     return new URL('auth/callback', baseUrl).toString();
+  }
+
+  private readOnboardingFlag(userId: string): boolean | null {
+    if (typeof localStorage === 'undefined') {
+      return null;
+    }
+
+    const rawValue = localStorage.getItem(this.onboardingStorageKey(userId));
+    if (rawValue === '1') {
+      return true;
+    }
+    if (rawValue === '0') {
+      return false;
+    }
+    return null;
+  }
+
+  private onboardingStorageKey(userId: string): string {
+    return `trackerbroo:onboarding:${userId}`;
   }
 }

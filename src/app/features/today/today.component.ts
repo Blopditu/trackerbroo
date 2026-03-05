@@ -23,11 +23,21 @@ import { MacroBarComponent } from '../../ui/minimal/macro-bar.component';
 import { HabitGridComponent, HabitState } from '../../ui/minimal/habit-grid.component';
 import { BottomSheetComponent } from '../../ui/minimal/bottom-sheet.component';
 import { formatAppError } from '../../core/error-format';
+import { LibraryDataService } from '../../core/library-data.service';
+import { QueryCacheService } from '../../core/query-cache.service';
 
 type QuickItem = Ingredient | Meal;
 
 interface MealMacroMap {
   [mealId: string]: MacroTotals;
+}
+
+interface TodaySnapshot {
+  entries: LogEntry[];
+  summary: DailySummary | null;
+  weightLogs: WeightLog[];
+  gymDaysThisWeek: string[];
+  proteinDaysThisWeek: string[];
 }
 
 @Component({
@@ -551,9 +561,12 @@ export class TodayComponent implements OnInit {
   private gymPhoto: File | null = null;
 
   private mealMacros: MealMacroMap = {};
+  private readonly dayDataTtlMs = 1000 * 60 * 3;
 
   private readonly supabaseService = inject(SupabaseService);
   private readonly authService = inject(AuthService);
+  private readonly libraryDataService = inject(LibraryDataService);
+  private readonly queryCache = inject(QueryCacheService);
 
   readonly todayLabel = computed(() =>
     new Date(`${this.today()}T00:00:00`).toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: '2-digit' })
@@ -631,7 +644,7 @@ export class TodayComponent implements OnInit {
     void this.loadData();
   }
 
-  async loadData(): Promise<void> {
+  async loadData(forceRefresh = false): Promise<void> {
     const user = this.authService.user();
     if (!user) {
       return;
@@ -640,91 +653,46 @@ export class TodayComponent implements OnInit {
     this.loading.set(true);
     this.errorMessage.set(null);
 
-    const [{ data: ingredientsData, error: ingredientError }, { data: mealsData, error: mealError }] = await Promise.all([
-      this.supabaseService.client.from('ingredients').select('*').eq('owner_id', user.id),
-      this.supabaseService.client.from('meals').select('*').eq('owner_id', user.id)
-    ]);
+    try {
+      const library = await this.libraryDataService.loadLibrary(user.id, {
+        forceRefresh,
+        allowStaleOnError: true
+      });
 
-    if (ingredientError || mealError) {
-      this.errorMessage.set(formatAppError(ingredientError || mealError, 'Lebensmittel-Bibliothek konnte nicht geladen werden'));
+      this.ingredients.set(library.ingredients);
+      this.meals.set(library.meals);
+      this.mealMacros = library.mealMacros;
+
+      const day = this.today();
+      const weekRange = this.getCurrentWeekRange();
+      const cacheKey = this.getTodayCacheKey(user.id, day, weekRange.start, weekRange.end);
+
+      const dayResult = await this.queryCache.getOrLoad({
+        key: cacheKey,
+        ttlMs: this.dayDataTtlMs,
+        forceRefresh,
+        allowStaleOnError: true,
+        loader: () => this.fetchDaySnapshot(user.id, day, weekRange.start, weekRange.end)
+      });
+
+      this.entries.set(dayResult.value.entries);
+      this.summary.set(dayResult.value.summary);
+      this.weightLogs.set(dayResult.value.weightLogs);
+      this.gymDaysThisWeek.set(new Set(dayResult.value.gymDaysThisWeek));
+      this.proteinDaysThisWeek.set(new Set(dayResult.value.proteinDaysThisWeek));
+
+      const selectedWeight = this.weightLogs().find(entry => entry.logged_on === day);
+      this.weightInput = Number(selectedWeight?.weight_kg || this.weightInput);
+      this.weightDateInput = day;
+
+      if (day === this.realToday && Number(dayResult.value.summary?.protein || 0) >= this.proteinGoal) {
+        await this.ensureProteinMilestonePost(user.id, day, dayResult.value.summary);
+      }
+    } catch (error: unknown) {
+      this.errorMessage.set(formatAppError(error, 'Heute-Daten konnten nicht geladen werden'));
+    } finally {
       this.loading.set(false);
-      return;
     }
-
-    const ingredients = (ingredientsData || []) as Ingredient[];
-    const meals = (mealsData || []) as Meal[];
-    this.ingredients.set(ingredients);
-    this.meals.set(meals);
-    await this.loadMealMacros(meals, ingredients);
-
-    const { data: entryData, error: entryError } = await this.supabaseService.client
-      .from('log_entries')
-      .select('*')
-      .eq('owner_id', user.id)
-      .is('group_id', null)
-      .eq('day', this.today())
-      .order('created_at', { ascending: false });
-
-    if (entryError) {
-      this.errorMessage.set(formatAppError(entryError, 'Einträge konnten nicht geladen werden'));
-      this.loading.set(false);
-      return;
-    }
-
-    this.entries.set((entryData || []) as LogEntry[]);
-
-    const { data: summaryData } = await this.supabaseService.client
-      .from('daily_summaries')
-      .select('*')
-      .eq('owner_id', user.id)
-      .is('group_id', null)
-      .eq('day', this.today())
-      .maybeSingle();
-
-    this.summary.set(summaryData as DailySummary | null);
-
-    const { data: weightData } = await this.supabaseService.client
-      .from('weight_logs')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('logged_on', { ascending: false })
-      .limit(30);
-
-    this.weightLogs.set((weightData || []) as WeightLog[]);
-
-    const selectedWeight = this.weightLogs().find(entry => entry.logged_on === this.today());
-    this.weightInput = Number(selectedWeight?.weight_kg || this.weightInput);
-    this.weightDateInput = this.today();
-
-    const weekRange = this.getCurrentWeekRange();
-
-    const { data: gymPostsData } = await this.supabaseService.client
-      .from('community_posts')
-      .select('day')
-      .eq('user_id', user.id)
-      .eq('post_type', 'gym_checkin')
-      .gte('day', weekRange.start)
-      .lte('day', weekRange.end);
-
-    this.gymDaysThisWeek.set(new Set((gymPostsData || []).map(row => String(row.day))));
-
-    const { data: proteinSummaryData } = await this.supabaseService.client
-      .from('daily_summaries')
-      .select('day,protein')
-      .eq('owner_id', user.id)
-      .is('group_id', null)
-      .gte('day', weekRange.start)
-      .lte('day', weekRange.end);
-
-    this.proteinDaysThisWeek.set(
-      new Set((proteinSummaryData || []).filter(row => Number(row.protein) >= this.proteinGoal).map(row => String(row.day)))
-    );
-
-    if (this.today() === this.realToday && Number(summaryData?.protein || 0) >= this.proteinGoal) {
-      await this.ensureProteinMilestonePost(user.id, this.today());
-    }
-
-    this.loading.set(false);
   }
 
   goPreviousDay(): void {
@@ -876,7 +844,8 @@ export class TodayComponent implements OnInit {
       this.closeActions();
     }
     this.closeAmountPicker();
-    await this.loadData();
+    this.invalidateDayCaches(user.id);
+    await this.loadData(true);
   }
 
   editEntry(entry: LogEntry): void {
@@ -915,7 +884,8 @@ export class TodayComponent implements OnInit {
     }
 
     this.successMessage.set('Eintrag gelöscht.');
-    await this.loadData();
+    this.invalidateDayCaches(user.id);
+    await this.loadData(true);
   }
 
   async saveWeight(): Promise<void> {
@@ -944,7 +914,8 @@ export class TodayComponent implements OnInit {
 
     this.successMessage.set('Gewicht gespeichert.');
     this.closeActions();
-    await this.loadData();
+    this.invalidateDayCaches(user.id);
+    await this.loadData(true);
   }
 
   onGymPhotoSelected(event: Event): void {
@@ -990,7 +961,8 @@ export class TodayComponent implements OnInit {
       this.gymPhoto = null;
       this.successMessage.set('Gym-Check-in gepostet.');
       this.closeActions();
-      await this.loadData();
+      this.invalidateDayCaches(user.id);
+      await this.loadData(true);
     } catch (error: unknown) {
       this.errorMessage.set(formatAppError(error, 'Gym-Check-in konnte nicht gepostet werden'));
     } finally {
@@ -1004,6 +976,78 @@ export class TodayComponent implements OnInit {
 
   getMealName(id: string): string {
     return this.meals().find(item => item.id === id)?.name || 'Unbekannt';
+  }
+
+  private invalidateDayCaches(userId: string): void {
+    this.queryCache.invalidatePrefix(`today:${userId}:`);
+    this.queryCache.invalidate(this.getProteinMilestoneCacheKey(userId, this.today()));
+  }
+
+  private getTodayCacheKey(userId: string, day: string, weekStart: string, weekEnd: string): string {
+    return `today:${userId}:${day}:${weekStart}:${weekEnd}`;
+  }
+
+  private getProteinMilestoneCacheKey(userId: string, day: string): string {
+    return `protein-posted:${userId}:${day}`;
+  }
+
+  private async fetchDaySnapshot(userId: string, day: string, weekStart: string, weekEnd: string): Promise<TodaySnapshot> {
+    const [
+      { data: entryData, error: entryError },
+      { data: summaryData, error: summaryError },
+      { data: weightData, error: weightError },
+      { data: gymPostsData, error: gymPostsError },
+      { data: proteinSummaryData, error: proteinSummaryError }
+    ] = await Promise.all([
+      this.supabaseService.client
+        .from('log_entries')
+        .select('id,owner_id,group_id,day,entry_type,ref_id,quantity,kcal,protein,carbs,fat,created_at')
+        .eq('owner_id', userId)
+        .is('group_id', null)
+        .eq('day', day)
+        .order('created_at', { ascending: false }),
+      this.supabaseService.client
+        .from('daily_summaries')
+        .select('owner_id,group_id,day,kcal,protein,carbs,fat,updated_at')
+        .eq('owner_id', userId)
+        .is('group_id', null)
+        .eq('day', day)
+        .maybeSingle(),
+      this.supabaseService.client
+        .from('weight_logs')
+        .select('id,user_id,logged_on,weight_kg,note,created_at')
+        .eq('user_id', userId)
+        .order('logged_on', { ascending: false })
+        .limit(30),
+      this.supabaseService.client
+        .from('community_posts')
+        .select('day')
+        .eq('user_id', userId)
+        .eq('post_type', 'gym_checkin')
+        .gte('day', weekStart)
+        .lte('day', weekEnd),
+      this.supabaseService.client
+        .from('daily_summaries')
+        .select('day,protein')
+        .eq('owner_id', userId)
+        .is('group_id', null)
+        .gte('day', weekStart)
+        .lte('day', weekEnd)
+    ]);
+
+    if (entryError || summaryError || weightError || gymPostsError || proteinSummaryError) {
+      throw entryError || summaryError || weightError || gymPostsError || proteinSummaryError;
+    }
+
+    return {
+      entries: (entryData || []) as LogEntry[],
+      summary: (summaryData as DailySummary | null) || null,
+      weightLogs: (weightData || []) as WeightLog[],
+      gymDaysThisWeek: (gymPostsData || []).map(row => String(row.day)),
+      proteinDaysThisWeek: (proteinSummaryData || [])
+        .filter(row => Number(row.protein) >= this.proteinGoal)
+        .map(row => String(row.day))
+    };
   }
 
   private getCurrentWeekRange(): { start: string; end: string } {
@@ -1046,35 +1090,6 @@ export class TodayComponent implements OnInit {
     return states;
   }
 
-  private async loadMealMacros(meals: Meal[], ingredients: Ingredient[]): Promise<void> {
-    if (meals.length === 0) {
-      this.mealMacros = {};
-      return;
-    }
-
-    const ingredientMap = new Map(ingredients.map(item => [item.id, item]));
-    const mealIds = meals.map(item => item.id);
-    const { data } = await this.supabaseService.client.from('meal_items').select('*').in('meal_id', mealIds);
-
-    const macros: MealMacroMap = {};
-    for (const meal of meals) {
-      macros[meal.id] = { kcal: 0, protein: 0, carbs: 0, fat: 0 };
-    }
-
-    for (const row of data || []) {
-      const ingredient = ingredientMap.get(String(row.ingredient_id));
-      const bucket = macros[String(row.meal_id)];
-      if (!ingredient || !bucket) continue;
-      const factor = Number(row.grams || 0) / 100;
-      bucket.kcal += Number(ingredient.kcal_per_100) * factor;
-      bucket.protein += Number(ingredient.protein_per_100) * factor;
-      bucket.carbs += Number(ingredient.carbs_per_100) * factor;
-      bucket.fat += Number(ingredient.fat_per_100) * factor;
-    }
-
-    this.mealMacros = macros;
-  }
-
   private itemMacros(item: QuickItem): MacroTotals {
     if (this.isIngredient(item)) {
       return {
@@ -1088,14 +1103,26 @@ export class TodayComponent implements OnInit {
     return this.mealMacros[item.id] || { kcal: 0, protein: 0, carbs: 0, fat: 0 };
   }
 
-  private async ensureProteinMilestonePost(userId: string, day: string): Promise<void> {
-    const { data: summaryData } = await this.supabaseService.client
-      .from('daily_summaries')
-      .select('protein,kcal,carbs,fat')
-      .eq('owner_id', userId)
-      .is('group_id', null)
-      .eq('day', day)
-      .maybeSingle();
+  private async ensureProteinMilestonePost(
+    userId: string,
+    day: string,
+    initialSummary?: Pick<DailySummary, 'protein' | 'kcal' | 'carbs' | 'fat'> | null
+  ): Promise<void> {
+    if (this.queryCache.getFresh<boolean>(this.getProteinMilestoneCacheKey(userId, day))) {
+      return;
+    }
+
+    let summaryData = initialSummary;
+    if (!summaryData) {
+      const { data } = await this.supabaseService.client
+        .from('daily_summaries')
+        .select('protein,kcal,carbs,fat')
+        .eq('owner_id', userId)
+        .is('group_id', null)
+        .eq('day', day)
+        .maybeSingle();
+      summaryData = data as Pick<DailySummary, 'protein' | 'kcal' | 'carbs' | 'fat'> | null;
+    }
 
     const protein = Number(summaryData?.protein || 0);
     if (protein < this.proteinGoal) {
@@ -1118,6 +1145,8 @@ export class TodayComponent implements OnInit {
       },
       { onConflict: 'user_id,day,post_type' }
     );
+
+    this.queryCache.set(this.getProteinMilestoneCacheKey(userId, day), true, 1000 * 60 * 60 * 6);
   }
 
   private async uploadImage(file: File, bucketName: string, userId: string): Promise<string> {

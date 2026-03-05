@@ -23,6 +23,15 @@ export class AuthGuard implements CanActivate {
         return true;
       }
 
+      const onboardingState = this.authService.onboardingCompleted();
+      if (onboardingState === false) {
+        await this.router.navigate(['/onboarding']);
+        return false;
+      }
+      if (onboardingState === true) {
+        return true;
+      }
+
       const { data, error } = await this.supabaseService.client
         .from('profiles')
         .select('onboarding_completed')
@@ -33,7 +42,10 @@ export class AuthGuard implements CanActivate {
         return true;
       }
 
-      if (!data?.onboarding_completed) {
+      const completed = Boolean(data?.onboarding_completed);
+      this.authService.setOnboardingCompleted(completed);
+
+      if (!completed) {
         await this.router.navigate(['/onboarding']);
         return false;
       }

@@ -1,0 +1,76 @@
+{
+  "$schema": "./node_modules/@angular/service-worker/config/schema.json",
+  "index": "/index.html",
+  "assetGroups": [
+    {
+      "name": "app-shell",
+      "installMode": "prefetch",
+      "updateMode": "prefetch",
+      "resources": {
+        "files": [
+          "/index.html",
+          "/*.css",
+          "/*.js",
+          "/manifest.json",
+          "/favicon.ico"
+        ]
+      }
+    },
+    {
+      "name": "assets",
+      "installMode": "lazy",
+      "updateMode": "prefetch",
+      "resources": {
+        "files": [
+          "/**/*.(png|jpg|jpeg|svg|gif|webp|ico|woff|woff2|ttf)"
+        ]
+      }
+    }
+  ],
+  "dataGroups": [
+    {
+      "name": "supabase-library",
+      "urls": [
+        "https://ttssluhvsbauieeejsht.supabase.co/rest/v1/ingredients**",
+        "https://ttssluhvsbauieeejsht.supabase.co/rest/v1/meals**",
+        "https://ttssluhvsbauieeejsht.supabase.co/rest/v1/meal_items**"
+      ],
+      "cacheConfig": {
+        "maxSize": 80,
+        "maxAge": "7d",
+        "timeout": "4s",
+        "strategy": "performance"
+      }
+    },
+    {
+      "name": "supabase-reads",
+      "urls": [
+        "https://ttssluhvsbauieeejsht.supabase.co/rest/v1/log_entries**",
+        "https://ttssluhvsbauieeejsht.supabase.co/rest/v1/daily_summaries**",
+        "https://ttssluhvsbauieeejsht.supabase.co/rest/v1/weight_logs**",
+        "https://ttssluhvsbauieeejsht.supabase.co/rest/v1/community_posts**",
+        "https://ttssluhvsbauieeejsht.supabase.co/rest/v1/community_comments**",
+        "https://ttssluhvsbauieeejsht.supabase.co/rest/v1/profiles**",
+        "https://ttssluhvsbauieeejsht.supabase.co/rest/v1/group_members**",
+        "https://ttssluhvsbauieeejsht.supabase.co/rest/v1/groups**"
+      ],
+      "cacheConfig": {
+        "maxSize": 120,
+        "maxAge": "2h",
+        "timeout": "8s",
+        "strategy": "freshness"
+      }
+    },
+    {
+      "name": "supabase-storage",
+      "urls": [
+        "https://ttssluhvsbauieeejsht.supabase.co/storage/v1/object/**"
+      ],
+      "cacheConfig": {
+        "maxSize": 100,
+        "maxAge": "1d",
+        "strategy": "performance"
+      }
+    }
+  ]
+}

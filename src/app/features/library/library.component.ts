@@ -3,8 +3,9 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SupabaseService } from '../../core/supabase.service';
 import { AuthService } from '../../core/auth.service';
-import { Ingredient, Meal } from '../../core/types';
+import { Ingredient, Meal, MealItem } from '../../core/types';
 import { formatAppError } from '../../core/error-format';
+import { LibraryDataService } from '../../core/library-data.service';
 
 @Component({
   selector: 'app-library',
@@ -350,9 +351,11 @@ export class LibraryComponent implements OnInit {
   mealForm = { name: '' };
   mealItems: { ingredient_id: string; grams: number }[] = [];
   mealCosts = signal<Record<string, number>>({});
+  private readonly allMealItems = signal<MealItem[]>([]);
 
-  private supabaseService = inject(SupabaseService);
-  private authService = inject(AuthService);
+  private readonly supabaseService = inject(SupabaseService);
+  private readonly authService = inject(AuthService);
+  private readonly libraryDataService = inject(LibraryDataService);
 
   marketSuggestions = computed(() => {
     const markets = this.ingredients()
@@ -383,71 +386,28 @@ export class LibraryComponent implements OnInit {
     void this.loadData();
   }
 
-  async loadData() {
+  async loadData(forceRefresh = false) {
     const user = this.authService.user();
     if (!user) return;
 
     this.loading.set(true);
     this.errorMessage.set(null);
 
-    const { data: ingredientsData, error: ingredientError } = await this.supabaseService.client
-      .from('ingredients')
-      .select('*')
-      .eq('owner_id', user.id);
+    try {
+      const snapshot = await this.libraryDataService.loadLibrary(user.id, {
+        forceRefresh,
+        allowStaleOnError: true
+      });
 
-    if (ingredientError) {
-      this.errorMessage.set(formatAppError(ingredientError, 'Zutaten konnten nicht geladen werden'));
+      this.ingredients.set(snapshot.ingredients);
+      this.meals.set(snapshot.meals);
+      this.allMealItems.set(snapshot.mealItems);
+      this.mealCosts.set(this.buildMealCosts(snapshot.meals, snapshot.mealItems, snapshot.ingredients));
+    } catch (error: unknown) {
+      this.errorMessage.set(formatAppError(error, 'Bibliothek konnte nicht geladen werden'));
+    } finally {
       this.loading.set(false);
-      return;
     }
-
-    this.ingredients.set((ingredientsData || []) as Ingredient[]);
-
-    const { data: mealsData, error: mealsError } = await this.supabaseService.client
-      .from('meals')
-      .select('*')
-      .eq('owner_id', user.id);
-
-    if (mealsError) {
-      this.errorMessage.set(formatAppError(mealsError, 'Mahlzeiten konnten nicht geladen werden'));
-      this.loading.set(false);
-      return;
-    }
-
-    this.meals.set((mealsData || []) as Meal[]);
-
-    const mealIds = (mealsData || []).map(meal => meal.id);
-    if (mealIds.length === 0) {
-      this.mealCosts.set({});
-      this.loading.set(false);
-      return;
-    }
-
-    const { data: mealItemsData } = await this.supabaseService.client
-      .from('meal_items')
-      .select('*')
-      .in('meal_id', mealIds);
-
-    const ingredientCostMap = new Map(
-      this.ingredients().map(ingredient => [ingredient.id, Number(ingredient.cost_per_100 || 0)])
-    );
-    const costs: Record<string, number> = {};
-
-    for (const meal of mealsData || []) {
-      costs[meal.id] = 0;
-    }
-
-    for (const item of mealItemsData || []) {
-      const unitCost = ingredientCostMap.get(item.ingredient_id) || 0;
-      costs[item.meal_id] = (costs[item.meal_id] || 0) + (Number(item.grams) / 100) * unitCost;
-    }
-
-    for (const mealId of Object.keys(costs)) {
-      costs[mealId] = Number(costs[mealId].toFixed(2));
-    }
-
-    this.mealCosts.set(costs);
-    this.loading.set(false);
   }
 
   openCreateModal() {
@@ -495,42 +455,65 @@ export class LibraryComponent implements OnInit {
       base_ingredient_id: normalizedBaseIngredientId
     };
 
-    if (this.editingIngredient()) {
-      await this.supabaseService.client
-        .from('ingredients')
-        .update(payload)
-        .eq('id', this.editingIngredient()!.id);
-    } else {
-      await this.supabaseService.client
-        .from('ingredients')
-        .insert({ ...payload, owner_id: user.id });
+    try {
+      if (this.editingIngredient()) {
+        const { error } = await this.supabaseService.client
+          .from('ingredients')
+          .update(payload)
+          .eq('id', this.editingIngredient()!.id);
+        if (error) {
+          throw error;
+        }
+      } else {
+        const { error } = await this.supabaseService.client
+          .from('ingredients')
+          .insert({ ...payload, owner_id: user.id });
+        if (error) {
+          throw error;
+        }
+      }
+
+      this.showIngredientModal.set(false);
+      this.editingIngredient.set(null);
+      this.ingredientForm = {
+        source_type: 'manual',
+        base_ingredient_id: null,
+        name: '',
+        kcal_per_100: 0,
+        cost_per_100: null,
+        market_name: '',
+        protein_per_100: 0,
+        carbs_per_100: 0,
+        fat_per_100: 0,
+        brand: ''
+      };
+
+      this.libraryDataService.invalidate(user.id);
+      await this.loadData(true);
+    } catch (error: unknown) {
+      this.errorMessage.set(formatAppError(error, 'Zutat konnte nicht gespeichert werden'));
     }
-
-    this.showIngredientModal.set(false);
-    this.editingIngredient.set(null);
-    this.ingredientForm = {
-      source_type: 'manual',
-      base_ingredient_id: null,
-      name: '',
-      kcal_per_100: 0,
-      cost_per_100: null,
-      market_name: '',
-      protein_per_100: 0,
-      carbs_per_100: 0,
-      fat_per_100: 0,
-      brand: ''
-    };
-
-    await this.loadData();
   }
 
   async deleteIngredient(ingredient: Ingredient) {
-    await this.supabaseService.client
+    const user = this.authService.user();
+    if (!user) {
+      return;
+    }
+
+    const { error } = await this.supabaseService.client
       .from('ingredients')
       .delete()
-      .eq('id', ingredient.id);
+      .eq('id', ingredient.id)
+      .eq('owner_id', user.id);
 
-    await this.loadData();
+    if (error) {
+      this.errorMessage.set(formatAppError(error, 'Zutat konnte nicht gelöscht werden'));
+      return;
+    }
+
+    this.libraryDataService.invalidate(user.id);
+    await this.loadData(true);
   }
 
   editMeal(meal: Meal) {
@@ -541,12 +524,9 @@ export class LibraryComponent implements OnInit {
   }
 
   async loadMealItems(mealId: string) {
-    const { data } = await this.supabaseService.client
-      .from('meal_items')
-      .select('*')
-      .eq('meal_id', mealId);
-
-    this.mealItems = data || [];
+    this.mealItems = this.allMealItems()
+      .filter(item => item.meal_id === mealId)
+      .map(item => ({ ingredient_id: item.ingredient_id, grams: Number(item.grams) }));
   }
 
   addMealItem() {
@@ -571,48 +551,90 @@ export class LibraryComponent implements OnInit {
     const user = this.authService.user();
     if (!user) return;
 
-    let mealId: string;
-    if (this.editingMeal()) {
-      await this.supabaseService.client
-        .from('meals')
-        .update(this.mealForm)
-        .eq('id', this.editingMeal()!.id);
-      mealId = this.editingMeal()!.id;
-    } else {
-      const { data } = await this.supabaseService.client
-        .from('meals')
-        .insert({ ...this.mealForm, owner_id: user.id })
-        .select()
-        .single();
-      mealId = data.id;
-    }
+    try {
+      let mealId: string;
+      if (this.editingMeal()) {
+        const { error } = await this.supabaseService.client
+          .from('meals')
+          .update({ name: this.mealForm.name.trim() })
+          .eq('id', this.editingMeal()!.id)
+          .eq('owner_id', user.id);
 
-    await this.supabaseService.client
-      .from('meal_items')
-      .delete()
-      .eq('meal_id', mealId);
+        if (error) {
+          throw error;
+        }
+        mealId = this.editingMeal()!.id;
+      } else {
+        const { data, error } = await this.supabaseService.client
+          .from('meals')
+          .insert({ name: this.mealForm.name.trim(), owner_id: user.id })
+          .select('id')
+          .single();
 
-    for (const item of this.mealItems) {
-      await this.supabaseService.client
+        if (error || !data) {
+          throw error || new Error('Mahlzeit konnte nicht erstellt werden');
+        }
+        mealId = data.id;
+      }
+
+      const { error: deleteMealItemsError } = await this.supabaseService.client
         .from('meal_items')
-        .insert({ ...item, meal_id: mealId });
+        .delete()
+        .eq('meal_id', mealId);
+
+      if (deleteMealItemsError) {
+        throw deleteMealItemsError;
+      }
+
+      const itemsToInsert = this.mealItems
+        .filter(item => Boolean(item.ingredient_id) && Number(item.grams) > 0)
+        .map(item => ({
+          meal_id: mealId,
+          ingredient_id: item.ingredient_id,
+          grams: Number(item.grams)
+        }));
+
+      if (itemsToInsert.length > 0) {
+        const { error: insertMealItemsError } = await this.supabaseService.client
+          .from('meal_items')
+          .insert(itemsToInsert);
+
+        if (insertMealItemsError) {
+          throw insertMealItemsError;
+        }
+      }
+
+      this.showMealModal.set(false);
+      this.editingMeal.set(null);
+      this.mealForm = { name: '' };
+      this.mealItems = [];
+
+      this.libraryDataService.invalidate(user.id);
+      await this.loadData(true);
+    } catch (error: unknown) {
+      this.errorMessage.set(formatAppError(error, 'Mahlzeit konnte nicht gespeichert werden'));
     }
-
-    this.showMealModal.set(false);
-    this.editingMeal.set(null);
-    this.mealForm = { name: '' };
-    this.mealItems = [];
-
-    await this.loadData();
   }
 
   async deleteMeal(meal: Meal) {
-    await this.supabaseService.client
+    const user = this.authService.user();
+    if (!user) {
+      return;
+    }
+
+    const { error } = await this.supabaseService.client
       .from('meals')
       .delete()
-      .eq('id', meal.id);
+      .eq('id', meal.id)
+      .eq('owner_id', user.id);
 
-    await this.loadData();
+    if (error) {
+      this.errorMessage.set(formatAppError(error, 'Mahlzeit konnte nicht gelöscht werden'));
+      return;
+    }
+
+    this.libraryDataService.invalidate(user.id);
+    await this.loadData(true);
   }
 
   getMealCostLabel(mealId: string) {
@@ -651,5 +673,27 @@ export class LibraryComponent implements OnInit {
 
   private formatCurrency(value: number) {
     return `${value.toFixed(2)} €`;
+  }
+
+  private buildMealCosts(meals: Meal[], mealItems: MealItem[], ingredients: Ingredient[]): Record<string, number> {
+    const ingredientCostMap = new Map(
+      ingredients.map(ingredient => [ingredient.id, Number(ingredient.cost_per_100 || 0)])
+    );
+    const costs: Record<string, number> = {};
+
+    for (const meal of meals) {
+      costs[meal.id] = 0;
+    }
+
+    for (const item of mealItems) {
+      const unitCost = ingredientCostMap.get(item.ingredient_id) || 0;
+      costs[item.meal_id] = (costs[item.meal_id] || 0) + (Number(item.grams) / 100) * unitCost;
+    }
+
+    for (const mealId of Object.keys(costs)) {
+      costs[mealId] = Number(costs[mealId].toFixed(2));
+    }
+
+    return costs;
   }
 }

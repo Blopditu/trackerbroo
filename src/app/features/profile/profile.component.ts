@@ -474,6 +474,7 @@ export class ProfileComponent implements OnInit {
     }
 
     this.profile.set(resolvedProfile as Profile);
+    this.authService.setOnboardingCompleted(Boolean(resolvedProfile.onboarding_completed));
     this.avatarPreview.set(resolvedProfile.avatar_url || null);
 
     this.profileForm.patchValue({
@@ -698,6 +699,8 @@ export class ProfileComponent implements OnInit {
       if (profileError) {
         throw profileError;
       }
+
+      this.authService.setOnboardingCompleted(false);
 
       const { error: weightsError } = await this.supabaseService.client
         .from('weight_logs')
