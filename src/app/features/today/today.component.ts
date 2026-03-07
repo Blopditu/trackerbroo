@@ -84,6 +84,11 @@ interface TodaySnapshot {
           <app-macro-bar label="Kohlenhydrate" [value]="carbsToday()" [target]="carbGoal" color="#3DBB78" />
         </div>
 
+        <div class="kcal-row">
+          <span>Kalorien</span>
+          <strong>{{ caloriesToday() }} kcal</strong>
+        </div>
+
         <div class="weight-row">
           <span><lucide-icon [img]="icons.weight" class="icon" aria-hidden="true"></lucide-icon> Gewicht</span>
           <strong>{{ weightValueLabel() }}</strong>
@@ -295,6 +300,7 @@ interface TodaySnapshot {
       gap: 8px;
     }
 
+    .kcal-row,
     .weight-row {
       display: flex;
       align-items: center;
@@ -305,10 +311,12 @@ interface TodaySnapshot {
       font-size: 16px;
     }
 
+    .kcal-row span,
     .weight-row span {
       color: #A4A9B6;
     }
 
+    .kcal-row strong,
     .weight-row strong {
       color: #E6E8EC;
       font-weight: 600;
@@ -574,6 +582,7 @@ export class TodayComponent implements OnInit {
   readonly proteinToday = computed(() => Math.round(Number(this.summary()?.protein || 0)));
   readonly fatToday = computed(() => Math.round(Number(this.summary()?.fat || 0)));
   readonly carbsToday = computed(() => Math.round(Number(this.summary()?.carbs || 0)));
+  readonly caloriesToday = computed(() => Math.round(Number(this.summary()?.kcal || 0)));
 
   readonly todayEntries = computed(() => this.entries());
   readonly recentWeightEntries = computed(() => this.weightLogs().slice(0, 7));
