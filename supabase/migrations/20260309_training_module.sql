@@ -572,11 +572,11 @@ BEGIN
     RAISE EXCEPTION 'Not authenticated';
   END IF;
 
-  SELECT id, name, duration_weeks, start_date
+  SELECT p.id, p.name, p.duration_weeks, p.start_date
   INTO v_plan_id, v_plan_name, v_duration_weeks, v_plan_start
-  FROM public.training_plans
-  WHERE user_id = v_user_id
-  ORDER BY is_active DESC, created_at DESC
+  FROM public.training_plans p
+  WHERE p.user_id = v_user_id
+  ORDER BY p.is_active DESC, p.created_at DESC
   LIMIT 1;
 
   IF v_plan_id IS NULL THEN
