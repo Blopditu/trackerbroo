@@ -17,6 +17,11 @@
   animation: route-enter 220ms ease-out;
 }
 
+.app-surface.keyboard-open .install-banner {
+  opacity: 0;
+  pointer-events: none;
+}
+
 .install-banner {
   position: fixed;
   left: 50%;

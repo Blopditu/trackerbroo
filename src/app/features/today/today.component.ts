@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, OnInit, signal, viewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
@@ -142,8 +142,7 @@ interface TodaySnapshot {
               <p class="entry-meta">{{ entry.created_at.slice(11,16) }}</p>
             </div>
             <div class="entry-actions">
-              <button type="button" class="entry-btn" (click)="editEntry(entry)">Bearbeiten</button>
-              <button type="button" class="entry-btn danger" (click)="deleteEntry(entry.id)">Löschen</button>
+              <button type="button" class="entry-btn" (click)="openEntryActions(entry)">Mehr</button>
             </div>
           </article>
         }
@@ -152,7 +151,7 @@ interface TodaySnapshot {
         }
       </section>
 
-      <button class="today-fab" type="button" (click)="openActions()" aria-label="Schnellaktionen">
+      <button class="app-fab today-fab" type="button" (click)="openActions()" aria-label="Schnellaktionen">
         <lucide-icon [img]="icons.plus" class="fab-icon" aria-hidden="true"></lucide-icon>
       </button>
     </main>
@@ -198,12 +197,29 @@ interface TodaySnapshot {
         <label for="gym-note-input">Notiz (optional)</label>
         <textarea id="gym-note-input" rows="3" [(ngModel)]="gymNote" placeholder="Was lief heute gut?"></textarea>
 
-        <label for="gym-photo-input">Foto (optional)</label>
-        <input id="gym-photo-input" type="file" accept="image/*" (change)="onGymPhotoSelected($event)">
+        <p class="file-label">Foto (optional)</p>
+        <div class="file-row">
+          <button type="button" class="menu-btn compact" (click)="pickGymPhoto()">Foto auswählen</button>
+          <span class="file-name">{{ gymPhotoName() || 'Kein Foto gewählt' }}</span>
+        </div>
+        <input #gymPhotoInput id="gym-photo-input" class="sr-only" type="file" accept="image/*" (change)="onGymPhotoSelected($event)">
 
         <button type="button" class="menu-btn" [disabled]="savingGymPost()" (click)="submitGymPost()">
           {{ savingGymPost() ? 'Wird gepostet...' : 'Gym-Check-in posten' }}
         </button>
+      }
+
+      @if (sheetMode() === 'entry') {
+        @if (selectedEntryForActions()) {
+          <article class="entry-action-card">
+            <p class="entry-action-title">{{ entryName(selectedEntryForActions()!) }}</p>
+            <p class="entry-action-sub">{{ selectedEntryForActions()!.quantity }}{{ selectedEntryForActions()!.entry_type === 'ingredient' ? 'g' : ' Portionen' }} • {{ selectedEntryForActions()!.kcal.toFixed(0) }} kcal</p>
+          </article>
+          <div class="action-list">
+            <button type="button" class="menu-btn" (click)="editSelectedEntry()">Bearbeiten</button>
+            <button type="button" class="menu-btn danger-outline" (click)="deleteSelectedEntry()">Löschen</button>
+          </div>
+        }
       }
     </app-bottom-sheet>
 
@@ -409,8 +425,8 @@ interface TodaySnapshot {
     }
 
     .entry-actions {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      display: flex;
+      justify-content: flex-end;
       gap: 8px;
     }
 
@@ -423,30 +439,8 @@ interface TodaySnapshot {
       font-weight: 600;
     }
 
-    .entry-btn.danger {
-      border-color: #7f2a37;
-      color: #f3bdc7;
-      background: #2a151c;
-    }
-
     .today-fab {
-      position: fixed;
-      left: 50%;
-      transform: translateX(-50%);
-      bottom: calc(96px + env(safe-area-inset-bottom));
-      width: 56px;
-      height: 56px;
-      border: 1px solid #1B202B;
-      background: #5B8CFF;
-      color: #0F1115;
-      font-size: 24px;
-      font-weight: 700;
-      z-index: 30;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0;
-      line-height: 1;
+      z-index: 31;
     }
 
     .action-list,
@@ -475,6 +469,80 @@ interface TodaySnapshot {
       align-items: center;
       gap: 8px;
       padding: 0 12px;
+    }
+
+    .file-label {
+      margin: 0;
+      font-size: 13px;
+      color: #A4A9B6;
+      font-weight: 600;
+    }
+
+    .file-row {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .menu-btn.compact {
+      min-height: 44px;
+      padding: 0 14px;
+      width: auto;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+    }
+
+    .file-name {
+      color: #A4A9B6;
+      font-size: 13px;
+      font-weight: 600;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    .entry-action-card {
+      border: 1px solid #1B202B;
+      background: #0F1115;
+      padding: 10px;
+      display: grid;
+      gap: 4px;
+    }
+
+    .entry-action-title {
+      margin: 0;
+      color: #E6E8EC;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .entry-action-sub {
+      margin: 0;
+      color: #A4A9B6;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .danger-outline {
+      border-color: #7f2a37;
+      color: #f3bdc7;
+      background: #2a151c;
     }
 
     .food-name {
@@ -520,7 +588,7 @@ interface TodaySnapshot {
       font-size: 16px;
       margin-bottom: 8px;
       min-height: 96px;
-      resize: vertical;
+      resize: none;
     }
   `]
 })
@@ -557,9 +625,12 @@ export class TodayComponent implements OnInit {
   readonly successMessage = signal<string | null>(null);
 
   readonly showActionSheet = signal(false);
-  readonly sheetMode = signal<'menu' | 'food' | 'weight' | 'gym'>('menu');
+  readonly sheetMode = signal<'menu' | 'food' | 'weight' | 'gym' | 'entry'>('menu');
   readonly foodSearch = signal('');
   readonly savingGymPost = signal(false);
+  readonly gymPhotoName = signal<string | null>(null);
+  readonly selectedEntryForActions = signal<LogEntry | null>(null);
+  readonly gymPhotoInput = viewChild<ElementRef<HTMLInputElement>>('gymPhotoInput');
 
   readonly realToday = this.formatDate(new Date());
   readonly today = signal(this.realToday);
@@ -777,9 +848,17 @@ export class TodayComponent implements OnInit {
     this.showActionSheet.set(false);
     this.sheetMode.set('menu');
     this.foodSearch.set('');
+    this.selectedEntryForActions.set(null);
+    this.gymNote = '';
+    this.gymPhoto = null;
+    this.gymPhotoName.set(null);
+    const photoInput = this.gymPhotoInput()?.nativeElement;
+    if (photoInput) {
+      photoInput.value = '';
+    }
   }
 
-  setSheetMode(mode: 'menu' | 'food' | 'weight' | 'gym'): void {
+  setSheetMode(mode: 'menu' | 'food' | 'weight' | 'gym' | 'entry'): void {
     this.sheetMode.set(mode);
     if (mode === 'weight') {
       this.weightDateInput = this.today();
@@ -794,6 +873,7 @@ export class TodayComponent implements OnInit {
     if (this.sheetMode() === 'food') return 'Essen hinzufügen';
     if (this.sheetMode() === 'weight') return 'Gewicht eintragen';
     if (this.sheetMode() === 'gym') return 'Gym posten';
+    if (this.sheetMode() === 'entry') return 'Eintrag';
     return 'Schnellaktionen';
   }
 
@@ -872,6 +952,31 @@ export class TodayComponent implements OnInit {
     this.selectedItem.set(item);
   }
 
+  openEntryActions(entry: LogEntry): void {
+    this.selectedEntryForActions.set(entry);
+    this.sheetMode.set('entry');
+    this.showActionSheet.set(true);
+  }
+
+  editSelectedEntry(): void {
+    const entry = this.selectedEntryForActions();
+    if (!entry) {
+      return;
+    }
+
+    this.closeActions();
+    this.editEntry(entry);
+  }
+
+  async deleteSelectedEntry(): Promise<void> {
+    const entry = this.selectedEntryForActions();
+    if (!entry) {
+      return;
+    }
+    await this.deleteEntry(entry.id);
+    this.closeActions();
+  }
+
   async deleteEntry(entryId: string): Promise<void> {
     this.errorMessage.set(null);
     this.successMessage.set(null);
@@ -930,6 +1035,11 @@ export class TodayComponent implements OnInit {
   onGymPhotoSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     this.gymPhoto = input.files?.[0] || null;
+    this.gymPhotoName.set(this.gymPhoto?.name || null);
+  }
+
+  pickGymPhoto(): void {
+    this.gymPhotoInput()?.nativeElement.click();
   }
 
   async submitGymPost(): Promise<void> {
@@ -968,6 +1078,7 @@ export class TodayComponent implements OnInit {
 
       this.gymNote = '';
       this.gymPhoto = null;
+      this.gymPhotoName.set(null);
       this.successMessage.set('Gym-Check-in gepostet.');
       this.closeActions();
       this.invalidateDayCaches(user.id);
@@ -985,6 +1096,10 @@ export class TodayComponent implements OnInit {
 
   getMealName(id: string): string {
     return this.meals().find(item => item.id === id)?.name || 'Unbekannt';
+  }
+
+  entryName(entry: LogEntry): string {
+    return entry.entry_type === 'ingredient' ? this.getIngredientName(entry.ref_id) : this.getMealName(entry.ref_id);
   }
 
   private invalidateDayCaches(userId: string): void {

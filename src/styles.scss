@@ -53,6 +53,7 @@ html,
 body {
   margin: 0;
   min-height: 100%;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
@@ -60,6 +61,7 @@ body {
   color: var(--ink-900);
   background: var(--bg-page);
   background-image: radial-gradient(circle at 20% -20%, #1c283a 0%, transparent 46%);
+  overscroll-behavior-y: contain;
 }
 
 h1,
@@ -81,6 +83,11 @@ textarea {
 
 button {
   cursor: pointer;
+  touch-action: manipulation;
+}
+
+a {
+  touch-action: manipulation;
 }
 
 button:focus-visible,
@@ -96,11 +103,13 @@ a:focus-visible {
   min-height: 100vh;
   width: min(100%, 480px);
   margin: 0 auto;
-  padding-top: 74px;
-  padding-bottom: 106px;
+  padding-top: 56px;
+  padding-bottom: 114px;
   background: var(--bg-shell);
   border-left: 1px solid var(--border-soft);
   border-right: 1px solid var(--border-soft);
+  overscroll-behavior-y: contain;
+  overflow-x: clip;
 }
 
 a,
@@ -168,6 +177,21 @@ button:active {
   padding: var(--space-4);
   display: grid;
   gap: var(--space-3);
+  padding-bottom: calc(var(--space-5) + env(safe-area-inset-bottom));
+}
+
+.app-surface.keyboard-open {
+  padding-bottom: 20px;
+}
+
+.app-surface.keyboard-open .page {
+  padding-bottom: var(--space-4);
+}
+
+.app-surface.keyboard-open .app-fab,
+.app-surface.keyboard-open app-bottom-nav {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .panel {
@@ -271,9 +295,20 @@ textarea {
   color: var(--ink-900);
 }
 
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
 textarea {
   min-height: 88px;
-  resize: vertical;
+  resize: none;
 }
 
 .modal {
@@ -320,7 +355,7 @@ textarea {
 
 .toast {
   position: fixed;
-  top: 82px;
+  top: 62px;
   left: 50%;
   transform: translateX(-50%);
   width: min(calc(100% - 1.25rem), 430px);

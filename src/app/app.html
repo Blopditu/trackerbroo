@@ -1,4 +1,4 @@
-<div class="app-surface">
+<div class="app-surface" [class.keyboard-open]="keyboardOpen()">
   @if (showTopBar()) {
     <app-top-bar></app-top-bar>
   }

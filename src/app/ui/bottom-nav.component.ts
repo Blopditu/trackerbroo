@@ -41,7 +41,7 @@ import { Dumbbell, House, Library, LucideAngularModule, User, Users } from 'luci
       display: grid;
       grid-template-columns: repeat(5, minmax(0, 1fr));
       gap: 0.3rem;
-      padding: 0.45rem 0.65rem calc(0.7rem + env(safe-area-inset-bottom));
+      padding: 0.4rem 0.65rem calc(0.75rem + env(safe-area-inset-bottom));
       border-top: 1px solid var(--border-strong);
       background: var(--bg-shell);
       z-index: 27;
@@ -59,7 +59,7 @@ import { Dumbbell, House, Library, LucideAngularModule, User, Users } from 'luci
       text-decoration: none;
       color: var(--ink-500);
       font-weight: 700;
-      font-size: 0.7rem;
+      font-size: 0.82rem;
       line-height: 1;
       background: var(--bg-surface-2);
     }
@@ -75,6 +75,7 @@ import { Dumbbell, House, Library, LucideAngularModule, User, Users } from 'luci
       color: var(--ink-900);
       border-color: var(--accent-500);
       background: var(--accent-soft);
+      box-shadow: inset 0 0 0 1px rgba(91, 140, 255, 0.25);
     }
   `]
 })

@@ -134,7 +134,7 @@ interface BuilderDayDraft {
               <div>
                 <p class="muted">Aktiver Plan</p>
                 <h2>{{ dashboardWeek()!.activePlan!.name }}</h2>
-                <p class="muted">Week {{ dashboardWeek()!.activePlan!.weekNumber }}</p>
+                <p class="muted">Woche {{ dashboardWeek()!.activePlan!.weekNumber }}</p>
               </div>
               <span class="mono-badge">{{ dashboardWeek()!.activePlan!.durationWeeks }} Wochen</span>
             </div>
@@ -146,7 +146,11 @@ interface BuilderDayDraft {
                     <strong>{{ workout.dayNumber }} {{ workout.name }}</strong>
                     <div class="thumbs" aria-hidden="true">
                       @for (thumb of workout.thumbnails.slice(0, 3); track thumb) {
-                        <img [src]="thumb" alt="" loading="lazy" decoding="async">
+                        @if (isPlaceholderImage(thumb)) {
+                          <span class="thumb-fallback"></span>
+                        } @else {
+                          <img [src]="thumb" alt="" loading="lazy" decoding="async">
+                        }
                       }
                       @if (workout.exerciseCount > 3) {
                         <span class="thumb-more">+{{ workout.exerciseCount - 3 }}</span>
@@ -201,7 +205,11 @@ interface BuilderDayDraft {
             <div class="exercise-list">
               @for (exercise of selectedOverview()?.exercises || []; track exercise.dayExerciseId) {
                 <article class="exercise-row">
-                  <img [src]="exercise.images[0] || placeholderImage" alt="{{ exercise.name }}" loading="lazy" decoding="async">
+                  @if (isPlaceholderImage(exercise.images[0] || null)) {
+                    <span class="exercise-thumb-fallback"></span>
+                  } @else {
+                    <img [src]="exercise.images[0] || placeholderImage" alt="{{ exercise.name }}" loading="lazy" decoding="async">
+                  }
                   <div>
                     <strong>{{ exercise.name }}</strong>
                     <p class="muted">{{ equipmentLabel(exercise.equipment) }} • {{ exercise.sets }} x {{ exercise.targetReps ? exercise.targetReps : (exercise.targetSeconds + 's') }}</p>
@@ -321,15 +329,15 @@ interface BuilderDayDraft {
           </div>
 
           <form class="measurement-form" [formGroup]="measurementForm" (ngSubmit)="saveMeasurement()">
-            <label for="measure-type">Measurement</label>
+            <label for="measure-type">Messung</label>
             <select id="measure-type" formControlName="type">
-              <option value="weight">Weight</option>
-              <option value="bodyfat">Bodyfat</option>
-              <option value="waist">Waist</option>
-              <option value="chest">Chest</option>
+              <option value="weight">Gewicht</option>
+              <option value="bodyfat">Körperfett</option>
+              <option value="waist">Taille</option>
+              <option value="chest">Brust</option>
             </select>
 
-            <label for="measure-value">Value</label>
+            <label for="measure-value">Wert</label>
             <input id="measure-value" type="number" min="0" step="0.1" formControlName="value">
 
             <label for="measure-date">Datum</label>
@@ -372,7 +380,7 @@ interface BuilderDayDraft {
       }
 
       @if (activeTab() === 'progress') {
-        <button class="gym-fab" type="button" (click)="openSheet('graphs')" aria-label="Schnellaktion">
+        <button class="app-fab gym-fab" type="button" (click)="openSheet('graphs')" aria-label="Schnellaktion">
           <lucide-icon [img]="icons.plus" class="fab-icon" aria-hidden="true"></lucide-icon>
         </button>
       }
@@ -710,6 +718,17 @@ interface BuilderDayDraft {
       background: #0F1115;
     }
 
+    .thumb-fallback,
+    .exercise-thumb-fallback {
+      width: 40px;
+      height: 40px;
+      border: 1px solid #1B202B;
+      border-radius: 8px;
+      background: #1b2434;
+      display: inline-block;
+      box-shadow: inset 0 0 0 1px rgba(91, 140, 255, 0.16);
+    }
+
     .thumb-more {
       font-size: 12px;
       color: #A4A9B6;
@@ -764,6 +783,13 @@ interface BuilderDayDraft {
       border: 1px solid #1B202B;
       background: #0F1115;
       padding: 10px;
+    }
+
+    .exercise-row img,
+    .exercise-row .exercise-thumb-fallback {
+      width: 48px;
+      height: 48px;
+      border-radius: 8px;
     }
 
     .execution-head {
@@ -977,19 +1003,7 @@ interface BuilderDayDraft {
     }
 
     .gym-fab {
-      position: fixed;
-      left: 50%;
-      transform: translateX(-50%);
-      bottom: calc(96px + env(safe-area-inset-bottom));
-      width: 56px;
-      height: 56px;
-      border: 1px solid #1B202B;
-      background: #5B8CFF;
-      color: #0F1115;
-      display: grid;
-      place-items: center;
       z-index: 35;
-      padding: 0;
     }
 
     .fab-icon {
@@ -1214,6 +1228,10 @@ export class GymComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.syncBuilderDayCount();
     void this.loadTrackerData();
+  }
+
+  isPlaceholderImage(url: string | null | undefined): boolean {
+    return !url || /dummyimage\.com/i.test(url);
   }
 
   ngOnDestroy(): void {

@@ -44,6 +44,7 @@ let sheetTitleIdCounter = 0;
       align-items: end;
       background: rgba(4, 8, 12, 0.68);
       animation: overlay-in 160ms ease-out;
+      touch-action: pan-y;
     }
 
     .sheet {
@@ -55,6 +56,8 @@ let sheetTitleIdCounter = 0;
       padding: 10px 16px calc(16px + env(safe-area-inset-bottom));
       max-height: 86vh;
       overflow: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
       box-shadow: 0 -12px 28px rgba(0, 0, 0, 0.35);
       animation: sheet-in 190ms ease-out;
     }
@@ -83,8 +86,8 @@ let sheetTitleIdCounter = 0;
     }
 
     .close {
-      width: 40px;
-      height: 40px;
+      width: 44px;
+      height: 44px;
       border: 1px solid #1B202B;
       background: #0F1115;
       color: #A4A9B6;

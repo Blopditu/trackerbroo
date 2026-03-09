@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, OnInit, signal, viewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -54,7 +54,11 @@ import { formatAppError } from '../../core/error-format';
           <div id="profile-form-title" class="scroll-header">Profil-Details</div>
           <form class="stack-form" [formGroup]="profileForm" (ngSubmit)="saveProfile()">
             <label for="avatar">Profilfoto</label>
-            <input id="avatar" type="file" accept="image/*" (change)="onAvatarSelected($event)">
+            <div class="file-row">
+              <button type="button" class="action-btn ghost" (click)="pickAvatar()">Foto auswählen</button>
+              <span class="file-name">{{ avatarFileName() || 'Kein Foto gewählt' }}</span>
+            </div>
+            <input #avatarInput id="avatar" class="sr-only" type="file" accept="image/*" (change)="onAvatarSelected($event)">
 
             <label for="display-name">Anzeigename</label>
             <input id="display-name" type="text" formControlName="display_name" placeholder="Dein Name">
@@ -235,6 +239,35 @@ import { formatAppError } from '../../core/error-format';
       font-weight: 700;
     }
 
+    .file-row {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.35rem;
+    }
+
+    .file-name {
+      color: var(--ink-700);
+      font-size: var(--text-sm);
+      font-weight: 700;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
     .grid-two {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -329,6 +362,8 @@ export class ProfileComponent implements OnInit {
   readonly profile = signal<Profile | null>(null);
   readonly weightLogs = signal<WeightLog[]>([]);
   readonly avatarPreview = signal<string | null>(null);
+  readonly avatarFileName = signal<string | null>(null);
+  readonly avatarInput = viewChild<ElementRef<HTMLInputElement>>('avatarInput');
   readonly gymWeekSessions = signal(0);
 
   private avatarFile: File | null = null;
@@ -482,6 +517,7 @@ export class ProfileComponent implements OnInit {
     this.profile.set(resolvedProfile as Profile);
     this.authService.setOnboardingCompleted(Boolean(resolvedProfile.onboarding_completed));
     this.avatarPreview.set(resolvedProfile.avatar_url || null);
+    this.avatarFileName.set(null);
 
     this.profileForm.patchValue({
       display_name: resolvedProfile.display_name || '',
@@ -542,11 +578,17 @@ export class ProfileComponent implements OnInit {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) {
+      this.avatarFileName.set(null);
       return;
     }
 
     this.avatarFile = file;
+    this.avatarFileName.set(file.name);
     this.avatarPreview.set(URL.createObjectURL(file));
+  }
+
+  pickAvatar(): void {
+    this.avatarInput()?.nativeElement.click();
   }
 
   async saveProfile(): Promise<void> {
@@ -596,6 +638,7 @@ export class ProfileComponent implements OnInit {
       }
 
       this.avatarFile = null;
+      this.avatarFileName.set(null);
       this.successMessage.set('Profil gespeichert.');
       await this.loadAll();
     } catch (error) {

@@ -6,11 +6,12 @@ import { AuthService } from '../../core/auth.service';
 import { Ingredient, Meal, MealItem } from '../../core/types';
 import { formatAppError } from '../../core/error-format';
 import { LibraryDataService } from '../../core/library-data.service';
+import { BottomSheetComponent } from '../../ui/minimal/bottom-sheet.component';
 
 @Component({
   selector: 'app-library',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, BottomSheetComponent],
   template: `
     <main class="page library-page">
       @if (errorMessage()) {
@@ -63,8 +64,7 @@ import { LibraryDataService } from '../../core/library-data.service';
                     }
                   </div>
                   <div class="actions">
-                    <button type="button" class="action-btn ghost mini" (click)="editIngredient(item)">Bearbeiten</button>
-                    <button type="button" class="action-btn ghost mini danger" (click)="deleteIngredient(item)">Löschen</button>
+                    <button type="button" class="action-btn ghost mini" (click)="openIngredientActions(item)">Mehr</button>
                   </div>
                 </article>
               }
@@ -88,8 +88,7 @@ import { LibraryDataService } from '../../core/library-data.service';
                     <div class="sub">Geschätzte Kosten: {{ getMealCostLabel(item.id) }}</div>
                   </div>
                   <div class="actions">
-                    <button type="button" class="action-btn ghost mini" (click)="editMeal(item)">Bearbeiten</button>
-                    <button type="button" class="action-btn ghost mini danger" (click)="deleteMeal(item)">Löschen</button>
+                    <button type="button" class="action-btn ghost mini" (click)="openMealActions(item)">Mehr</button>
                   </div>
                 </article>
               }
@@ -110,6 +109,19 @@ import { LibraryDataService } from '../../core/library-data.service';
         +
       </button>
     </main>
+
+    <app-bottom-sheet [open]="actionSheetOpen()" title="Aktionen" (closed)="closeActionSheet()">
+      @if (actionSheetItemLabel()) {
+        <article class="sheet-preview">
+          <strong>{{ actionSheetItemLabel() }}</strong>
+          <p class="sub">{{ actionSheetItemSubLabel() }}</p>
+        </article>
+      }
+      <div class="action-sheet-list">
+        <button type="button" class="action-btn ghost" (click)="editSelectedItem()">Bearbeiten</button>
+        <button type="button" class="action-btn ghost mini danger" (click)="deleteSelectedItem()">Löschen</button>
+      </div>
+    </app-bottom-sheet>
 
     @if (showIngredientModal()) {
       <div class="modal" role="dialog" aria-modal="true" aria-label="Zutateneditor">
@@ -319,6 +331,31 @@ import { LibraryDataService } from '../../core/library-data.service';
     .modal-actions button {
       flex: 1;
     }
+
+    .sheet-preview {
+      border: 1px solid var(--border-strong);
+      border-radius: 12px;
+      background: #0f1115;
+      padding: 0.7rem 0.75rem;
+      display: grid;
+      gap: 0.3rem;
+    }
+
+    .sheet-preview strong {
+      font-size: 1rem;
+      color: var(--ink-900);
+    }
+
+    .action-sheet-list {
+      margin-top: 0.6rem;
+      display: grid;
+      gap: 0.5rem;
+    }
+
+    .action-sheet-list .action-btn {
+      width: 100%;
+      justify-content: center;
+    }
   `]
 })
 export class LibraryComponent implements OnInit {
@@ -331,6 +368,9 @@ export class LibraryComponent implements OnInit {
   editingMeal = signal<Meal | null>(null);
   loading = signal(false);
   errorMessage = signal<string | null>(null);
+  selectedIngredientForActions = signal<Ingredient | null>(null);
+  selectedMealForActions = signal<Meal | null>(null);
+  actionSheetOpen = signal(false);
 
   ingredientSearch = '';
   marketFilter = '';
@@ -673,6 +713,74 @@ export class LibraryComponent implements OnInit {
 
   private formatCurrency(value: number) {
     return `${value.toFixed(2)} €`;
+  }
+
+  openIngredientActions(ingredient: Ingredient): void {
+    this.selectedIngredientForActions.set(ingredient);
+    this.selectedMealForActions.set(null);
+    this.actionSheetOpen.set(true);
+  }
+
+  openMealActions(meal: Meal): void {
+    this.selectedMealForActions.set(meal);
+    this.selectedIngredientForActions.set(null);
+    this.actionSheetOpen.set(true);
+  }
+
+  closeActionSheet(): void {
+    this.actionSheetOpen.set(false);
+    this.selectedIngredientForActions.set(null);
+    this.selectedMealForActions.set(null);
+  }
+
+  actionSheetItemLabel(): string {
+    if (this.selectedIngredientForActions()) {
+      return this.selectedIngredientForActions()!.name;
+    }
+    if (this.selectedMealForActions()) {
+      return this.selectedMealForActions()!.name;
+    }
+    return '';
+  }
+
+  actionSheetItemSubLabel(): string {
+    if (this.selectedIngredientForActions()) {
+      return `${this.selectedIngredientForActions()!.kcal_per_100} kcal / 100g`;
+    }
+    if (this.selectedMealForActions()) {
+      return `Geschätzte Kosten: ${this.getMealCostLabel(this.selectedMealForActions()!.id)}`;
+    }
+    return '';
+  }
+
+  editSelectedItem(): void {
+    const ingredient = this.selectedIngredientForActions();
+    if (ingredient) {
+      this.closeActionSheet();
+      this.editIngredient(ingredient);
+      return;
+    }
+
+    const meal = this.selectedMealForActions();
+    if (meal) {
+      this.closeActionSheet();
+      this.editMeal(meal);
+    }
+  }
+
+  async deleteSelectedItem(): Promise<void> {
+    const ingredient = this.selectedIngredientForActions();
+    if (ingredient) {
+      await this.deleteIngredient(ingredient);
+      this.closeActionSheet();
+      return;
+    }
+
+    const meal = this.selectedMealForActions();
+    if (meal) {
+      await this.deleteMeal(meal);
+      this.closeActionSheet();
+    }
   }
 
   private buildMealCosts(meals: Meal[], mealItems: MealItem[], ingredients: Ingredient[]): Record<string, number> {

@@ -8,7 +8,8 @@ import {
   ViewChild,
   computed,
   inject,
-  signal
+  signal,
+  viewChild
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -64,7 +65,7 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
                   <div class="post-actions">
                     <span class="post-meta">{{ post.day }}</span>
                     @if (isOwnPost(post)) {
-                      <button type="button" class="btn-inline danger" (click)="deletePost(post.id)">Löschen</button>
+                      <button type="button" class="btn-inline" (click)="openPostActions(post)">Mehr</button>
                     }
                   </div>
                 </div>
@@ -102,16 +103,24 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
                   }
                 </div>
 
-                <div class="compose-row">
-                  <input
-                    type="text"
-                    [ngModel]="commentInputs()[post.id] || ''"
-                    (ngModelChange)="setCommentInput(post.id, $event)"
-                    placeholder="Kommentar"
-                    [attr.aria-label]="'Kommentar für Post von ' + displayName(post.user_id)"
-                  >
-                  <button type="button" class="btn-inline" (click)="submitComment(post.id)">Senden</button>
+                <div class="post-inline-actions">
+                  <button type="button" class="btn-inline" (click)="toggleCommentComposer(post.id)">
+                    {{ expandedCommentPostId() === post.id ? 'Schließen' : 'Kommentieren' }}
+                  </button>
                 </div>
+
+                @if (expandedCommentPostId() === post.id) {
+                  <div class="compose-row">
+                    <input
+                      type="text"
+                      [ngModel]="commentInputs()[post.id] || ''"
+                      (ngModelChange)="setCommentInput(post.id, $event)"
+                      placeholder="Kommentar"
+                      [attr.aria-label]="'Kommentar für Post von ' + displayName(post.user_id)"
+                    >
+                    <button type="button" class="btn-inline" (click)="submitComment(post.id)">Senden</button>
+                  </div>
+                }
               </article>
             }
           }
@@ -136,7 +145,7 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
         }
       </section>
 
-      <button class="community-fab" type="button" (click)="openGymSheet()" aria-label="Gym-Post erstellen">
+      <button class="app-fab community-fab" type="button" (click)="openGymSheet()" aria-label="Gym-Post erstellen">
         <lucide-icon [img]="icons.plus" class="fab-icon" aria-hidden="true"></lucide-icon>
       </button>
     </main>
@@ -145,12 +154,31 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
       <label for="gym-note">Notiz (optional)</label>
       <textarea id="gym-note" rows="2" [(ngModel)]="gymNote" placeholder="Was lief heute gut?"></textarea>
 
-      <label for="gym-photo">Foto (optional)</label>
-      <input id="gym-photo" type="file" accept="image/*" (change)="onGymPhotoSelected($event)">
+      <p class="file-label">Foto (optional)</p>
+      <div class="file-row">
+        <button type="button" class="btn compact" (click)="pickGymPhoto()">Foto auswählen</button>
+        <span class="file-name">{{ gymPhotoName() || 'Kein Foto gewählt' }}</span>
+      </div>
+      <input #gymPhotoInput id="gym-photo" class="sr-only" type="file" accept="image/*" (change)="onGymPhotoSelected($event)">
 
       <button type="button" class="btn" [disabled]="savingPost()" (click)="submitGymPost()">
         {{ savingPost() ? 'Wird gepostet...' : 'Gym-Check-in posten' }}
       </button>
+    </app-bottom-sheet>
+
+    <app-bottom-sheet [open]="selectedPostForActions() !== null" title="Post-Aktionen" (closed)="closePostActions()">
+      @if (selectedPostForActions()) {
+        <article class="action-card">
+          <p class="action-title">{{ postTypeLabel(selectedPostForActions()!) }}</p>
+          @if (selectedPostForActions()!.note) {
+            <p class="action-sub">{{ selectedPostForActions()!.note }}</p>
+          }
+        </article>
+        <div class="action-list">
+          <button type="button" class="btn danger" (click)="deleteSelectedPost()">Löschen</button>
+          <button type="button" class="btn" (click)="closePostActions()">Abbrechen</button>
+        </div>
+      }
     </app-bottom-sheet>
   `,
   styles: [`
@@ -259,6 +287,80 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
       background: #2a151c;
     }
 
+    .post-inline-actions {
+      display: flex;
+      justify-content: flex-start;
+    }
+
+    .file-label {
+      margin: 0;
+      font-size: 13px;
+      color: #A4A9B6;
+      font-weight: 600;
+    }
+
+    .file-row {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .btn.compact {
+      min-height: 40px;
+      padding: 0 12px;
+      width: auto;
+    }
+
+    .file-name {
+      color: #A4A9B6;
+      font-size: 13px;
+      font-weight: 600;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    .action-card {
+      border: 1px solid #1B202B;
+      background: #0F1115;
+      padding: 10px;
+      display: grid;
+      gap: 4px;
+    }
+
+    .action-title {
+      margin: 0;
+      color: #E6E8EC;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .action-sub {
+      margin: 0;
+      color: #A4A9B6;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .action-list {
+      display: grid;
+      gap: 8px;
+    }
+
     .load-more {
       width: 100%;
       text-align: center;
@@ -271,21 +373,7 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
     }
 
     .community-fab {
-      position: fixed;
-      left: 50%;
-      transform: translateX(-50%);
-      bottom: calc(96px + env(safe-area-inset-bottom));
-      width: 56px;
-      height: 56px;
-      border: 1px solid #1B202B;
-      background: #5B8CFF;
-      color: #0F1115;
-      z-index: 30;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0;
-      line-height: 1;
+      z-index: 31;
     }
 
     .fab-icon {
@@ -324,6 +412,10 @@ export class CommunityComponent implements OnInit, AfterViewInit, OnDestroy {
   readonly profiles = signal<Record<string, ProfileDirectoryEntry>>({});
   readonly photoSrcMap = signal<Record<string, string>>({});
   readonly commentInputs = signal<Record<string, string>>({});
+  readonly selectedPostForActions = signal<CommunityPost | null>(null);
+  readonly expandedCommentPostId = signal<string | null>(null);
+  readonly gymPhotoName = signal<string | null>(null);
+  readonly gymPhotoInput = viewChild<ElementRef<HTMLInputElement>>('gymPhotoInput');
 
   readonly loadingInitial = signal(false);
   readonly loadingMore = signal(false);
@@ -387,6 +479,8 @@ export class CommunityComponent implements OnInit, AfterViewInit, OnDestroy {
     this.commentsByPost.set({});
     this.profiles.set({});
     this.photoSrcMap.set({});
+    this.selectedPostForActions.set(null);
+    this.expandedCommentPostId.set(null);
     this.nextOffset.set(0);
     this.hasMore.set(true);
 
@@ -452,6 +546,7 @@ export class CommunityComponent implements OnInit, AfterViewInit, OnDestroy {
 
       this.gymNote = '';
       this.gymPhoto = null;
+      this.gymPhotoName.set(null);
       this.showGymSheet.set(false);
       this.successMessage.set('Gym-Check-in gepostet.');
       await this.loadInitial();
@@ -490,6 +585,7 @@ export class CommunityComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     this.setCommentInput(postId, '');
+    this.expandedCommentPostId.set(null);
 
     if (!data) {
       return;
@@ -534,15 +630,48 @@ export class CommunityComponent implements OnInit, AfterViewInit, OnDestroy {
 
   closeGymSheet(): void {
     this.showGymSheet.set(false);
+    this.gymNote = '';
+    this.gymPhoto = null;
+    this.gymPhotoName.set(null);
+    const photoInput = this.gymPhotoInput()?.nativeElement;
+    if (photoInput) {
+      photoInput.value = '';
+    }
   }
 
   onGymPhotoSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     this.gymPhoto = input.files?.[0] || null;
+    this.gymPhotoName.set(this.gymPhoto?.name || null);
+  }
+
+  pickGymPhoto(): void {
+    this.gymPhotoInput()?.nativeElement.click();
   }
 
   setCommentInput(postId: string, value: string): void {
     this.commentInputs.update(current => ({ ...current, [postId]: value }));
+  }
+
+  openPostActions(post: CommunityPost): void {
+    this.selectedPostForActions.set(post);
+  }
+
+  closePostActions(): void {
+    this.selectedPostForActions.set(null);
+  }
+
+  toggleCommentComposer(postId: string): void {
+    this.expandedCommentPostId.update(current => (current === postId ? null : postId));
+  }
+
+  async deleteSelectedPost(): Promise<void> {
+    const post = this.selectedPostForActions();
+    if (!post) {
+      return;
+    }
+    await this.deletePost(post.id);
+    this.closePostActions();
   }
 
   isOwnPost(post: CommunityPost): boolean {
