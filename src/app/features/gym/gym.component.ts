@@ -83,7 +83,7 @@ interface BuilderDayDraft {
 
       <header class="panel hero">
         <p class="title-font">Gym</p>
-        <h1>Strength Tracker</h1>
+        <h1>Krafttracker</h1>
         <div class="tabs" role="tablist" aria-label="Gym Tabs">
           <button type="button" role="tab" [attr.aria-selected]="activeTab() === 'tracker'" [class.active]="activeTab() === 'tracker'" (click)="activeTab.set('tracker')">
             <lucide-icon [img]="icons.dumbbell" class="icon" aria-hidden="true"></lucide-icon>
@@ -166,9 +166,9 @@ interface BuilderDayDraft {
           }
 
           <div class="quick-actions">
-            <button type="button" class="action-btn ghost" (click)="openSheet('plans')">All Plans</button>
-            <button type="button" class="action-btn ghost" (click)="openSheet('exercises')">Exercises</button>
-            <button type="button" class="action-btn ghost" (click)="openSheet('help')">Help</button>
+            <button type="button" class="action-btn ghost" (click)="openSheet('plans')">Alle Plaene</button>
+            <button type="button" class="action-btn ghost" (click)="openSheet('exercises')">Uebungen</button>
+            <button type="button" class="action-btn ghost" (click)="openSheet('help')">Hilfe</button>
           </div>
         </section>
 
@@ -177,8 +177,8 @@ interface BuilderDayDraft {
             <div class="overview-head">
               <div>
                 <h2>{{ selectedOverview()!.dayName }}</h2>
-                <p class="muted">{{ selectedOverview()!.planName }} • Week {{ selectedOverview()!.weekNumber }}</p>
-                <p class="muted">{{ selectedOverview()!.totalExercises }} Übungen • {{ selectedOverview()!.totalSets }} Sets</p>
+                <p class="muted">{{ selectedOverview()!.planName }} • Woche {{ selectedOverview()!.weekNumber }}</p>
+                <p class="muted">{{ selectedOverview()!.totalExercises }} Uebungen • {{ selectedOverview()!.totalSets }} Saetze</p>
               </div>
               <button type="button" class="action-btn" (click)="startWorkout()">
                 <lucide-icon [img]="icons.play" class="icon" aria-hidden="true"></lucide-icon>
@@ -214,8 +214,8 @@ interface BuilderDayDraft {
         @if (activeSession()) {
           <section class="panel execution">
             <div class="execution-head">
-              <h2>Workout Execution</h2>
-              <span class="mono-badge">Session {{ activeSession()!.sessionDate }}</span>
+              <h2>Workout-Ausfuehrung</h2>
+              <span class="mono-badge">Einheit {{ activeSession()!.sessionDate }}</span>
             </div>
 
             <div class="exercise-tabs" role="tablist" aria-label="Übungen">
@@ -259,7 +259,7 @@ interface BuilderDayDraft {
                   <div class="table-head" role="row">
                     <span>#</span>
                     <span>KG</span>
-                    <span>REPS</span>
+                    <span>WDH</span>
                     <span>10RM</span>
                     <span>OK</span>
                   </div>
@@ -339,7 +339,7 @@ interface BuilderDayDraft {
             <h2>Progress</h2>
             <button type="button" class="action-btn ghost" (click)="openSheet('graphs')">
               <lucide-icon [img]="icons.plus" class="icon" aria-hidden="true"></lucide-icon>
-              Add Graph
+              Graph hinzufuegen
             </button>
           </div>
 
@@ -371,7 +371,7 @@ interface BuilderDayDraft {
       </button>
     </main>
 
-    <app-bottom-sheet [open]="activeSheet() === 'plans'" title="All Plans" (closed)="closeSheet()">
+    <app-bottom-sheet [open]="activeSheet() === 'plans'" title="Alle Plaene" (closed)="closeSheet()">
       <div class="sheet-stack">
         <button type="button" class="action-btn" (click)="startPlanBuilder()">Neuen Plan erstellen</button>
         @for (plan of plans(); track plan.id) {
@@ -415,7 +415,7 @@ interface BuilderDayDraft {
           <section class="builder-day">
             <h3>Day {{ dayIndex + 1 }}</h3>
             <input type="text" [value]="day.name" (input)="setBuilderDayName(dayIndex, $event)" placeholder="Day Name">
-            <input type="text" [value]="day.targetMuscles" (input)="setBuilderDayMuscles(dayIndex, $event)" placeholder="Target muscles (comma separated)">
+            <input type="text" [value]="day.targetMuscles" (input)="setBuilderDayMuscles(dayIndex, $event)" placeholder="Zielmuskeln (Komma-getrennt)">
 
             @for (exercise of day.exercises; track $index; let exerciseIndex = $index) {
               <div class="builder-exercise">
@@ -425,33 +425,33 @@ interface BuilderDayDraft {
                   }
                 </select>
                 <input type="number" min="1" [value]="exercise.sets" (input)="setBuilderExercise(dayIndex, exerciseIndex, 'sets', $event)">
-                <input type="number" min="1" [value]="exercise.targetReps ?? ''" (input)="setBuilderExercise(dayIndex, exerciseIndex, 'targetReps', $event)" placeholder="Reps">
+                <input type="number" min="1" [value]="exercise.targetReps ?? ''" (input)="setBuilderExercise(dayIndex, exerciseIndex, 'targetReps', $event)" placeholder="Wdh">
                 <button type="button" class="action-btn ghost" (click)="removeBuilderExercise(dayIndex, exerciseIndex)">Entfernen</button>
               </div>
             }
 
-            <button type="button" class="action-btn ghost" (click)="addBuilderExercise(dayIndex)">Add Exercise</button>
+            <button type="button" class="action-btn ghost" (click)="addBuilderExercise(dayIndex)">Uebung hinzufuegen</button>
           </section>
         }
 
-        <button type="button" class="action-btn ghost" [disabled]="builderDays().length >= 7" (click)="addBuilderDay()">Add Day</button>
+        <button type="button" class="action-btn ghost" [disabled]="builderDays().length >= 7" (click)="addBuilderDay()">Tag hinzufuegen</button>
         <button type="submit" class="action-btn" [disabled]="planMetaForm.invalid || builderDays().length === 0">Plan speichern</button>
       </form>
     </app-bottom-sheet>
 
-    <app-bottom-sheet [open]="activeSheet() === 'exercises'" title="Exercises" (closed)="closeSheet()">
+    <app-bottom-sheet [open]="activeSheet() === 'exercises'" title="Uebungen" (closed)="closeSheet()">
       <div class="sheet-stack">
         <form class="sheet-card" [formGroup]="customExerciseForm" (ngSubmit)="saveCustomExercise()">
-          <strong>Custom Exercise</strong>
+          <strong>Eigene Uebung</strong>
           <input type="text" formControlName="name" placeholder="Name">
           <select formControlName="equipment">
             @for (equipment of equipmentOptions; track equipment) {
               <option [value]="equipment">{{ equipmentLabel(equipment) }}</option>
             }
           </select>
-          <input type="text" formControlName="primaryMuscle" placeholder="Primary muscle">
-          <input type="text" formControlName="secondaryMuscles" placeholder="Secondary muscles (comma)">
-          <input type="text" formControlName="images" placeholder="Image URLs (comma)">
+          <input type="text" formControlName="primaryMuscle" placeholder="Primaerer Muskel">
+          <input type="text" formControlName="secondaryMuscles" placeholder="Sekundaere Muskeln (Komma-getrennt)">
+          <input type="text" formControlName="images" placeholder="Bild-URLs (Komma-getrennt)">
           <button type="submit" class="action-btn" [disabled]="customExerciseForm.invalid">Speichern</button>
         </form>
 
@@ -461,8 +461,8 @@ interface BuilderDayDraft {
               <img [src]="exercise.images[0] || placeholderImage" alt="{{ exercise.name }}" loading="lazy" decoding="async">
               <div>
                 <strong>{{ exercise.name }}</strong>
-                <p class="muted">{{ equipmentLabel(exercise.equipment) }} • {{ exercise.primary_muscle }}</p>
-                <p class="muted">{{ exercise.is_system ? 'System' : 'Custom' }}</p>
+                <p class="muted">{{ equipmentLabel(exercise.equipment) }} • {{ muscleLabel(exercise.primary_muscle) }}</p>
+                <p class="muted">{{ exercise.is_system ? 'System' : 'Eigen' }}</p>
               </div>
             </article>
           }
@@ -470,7 +470,7 @@ interface BuilderDayDraft {
       </div>
     </app-bottom-sheet>
 
-    <app-bottom-sheet [open]="activeSheet() === 'help'" title="Help" (closed)="closeSheet()">
+    <app-bottom-sheet [open]="activeSheet() === 'help'" title="Hilfe" (closed)="closeSheet()">
       <div class="sheet-stack">
         <article class="sheet-card text-only">
           <strong>Quick Logging</strong>
@@ -487,19 +487,19 @@ interface BuilderDayDraft {
       </div>
     </app-bottom-sheet>
 
-    <app-bottom-sheet [open]="activeSheet() === 'graphs'" title="Add Graph" (closed)="closeSheet()">
+    <app-bottom-sheet [open]="activeSheet() === 'graphs'" title="Graph hinzufuegen" (closed)="closeSheet()">
       <form class="sheet-stack" [formGroup]="graphForm" (ngSubmit)="addGraphWidget()">
-        <label for="graph-type">Graph type</label>
+        <label for="graph-type">Graph-Typ</label>
         <select id="graph-type" formControlName="graphType">
-          <option value="workout_count">Workout count</option>
-          <option value="exercise_10rm">Exercise 10RM progression</option>
-          <option value="muscle_volume">Muscle group volume</option>
-          <option value="bodyweight">Bodyweight</option>
-          <option value="total_volume">Total volume</option>
+          <option value="workout_count">Workouts pro Woche</option>
+          <option value="exercise_10rm">Uebung 10RM Verlauf</option>
+          <option value="muscle_volume">Muskelgruppen-Volumen</option>
+          <option value="bodyweight">Koerpergewicht</option>
+          <option value="total_volume">Gesamtvolumen</option>
         </select>
 
         @if (graphForm.value.graphType === 'exercise_10rm') {
-          <label for="graph-exercise">Exercise</label>
+          <label for="graph-exercise">Uebung</label>
           <select id="graph-exercise" formControlName="exerciseId">
             <option value="">Bitte wählen</option>
             @for (exercise of exercises(); track exercise.id) {
@@ -509,7 +509,7 @@ interface BuilderDayDraft {
         }
 
         @if (graphForm.value.graphType === 'muscle_volume') {
-          <label for="graph-muscle">Muscle group</label>
+          <label for="graph-muscle">Muskelgruppe</label>
           <input id="graph-muscle" type="text" formControlName="muscleGroup" placeholder="z.B. quads">
         }
 
@@ -517,7 +517,7 @@ interface BuilderDayDraft {
       </form>
     </app-bottom-sheet>
 
-    <app-bottom-sheet [open]="activeSheet() === 'graph-detail'" title="Advanced Analytics" (closed)="closeSheet()">
+    <app-bottom-sheet [open]="activeSheet() === 'graph-detail'" title="Erweiterte Analyse" (closed)="closeSheet()">
       @if (selectedDetailWidget()) {
         <div class="sheet-stack">
           <strong>{{ graphTitle(selectedDetailWidget()!) }}</strong>
@@ -1074,7 +1074,7 @@ export class GymComponent implements OnInit {
 
   readonly frequencies = [1, 2, 3, 4, 5, 6, 7];
   readonly equipmentOptions: TrainingExercise['equipment'][] = ['barbell', 'dumbbell', 'machine', 'cable', 'bodyweight', 'bands', 'other'];
-  readonly placeholderImage = 'https://dummyimage.com/640x360/1b202b/a4a9b6&text=Exercise';
+  readonly placeholderImage = 'https://dummyimage.com/640x360/1b202b/a4a9b6&text=Uebung';
 
   readonly activeTab = signal<'tracker' | 'progress'>('tracker');
   readonly selectedDate = signal(toIsoDate(new Date()));
@@ -1165,7 +1165,7 @@ export class GymComponent implements OnInit {
     equipment: ['dumbbell' as TrainingExercise['equipment'], Validators.required],
     primaryMuscle: ['chest', Validators.required],
     secondaryMuscles: ['triceps,front_delts'],
-    images: ['https://dummyimage.com/640x360/1b202b/a4a9b6&text=Custom+Exercise']
+    images: ['https://dummyimage.com/640x360/1b202b/a4a9b6&text=Eigene+Uebung']
   });
 
   readonly graphForm = inject(FormBuilder).nonNullable.group({
@@ -1586,7 +1586,7 @@ export class GymComponent implements OnInit {
       this.customExerciseForm.patchValue({
         name: '',
         secondaryMuscles: '',
-        images: 'https://dummyimage.com/640x360/1b202b/a4a9b6&text=Custom+Exercise'
+        images: 'https://dummyimage.com/640x360/1b202b/a4a9b6&text=Eigene+Uebung'
       });
 
       this.successMessage.set('Übung gespeichert.');
@@ -1711,16 +1711,51 @@ export class GymComponent implements OnInit {
 
   equipmentLabel(equipment: string): string {
     const map: Record<string, string> = {
-      barbell: 'Barbell',
-      dumbbell: 'Dumbbells',
-      machine: 'Machine',
-      cable: 'Cable',
-      bodyweight: 'Bodyweight',
-      bands: 'Bands',
-      other: 'Other'
+      barbell: 'Langhantel',
+      dumbbell: 'Kurzhantel',
+      machine: 'Maschine',
+      cable: 'Kabel',
+      bodyweight: 'Koerpergewicht',
+      bands: 'Baender',
+      other: 'Sonstiges'
     };
 
     return map[equipment] || equipment;
+  }
+
+  muscleLabel(muscle: string): string {
+    const map: Record<string, string> = {
+      chest: 'Brust',
+      upper_chest: 'Obere Brust',
+      lower_chest: 'Untere Brust',
+      shoulders: 'Schultern',
+      side_delts: 'Seitliche Schulter',
+      rear_delts: 'Hintere Schulter',
+      front_delts: 'Vordere Schulter',
+      triceps: 'Trizeps',
+      biceps: 'Bizeps',
+      brachialis: 'Brachialis',
+      forearms: 'Unterarme',
+      lats: 'Latissimus',
+      mid_back: 'Mittlerer Ruecken',
+      upper_back: 'Oberer Ruecken',
+      lower_back: 'Unterer Ruecken',
+      traps: 'Trapez',
+      posterior_chain: 'Rueckseite',
+      quads: 'Quadrizeps',
+      hamstrings: 'Hamstrings',
+      glutes: 'Gesaess',
+      calves: 'Waden',
+      abs: 'Bauch',
+      core: 'Rumpf',
+      obliques: 'Seitliche Bauchmuskeln',
+      hip_flexors: 'Hueftbeuger',
+      rectus_femoris: 'Rectus Femoris',
+      teres_major: 'Teres Major',
+      soleus: 'Soleus'
+    };
+
+    return map[muscle] || muscle;
   }
 
   targetLabel(exercise: TrainingExecutionExercise): string {
@@ -1740,20 +1775,20 @@ export class GymComponent implements OnInit {
   }
 
   graphTitle(widget: TrainingGraphConfig): string {
-    if (widget.graph_type === 'workout_count') return 'Workout Frequency';
+    if (widget.graph_type === 'workout_count') return 'Workout-Haeufigkeit';
     if (widget.graph_type === 'exercise_10rm') {
       const exerciseName = this.exercises().find(item => item.id === widget.exercise_id)?.name;
-      return `${exerciseName || 'Exercise'} 10RM`;
+      return `${exerciseName || 'Uebung'} 10RM`;
     }
-    if (widget.graph_type === 'muscle_volume') return `Muscle Volume (${widget.muscle_group || 'all'})`;
-    if (widget.graph_type === 'bodyweight') return 'Bodyweight';
-    return 'Total Volume';
+    if (widget.graph_type === 'muscle_volume') return `Muskelvolumen (${widget.muscle_group || 'alle'})`;
+    if (widget.graph_type === 'bodyweight') return 'Koerpergewicht';
+    return 'Gesamtvolumen';
   }
 
   graphSubtitle(widget: TrainingGraphConfig): string {
-    if (widget.graph_type === 'exercise_10rm' && !widget.exercise_id) return 'Bitte Übung wählen';
+    if (widget.graph_type === 'exercise_10rm' && !widget.exercise_id) return 'Bitte Uebung waehlen';
     if (widget.graph_type === 'muscle_volume' && !widget.muscle_group) return 'Alle Muskelgruppen';
-    return 'Tap für Advanced Analytics';
+    return 'Tippen fuer erweiterte Analyse';
   }
 
   toLinePoints(points: TrainingGraphDataPoint[]): string {
