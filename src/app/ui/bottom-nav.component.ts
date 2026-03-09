@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { House, Library, LucideAngularModule, User, Users } from 'lucide-angular';
+import { Dumbbell, House, Library, LucideAngularModule, User, Users } from 'lucide-angular';
 
 @Component({
   selector: 'app-bottom-nav',
@@ -12,6 +12,10 @@ import { House, Library, LucideAngularModule, User, Users } from 'lucide-angular
       <a routerLink="/today" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
         <lucide-icon [img]="icons.house" class="nav-icon" aria-hidden="true"></lucide-icon>
         <span>Heute</span>
+      </a>
+      <a routerLink="/gym" routerLinkActive="active">
+        <lucide-icon [img]="icons.dumbbell" class="nav-icon" aria-hidden="true"></lucide-icon>
+        <span>Gym</span>
       </a>
       <a routerLink="/library" routerLinkActive="active">
         <lucide-icon [img]="icons.library" class="nav-icon" aria-hidden="true"></lucide-icon>
@@ -35,7 +39,7 @@ import { House, Library, LucideAngularModule, User, Users } from 'lucide-angular
       transform: translateX(-50%);
       width: min(100%, 480px);
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(5, minmax(0, 1fr));
       gap: 0.3rem;
       padding: 0.45rem 0.65rem calc(0.7rem + env(safe-area-inset-bottom));
       border-top: 1px solid var(--border-strong);
@@ -77,6 +81,7 @@ import { House, Library, LucideAngularModule, User, Users } from 'lucide-angular
 export class BottomNavComponent {
   readonly icons = {
     house: House,
+    dumbbell: Dumbbell,
     library: Library,
     users: Users,
     user: User

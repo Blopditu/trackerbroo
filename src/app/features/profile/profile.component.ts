@@ -62,6 +62,9 @@ import { formatAppError } from '../../core/error-format';
             <label for="bio">Kurzbeschreibung</label>
             <textarea id="bio" formControlName="bio" rows="3" placeholder="Optionale Notiz zu deinem Ziel"></textarea>
 
+            <label for="gym-name">Gym Name</label>
+            <input id="gym-name" type="text" formControlName="gym_name" placeholder="z.B. Mein Gym">
+
             <div class="grid-two">
               <div>
                 <label for="height">Größe (cm)</label>
@@ -333,6 +336,7 @@ export class ProfileComponent implements OnInit {
   readonly profileForm = this.formBuilder.nonNullable.group({
     display_name: [''],
     bio: [''],
+    gym_name: [''],
     height_cm: [170, [Validators.min(80), Validators.max(260)]],
     current_weight_kg: [70, [Validators.min(20)]],
     target_weight_kg: [70, [Validators.min(20)]],
@@ -437,6 +441,7 @@ export class ProfileComponent implements OnInit {
       user_id: user.id,
       display_name: '',
       bio: '',
+      gym_name: null,
       avatar_url: '',
       age: null,
       height_cm: 170,
@@ -457,6 +462,7 @@ export class ProfileComponent implements OnInit {
           user_id: user.id,
           display_name: '',
           bio: '',
+          gym_name: null,
           age: null,
           height_cm: 170,
           current_weight_kg: 70,
@@ -480,6 +486,7 @@ export class ProfileComponent implements OnInit {
     this.profileForm.patchValue({
       display_name: resolvedProfile.display_name || '',
       bio: resolvedProfile.bio || '',
+      gym_name: resolvedProfile.gym_name || '',
       height_cm: Number(resolvedProfile.height_cm || 170),
       current_weight_kg: Number(resolvedProfile.current_weight_kg || 70),
       target_weight_kg: Number(resolvedProfile.target_weight_kg || 70),
@@ -570,6 +577,7 @@ export class ProfileComponent implements OnInit {
         user_id: user.id,
         display_name: formValue.display_name.trim() || null,
         bio: formValue.bio.trim() || null,
+        gym_name: formValue.gym_name.trim() || null,
         avatar_url: avatarUrl,
         height_cm: formValue.height_cm,
         current_weight_kg: formValue.current_weight_kg,

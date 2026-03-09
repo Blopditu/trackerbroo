@@ -31,6 +31,11 @@ export const routes: Routes = [
     canActivate: [AuthGuard]
   },
   {
+    path: 'gym',
+    loadComponent: () => import('./features/gym/gym.component').then(m => m.GymComponent),
+    canActivate: [AuthGuard]
+  },
+  {
     path: 'dashboard',
     redirectTo: 'community',
     pathMatch: 'full'
