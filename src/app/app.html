@@ -8,6 +8,15 @@
   <section class="route-host">
     <router-outlet></router-outlet>
   </section>
+  @if (showInstallBanner()) {
+    <aside class="install-banner" aria-live="polite">
+      <p class="install-text">Als App installieren für schnelleren Zugriff und Vollbildmodus.</p>
+      <div class="install-actions">
+        <button type="button" class="install-btn primary" (click)="installApp()">Installieren</button>
+        <button type="button" class="install-btn ghost" (click)="dismissInstallBanner()">Später</button>
+      </div>
+    </aside>
+  }
   @if (showNav()) {
     <app-bottom-nav></app-bottom-nav>
   }

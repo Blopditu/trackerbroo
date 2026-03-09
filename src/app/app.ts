@@ -5,6 +5,7 @@ import { filter } from 'rxjs/operators';
 import { Subscription } from 'rxjs';
 import { BottomNavComponent } from './ui/bottom-nav.component';
 import { TopBarComponent } from './ui/top-bar.component';
+import { PwaInstallService } from './core/pwa-install.service';
 
 @Component({
   selector: 'app-root',
@@ -16,6 +17,7 @@ export class App implements OnDestroy {
   protected readonly title = signal('proteintracker');
 
   private readonly router = inject(Router);
+  readonly pwaInstall = inject(PwaInstallService);
   private readonly currentRoute = signal('/');
   private readonly isOnline = signal(typeof navigator === 'undefined' ? true : navigator.onLine);
   private routeSubscription: Subscription | null = null;
@@ -24,6 +26,7 @@ export class App implements OnDestroy {
   showNav = computed(() => !this.currentRoute().includes('/login') && !this.currentRoute().includes('/onboarding'));
   showTopBar = computed(() => !this.currentRoute().includes('/login') && !this.currentRoute().includes('/onboarding'));
   showOfflineBanner = computed(() => !this.isOnline() && this.showTopBar());
+  showInstallBanner = computed(() => this.showNav() && this.pwaInstall.canPrompt());
 
   constructor() {
     this.routeSubscription = this.router.events
@@ -49,4 +52,12 @@ export class App implements OnDestroy {
   private readonly handleOnlineStatus = (): void => {
     this.isOnline.set(typeof navigator === 'undefined' ? true : navigator.onLine);
   };
+
+  async installApp(): Promise<void> {
+    await this.pwaInstall.promptInstall();
+  }
+
+  dismissInstallBanner(): void {
+    this.pwaInstall.dismiss();
+  }
 }

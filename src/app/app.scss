@@ -17,6 +17,56 @@
   animation: route-enter 220ms ease-out;
 }
 
+.install-banner {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(86px + env(safe-area-inset-bottom));
+  width: min(calc(100% - 1.25rem), 430px);
+  z-index: 35;
+  border: 1px solid #1b202b;
+  border-radius: 12px;
+  background: #151922;
+  padding: 0.75rem;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.install-text {
+  margin: 0;
+  color: #e6e8ec;
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.install-actions {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.5rem;
+}
+
+.install-btn {
+  min-height: 40px;
+  border: 1px solid #1b202b;
+  border-radius: 999px;
+  background: #0f1115;
+  color: #e6e8ec;
+  padding: 0 0.8rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.install-btn.primary {
+  border-color: #5b8cff;
+  background: #5b8cff;
+  color: #0f1115;
+}
+
+.install-btn.ghost {
+  color: #a4a9b6;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .route-host {
     animation: none;
