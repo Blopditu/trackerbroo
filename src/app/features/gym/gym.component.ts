@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  OnDestroy,
   OnInit,
   computed,
   inject,
@@ -277,6 +278,10 @@ interface BuilderDayDraft {
                   }
                 </div>
 
+                @if (currentExerciseSaveHint()) {
+                  <p class="save-hint">{{ currentExerciseSaveHint() }}</p>
+                }
+
                 @if (previousPerformance().length > 0) {
                   <div class="previous-block">
                     <p class="muted">Vorheriges Workout ({{ previousPerformance()[0].session_date }})</p>
@@ -366,9 +371,11 @@ interface BuilderDayDraft {
         </section>
       }
 
-      <button class="gym-fab" type="button" (click)="openSheet(activeTab() === 'tracker' ? 'plans' : 'graphs')" aria-label="Schnellaktion">
-        <lucide-icon [img]="icons.plus" class="fab-icon" aria-hidden="true"></lucide-icon>
-      </button>
+      @if (activeTab() === 'progress') {
+        <button class="gym-fab" type="button" (click)="openSheet('graphs')" aria-label="Schnellaktion">
+          <lucide-icon [img]="icons.plus" class="fab-icon" aria-hidden="true"></lucide-icon>
+        </button>
+      }
     </main>
 
     <app-bottom-sheet [open]="activeSheet() === 'plans'" title="Alle Plaene" (closed)="closeSheet()">
@@ -388,7 +395,7 @@ interface BuilderDayDraft {
       </div>
     </app-bottom-sheet>
 
-    <app-bottom-sheet [open]="activeSheet() === 'builder'" title="Plan Builder" (closed)="closeSheet()">
+    <app-bottom-sheet [open]="activeSheet() === 'builder'" [closeOnBackdrop]="false" title="Plan Builder" (closed)="closeSheet()">
       <form class="sheet-stack" [formGroup]="planMetaForm" (ngSubmit)="savePlan()">
         <label for="plan-name">Plan Name</label>
         <input id="plan-name" type="text" formControlName="name">
@@ -439,7 +446,7 @@ interface BuilderDayDraft {
       </form>
     </app-bottom-sheet>
 
-    <app-bottom-sheet [open]="activeSheet() === 'exercises'" title="Uebungen" (closed)="closeSheet()">
+    <app-bottom-sheet [open]="activeSheet() === 'exercises'" [closeOnBackdrop]="false" title="Uebungen" (closed)="closeSheet()">
       <div class="sheet-stack">
         <form class="sheet-card" [formGroup]="customExerciseForm" (ngSubmit)="saveCustomExercise()">
           <strong>Eigene Uebung</strong>
@@ -487,7 +494,7 @@ interface BuilderDayDraft {
       </div>
     </app-bottom-sheet>
 
-    <app-bottom-sheet [open]="activeSheet() === 'graphs'" title="Graph hinzufuegen" (closed)="closeSheet()">
+    <app-bottom-sheet [open]="activeSheet() === 'graphs'" [closeOnBackdrop]="false" title="Graph hinzufuegen" (closed)="closeSheet()">
       <form class="sheet-stack" [formGroup]="graphForm" (ngSubmit)="addGraphWidget()">
         <label for="graph-type">Graph-Typ</label>
         <select id="graph-type" formControlName="graphType">
@@ -884,6 +891,13 @@ interface BuilderDayDraft {
       color: #E6E8EC;
     }
 
+    .save-hint {
+      margin: 0;
+      color: #A4A9B6;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
     .stats-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1057,7 +1071,7 @@ interface BuilderDayDraft {
     }
   `]
 })
-export class GymComponent implements OnInit {
+export class GymComponent implements OnInit, OnDestroy {
   readonly icons = {
     dumbbell: Dumbbell,
     barChart: BarChart3,
@@ -1106,6 +1120,7 @@ export class GymComponent implements OnInit {
   readonly activeSheet = signal<'none' | 'plans' | 'builder' | 'exercises' | 'help' | 'graphs' | 'graph-detail'>('none');
   readonly errorMessage = signal<string | null>(null);
   readonly successMessage = signal<string | null>(null);
+  readonly setSaveState = signal<Record<string, 'idle' | 'saving' | 'saved' | 'error'>>({});
 
   readonly currentExercise = computed<TrainingExecutionExercise | null>(() => {
     const session = this.activeSession();
@@ -1116,6 +1131,21 @@ export class GymComponent implements OnInit {
   });
 
   readonly filteredExerciseLibrary = computed(() => this.exercises().slice(0, 120));
+  readonly currentExerciseSaveHint = computed(() => {
+    const exercise = this.currentExercise();
+    if (!exercise) {
+      return null;
+    }
+
+    const states = exercise.sets.map(setRow => this.setSaveState()[setRow.clientRef] || 'idle');
+    if (states.includes('error')) {
+      return 'Einige Eingaben konnten noch nicht gespeichert werden.';
+    }
+    if (states.includes('saving')) {
+      return 'Eingaben werden gespeichert...';
+    }
+    return null;
+  });
 
   readonly recommendedSetLine = computed(() => {
     const exercise = this.currentExercise();
@@ -1177,10 +1207,25 @@ export class GymComponent implements OnInit {
   readonly builderDays = signal<BuilderDayDraft[]>([]);
 
   private readonly trainingData = inject(TrainingDataService);
+  private readonly pendingSetSaves = new Map<string, ReturnType<typeof setTimeout>>();
+  private readonly pendingSetStateResets = new Map<string, ReturnType<typeof setTimeout>>();
+  private readonly inFlightSetSaves = new Map<string, Promise<void>>();
 
   ngOnInit(): void {
     this.syncBuilderDayCount();
     void this.loadTrackerData();
+  }
+
+  ngOnDestroy(): void {
+    for (const timer of this.pendingSetSaves.values()) {
+      clearTimeout(timer);
+    }
+    this.pendingSetSaves.clear();
+
+    for (const timer of this.pendingSetStateResets.values()) {
+      clearTimeout(timer);
+    }
+    this.pendingSetStateResets.clear();
   }
 
   async activateProgressTab(): Promise<void> {
@@ -1303,6 +1348,8 @@ export class GymComponent implements OnInit {
       draft.volume = calculateVolume(draft.weightKg, draft.reps);
       draft.estimated10Rm = estimateTenRm(draft.weightKg, draft.reps);
     });
+
+    this.scheduleSetSave(setRow.clientRef);
   }
 
   async toggleSetComplete(setRow: TrainingExecutionSet): Promise<void> {
@@ -1325,17 +1372,7 @@ export class GymComponent implements OnInit {
       return;
     }
 
-    await this.trainingData.upsertSetLog({
-      sessionClientRef: session.sessionClientRef,
-      exerciseSortOrder: exercise.sortOrder,
-      setNumber: currentSet.setNumber,
-      isWarmup: currentSet.isWarmup,
-      weightKg: currentSet.weightKg,
-      reps: currentSet.reps,
-      durationSeconds: currentSet.durationSeconds,
-      isCompleted: currentSet.isCompleted,
-      clientRef: currentSet.clientRef
-    });
+    await this.persistSetLog(currentSet.clientRef);
   }
 
   acceptRecommendation(): void {
@@ -1364,6 +1401,8 @@ export class GymComponent implements OnInit {
       draft.volume = calculateVolume(weight, reps);
       draft.estimated10Rm = estimateTenRm(weight, reps);
     });
+
+    this.scheduleSetSave(firstSet.clientRef);
   }
 
   async finishWorkout(): Promise<void> {
@@ -1375,6 +1414,7 @@ export class GymComponent implements OnInit {
     this.errorMessage.set(null);
 
     try {
+      await this.flushPendingSetSaves();
       await this.trainingData.completeSession(session.sessionClientRef);
       this.successMessage.set('Workout abgeschlossen.');
       this.activeSession.set(null);
@@ -1851,6 +1891,112 @@ export class GymComponent implements OnInit {
     }
 
     return null;
+  }
+
+  private findSetContext(clientRef: string): { exercise: TrainingExecutionExercise; setRow: TrainingExecutionSet } | null {
+    const session = this.activeSession();
+    if (!session) {
+      return null;
+    }
+
+    for (const exercise of session.exercises) {
+      const setRow = exercise.sets.find(setItem => setItem.clientRef === clientRef);
+      if (setRow) {
+        return { exercise, setRow };
+      }
+    }
+
+    return null;
+  }
+
+  private scheduleSetSave(clientRef: string): void {
+    const pending = this.pendingSetSaves.get(clientRef);
+    if (pending) {
+      clearTimeout(pending);
+    }
+
+    this.markSetSaveState(clientRef, 'saving');
+
+    const timer = setTimeout(() => {
+      this.pendingSetSaves.delete(clientRef);
+      void this.persistSetLog(clientRef);
+    }, 420);
+
+    this.pendingSetSaves.set(clientRef, timer);
+  }
+
+  private async persistSetLog(clientRef: string): Promise<void> {
+    const session = this.activeSession();
+    const context = this.findSetContext(clientRef);
+    if (!session || !context) {
+      return;
+    }
+
+    const task = (async () => {
+      this.markSetSaveState(clientRef, 'saving');
+      await this.trainingData.upsertSetLog({
+        sessionClientRef: session.sessionClientRef,
+        exerciseSortOrder: context.exercise.sortOrder,
+        setNumber: context.setRow.setNumber,
+        isWarmup: context.setRow.isWarmup,
+        weightKg: context.setRow.weightKg,
+        reps: context.setRow.reps,
+        durationSeconds: context.setRow.durationSeconds,
+        isCompleted: context.setRow.isCompleted,
+        clientRef: context.setRow.clientRef
+      });
+
+      this.markSetSaveState(clientRef, 'saved');
+      const existing = this.pendingSetStateResets.get(clientRef);
+      if (existing) {
+        clearTimeout(existing);
+      }
+
+      const resetTimer = setTimeout(() => {
+        this.pendingSetStateResets.delete(clientRef);
+        this.markSetSaveState(clientRef, 'idle');
+      }, 1200);
+      this.pendingSetStateResets.set(clientRef, resetTimer);
+    })();
+
+    this.inFlightSetSaves.set(clientRef, task);
+    try {
+      await task;
+    } catch {
+      this.markSetSaveState(clientRef, 'error');
+    } finally {
+      if (this.inFlightSetSaves.get(clientRef) === task) {
+        this.inFlightSetSaves.delete(clientRef);
+      }
+    }
+  }
+
+  private async flushPendingSetSaves(): Promise<void> {
+    const saves: Promise<void>[] = [];
+
+    for (const [clientRef, timer] of this.pendingSetSaves.entries()) {
+      clearTimeout(timer);
+      this.pendingSetSaves.delete(clientRef);
+      saves.push(this.persistSetLog(clientRef));
+    }
+
+    saves.push(...this.inFlightSetSaves.values());
+    if (saves.length === 0) {
+      return;
+    }
+
+    await Promise.allSettled(saves);
+  }
+
+  private markSetSaveState(clientRef: string, state: 'idle' | 'saving' | 'saved' | 'error'): void {
+    this.setSaveState.update(current => {
+      if (state === 'idle') {
+        const { [clientRef]: removed, ...rest } = current;
+        void removed;
+        return rest;
+      }
+      return { ...current, [clientRef]: state };
+    });
   }
 
   private updateSet(clientRef: string, updater: (setRow: TrainingExecutionSet) => void): void {
