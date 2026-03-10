@@ -8,6 +8,13 @@ import { formatAppError } from '../../core/error-format';
 import { LibraryDataService } from '../../core/library-data.service';
 import { BottomSheetComponent } from '../../ui/minimal/bottom-sheet.component';
 
+interface ParsedMacroInput {
+  kcal?: number;
+  protein?: number;
+  carbs?: number;
+  fat?: number;
+}
+
 @Component({
   selector: 'app-library',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -162,6 +169,21 @@ import { BottomSheetComponent } from '../../ui/minimal/bottom-sheet.component';
             <label for="ing-name">Name</label>
             <input id="ing-name" type="text" [(ngModel)]="ingredientForm.name" name="name" required>
 
+            <label for="ing-macro-paste">Makros aus Text (optional)</label>
+            <textarea
+              id="ing-macro-paste"
+              [(ngModel)]="macroPasteText"
+              name="macro_paste"
+              rows="4"
+              placeholder="kcal: 230&#10;protein: 8.5&#10;carbs: 29&#10;fat: 6.2"
+            ></textarea>
+            <button type="button" class="action-btn ghost mini" [disabled]="!macroPasteText.trim()" (click)="applyMacroPaste()">
+              Makros übernehmen
+            </button>
+            @if (macroPasteMessage()) {
+              <p class="sub">{{ macroPasteMessage() }}</p>
+            }
+
             <label for="ing-kcal">Kcal / 100g</label>
             <input id="ing-kcal" type="number" [(ngModel)]="ingredientForm.kcal_per_100" name="kcal" required>
 
@@ -304,6 +326,11 @@ import { BottomSheetComponent } from '../../ui/minimal/bottom-sheet.component';
       font-weight: 700;
     }
 
+    .stack-form textarea {
+      min-height: 88px;
+      resize: vertical;
+    }
+
     .meal-items {
       display: grid;
       gap: 0.5rem;
@@ -374,6 +401,8 @@ export class LibraryComponent implements OnInit {
 
   ingredientSearch = '';
   marketFilter = '';
+  macroPasteText = '';
+  macroPasteMessage = signal<string | null>(null);
 
   ingredientForm = {
     source_type: 'manual' as 'manual' | 'blv_generic' | 'custom_product',
@@ -452,6 +481,9 @@ export class LibraryComponent implements OnInit {
 
   openCreateModal() {
     if (this.activeTab() === 'ingredients') {
+      this.editingIngredient.set(null);
+      this.macroPasteText = '';
+      this.macroPasteMessage.set(null);
       this.showIngredientModal.set(true);
       return;
     }
@@ -461,6 +493,8 @@ export class LibraryComponent implements OnInit {
 
   editIngredient(ingredient: Ingredient) {
     this.editingIngredient.set(ingredient);
+    this.macroPasteText = '';
+    this.macroPasteMessage.set(null);
     this.ingredientForm = {
       source_type: ingredient.source_type || 'manual',
       base_ingredient_id: ingredient.base_ingredient_id ?? null,
@@ -515,6 +549,8 @@ export class LibraryComponent implements OnInit {
 
       this.showIngredientModal.set(false);
       this.editingIngredient.set(null);
+      this.macroPasteText = '';
+      this.macroPasteMessage.set(null);
       this.ingredientForm = {
         source_type: 'manual',
         base_ingredient_id: null,
@@ -711,8 +747,151 @@ export class LibraryComponent implements OnInit {
     this.ingredientForm.fat_per_100 = baseIngredient.fat_per_100;
   }
 
+  applyMacroPaste(): void {
+    const parsed = this.parseMacroInput(this.macroPasteText);
+    if (!parsed) {
+      this.macroPasteMessage.set('Keine Makros erkannt. Bitte Format wie "protein: 10.5" nutzen.');
+      return;
+    }
+
+    if (parsed.protein !== undefined) {
+      this.ingredientForm.protein_per_100 = this.roundOneDecimal(parsed.protein);
+    }
+    if (parsed.carbs !== undefined) {
+      this.ingredientForm.carbs_per_100 = this.roundOneDecimal(parsed.carbs);
+    }
+    if (parsed.fat !== undefined) {
+      this.ingredientForm.fat_per_100 = this.roundOneDecimal(parsed.fat);
+    }
+
+    if (parsed.kcal !== undefined) {
+      this.ingredientForm.kcal_per_100 = this.roundKcal(parsed.kcal);
+    } else {
+      const protein = Number(this.ingredientForm.protein_per_100 || 0);
+      const carbs = Number(this.ingredientForm.carbs_per_100 || 0);
+      const fat = Number(this.ingredientForm.fat_per_100 || 0);
+      this.ingredientForm.kcal_per_100 = this.roundKcal(protein * 4 + carbs * 4 + fat * 9);
+    }
+
+    this.macroPasteMessage.set(
+      `Übernommen: ${this.ingredientForm.kcal_per_100} kcal · P ${Number(this.ingredientForm.protein_per_100).toFixed(1)} · KH ${Number(this.ingredientForm.carbs_per_100).toFixed(1)} · F ${Number(this.ingredientForm.fat_per_100).toFixed(1)}`
+    );
+  }
+
   private formatCurrency(value: number) {
     return `${value.toFixed(2)} €`;
+  }
+
+  private parseMacroInput(input: string): ParsedMacroInput | null {
+    const raw = input.trim();
+    if (!raw) {
+      return null;
+    }
+
+    const jsonParsed = this.parseMacroJson(raw);
+    if (jsonParsed) {
+      return jsonParsed;
+    }
+
+    const normalized = raw.replace(/\u00a0/g, ' ');
+    const parsed: ParsedMacroInput = {
+      kcal: this.extractMacroValue(normalized, [
+        /\b(?:kcal|kalorien|kalorie|calories?)\b\s*(?:[:=\-])?\s*(-?\d+(?:[.,]\d+)?)/i,
+        /(-?\d+(?:[.,]\d+)?)\s*(?:kcal)\b/i
+      ]),
+      protein: this.extractMacroValue(normalized, [
+        /\b(?:protein|eiweiss|eiweiß|p)\b\s*(?:[:=\-])?\s*(-?\d+(?:[.,]\d+)?)/i,
+        /(-?\d+(?:[.,]\d+)?)\s*g?\s*(?:protein|eiweiss|eiweiß)\b/i
+      ]),
+      carbs: this.extractMacroValue(normalized, [
+        /\b(?:carbs?|kohlenhydrate|kh|c)\b\s*(?:[:=\-])?\s*(-?\d+(?:[.,]\d+)?)/i,
+        /(-?\d+(?:[.,]\d+)?)\s*g?\s*(?:carbs?|kohlenhydrate|kh)\b/i
+      ]),
+      fat: this.extractMacroValue(normalized, [
+        /\b(?:fett|fat|f)\b\s*(?:[:=\-])?\s*(-?\d+(?:[.,]\d+)?)/i,
+        /(-?\d+(?:[.,]\d+)?)\s*g?\s*(?:fett|fat)\b/i
+      ])
+    };
+
+    return this.hasMacroValues(parsed) ? parsed : null;
+  }
+
+  private parseMacroJson(input: string): ParsedMacroInput | null {
+    try {
+      const payload: unknown = JSON.parse(input);
+      if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+        return null;
+      }
+
+      const record = payload as Record<string, unknown>;
+      const getValue = (keys: string[]): number | undefined => {
+        for (const key of keys) {
+          const value = this.parseNumericValue(record[key]);
+          if (value !== undefined) {
+            return value;
+          }
+        }
+        return undefined;
+      };
+
+      const parsed: ParsedMacroInput = {
+        kcal: getValue(['kcal', 'calories', 'kalorien']),
+        protein: getValue(['protein', 'eiweiss', 'eiweiß', 'p']),
+        carbs: getValue(['carbs', 'carbohydrates', 'kohlenhydrate', 'kh', 'c']),
+        fat: getValue(['fat', 'fett', 'f'])
+      };
+
+      return this.hasMacroValues(parsed) ? parsed : null;
+    } catch {
+      return null;
+    }
+  }
+
+  private extractMacroValue(input: string, patterns: RegExp[]): number | undefined {
+    for (const pattern of patterns) {
+      const match = input.match(pattern);
+      if (!match?.[1]) {
+        continue;
+      }
+      const value = this.parseNumericValue(match[1]);
+      if (value !== undefined) {
+        return value;
+      }
+    }
+    return undefined;
+  }
+
+  private parseNumericValue(value: unknown): number | undefined {
+    if (typeof value === 'number') {
+      return Number.isFinite(value) ? value : undefined;
+    }
+
+    if (typeof value !== 'string') {
+      return undefined;
+    }
+
+    const token = value.trim().match(/-?\d+(?:[.,]\d+)?/);
+    if (!token?.[0]) {
+      return undefined;
+    }
+
+    const numeric = Number(token[0].replace(',', '.'));
+    return Number.isFinite(numeric) ? numeric : undefined;
+  }
+
+  private hasMacroValues(parsed: ParsedMacroInput): boolean {
+    return parsed.kcal !== undefined
+      || parsed.protein !== undefined
+      || parsed.carbs !== undefined
+      || parsed.fat !== undefined;
+  }
+
+  private roundOneDecimal(value: number): number {
+    return Number(value.toFixed(1));
+  }
+
+  private roundKcal(value: number): number {
+    return Math.max(0, Math.round(value));
   }
 
   openIngredientActions(ingredient: Ingredient): void {
