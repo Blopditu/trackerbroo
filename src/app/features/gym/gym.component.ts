@@ -456,20 +456,6 @@ interface BuilderDayDraft {
 
     <app-bottom-sheet [open]="activeSheet() === 'exercises'" [closeOnBackdrop]="false" title="Uebungen" (closed)="closeSheet()">
       <div class="sheet-stack">
-        <form class="sheet-card" [formGroup]="customExerciseForm" (ngSubmit)="saveCustomExercise()">
-          <strong>Eigene Uebung</strong>
-          <input type="text" formControlName="name" placeholder="Name">
-          <select formControlName="equipment">
-            @for (equipment of equipmentOptions; track equipment) {
-              <option [value]="equipment">{{ equipmentLabel(equipment) }}</option>
-            }
-          </select>
-          <input type="text" formControlName="primaryMuscle" placeholder="Primaerer Muskel">
-          <input type="text" formControlName="secondaryMuscles" placeholder="Sekundaere Muskeln (Komma-getrennt)">
-          <input type="text" formControlName="images" placeholder="Bild-URLs (Komma-getrennt)">
-          <button type="submit" class="action-btn" [disabled]="customExerciseForm.invalid">Speichern</button>
-        </form>
-
         <section class="sheet-card filter-card">
           <div class="filter-head">
             <strong>Filter</strong>
@@ -1302,14 +1288,6 @@ export class GymComponent implements OnInit, OnDestroy {
     isActive: [true]
   });
 
-  readonly customExerciseForm = inject(FormBuilder).nonNullable.group({
-    name: ['', [Validators.required, Validators.minLength(2)]],
-    equipment: ['dumbbell' as TrainingExercise['equipment'], Validators.required],
-    primaryMuscle: ['chest', Validators.required],
-    secondaryMuscles: ['triceps,front_delts'],
-    images: ['https://dummyimage.com/640x360/1b202b/a4a9b6&text=Eigene+Uebung']
-  });
-
   readonly graphForm = inject(FormBuilder).nonNullable.group({
     graphType: ['workout_count' as TrainingGraphType, Validators.required],
     exerciseId: [''],
@@ -1713,42 +1691,6 @@ export class GymComponent implements OnInit, OnDestroy {
       await this.loadTrackerData(true);
     } catch (error: unknown) {
       this.errorMessage.set(formatAppError(error, 'Plan konnte nicht aktiviert werden'));
-    }
-  }
-
-  async saveCustomExercise(): Promise<void> {
-    if (this.customExerciseForm.invalid) {
-      return;
-    }
-
-    const value = this.customExerciseForm.getRawValue();
-
-    try {
-      await this.trainingData.createCustomExercise({
-        name: value.name,
-        equipment: value.equipment,
-        type: value.equipment,
-        primaryMuscle: value.primaryMuscle.trim().toLowerCase(),
-        secondaryMuscles: value.secondaryMuscles
-          .split(',')
-          .map(item => item.trim().toLowerCase())
-          .filter(Boolean),
-        images: value.images
-          .split(',')
-          .map(item => item.trim())
-          .filter(Boolean)
-      });
-
-      this.customExerciseForm.patchValue({
-        name: '',
-        secondaryMuscles: '',
-        images: 'https://dummyimage.com/640x360/1b202b/a4a9b6&text=Eigene+Uebung'
-      });
-
-      this.successMessage.set('Übung gespeichert.');
-      this.exercises.set(await this.trainingData.getExercises(true));
-    } catch (error: unknown) {
-      this.errorMessage.set(formatAppError(error, 'Übung konnte nicht gespeichert werden'));
     }
   }
 
