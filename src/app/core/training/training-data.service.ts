@@ -890,6 +890,59 @@ export class TrainingDataService {
     return value;
   }
 
+  async getExerciseVolumeSeries(
+    exerciseId: string,
+    from?: string,
+    to?: string,
+    forceRefresh = false
+  ): Promise<TrainingGraphDataPoint[]> {
+    const user = this.requireUser();
+    const cacheKey = `training:progress:${user.id}:exercise_volume:${exerciseId}:${from || ''}:${to || ''}`;
+
+    const { value } = await this.queryCache.getOrLoad({
+      key: cacheKey,
+      ttlMs: this.progressTtlMs,
+      forceRefresh,
+      allowStaleOnError: true,
+      loader: async () => {
+        const { data, error } = await this.supabaseService.client.rpc('training_exercise_volume_series', {
+          p_exercise_id: exerciseId,
+          p_from: from || null,
+          p_to: to || null
+        });
+
+        if (error) {
+          throw error;
+        }
+
+        return ((data || []) as TrainingGraphDataPoint[]).map(point => ({
+          point_date: String(point.point_date),
+          point_value: Number(point.point_value)
+        }));
+      }
+    });
+
+    return value;
+  }
+
+  async getCompletedWorkoutCountForRange(from: string, to: string): Promise<number> {
+    const user = this.requireUser();
+
+    const { count, error } = await this.supabaseService.client
+      .from('training_sessions')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .eq('status', 'completed')
+      .gte('session_date', from)
+      .lte('session_date', to);
+
+    if (error) {
+      throw error;
+    }
+
+    return Number(count || 0);
+  }
+
   async upsertMeasurement(input: UpsertMeasurementInput): Promise<void> {
     const user = this.requireUser();
 

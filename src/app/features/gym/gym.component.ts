@@ -1,15 +1,17 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  ElementRef,
   OnDestroy,
   OnInit,
   computed,
   inject,
-  signal
+  signal,
+  viewChild
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
   Activity,
   BarChart3,
@@ -56,6 +58,8 @@ import {
   toIsoDate
 } from '../../core/training/training-utils';
 import { formatAppError } from '../../core/error-format';
+import { AuthService } from '../../core/auth.service';
+import { SupabaseService } from '../../core/supabase.service';
 
 interface BuilderDayDraft {
   name: string;
@@ -68,10 +72,16 @@ interface BuilderDayDraft {
   }>;
 }
 
+interface ExerciseProgressRow {
+  date: string;
+  tenRm: string;
+  volume: string;
+}
+
 @Component({
   selector: 'app-gym',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, LucideAngularModule, BottomSheetComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterLink, LucideAngularModule, BottomSheetComponent],
   template: `
     <main class="page gym-page">
       @if (errorMessage()) {
@@ -102,128 +112,133 @@ interface BuilderDayDraft {
       </header>
 
       @if (activeTab() === 'tracker') {
-        <section class="panel">
-          <div class="week-nav">
-            <button type="button" class="week-btn" (click)="goPrevWeek()" aria-label="Vorherige Woche">
-              <lucide-icon [img]="icons.chevronLeft" aria-hidden="true"></lucide-icon>
-            </button>
-            <div class="week-scroll" role="tablist" aria-label="Wochentage">
-              @for (day of dashboardWeek()?.days || []; track day.iso) {
-                <button
-                  type="button"
-                  role="tab"
-                  [attr.aria-selected]="selectedDate() === day.iso"
-                  [class.day-pill]="true"
-                  [class.active]="selectedDate() === day.iso"
-                  [class.today]="day.isToday"
-                  (click)="onSelectDate(day.iso)"
-                >
-                  {{ day.label }}
-                </button>
-              }
-            </div>
-            <button type="button" class="week-btn" (click)="goNextWeek()" aria-label="Nächste Woche">
-              <lucide-icon [img]="icons.chevronRight" aria-hidden="true"></lucide-icon>
-            </button>
-          </div>
-        </section>
-
-        <section class="panel">
-          @if (dashboardWeek()?.activePlan) {
-            <div class="active-plan-head">
-              <div>
-                <p class="muted">Aktiver Plan</p>
-                <h2>{{ dashboardWeek()!.activePlan!.name }}</h2>
-                <p class="muted">Woche {{ dashboardWeek()!.activePlan!.weekNumber }}</p>
-              </div>
-              <span class="mono-badge">{{ dashboardWeek()!.activePlan!.durationWeeks }} Wochen</span>
-            </div>
-
-            <div class="workout-days">
-              @for (workout of dashboardWeek()?.workoutDays || []; track workout.dayId) {
-                <button type="button" class="workout-day" [class.completed]="workout.completed" (click)="openWorkoutPreview(workout)">
-                  <div class="left">
-                    <strong>{{ workout.dayNumber }} {{ workout.name }}</strong>
-                    <div class="thumbs" aria-hidden="true">
-                      @for (thumb of workout.thumbnails.slice(0, 3); track thumb) {
-                        @if (isPlaceholderImage(thumb)) {
-                          <span class="thumb-fallback"></span>
-                        } @else {
-                          <img [src]="thumb" alt="" loading="lazy" decoding="async">
-                        }
-                      }
-                      @if (workout.exerciseCount > 3) {
-                        <span class="thumb-more">+{{ workout.exerciseCount - 3 }}</span>
-                      }
-                    </div>
-                  </div>
-                  <div class="right">
-                    <span>{{ workout.exerciseCount }} Übungen</span>
-                    @if (workout.completed) {
-                      <lucide-icon [img]="icons.check" class="check-icon" aria-hidden="true"></lucide-icon>
-                    }
-                  </div>
-                </button>
-              }
-            </div>
-          } @else {
-            <p class="muted">Noch kein Trainingsplan aktiv. Erstelle deinen ersten Plan.</p>
-          }
-
-          <div class="quick-actions">
-            <button type="button" class="action-btn ghost" (click)="openSheet('plans')">Alle Plaene</button>
-            <button type="button" class="action-btn ghost" (click)="openSheet('exercises')">Uebungen</button>
-            <button type="button" class="action-btn ghost" (click)="openSheet('help')">Hilfe</button>
-          </div>
-        </section>
-
-        @if (selectedOverview()) {
+        @if (!activeSession()) {
           <section class="panel">
-            <div class="overview-head">
-              <div>
-                <h2>{{ selectedOverview()!.dayName }}</h2>
-                <p class="muted">{{ selectedOverview()!.planName }} • Woche {{ selectedOverview()!.weekNumber }}</p>
-                <p class="muted">{{ selectedOverview()!.totalExercises }} Uebungen • {{ selectedOverview()!.totalSets }} Saetze</p>
+            <div class="week-nav">
+              <button type="button" class="week-btn" (click)="goPrevWeek()" aria-label="Vorherige Woche">
+                <lucide-icon [img]="icons.chevronLeft" aria-hidden="true"></lucide-icon>
+              </button>
+              <div class="week-scroll" role="tablist" aria-label="Wochentage">
+                @for (day of dashboardWeek()?.days || []; track day.iso) {
+                  <button
+                    type="button"
+                    role="tab"
+                    [attr.aria-selected]="selectedDate() === day.iso"
+                    [class.day-pill]="true"
+                    [class.active]="selectedDate() === day.iso"
+                    [class.today]="day.isToday"
+                    (click)="onSelectDate(day.iso)"
+                  >
+                    {{ day.label }}
+                  </button>
+                }
               </div>
-              <button type="button" class="action-btn" (click)="startWorkout()">
-                <lucide-icon [img]="icons.play" class="icon" aria-hidden="true"></lucide-icon>
-                Start
+              <button type="button" class="week-btn" (click)="goNextWeek()" aria-label="Nächste Woche">
+                <lucide-icon [img]="icons.chevronRight" aria-hidden="true"></lucide-icon>
               </button>
             </div>
+          </section>
 
-            <div class="body-diagram" aria-label="Muskelgruppenübersicht">
-              <svg viewBox="0 0 220 130" role="img" aria-label="Zielmuskeln">
-                <rect x="10" y="10" width="58" height="48" [attr.fill]="muscleColor('chest')"></rect>
-                <rect x="82" y="10" width="58" height="48" [attr.fill]="muscleColor('shoulders')"></rect>
-                <rect x="154" y="10" width="58" height="48" [attr.fill]="muscleColor('lats')"></rect>
-                <rect x="10" y="72" width="58" height="48" [attr.fill]="muscleColor('quads')"></rect>
-                <rect x="82" y="72" width="58" height="48" [attr.fill]="muscleColor('hamstrings')"></rect>
-                <rect x="154" y="72" width="58" height="48" [attr.fill]="muscleColor('core')"></rect>
-              </svg>
-            </div>
+          <section class="panel">
+            @if (dashboardWeek()?.activePlan) {
+              <div class="active-plan-head">
+                <div>
+                  <p class="muted">Aktiver Plan</p>
+                  <h2>{{ dashboardWeek()!.activePlan!.name }}</h2>
+                  <p class="muted">Woche {{ dashboardWeek()!.activePlan!.weekNumber }}</p>
+                </div>
+                <span class="mono-badge">{{ dashboardWeek()!.activePlan!.durationWeeks }} Wochen</span>
+              </div>
 
-            <div class="exercise-list">
-              @for (exercise of selectedOverview()?.exercises || []; track exercise.dayExerciseId) {
-                <article class="exercise-row">
-                  @if (isPlaceholderImage(exercise.images[0] || null)) {
-                    <span class="exercise-thumb-fallback"></span>
-                  } @else {
-                    <img [src]="exercise.images[0] || placeholderImage" alt="{{ exercise.name }}" loading="lazy" decoding="async">
-                  }
-                  <div>
-                    <strong>{{ exercise.name }}</strong>
-                    <p class="muted">{{ equipmentLabel(exercise.equipment) }} • {{ exercise.sets }} x {{ exercise.targetReps ? exercise.targetReps : (exercise.targetSeconds + 's') }}</p>
-                  </div>
-                </article>
-              }
+              <div class="workout-days">
+                @for (workout of dashboardWeek()?.workoutDays || []; track workout.dayId) {
+                  <button type="button" class="workout-day" [class.completed]="workout.completed" (click)="openWorkoutPreview(workout)">
+                    <div class="left">
+                      <strong>{{ workout.dayNumber }} {{ workout.name }}</strong>
+                      <div class="thumbs" aria-hidden="true">
+                        @for (thumb of workout.thumbnails.slice(0, 3); track thumb) {
+                          @if (isPlaceholderImage(thumb)) {
+                            <span class="thumb-fallback"></span>
+                          } @else {
+                            <img [src]="thumb" alt="" loading="lazy" decoding="async">
+                          }
+                        }
+                        @if (workout.exerciseCount > 3) {
+                          <span class="thumb-more">+{{ workout.exerciseCount - 3 }}</span>
+                        }
+                      </div>
+                    </div>
+                    <div class="right">
+                      <span>{{ workout.exerciseCount }} Übungen</span>
+                      @if (workout.completed) {
+                        <lucide-icon [img]="icons.check" class="check-icon" aria-hidden="true"></lucide-icon>
+                      }
+                    </div>
+                  </button>
+                }
+              </div>
+            } @else {
+              <p class="muted">Noch kein Trainingsplan aktiv. Erstelle deinen ersten Plan.</p>
+            }
+
+            <div class="quick-actions">
+              <button type="button" class="action-btn ghost" (click)="openSheet('plans')">Alle Plaene</button>
+              <button type="button" class="action-btn ghost" (click)="openSheet('exercises')">Uebungen</button>
+              <button type="button" class="action-btn ghost" (click)="openSheet('help')">Hilfe</button>
             </div>
           </section>
+
+          @if (selectedOverview()) {
+            <section class="panel">
+              <div class="overview-head">
+                <div>
+                  <h2>{{ selectedOverview()!.dayName }}</h2>
+                  <p class="muted">{{ selectedOverview()!.planName }} • Woche {{ selectedOverview()!.weekNumber }}</p>
+                  <p class="muted">{{ selectedOverview()!.totalExercises }} Uebungen • {{ selectedOverview()!.totalSets }} Saetze</p>
+                </div>
+                <button type="button" class="action-btn" (click)="startWorkout()">
+                  <lucide-icon [img]="icons.play" class="icon" aria-hidden="true"></lucide-icon>
+                  Start
+                </button>
+              </div>
+
+              <div class="body-diagram" aria-label="Muskelgruppenübersicht">
+                <svg viewBox="0 0 220 130" role="img" aria-label="Zielmuskeln">
+                  <rect x="10" y="10" width="58" height="48" [attr.fill]="muscleColor('chest')"></rect>
+                  <rect x="82" y="10" width="58" height="48" [attr.fill]="muscleColor('shoulders')"></rect>
+                  <rect x="154" y="10" width="58" height="48" [attr.fill]="muscleColor('lats')"></rect>
+                  <rect x="10" y="72" width="58" height="48" [attr.fill]="muscleColor('quads')"></rect>
+                  <rect x="82" y="72" width="58" height="48" [attr.fill]="muscleColor('hamstrings')"></rect>
+                  <rect x="154" y="72" width="58" height="48" [attr.fill]="muscleColor('core')"></rect>
+                </svg>
+              </div>
+
+              <div class="exercise-list">
+                @for (exercise of selectedOverview()?.exercises || []; track exercise.dayExerciseId) {
+                  <article class="exercise-row">
+                    @if (isPlaceholderImage(exercise.images[0] || null)) {
+                      <span class="exercise-thumb-fallback"></span>
+                    } @else {
+                      <img [src]="exercise.images[0] || placeholderImage" alt="{{ exercise.name }}" loading="lazy" decoding="async">
+                    }
+                    <div>
+                      <strong>{{ exercise.name }}</strong>
+                      <p class="muted">{{ equipmentLabel(exercise.equipment) }} • {{ exercise.sets }} x {{ exercise.targetReps ? exercise.targetReps : (exercise.targetSeconds + 's') }}</p>
+                    </div>
+                  </article>
+                }
+              </div>
+            </section>
+          }
         }
 
         @if (activeSession()) {
           <section class="panel execution">
             <div class="execution-head">
-              <h2>Workout-Ausfuehrung</h2>
+              <div>
+                <h2>Workout-Ausfuehrung</h2>
+                <p class="muted">Übung {{ activeExerciseIndex() + 1 }} / {{ activeSession()!.exercises.length }}</p>
+              </div>
               <span class="mono-badge">Einheit {{ activeSession()!.sessionDate }}</span>
             </div>
 
@@ -301,7 +316,15 @@ interface BuilderDayDraft {
               </article>
             }
 
-            <button type="button" class="action-btn" (click)="finishWorkout()">Workout abschließen</button>
+            <div class="execution-actions">
+              <button type="button" class="action-btn ghost" [disabled]="activeExerciseIndex() === 0" (click)="goToPreviousExercise()">
+                Zurück
+              </button>
+              <button type="button" class="action-btn ghost" [disabled]="activeExerciseIndex() >= activeSession()!.exercises.length - 1" (click)="goToNextExercise()">
+                Nächste Übung
+              </button>
+              <button type="button" class="action-btn" (click)="finishWorkout()">Workout abschließen</button>
+            </div>
           </section>
         }
       }
@@ -349,40 +372,69 @@ interface BuilderDayDraft {
 
         <section class="panel">
           <div class="progress-head">
-            <h2>Progress</h2>
-            <button type="button" class="action-btn ghost" (click)="openSheet('graphs')">
-              <lucide-icon [img]="icons.plus" class="icon" aria-hidden="true"></lucide-icon>
-              Graph hinzufuegen
-            </button>
+            <h2>Übungs-Progress</h2>
           </div>
 
-          @for (widget of widgets(); track widget.position + '-' + widget.graph_type + '-' + (widget.exercise_id || '') + '-' + (widget.muscle_group || '')) {
-            <article class="graph-card" (click)="openGraphDetail(widget)">
-              <div class="graph-head">
-                <strong>{{ graphTitle(widget) }}</strong>
-                <span class="muted">{{ graphSubtitle(widget) }}</span>
-              </div>
+          <label for="progress-exercise">Übung</label>
+          <select id="progress-exercise" [value]="selectedProgressExerciseId()" (change)="onProgressExerciseChange($event)">
+            <option value="">Bitte wählen</option>
+            @for (exercise of exercises(); track exercise.id) {
+              <option [value]="exercise.id">{{ exercise.name }}</option>
+            }
+          </select>
 
-              @if ((seriesMap()[widget.position] || []).length > 0) {
-                <svg class="graph" viewBox="0 0 100 34" preserveAspectRatio="none" aria-label="Graph">
-                  <polyline [attr.points]="toLinePoints(seriesMap()[widget.position] || [])"></polyline>
-                </svg>
-              } @else {
-                <p class="muted">Noch keine Daten für diesen Graph.</p>
-              }
-            </article>
+          @if (selectedProgressExercise()) {
+            <p class="muted">{{ equipmentLabel(selectedProgressExercise()!.equipment) }} • {{ muscleLabel(selectedProgressExercise()!.primary_muscle) }}</p>
           }
 
-          @if (widgets().length === 0) {
-            <p class="muted">Füge deinen ersten Graph hinzu.</p>
+          <div class="stats-grid">
+            <article class="stat-box">
+              <p class="label">Aktuelles 10RM</p>
+              <strong>{{ latestTenRmLabel() }}</strong>
+            </article>
+            <article class="stat-box">
+              <p class="label">Volumen / Session</p>
+              <strong>{{ latestSessionVolumeLabel() }}</strong>
+            </article>
+          </div>
+
+          <article class="graph-card">
+            <div class="graph-head">
+              <strong>10RM Verlauf</strong>
+              <span class="muted">Arbeitssets, pro Session</span>
+            </div>
+            @if (tenRmSeries().length > 0) {
+              <svg class="graph" viewBox="0 0 100 34" preserveAspectRatio="none" aria-label="10RM Verlauf">
+                <polyline [attr.points]="toLinePoints(tenRmSeries())"></polyline>
+              </svg>
+            } @else {
+              <p class="muted">Noch keine 10RM-Daten für diese Übung.</p>
+            }
+          </article>
+
+          <article class="graph-card">
+            <div class="graph-head">
+              <strong>Volumen pro Session</strong>
+              <span class="muted">Summe aus Gewicht × Wdh</span>
+            </div>
+            @if (exerciseVolumeSeries().length > 0) {
+              <svg class="graph" viewBox="0 0 100 34" preserveAspectRatio="none" aria-label="Volumen pro Session">
+                <polyline [attr.points]="toLinePoints(exerciseVolumeSeries())"></polyline>
+              </svg>
+            } @else {
+              <p class="muted">Noch keine Volumen-Daten für diese Übung.</p>
+            }
+          </article>
+
+          @if (progressSessionRows().length > 0) {
+            <div class="previous-block">
+              <p class="muted">Letzte Sessions</p>
+              @for (row of progressSessionRows(); track row.date) {
+                <p class="previous-row">{{ row.date }} • 10RM {{ row.tenRm }} • Volumen {{ row.volume }}</p>
+              }
+            </div>
           }
         </section>
-      }
-
-      @if (activeTab() === 'progress') {
-        <button class="app-fab gym-fab" type="button" (click)="openSheet('graphs')" aria-label="Schnellaktion">
-          <lucide-icon [img]="icons.plus" class="fab-icon" aria-hidden="true"></lucide-icon>
-        </button>
       }
     </main>
 
@@ -522,6 +574,26 @@ interface BuilderDayDraft {
           <strong>Offline First</strong>
           <p class="muted">Alle Schreibaktionen werden offline lokal gespeichert und automatisch synchronisiert.</p>
         </article>
+      </div>
+    </app-bottom-sheet>
+
+    <app-bottom-sheet [open]="activeSheet() === 'session-share'" [closeOnBackdrop]="false" title="Workout teilen" (closed)="closeSheet()">
+      <p class="muted">{{ workoutShareSuggestion() }}</p>
+      <label for="session-share-note">Notiz (optional)</label>
+      <textarea id="session-share-note" rows="2" [(ngModel)]="workoutShareNote" placeholder="Wie lief das Training?"></textarea>
+
+      <p class="file-label">Foto (optional)</p>
+      <div class="file-row">
+        <button type="button" class="action-btn ghost compact" (click)="pickSessionSharePhoto()">Foto auswählen</button>
+        <span class="file-name">{{ workoutSharePhotoName() || 'Kein Foto gewählt' }}</span>
+      </div>
+      <input #sessionSharePhotoInput class="sr-only" type="file" accept="image/*" (change)="onSessionSharePhotoSelected($event)">
+
+      <div class="action-list">
+        <button type="button" class="action-btn" [disabled]="sharingWorkoutPost()" (click)="submitSessionCommunityPost()">
+          {{ sharingWorkoutPost() ? 'Wird gepostet...' : 'In Community posten' }}
+        </button>
+        <button type="button" class="action-btn ghost" [disabled]="sharingWorkoutPost()" (click)="skipSessionShare()">Überspringen</button>
       </div>
     </app-bottom-sheet>
 
@@ -822,6 +894,12 @@ interface BuilderDayDraft {
       gap: 8px;
     }
 
+    .execution-actions {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
     .exercise-tabs {
       display: flex;
       gap: 6px;
@@ -976,6 +1054,8 @@ interface BuilderDayDraft {
 
     .measurement-form input,
     .measurement-form select,
+    .panel > select,
+    .panel > textarea,
     .sheet-stack input,
     .sheet-stack select {
       min-height: 44px;
@@ -983,6 +1063,12 @@ interface BuilderDayDraft {
       background: #0F1115;
       color: #E6E8EC;
       padding: 0 10px;
+    }
+
+    .panel > textarea {
+      min-height: 88px;
+      padding: 10px;
+      resize: vertical;
     }
 
     .progress-head {
@@ -1037,6 +1123,46 @@ interface BuilderDayDraft {
     .sheet-stack {
       display: grid;
       gap: 8px;
+    }
+
+    .action-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .file-label {
+      margin: 0;
+      color: #A4A9B6;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .file-row {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .file-name {
+      color: #A4A9B6;
+      font-size: 13px;
+      font-weight: 600;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
     }
 
     .sheet-card {
@@ -1117,6 +1243,10 @@ interface BuilderDayDraft {
         grid-template-columns: 1fr;
       }
 
+      .execution-actions {
+        grid-template-columns: 1fr;
+      }
+
       .table-head,
       .table-row {
         grid-template-columns: 24px 1fr 1fr 1fr 44px;
@@ -1171,8 +1301,16 @@ export class GymComponent implements OnInit, OnDestroy {
   readonly detailTo = signal(toIsoDate(new Date()));
   readonly exerciseEquipmentFilter = signal('');
   readonly exerciseMuscleFilter = signal('');
+  readonly selectedProgressExerciseId = signal('');
+  readonly tenRmSeries = signal<TrainingGraphDataPoint[]>([]);
+  readonly exerciseVolumeSeries = signal<TrainingGraphDataPoint[]>([]);
+  readonly workoutShareSuggestion = signal('1/3 Workouts diese Woche');
+  readonly workoutSharePhotoName = signal<string | null>(null);
+  readonly sharingWorkoutPost = signal(false);
+  readonly lastCompletedSessionDay = signal<string | null>(null);
+  readonly sessionSharePhotoInput = viewChild<ElementRef<HTMLInputElement>>('sessionSharePhotoInput');
 
-  readonly activeSheet = signal<'none' | 'plans' | 'builder' | 'exercises' | 'help' | 'graphs' | 'graph-detail'>('none');
+  readonly activeSheet = signal<'none' | 'plans' | 'builder' | 'exercises' | 'help' | 'graphs' | 'graph-detail' | 'session-share'>('none');
   readonly errorMessage = signal<string | null>(null);
   readonly successMessage = signal<string | null>(null);
   readonly setSaveState = signal<Record<string, 'idle' | 'saving' | 'saved' | 'error'>>({});
@@ -1183,6 +1321,14 @@ export class GymComponent implements OnInit, OnDestroy {
       return null;
     }
     return session.exercises[this.activeExerciseIndex()] || null;
+  });
+
+  readonly selectedProgressExercise = computed<TrainingExercise | null>(() => {
+    const selectedId = this.selectedProgressExerciseId();
+    if (!selectedId) {
+      return null;
+    }
+    return this.exercises().find(exercise => exercise.id === selectedId) || null;
   });
 
   readonly exerciseEquipmentOptions = computed(() =>
@@ -1228,6 +1374,44 @@ export class GymComponent implements OnInit, OnDestroy {
 
       return exercise.secondary_muscles.includes(muscle);
     });
+  });
+
+  readonly latestTenRmLabel = computed(() => {
+    const latest = this.tenRmSeries()[this.tenRmSeries().length - 1];
+    if (!latest) {
+      return '--';
+    }
+    return `${Number(latest.point_value).toFixed(1)} kg`;
+  });
+
+  readonly latestSessionVolumeLabel = computed(() => {
+    const latest = this.exerciseVolumeSeries()[this.exerciseVolumeSeries().length - 1];
+    if (!latest) {
+      return '--';
+    }
+    return `${Math.round(Number(latest.point_value))} kg`;
+  });
+
+  readonly progressSessionRows = computed<ExerciseProgressRow[]>(() => {
+    const tenRmByDay = new Map<string, number>();
+    const volumeByDay = new Map<string, number>();
+
+    for (const point of this.tenRmSeries()) {
+      tenRmByDay.set(point.point_date, Number(point.point_value));
+    }
+    for (const point of this.exerciseVolumeSeries()) {
+      volumeByDay.set(point.point_date, Number(point.point_value));
+    }
+
+    const dates = [...new Set([...tenRmByDay.keys(), ...volumeByDay.keys()])]
+      .sort((a, b) => (a < b ? 1 : -1))
+      .slice(0, 8);
+
+    return dates.map(date => ({
+      date,
+      tenRm: tenRmByDay.has(date) ? `${tenRmByDay.get(date)!.toFixed(1)} kg` : '--',
+      volume: volumeByDay.has(date) ? `${Math.round(volumeByDay.get(date)!)} kg` : '--'
+    }));
   });
   readonly currentExerciseSaveHint = computed(() => {
     const exercise = this.currentExercise();
@@ -1297,9 +1481,13 @@ export class GymComponent implements OnInit, OnDestroy {
   readonly builderDays = signal<BuilderDayDraft[]>([]);
 
   private readonly trainingData = inject(TrainingDataService);
+  private readonly authService = inject(AuthService);
+  private readonly supabaseService = inject(SupabaseService);
   private readonly pendingSetSaves = new Map<string, ReturnType<typeof setTimeout>>();
   private readonly pendingSetStateResets = new Map<string, ReturnType<typeof setTimeout>>();
   private readonly inFlightSetSaves = new Map<string, Promise<void>>();
+  private workoutSharePhoto: File | null = null;
+  workoutShareNote = '';
 
   ngOnInit(): void {
     this.syncBuilderDayCount();
@@ -1359,9 +1547,17 @@ export class GymComponent implements OnInit, OnDestroy {
         this.trainingData.getPersonalStats(forceRefresh)
       ]);
 
-      this.widgets.set(widgets.sort((a, b) => a.position - b.position));
+      if (this.exercises().length === 0) {
+        this.exercises.set(await this.trainingData.getExercises(forceRefresh));
+      }
+
+      if (!this.selectedProgressExerciseId() && this.exercises().length > 0) {
+        this.selectedProgressExerciseId.set(this.exercises()[0].id);
+      }
+
+      await this.loadSelectedExerciseProgress(forceRefresh);
       this.personalStats.set(personalStats);
-      await this.loadSeriesForWidgets();
+      this.widgets.set(widgets.sort((a, b) => a.position - b.position));
     } catch (error: unknown) {
       this.errorMessage.set(formatAppError(error, 'Progress Daten konnten nicht geladen werden'));
     }
@@ -1410,6 +1606,27 @@ export class GymComponent implements OnInit, OnDestroy {
   setActiveExercise(index: number): void {
     this.activeExerciseIndex.set(index);
     void this.refreshPreviousPerformance();
+  }
+
+  goToPreviousExercise(): void {
+    const previous = Math.max(0, this.activeExerciseIndex() - 1);
+    if (previous === this.activeExerciseIndex()) {
+      return;
+    }
+    this.setActiveExercise(previous);
+  }
+
+  goToNextExercise(): void {
+    const session = this.activeSession();
+    if (!session) {
+      return;
+    }
+
+    const next = Math.min(session.exercises.length - 1, this.activeExerciseIndex() + 1);
+    if (next === this.activeExerciseIndex()) {
+      return;
+    }
+    this.setActiveExercise(next);
   }
 
   async refreshPreviousPerformance(): Promise<void> {
@@ -1467,6 +1684,25 @@ export class GymComponent implements OnInit, OnDestroy {
     }
 
     await this.persistSetLog(currentSet.clientRef);
+
+    if (!nextCompleted) {
+      return;
+    }
+
+    const updatedExercise = this.currentExercise();
+    if (!updatedExercise) {
+      return;
+    }
+
+    const isExerciseDone = updatedExercise.sets.every(item => item.isCompleted);
+    if (!isExerciseDone) {
+      return;
+    }
+
+    if (this.activeExerciseIndex() < session.exercises.length - 1) {
+      this.goToNextExercise();
+      this.successMessage.set(`"${updatedExercise.name}" abgeschlossen. Weiter zur nächsten Übung.`);
+    }
   }
 
   acceptRecommendation(): void {
@@ -1510,21 +1746,32 @@ export class GymComponent implements OnInit, OnDestroy {
     try {
       await this.flushPendingSetSaves();
       await this.trainingData.completeSession(session.sessionClientRef);
+      this.lastCompletedSessionDay.set(session.sessionDate);
+      try {
+        await this.prepareWorkoutShareSuggestion(session.sessionDate);
+      } catch {
+        this.workoutShareSuggestion.set('1/3 Workouts diese Woche');
+        this.workoutShareNote = 'Gym erledigt 1/3 diese Woche 💪';
+      }
       this.successMessage.set('Workout abgeschlossen.');
       this.activeSession.set(null);
       this.previousPerformance.set([]);
       await this.loadTrackerData(true);
       await this.loadProgressData(true);
+      this.activeSheet.set('session-share');
     } catch (error: unknown) {
       this.errorMessage.set(formatAppError(error, 'Workout konnte nicht abgeschlossen werden'));
     }
   }
 
-  openSheet(sheet: 'plans' | 'builder' | 'exercises' | 'help' | 'graphs' | 'graph-detail'): void {
+  openSheet(sheet: 'plans' | 'builder' | 'exercises' | 'help' | 'graphs' | 'graph-detail' | 'session-share'): void {
     this.activeSheet.set(sheet);
   }
 
   closeSheet(): void {
+    if (this.activeSheet() === 'session-share') {
+      this.resetWorkoutShareState();
+    }
     this.activeSheet.set('none');
   }
 
@@ -1807,6 +2054,12 @@ export class GymComponent implements OnInit, OnDestroy {
     }
   }
 
+  onProgressExerciseChange(event: Event): void {
+    const exerciseId = (event.target as HTMLSelectElement).value;
+    this.selectedProgressExerciseId.set(exerciseId);
+    void this.loadSelectedExerciseProgress(true);
+  }
+
   onExerciseEquipmentFilterChange(event: Event): void {
     this.exerciseEquipmentFilter.set((event.target as HTMLSelectElement).value);
   }
@@ -1818,6 +2071,68 @@ export class GymComponent implements OnInit, OnDestroy {
   resetExerciseFilters(): void {
     this.exerciseEquipmentFilter.set('');
     this.exerciseMuscleFilter.set('');
+  }
+
+  onSessionSharePhotoSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.workoutSharePhoto = input.files?.[0] || null;
+    this.workoutSharePhotoName.set(this.workoutSharePhoto?.name || null);
+  }
+
+  pickSessionSharePhoto(): void {
+    this.sessionSharePhotoInput()?.nativeElement.click();
+  }
+
+  async submitSessionCommunityPost(): Promise<void> {
+    const user = this.authService.user();
+    if (!user) {
+      return;
+    }
+
+    this.sharingWorkoutPost.set(true);
+    this.errorMessage.set(null);
+
+    try {
+      let photoPath: string | null = null;
+      if (this.workoutSharePhoto) {
+        photoPath = await this.uploadGymImage(this.workoutSharePhoto, user.id);
+      }
+
+      const postDay = this.lastCompletedSessionDay() || toIsoDate(new Date());
+      const { error } = await this.supabaseService.client
+        .from('community_posts')
+        .upsert(
+          {
+            user_id: user.id,
+            post_type: 'gym_checkin',
+            day: postDay,
+            note: this.workoutShareNote.trim() || this.workoutShareSuggestion(),
+            summary: {
+              session_day: postDay,
+              weekly_progress: this.workoutShareSuggestion()
+            },
+            photo_url: photoPath
+          },
+          { onConflict: 'user_id,day,post_type' }
+        );
+
+      if (error) {
+        throw error;
+      }
+
+      this.successMessage.set('Gym-Post erstellt.');
+      this.resetWorkoutShareState();
+      this.activeSheet.set('none');
+    } catch (error: unknown) {
+      this.errorMessage.set(formatAppError(error, 'Community-Post konnte nicht erstellt werden'));
+    } finally {
+      this.sharingWorkoutPost.set(false);
+    }
+  }
+
+  skipSessionShare(): void {
+    this.resetWorkoutShareState();
+    this.activeSheet.set('none');
   }
 
   equipmentLabel(equipment: string): string {
@@ -1923,6 +2238,69 @@ export class GymComponent implements OnInit, OnDestroy {
         return `${x},${roundTo(y, 2)}`;
       })
       .join(' ');
+  }
+
+  private async loadSelectedExerciseProgress(forceRefresh = false): Promise<void> {
+    const exerciseId = this.selectedProgressExerciseId();
+    if (!exerciseId) {
+      this.tenRmSeries.set([]);
+      this.exerciseVolumeSeries.set([]);
+      return;
+    }
+
+    const tenRm = await this.trainingData.getProgressSeries({
+      graphType: 'exercise_10rm',
+      exerciseId
+    });
+
+    let volume: TrainingGraphDataPoint[] = [];
+    try {
+      volume = await this.trainingData.getExerciseVolumeSeries(exerciseId, undefined, undefined, forceRefresh);
+    } catch {
+      volume = [];
+    }
+
+    this.tenRmSeries.set(tenRm);
+    this.exerciseVolumeSeries.set(volume);
+  }
+
+  private async prepareWorkoutShareSuggestion(sessionDay: string): Promise<void> {
+    const sessionDate = new Date(`${sessionDay}T00:00:00`);
+    const weekStartDate = startOfIsoWeek(sessionDate);
+    const weekStart = toIsoDate(weekStartDate);
+    const weekEnd = toIsoDate(addDays(weekStartDate, 6));
+    const completedThisWeek = await this.trainingData.getCompletedWorkoutCountForRange(weekStart, weekEnd);
+    const level = Math.min(Math.max(completedThisWeek, 1), 3);
+    const progressLabel = `${level}/3`;
+
+    this.workoutShareSuggestion.set(`${progressLabel} Workouts diese Woche`);
+    this.workoutShareNote = `Gym erledigt ${progressLabel} diese Woche 💪`;
+  }
+
+  private resetWorkoutShareState(): void {
+    this.workoutSharePhoto = null;
+    this.workoutSharePhotoName.set(null);
+    this.workoutShareSuggestion.set('1/3 Workouts diese Woche');
+    this.workoutShareNote = '';
+    this.lastCompletedSessionDay.set(null);
+    const input = this.sessionSharePhotoInput()?.nativeElement;
+    if (input) {
+      input.value = '';
+    }
+  }
+
+  private async uploadGymImage(file: File, userId: string): Promise<string> {
+    const extension = file.name.split('.').pop() || 'jpg';
+    const path = `${userId}/${Date.now()}.${extension}`;
+    const { error } = await this.supabaseService.client.storage
+      .from('gym-checkins')
+      .upload(path, file, { upsert: true });
+
+    if (error) {
+      throw error;
+    }
+
+    return path;
   }
 
   private async loadSeriesForWidgets(): Promise<void> {
