@@ -470,6 +470,43 @@ interface BuilderDayDraft {
           <button type="submit" class="action-btn" [disabled]="customExerciseForm.invalid">Speichern</button>
         </form>
 
+        <section class="sheet-card filter-card">
+          <div class="filter-head">
+            <strong>Filter</strong>
+            @if (activeExerciseFilterCount() > 0) {
+              <button type="button" class="action-btn ghost compact" (click)="resetExerciseFilters()">
+                Zuruecksetzen
+              </button>
+            }
+          </div>
+
+          <label for="exercise-filter-equipment">Equipment</label>
+          <select
+            id="exercise-filter-equipment"
+            [value]="exerciseEquipmentFilter()"
+            (change)="onExerciseEquipmentFilterChange($event)"
+          >
+            <option value="">Alle</option>
+            @for (equipment of exerciseEquipmentOptions(); track equipment) {
+              <option [value]="equipment">{{ equipmentLabel(equipment) }}</option>
+            }
+          </select>
+
+          <label for="exercise-filter-muscle">Muskel</label>
+          <select
+            id="exercise-filter-muscle"
+            [value]="exerciseMuscleFilter()"
+            (change)="onExerciseMuscleFilterChange($event)"
+          >
+            <option value="">Alle</option>
+            @for (muscle of exerciseMuscleOptions(); track muscle) {
+              <option [value]="muscle">{{ muscleLabel(muscle) }}</option>
+            }
+          </select>
+
+          <p class="muted">{{ filteredExerciseLibrary().length }} von {{ exercises().length }} Uebungen</p>
+        </section>
+
         <div class="sheet-scroll-list">
           @for (exercise of filteredExerciseLibrary(); track exercise.id) {
             <article class="sheet-card">
@@ -1024,6 +1061,22 @@ interface BuilderDayDraft {
       gap: 8px;
     }
 
+    .filter-card {
+      gap: 6px;
+    }
+
+    .filter-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .action-btn.compact {
+      min-height: 36px;
+      padding-inline: 10px;
+    }
+
     .sheet-card.text-only {
       gap: 4px;
     }
@@ -1130,6 +1183,8 @@ export class GymComponent implements OnInit, OnDestroy {
   readonly detailSeries = signal<TrainingGraphDataPoint[]>([]);
   readonly detailFrom = signal(toIsoDate(addDays(new Date(), -365)));
   readonly detailTo = signal(toIsoDate(new Date()));
+  readonly exerciseEquipmentFilter = signal('');
+  readonly exerciseMuscleFilter = signal('');
 
   readonly activeSheet = signal<'none' | 'plans' | 'builder' | 'exercises' | 'help' | 'graphs' | 'graph-detail'>('none');
   readonly errorMessage = signal<string | null>(null);
@@ -1144,7 +1199,50 @@ export class GymComponent implements OnInit, OnDestroy {
     return session.exercises[this.activeExerciseIndex()] || null;
   });
 
-  readonly filteredExerciseLibrary = computed(() => this.exercises().slice(0, 120));
+  readonly exerciseEquipmentOptions = computed(() =>
+    [...new Set(this.exercises().map(exercise => exercise.equipment))]
+      .sort((a, b) => a.localeCompare(b))
+  );
+
+  readonly exerciseMuscleOptions = computed(() =>
+    [
+      ...new Set(
+        this.exercises().flatMap(exercise => [exercise.primary_muscle, ...(exercise.secondary_muscles || [])])
+      )
+    ].sort((a, b) => this.muscleLabel(a).localeCompare(this.muscleLabel(b)))
+  );
+
+  readonly activeExerciseFilterCount = computed(() => {
+    let count = 0;
+    if (this.exerciseEquipmentFilter()) {
+      count += 1;
+    }
+    if (this.exerciseMuscleFilter()) {
+      count += 1;
+    }
+    return count;
+  });
+
+  readonly filteredExerciseLibrary = computed(() => {
+    const equipment = this.exerciseEquipmentFilter();
+    const muscle = this.exerciseMuscleFilter();
+
+    return this.exercises().filter(exercise => {
+      if (equipment && exercise.equipment !== equipment) {
+        return false;
+      }
+
+      if (!muscle) {
+        return true;
+      }
+
+      if (exercise.primary_muscle === muscle) {
+        return true;
+      }
+
+      return exercise.secondary_muscles.includes(muscle);
+    });
+  });
   readonly currentExerciseSaveHint = computed(() => {
     const exercise = this.currentExercise();
     if (!exercise) {
@@ -1767,6 +1865,19 @@ export class GymComponent implements OnInit, OnDestroy {
     }
   }
 
+  onExerciseEquipmentFilterChange(event: Event): void {
+    this.exerciseEquipmentFilter.set((event.target as HTMLSelectElement).value);
+  }
+
+  onExerciseMuscleFilterChange(event: Event): void {
+    this.exerciseMuscleFilter.set((event.target as HTMLSelectElement).value);
+  }
+
+  resetExerciseFilters(): void {
+    this.exerciseEquipmentFilter.set('');
+    this.exerciseMuscleFilter.set('');
+  }
+
   equipmentLabel(equipment: string): string {
     const map: Record<string, string> = {
       barbell: 'Langhantel',
@@ -1786,6 +1897,7 @@ export class GymComponent implements OnInit, OnDestroy {
       chest: 'Brust',
       upper_chest: 'Obere Brust',
       lower_chest: 'Untere Brust',
+      neck: 'Nacken',
       shoulders: 'Schultern',
       side_delts: 'Seitliche Schulter',
       rear_delts: 'Hintere Schulter',
@@ -1807,10 +1919,13 @@ export class GymComponent implements OnInit, OnDestroy {
       abs: 'Bauch',
       core: 'Rumpf',
       obliques: 'Seitliche Bauchmuskeln',
+      serratus_anterior: 'Serratus',
       hip_flexors: 'Hueftbeuger',
       rectus_femoris: 'Rectus Femoris',
       teres_major: 'Teres Major',
-      soleus: 'Soleus'
+      soleus: 'Soleus',
+      adductors: 'Adduktoren',
+      abductors: 'Abduktoren'
     };
 
     return map[muscle] || muscle;

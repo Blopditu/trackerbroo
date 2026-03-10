@@ -35,6 +35,20 @@ A mobile-first macro tracking web app built with Angular and Supabase. Track you
 4. Update auth redirect URLs to include your domain
 5. Copy your project URL and anon key to `src/environments/environment.ts`
 
+### Import Training Exercises from wger
+
+Use the provided sync script to fetch all public exercises from wger and upsert them as system exercises:
+
+```bash
+SUPABASE_URL="https://YOUR_PROJECT.supabase.co" \
+SUPABASE_SERVICE_ROLE_KEY="YOUR_SERVICE_ROLE_KEY" \
+npm run import:wger
+```
+
+Notes:
+- The script upserts into `training_exercises` and can be re-run safely.
+- It maps wger equipment/muscles to the app's existing enum and muscle keys.
+
 ## Deployment to GitHub Pages
 
 1. Push to GitHub main branch

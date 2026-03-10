@@ -5,6 +5,7 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
+    "import:wger": "node supabase/scripts/import_wger_exercises.mjs",
     "build:gh": "ng build --configuration production --base-href /proteintracker/",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
