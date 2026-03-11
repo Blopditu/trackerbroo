@@ -130,7 +130,7 @@ interface ExerciseProgressRow {
               Progress
             </mat-button-toggle>
           </mat-button-toggle-group>
-          <button mat-icon-button type="button" routerLink="/profile" aria-label="Profil öffnen">
+          <button mat-icon-button type="button" class="hero-profile-btn" routerLink="/profile" aria-label="Profil öffnen">
             <lucide-icon [img]="icons.user" class="icon" aria-hidden="true"></lucide-icon>
           </button>
         </div>
@@ -241,17 +241,6 @@ interface ExerciseProgressRow {
                   <lucide-icon [img]="icons.play" class="icon" aria-hidden="true"></lucide-icon>
                   Start
                 </button>
-              </div>
-
-              <div class="body-diagram" aria-label="Muskelgruppenübersicht">
-                <svg viewBox="0 0 220 130" role="img" aria-label="Zielmuskeln">
-                  <rect x="10" y="10" width="58" height="48" [attr.fill]="muscleColor('chest')"></rect>
-                  <rect x="82" y="10" width="58" height="48" [attr.fill]="muscleColor('shoulders')"></rect>
-                  <rect x="154" y="10" width="58" height="48" [attr.fill]="muscleColor('lats')"></rect>
-                  <rect x="10" y="72" width="58" height="48" [attr.fill]="muscleColor('quads')"></rect>
-                  <rect x="82" y="72" width="58" height="48" [attr.fill]="muscleColor('hamstrings')"></rect>
-                  <rect x="154" y="72" width="58" height="48" [attr.fill]="muscleColor('core')"></rect>
-                </svg>
               </div>
 
               <div class="exercise-list">
@@ -733,18 +722,29 @@ interface ExerciseProgressRow {
     }
 
     .hero-controls {
-      display: flex;
+      display: grid;
+      grid-template-columns: 1fr auto;
       align-items: center;
-      justify-content: space-between;
-      gap: 10px;
+      gap: 12px;
     }
 
     .gym-tabs {
-      flex: 1;
+      width: 100%;
+      border: 1px solid color-mix(in srgb, var(--m3-sys-color-outline-variant) 70%, transparent);
+      border-radius: 999px;
+      background: var(--m3-sys-color-surface-container-high);
+      padding: 4px;
     }
 
     .gym-tabs .mat-button-toggle {
       min-height: var(--touch-target);
+      border: 0;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .gym-tabs .mat-button-toggle + .mat-button-toggle {
+      margin-left: 4px;
     }
 
     .gym-tabs .mat-button-toggle-label-content {
@@ -753,7 +753,22 @@ interface ExerciseProgressRow {
       gap: 6px;
     }
 
+    .gym-tabs .mat-button-toggle-checked {
+      background: var(--m3-sys-color-secondary-container);
+      color: var(--m3-sys-color-on-secondary-container);
+    }
+
+    .hero-profile-btn {
+      width: var(--touch-target);
+      height: var(--touch-target);
+      border-radius: 999px;
+      border: 1px solid var(--m3-sys-color-outline-variant);
+      background: var(--m3-sys-color-surface-container-high);
+      color: var(--m3-sys-color-on-surface-variant);
+    }
+
     .quick-start-strip {
+      display: grid;
       grid-template-columns: 1fr auto;
       align-items: center;
       gap: 12px;
@@ -787,7 +802,7 @@ interface ExerciseProgressRow {
     }
 
     .workout-day {
-      border: 1px solid var(--m3-sys-color-outline-variant);
+      border: 1px solid color-mix(in srgb, var(--m3-sys-color-outline-variant) 70%, transparent);
       border-radius: 20px;
       background: var(--m3-sys-color-surface-container-high);
       color: var(--m3-sys-color-on-surface);
@@ -801,8 +816,9 @@ interface ExerciseProgressRow {
     }
 
     .workout-day.completed {
-      border-color: var(--success-500);
-      background: color-mix(in srgb, var(--success-500) 20%, var(--m3-sys-color-surface-container-low));
+      border-color: color-mix(in srgb, var(--m3-sys-color-outline-variant) 70%, transparent);
+      background: var(--m3-sys-color-surface-container-high);
+      box-shadow: inset 3px 0 0 color-mix(in srgb, var(--success-500) 88%, transparent);
     }
 
     .left,
@@ -866,15 +882,6 @@ interface ExerciseProgressRow {
       gap: 10px;
     }
 
-    .body-diagram {
-      border: 1px solid var(--m3-sys-color-outline-variant);
-      border-radius: 20px;
-      background: var(--m3-sys-color-surface-container-high);
-      padding: 12px;
-      display: grid;
-      place-items: center;
-    }
-
     .exercise-list {
       display: grid;
       gap: 10px;
@@ -885,9 +892,9 @@ interface ExerciseProgressRow {
       grid-template-columns: 48px 1fr;
       gap: 10px;
       align-items: center;
-      border: 1px solid var(--m3-sys-color-outline-variant);
-      border-radius: 20px;
-      background: var(--m3-sys-color-surface-container-high);
+      border: 1px solid color-mix(in srgb, var(--m3-sys-color-outline-variant) 65%, transparent);
+      border-radius: 18px;
+      background: color-mix(in srgb, var(--m3-sys-color-surface-container-high) 88%, var(--m3-sys-color-surface-container));
       padding: 12px;
     }
 
@@ -1128,6 +1135,18 @@ interface ExerciseProgressRow {
     }
 
     @media (max-width: 420px) {
+      .hero-controls {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-profile-btn {
+        justify-self: end;
+      }
+
+      .quick-start-strip {
+        grid-template-columns: 1fr;
+      }
+
       .quick-actions {
         grid-template-columns: 1fr;
       }

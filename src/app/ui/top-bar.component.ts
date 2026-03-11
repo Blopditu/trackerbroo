@@ -22,15 +22,10 @@ import { MatToolbarModule } from '@angular/material/toolbar';
       align-items: center;
       justify-content: flex-start;
       padding: 0 clamp(16px, 4vw, 32px);
-      background:
-        linear-gradient(
-          180deg,
-          color-mix(in srgb, var(--m3-sys-color-surface-container-high) 72%, transparent),
-          var(--m3-sys-color-surface)
-        );
+      background: var(--m3-sys-color-surface);
       border-bottom: 1px solid var(--m3-sys-color-outline-variant);
       z-index: 28;
-      backdrop-filter: blur(8px);
+      backdrop-filter: blur(6px);
       transition: padding var(--motion-duration-medium) var(--motion-easing-standard);
     }
 
