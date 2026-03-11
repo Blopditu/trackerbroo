@@ -2,13 +2,16 @@ import { ChangeDetectionStrategy, Component, effect, inject, OnInit } from '@ang
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
 import { AuthService } from '../../core/auth.service';
 import { formatAppError } from '../../core/error-format';
 
 @Component({
   selector: 'app-login',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, MatButtonModule, MatFormFieldModule, MatInputModule],
   template: `
     <main class="page login-page">
       @if (message) {
@@ -22,26 +25,29 @@ import { formatAppError } from '../../core/error-format';
       </section>
 
       <section class="panel auth-panel" aria-label="Anmelden">
-        <button type="button" class="action-btn ghost provider" (click)="signInWithGoogle()" [disabled]="loading">
+        <button mat-flat-button type="button" class="action-btn ghost provider" (click)="signInWithGoogle()" [disabled]="loading">
           Mit Google anmelden
         </button>
 
         <div class="divider" role="separator" aria-label="oder">oder</div>
 
         <form (ngSubmit)="onSubmit()" #loginForm="ngForm" class="stack">
-          <label for="email" class="label">E-Mail</label>
-          <input
-            id="email"
-            type="email"
-            [(ngModel)]="email"
-            name="email"
-            placeholder="name@beispiel.de"
-            required
-            email
-            autocomplete="email"
-          >
+          <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+            <mat-label>E-Mail</mat-label>
+            <input
+              matInput
+              id="email"
+              type="email"
+              [(ngModel)]="email"
+              name="email"
+              placeholder="name@beispiel.de"
+              required
+              email
+              autocomplete="email"
+            >
+          </mat-form-field>
 
-          <button type="submit" class="action-btn" [disabled]="!loginForm.valid || loading">
+          <button mat-flat-button type="submit" class="action-btn" [disabled]="!loginForm.valid || loading">
             {{ loading ? 'Link wird gesendet...' : 'Anmeldelink senden' }}
           </button>
         </form>
@@ -89,12 +95,6 @@ import { formatAppError } from '../../core/error-format';
     .stack {
       display: grid;
       gap: 0.6rem;
-    }
-
-    .label {
-      font-size: var(--text-sm);
-      color: var(--ink-700);
-      font-weight: 700;
     }
   `]
 })

@@ -1,6 +1,9 @@
 import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, OnInit, signal, viewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
 import {
   Calendar,
   ChevronLeft,
@@ -46,6 +49,9 @@ interface TodaySnapshot {
   imports: [
     CommonModule,
     FormsModule,
+    MatButtonModule,
+    MatFormFieldModule,
+    MatInputModule,
     LucideAngularModule,
     AmountPickerSheetComponent,
     HeroRingComponent,
@@ -67,21 +73,24 @@ interface TodaySnapshot {
         <p class="date-label"><lucide-icon [img]="icons.calendar" class="icon" aria-hidden="true"></lucide-icon> {{ todayLabel() }}</p>
 
         <div class="day-nav">
-          <button type="button" class="nav-btn" (click)="goPreviousDay()" aria-label="Vorheriger Tag">
+          <button mat-icon-button type="button" class="nav-btn" (click)="goPreviousDay()" aria-label="Vorheriger Tag">
             <lucide-icon [img]="icons.chevronLeft" aria-hidden="true"></lucide-icon>
           </button>
-          <input type="date" class="day-input" [ngModel]="today()" (ngModelChange)="onDayPicked($event)">
-          <button type="button" class="nav-btn" (click)="goNextDay()" [disabled]="today() >= realToday" aria-label="Nächster Tag">
+          <mat-form-field class="m3-field day-field" appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Tag</mat-label>
+            <input matInput type="date" class="day-input" [ngModel]="today()" (ngModelChange)="onDayPicked($event)">
+          </mat-form-field>
+          <button mat-icon-button type="button" class="nav-btn" (click)="goNextDay()" [disabled]="today() >= realToday" aria-label="Nächster Tag">
             <lucide-icon [img]="icons.chevronRight" aria-hidden="true"></lucide-icon>
           </button>
         </div>
 
         <div class="hero-actions">
-          <button type="button" class="action-btn" (click)="openActions()">
+          <button mat-flat-button type="button" class="action-btn" (click)="openActions()">
             <lucide-icon [img]="icons.plus" class="icon" aria-hidden="true"></lucide-icon>
             Eintrag hinzufügen
           </button>
-          <button type="button" class="action-btn ghost" [disabled]="today() === realToday" (click)="jumpToToday()">
+          <button mat-flat-button type="button" class="action-btn ghost" [disabled]="today() === realToday" (click)="jumpToToday()">
             Heute
           </button>
         </div>
@@ -170,7 +179,7 @@ interface TodaySnapshot {
         }
       </section>
 
-      <button class="app-fab today-fab" type="button" (click)="openActions()" aria-label="Schnellaktionen">
+      <button mat-fab class="app-fab today-fab" type="button" (click)="openActions()" aria-label="Schnellaktionen">
         <lucide-icon [img]="icons.plus" class="fab-icon" aria-hidden="true"></lucide-icon>
       </button>
     </main>
@@ -185,13 +194,17 @@ interface TodaySnapshot {
       }
 
       @if (sheetMode() === 'food') {
-        <input
-          type="search"
-          [ngModel]="foodSearch()"
-          (ngModelChange)="foodSearch.set($event)"
-          placeholder="Lebensmittel suchen"
-          aria-label="Lebensmittel suchen"
-        >
+        <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Lebensmittel suchen</mat-label>
+          <input
+            matInput
+            type="search"
+            [ngModel]="foodSearch()"
+            (ngModelChange)="foodSearch.set($event)"
+            placeholder="Lebensmittel suchen"
+            aria-label="Lebensmittel suchen"
+          >
+        </mat-form-field>
         <div class="food-list">
           @for (item of quickFoodItems(); track item.id) {
             <button type="button" class="menu-btn" (click)="openAmountPicker(item)">
@@ -203,18 +216,24 @@ interface TodaySnapshot {
       }
 
       @if (sheetMode() === 'weight') {
-        <label for="weight-day-input">Datum</label>
-        <input id="weight-day-input" type="date" [(ngModel)]="weightDateInput">
+        <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Datum</mat-label>
+          <input matInput id="weight-day-input" type="date" [(ngModel)]="weightDateInput">
+        </mat-form-field>
 
-        <label for="weight-input">Gewicht (kg)</label>
-        <input id="weight-input" type="number" min="20" step="0.1" [(ngModel)]="weightInput">
+        <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Gewicht (kg)</mat-label>
+          <input matInput id="weight-input" type="number" min="20" step="0.1" [(ngModel)]="weightInput">
+        </mat-form-field>
 
         <button type="button" class="menu-btn" (click)="saveWeight()">Gewicht speichern</button>
       }
 
       @if (sheetMode() === 'gym') {
-        <label for="gym-note-input">Notiz (optional)</label>
-        <textarea id="gym-note-input" rows="3" [(ngModel)]="gymNote" placeholder="Was lief heute gut?"></textarea>
+        <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Notiz (optional)</mat-label>
+          <textarea matInput id="gym-note-input" rows="3" [(ngModel)]="gymNote" placeholder="Was lief heute gut?"></textarea>
+        </mat-form-field>
 
         <p class="file-label">Foto (optional)</p>
         <div class="file-row">
@@ -302,13 +321,13 @@ interface TodaySnapshot {
       height: 18px;
     }
 
-    .day-input {
+    .day-field .mat-mdc-form-field-subscript-wrapper {
+      display: none;
+    }
+
+    .day-field .mat-mdc-text-field-wrapper {
       min-height: 44px;
-      border: 1px solid var(--m3-sys-color-outline-variant);
-      background: var(--m3-sys-color-surface);
-      color: var(--m3-sys-color-on-surface);
-      padding: 0 12px;
-      font-size: 16px;
+      border-radius: 12px;
     }
 
     .hero-actions {
@@ -590,32 +609,8 @@ interface TodaySnapshot {
       opacity: 1;
     }
 
-    label {
-      font-size: 13px;
-      color: var(--m3-sys-color-on-surface-variant);
-      font-weight: 600;
-    }
-
-    input {
-      width: 100%;
-      min-height: 44px;
-      border: 1px solid var(--m3-sys-color-outline-variant);
-      background: var(--m3-sys-color-surface);
-      color: var(--m3-sys-color-on-surface);
-      padding: 0 12px;
-      margin-bottom: 8px;
-    }
-
-    textarea {
-      width: 100%;
-      border: 1px solid var(--m3-sys-color-outline-variant);
-      background: var(--m3-sys-color-surface);
-      color: var(--m3-sys-color-on-surface);
-      padding: 12px;
-      font-size: 16px;
-      margin-bottom: 8px;
-      min-height: 96px;
-      resize: none;
+    .m3-field {
+      margin-bottom: 2px;
     }
   `]
 })

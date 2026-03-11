@@ -9,10 +9,11 @@ import { PwaInstallService } from './core/pwa-install.service';
 import { AuthService } from './core/auth.service';
 import { SupabaseService } from './core/supabase.service';
 import { ThemeService } from './core/theme.service';
+import { MatButtonModule } from '@angular/material/button';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, CommonModule, BottomNavComponent, TopBarComponent],
+  imports: [RouterOutlet, CommonModule, MatButtonModule, BottomNavComponent, TopBarComponent],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })

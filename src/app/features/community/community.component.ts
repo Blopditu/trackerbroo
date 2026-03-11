@@ -14,6 +14,9 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule, Plus } from 'lucide-angular';
+import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
 import { AuthService } from '../../core/auth.service';
 import { SupabaseService } from '../../core/supabase.service';
 import { CommunityComment, CommunityPost, LogEntry, Profile } from '../../core/types';
@@ -32,7 +35,15 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
 @Component({
   selector: 'app-community',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, LucideAngularModule, BottomSheetComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    LucideAngularModule,
+    MatButtonModule,
+    MatFormFieldModule,
+    MatInputModule,
+    BottomSheetComponent
+  ],
   template: `
     <main class="page community-page">
       @if (errorMessage()) {
@@ -68,7 +79,7 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
                   <div class="post-actions">
                     <span class="post-meta">{{ post.day }}</span>
                     @if (isOwnPost(post)) {
-                      <button type="button" class="action-btn ghost compact" (click)="openPostActions(post)">Mehr</button>
+                      <button mat-flat-button type="button" class="action-btn ghost compact" (click)="openPostActions(post)">Mehr</button>
                     }
                   </div>
                 </div>
@@ -107,21 +118,25 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
                 </div>
 
                 <div class="post-inline-actions">
-                  <button type="button" class="action-btn ghost compact" (click)="toggleCommentComposer(post.id)">
+                  <button mat-flat-button type="button" class="action-btn ghost compact" (click)="toggleCommentComposer(post.id)">
                     {{ expandedCommentPostId() === post.id ? 'Schließen' : 'Kommentieren' }}
                   </button>
                 </div>
 
                 @if (expandedCommentPostId() === post.id) {
                   <div class="compose-row">
-                    <input
-                      type="text"
-                      [ngModel]="commentInputs()[post.id] || ''"
-                      (ngModelChange)="setCommentInput(post.id, $event)"
-                      placeholder="Kommentar"
-                      [attr.aria-label]="'Kommentar für Post von ' + displayName(post.user_id)"
-                    >
-                    <button type="button" class="action-btn compact" (click)="submitComment(post.id)">Senden</button>
+                    <mat-form-field class="m3-field comment-field" appearance="outline" subscriptSizing="dynamic">
+                      <mat-label>Kommentar</mat-label>
+                      <input
+                        matInput
+                        type="text"
+                        [ngModel]="commentInputs()[post.id] || ''"
+                        (ngModelChange)="setCommentInput(post.id, $event)"
+                        placeholder="Kommentar"
+                        [attr.aria-label]="'Kommentar für Post von ' + displayName(post.user_id)"
+                      >
+                    </mat-form-field>
+                    <button mat-flat-button type="button" class="action-btn compact" (click)="submitComment(post.id)">Senden</button>
                   </div>
                 }
               </article>
@@ -139,7 +154,7 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
           }
 
           @if (hasMore()) {
-            <button type="button" class="action-btn ghost load-more" (click)="loadMore()" [disabled]="loadingMore()">
+            <button mat-flat-button type="button" class="action-btn ghost load-more" (click)="loadMore()" [disabled]="loadingMore()">
               Mehr laden
             </button>
           } @else if (posts().length > 0) {
@@ -148,23 +163,25 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
         }
       </section>
 
-      <button class="app-fab community-fab" type="button" (click)="openGymSheet()" aria-label="Gym-Post erstellen">
+      <button mat-fab class="app-fab community-fab" type="button" (click)="openGymSheet()" aria-label="Gym-Post erstellen">
         <lucide-icon [img]="icons.plus" class="fab-icon" aria-hidden="true"></lucide-icon>
       </button>
     </main>
 
     <app-bottom-sheet [open]="showGymSheet()" title="Gym posten" (closed)="closeGymSheet()">
-      <label for="gym-note">Notiz (optional)</label>
-      <textarea id="gym-note" rows="2" [(ngModel)]="gymNote" placeholder="Was lief heute gut?"></textarea>
+      <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Notiz (optional)</mat-label>
+        <textarea matInput id="gym-note" rows="2" [(ngModel)]="gymNote" placeholder="Was lief heute gut?"></textarea>
+      </mat-form-field>
 
       <p class="file-label">Foto (optional)</p>
       <div class="file-row">
-        <button type="button" class="action-btn ghost compact" (click)="pickGymPhoto()">Foto auswählen</button>
+        <button mat-flat-button type="button" class="action-btn ghost compact" (click)="pickGymPhoto()">Foto auswählen</button>
         <span class="file-name">{{ gymPhotoName() || 'Kein Foto gewählt' }}</span>
       </div>
       <input #gymPhotoInput id="gym-photo" class="sr-only" type="file" accept="image/*" (change)="onGymPhotoSelected($event)">
 
-      <button type="button" class="action-btn" [disabled]="savingPost()" (click)="submitGymPost()">
+      <button mat-flat-button type="button" class="action-btn" [disabled]="savingPost()" (click)="submitGymPost()">
         {{ savingPost() ? 'Wird gepostet...' : 'Gym-Check-in posten' }}
       </button>
     </app-bottom-sheet>
@@ -178,8 +195,8 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
           }
         </article>
         <div class="action-list">
-          <button type="button" class="action-btn danger" (click)="deleteSelectedPost()">Löschen</button>
-          <button type="button" class="action-btn ghost" (click)="closePostActions()">Abbrechen</button>
+          <button mat-flat-button type="button" class="action-btn danger" (click)="deleteSelectedPost()">Löschen</button>
+          <button mat-flat-button type="button" class="action-btn ghost" (click)="closePostActions()">Abbrechen</button>
         </div>
       }
     </app-bottom-sheet>
@@ -268,6 +285,10 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
       grid-template-columns: 1fr auto;
       gap: 8px;
       align-items: center;
+    }
+
+    .comment-field .mat-mdc-form-field-subscript-wrapper {
+      display: none;
     }
 
     .post-inline-actions {

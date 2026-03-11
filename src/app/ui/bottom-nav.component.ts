@@ -2,32 +2,43 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { Dumbbell, House, Library, LucideAngularModule, User, Users } from 'lucide-angular';
+import { MatRippleModule } from '@angular/material/core';
 
 @Component({
   selector: 'app-bottom-nav',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, RouterModule, LucideAngularModule],
+  imports: [CommonModule, RouterModule, LucideAngularModule, MatRippleModule],
   template: `
     <nav class="bottom-nav" aria-label="Hauptnavigation">
-      <a routerLink="/today" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
-        <lucide-icon [img]="icons.house" class="nav-icon" aria-hidden="true"></lucide-icon>
-        <span>Heute</span>
+      <a matRipple routerLink="/today" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+        <span class="icon-wrap">
+          <lucide-icon [img]="icons.house" class="nav-icon" aria-hidden="true"></lucide-icon>
+        </span>
+        <span class="label">Heute</span>
       </a>
-      <a routerLink="/gym" routerLinkActive="active">
-        <lucide-icon [img]="icons.dumbbell" class="nav-icon" aria-hidden="true"></lucide-icon>
-        <span>Gym</span>
+      <a matRipple routerLink="/gym" routerLinkActive="active">
+        <span class="icon-wrap">
+          <lucide-icon [img]="icons.dumbbell" class="nav-icon" aria-hidden="true"></lucide-icon>
+        </span>
+        <span class="label">Gym</span>
       </a>
-      <a routerLink="/library" routerLinkActive="active">
-        <lucide-icon [img]="icons.library" class="nav-icon" aria-hidden="true"></lucide-icon>
-        <span>Bibliothek</span>
+      <a matRipple routerLink="/library" routerLinkActive="active">
+        <span class="icon-wrap">
+          <lucide-icon [img]="icons.library" class="nav-icon" aria-hidden="true"></lucide-icon>
+        </span>
+        <span class="label">Bibliothek</span>
       </a>
-      <a routerLink="/community" routerLinkActive="active">
-        <lucide-icon [img]="icons.users" class="nav-icon" aria-hidden="true"></lucide-icon>
-        <span>Community</span>
+      <a matRipple routerLink="/community" routerLinkActive="active">
+        <span class="icon-wrap">
+          <lucide-icon [img]="icons.users" class="nav-icon" aria-hidden="true"></lucide-icon>
+        </span>
+        <span class="label">Community</span>
       </a>
-      <a routerLink="/profile" routerLinkActive="active">
-        <lucide-icon [img]="icons.user" class="nav-icon" aria-hidden="true"></lucide-icon>
-        <span>Profil</span>
+      <a matRipple routerLink="/profile" routerLinkActive="active">
+        <span class="icon-wrap">
+          <lucide-icon [img]="icons.user" class="nav-icon" aria-hidden="true"></lucide-icon>
+        </span>
+        <span class="label">Profil</span>
       </a>
     </nav>
   `,
@@ -40,41 +51,68 @@ import { Dumbbell, House, Library, LucideAngularModule, User, Users } from 'luci
       width: min(100%, 480px);
       display: grid;
       grid-template-columns: repeat(5, minmax(0, 1fr));
-      gap: 0.3rem;
-      padding: 0.4rem 0.65rem calc(0.75rem + env(safe-area-inset-bottom));
+      gap: 0;
+      padding: 0.35rem 0.5rem calc(0.75rem + env(safe-area-inset-bottom));
       border-top: 1px solid var(--m3-sys-color-outline-variant);
-      background: var(--m3-sys-color-surface-container);
+      background: var(--m3-sys-color-surface);
       z-index: 27;
     }
 
     a {
-      min-height: 52px;
-      border: 1px solid transparent;
-      border-radius: 16px;
+      min-height: 64px;
+      border: none;
+      border-radius: 12px;
+      overflow: hidden;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 0.2rem;
+      gap: 2px;
       text-decoration: none;
       color: var(--m3-sys-color-on-surface-variant);
-      font-weight: 700;
-      font-size: 0.82rem;
-      line-height: 1;
-      background: var(--m3-sys-color-surface-container-high);
+      background: transparent;
+      transition: background-color 150ms ease, color 150ms ease;
+    }
+
+    .icon-wrap {
+      width: 64px;
+      height: 32px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: inherit;
+      transition: background-color 150ms ease, color 150ms ease;
     }
 
     .nav-icon {
-      width: 16px;
-      height: 16px;
+      width: 20px;
+      height: 20px;
       display: block;
-      flex: 0 0 16px;
+      flex: 0 0 20px;
     }
 
-    a.active {
-      color: var(--m3-sys-color-on-secondary-container);
-      border-color: var(--m3-sys-color-secondary-container);
+    .label {
+      font-size: 12px;
+      line-height: 16px;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+    }
+
+    a.active .icon-wrap {
       background: var(--m3-sys-color-secondary-container);
+      color: var(--m3-sys-color-on-secondary-container);
+    }
+
+    a.active .label {
+      color: var(--m3-sys-color-on-surface);
+      font-weight: 600;
+      letter-spacing: 0.1px;
+    }
+
+    a:focus-visible {
+      outline: 2px solid var(--m3-sys-color-primary);
+      outline-offset: -1px;
     }
   `]
 })

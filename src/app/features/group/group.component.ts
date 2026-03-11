@@ -2,6 +2,9 @@ import { ChangeDetectionStrategy, Component, inject, signal, OnInit } from '@ang
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
 import { SupabaseService } from '../../core/supabase.service';
 import { AuthService } from '../../core/auth.service';
 import { ActiveGroupService } from '../../core/active-group.service';
@@ -11,7 +14,7 @@ import { formatAppError } from '../../core/error-format';
 @Component({
   selector: 'app-group',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, MatButtonModule, MatFormFieldModule, MatInputModule],
   template: `
     <main class="page group-page">
       @if (errorMessage()) {
@@ -50,16 +53,19 @@ import { formatAppError } from '../../core/error-format';
       <section class="panel" aria-label="Gruppe erstellen">
         <div class="scroll-header">Gruppe erstellen</div>
         <form (ngSubmit)="createGroup()" #groupForm="ngForm" class="stack-form">
-          <label for="group-name" class="label">Gruppenname</label>
-          <input
-            id="group-name"
-            type="text"
-            [(ngModel)]="groupName"
-            name="groupName"
-            placeholder="z. B. Team Alpen"
-            required
-          >
-          <button type="submit" class="action-btn" [disabled]="!groupForm.valid || loading">
+          <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Gruppenname</mat-label>
+            <input
+              matInput
+              id="group-name"
+              type="text"
+              [(ngModel)]="groupName"
+              name="groupName"
+              placeholder="z. B. Team Alpen"
+              required
+            >
+          </mat-form-field>
+          <button mat-flat-button type="submit" class="action-btn" [disabled]="!groupForm.valid || loading">
             {{ loading ? 'Wird erstellt...' : 'Gruppe erstellen' }}
           </button>
         </form>
@@ -68,16 +74,19 @@ import { formatAppError } from '../../core/error-format';
       <section class="panel" aria-label="Gruppe beitreten">
         <div class="scroll-header">Gruppe beitreten</div>
         <form (ngSubmit)="joinGroup()" #joinForm="ngForm" class="stack-form">
-          <label for="invite-code" class="label">Einladungscode (Gruppen-ID)</label>
-          <input
-            id="invite-code"
-            type="text"
-            [(ngModel)]="inviteCode"
-            name="inviteCode"
-            placeholder="Einladungscode einfügen"
-            required
-          >
-          <button type="submit" class="action-btn alt" [disabled]="!joinForm.valid || loading">
+          <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Einladungscode (Gruppen-ID)</mat-label>
+            <input
+              matInput
+              id="invite-code"
+              type="text"
+              [(ngModel)]="inviteCode"
+              name="inviteCode"
+              placeholder="Einladungscode einfügen"
+              required
+            >
+          </mat-form-field>
+          <button mat-flat-button type="submit" class="action-btn alt" [disabled]="!joinForm.valid || loading">
             {{ loading ? 'Wird beigetreten...' : 'Gruppe beitreten' }}
           </button>
         </form>
@@ -121,11 +130,6 @@ import { formatAppError } from '../../core/error-format';
       min-height: 56px;
     }
 
-    .label {
-      font-size: var(--text-sm);
-      color: var(--ink-700);
-      font-weight: 700;
-    }
   `]
 })
 export class GroupComponent implements OnInit {

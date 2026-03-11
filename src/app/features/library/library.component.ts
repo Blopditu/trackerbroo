@@ -1,6 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { SupabaseService } from '../../core/supabase.service';
 import { AuthService } from '../../core/auth.service';
 import { Ingredient, Meal, MealItem } from '../../core/types';
@@ -18,7 +22,15 @@ interface ParsedMacroInput {
 @Component({
   selector: 'app-library',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, BottomSheetComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    MatButtonModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+    BottomSheetComponent
+  ],
   template: `
     <main class="page library-page">
       @if (errorMessage()) {
@@ -46,18 +58,24 @@ interface ParsedMacroInput {
               {{ meals().length }} Mahlzeiten
             }
           </span>
-          <button type="button" class="action-btn tonal compact" (click)="openCreateModal()">Neu</button>
+          <button mat-flat-button type="button" class="action-btn tonal compact" (click)="openCreateModal()">Neu</button>
         </div>
 
         @if (activeTab() === 'ingredients') {
           <div class="toolbar">
-            <input type="search" [(ngModel)]="ingredientSearch" placeholder="Zutat suchen" aria-label="Zutaten suchen">
-            <select [(ngModel)]="marketFilter" aria-label="Nach Markt filtern">
-              <option value="">Alle Märkte</option>
-              @for (market of marketSuggestions(); track market) {
-                <option [value]="market">{{ market }}</option>
-              }
-            </select>
+            <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+              <mat-label>Zutat suchen</mat-label>
+              <input matInput type="search" [(ngModel)]="ingredientSearch" placeholder="Zutat suchen" aria-label="Zutaten suchen">
+            </mat-form-field>
+            <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+              <mat-label>Markt</mat-label>
+              <mat-select [(ngModel)]="marketFilter" aria-label="Nach Markt filtern">
+                <mat-option value="">Alle Märkte</mat-option>
+                @for (market of marketSuggestions(); track market) {
+                  <mat-option [value]="market">{{ market }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
           </div>
 
           @if (loading()) {
@@ -82,7 +100,7 @@ interface ParsedMacroInput {
                     }
                   </div>
                   <div class="actions">
-                    <button type="button" class="action-btn ghost compact" (click)="openIngredientActions(item)">Mehr</button>
+                    <button mat-flat-button type="button" class="action-btn ghost compact" (click)="openIngredientActions(item)">Mehr</button>
                   </div>
                 </article>
               }
@@ -106,7 +124,7 @@ interface ParsedMacroInput {
                     <div class="sub">Geschätzte Kosten: {{ getMealCostLabel(item.id) }}</div>
                   </div>
                   <div class="actions">
-                    <button type="button" class="action-btn ghost compact" (click)="openMealActions(item)">Mehr</button>
+                    <button mat-flat-button type="button" class="action-btn ghost compact" (click)="openMealActions(item)">Mehr</button>
                   </div>
                 </article>
               }
@@ -119,6 +137,7 @@ interface ParsedMacroInput {
       </section>
 
       <button
+        mat-fab
         class="app-fab"
         type="button"
         [attr.aria-label]="activeTab() === 'ingredients' ? 'Zutat hinzufügen' : 'Mahlzeit hinzufügen'"
@@ -136,8 +155,8 @@ interface ParsedMacroInput {
         </article>
       }
       <div class="action-sheet-list">
-        <button type="button" class="action-btn tonal" (click)="editSelectedItem()">Bearbeiten</button>
-        <button type="button" class="action-btn danger" (click)="deleteSelectedItem()">Löschen</button>
+        <button mat-flat-button type="button" class="action-btn tonal" (click)="editSelectedItem()">Bearbeiten</button>
+        <button mat-flat-button type="button" class="action-btn danger" (click)="deleteSelectedItem()">Löschen</button>
       </div>
     </app-bottom-sheet>
 
@@ -146,84 +165,107 @@ interface ParsedMacroInput {
         <div class="modal-card">
           <h2 class="title-font">{{ editingIngredient() ? 'Zutat bearbeiten' : 'Zutat hinzufügen' }}</h2>
           <form (ngSubmit)="saveIngredient()" #ingForm="ngForm" class="stack-form">
-            <label for="ing-source">Quelle</label>
-            <select
-              id="ing-source"
-              [(ngModel)]="ingredientForm.source_type"
-              name="source_type"
-              (ngModelChange)="onIngredientSourceTypeChange()"
-              required
-            >
-              <option value="manual">Manuell</option>
-              <option value="custom_product">Konkretes Produkt</option>
-              <option value="blv_generic">BLV generisch</option>
-            </select>
+            <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+              <mat-label>Quelle</mat-label>
+              <mat-select
+                id="ing-source"
+                [(ngModel)]="ingredientForm.source_type"
+                name="source_type"
+                (ngModelChange)="onIngredientSourceTypeChange()"
+                required
+              >
+                <mat-option value="manual">Manuell</mat-option>
+                <mat-option value="custom_product">Konkretes Produkt</mat-option>
+                <mat-option value="blv_generic">BLV generisch</mat-option>
+              </mat-select>
+            </mat-form-field>
 
             @if (ingredientForm.source_type === 'custom_product') {
-              <label for="ing-base">BLV-Basiszutat</label>
-              <select
-                id="ing-base"
-                [(ngModel)]="ingredientForm.base_ingredient_id"
-                name="base_ingredient_id"
-                [required]="ingredientForm.source_type === 'custom_product'"
-              >
-                <option [ngValue]="null">Bitte wählen</option>
-                @for (item of baseIngredientOptions(); track item.id) {
-                  <option [ngValue]="item.id">{{ item.name }}</option>
-                }
-              </select>
-              <button type="button" class="action-btn tonal compact" (click)="copyNutritionFromBaseIngredient()">
+              <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+                <mat-label>BLV-Basiszutat</mat-label>
+                <mat-select
+                  id="ing-base"
+                  [(ngModel)]="ingredientForm.base_ingredient_id"
+                  name="base_ingredient_id"
+                  [required]="ingredientForm.source_type === 'custom_product'"
+                >
+                  <mat-option [value]="null">Bitte wählen</mat-option>
+                  @for (item of baseIngredientOptions(); track item.id) {
+                    <mat-option [value]="item.id">{{ item.name }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+              <button mat-flat-button type="button" class="action-btn tonal compact" (click)="copyNutritionFromBaseIngredient()">
                 BLV-Werte übernehmen
               </button>
             }
 
-            <label for="ing-name">Name</label>
-            <input id="ing-name" type="text" [(ngModel)]="ingredientForm.name" name="name" required>
+            <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+              <mat-label>Name</mat-label>
+              <input matInput id="ing-name" type="text" [(ngModel)]="ingredientForm.name" name="name" required>
+            </mat-form-field>
 
-            <label for="ing-macro-paste">Makros aus Text (optional)</label>
-            <textarea
-              id="ing-macro-paste"
-              [(ngModel)]="macroPasteText"
-              name="macro_paste"
-              rows="4"
-              placeholder="kcal: 230&#10;protein: 8.5&#10;carbs: 29&#10;fat: 6.2"
-            ></textarea>
-            <button type="button" class="action-btn tonal compact" [disabled]="!macroPasteText.trim()" (click)="applyMacroPaste()">
+            <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+              <mat-label>Makros aus Text (optional)</mat-label>
+              <textarea
+                matInput
+                id="ing-macro-paste"
+                [(ngModel)]="macroPasteText"
+                name="macro_paste"
+                rows="4"
+                placeholder="kcal: 230&#10;protein: 8.5&#10;carbs: 29&#10;fat: 6.2"
+              ></textarea>
+            </mat-form-field>
+            <button mat-flat-button type="button" class="action-btn tonal compact" [disabled]="!macroPasteText.trim()" (click)="applyMacroPaste()">
               Makros übernehmen
             </button>
             @if (macroPasteMessage()) {
               <p class="sub">{{ macroPasteMessage() }}</p>
             }
 
-            <label for="ing-kcal">Kcal / 100g</label>
-            <input id="ing-kcal" type="number" [(ngModel)]="ingredientForm.kcal_per_100" name="kcal" required>
+            <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+              <mat-label>Kcal / 100g</mat-label>
+              <input matInput id="ing-kcal" type="number" [(ngModel)]="ingredientForm.kcal_per_100" name="kcal" required>
+            </mat-form-field>
 
-            <label for="ing-cost">Kosten / 100g (optional)</label>
-            <input id="ing-cost" type="number" [(ngModel)]="ingredientForm.cost_per_100" name="cost" min="0" step="0.01">
+            <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+              <mat-label>Kosten / 100g (optional)</mat-label>
+              <input matInput id="ing-cost" type="number" [(ngModel)]="ingredientForm.cost_per_100" name="cost" min="0" step="0.01">
+            </mat-form-field>
 
-            <label for="ing-market">Markt (optional)</label>
-            <input id="ing-market" type="text" [(ngModel)]="ingredientForm.market_name" name="market" list="market-suggestions">
+            <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+              <mat-label>Markt (optional)</mat-label>
+              <input matInput id="ing-market" type="text" [(ngModel)]="ingredientForm.market_name" name="market" list="market-suggestions">
+            </mat-form-field>
             <datalist id="market-suggestions">
               @for (market of marketSuggestions(); track market) {
                 <option [value]="market"></option>
               }
             </datalist>
 
-            <label for="ing-protein">Protein / 100g</label>
-            <input id="ing-protein" type="number" [(ngModel)]="ingredientForm.protein_per_100" name="protein" required>
+            <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+              <mat-label>Protein / 100g</mat-label>
+              <input matInput id="ing-protein" type="number" [(ngModel)]="ingredientForm.protein_per_100" name="protein" required>
+            </mat-form-field>
 
-            <label for="ing-carbs">Kohlenhydrate / 100g</label>
-            <input id="ing-carbs" type="number" [(ngModel)]="ingredientForm.carbs_per_100" name="carbs" required>
+            <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+              <mat-label>Kohlenhydrate / 100g</mat-label>
+              <input matInput id="ing-carbs" type="number" [(ngModel)]="ingredientForm.carbs_per_100" name="carbs" required>
+            </mat-form-field>
 
-            <label for="ing-fat">Fett / 100g</label>
-            <input id="ing-fat" type="number" [(ngModel)]="ingredientForm.fat_per_100" name="fat" required>
+            <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+              <mat-label>Fett / 100g</mat-label>
+              <input matInput id="ing-fat" type="number" [(ngModel)]="ingredientForm.fat_per_100" name="fat" required>
+            </mat-form-field>
 
-            <label for="ing-brand">Marke (optional)</label>
-            <input id="ing-brand" type="text" [(ngModel)]="ingredientForm.brand" name="brand">
+            <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+              <mat-label>Marke (optional)</mat-label>
+              <input matInput id="ing-brand" type="text" [(ngModel)]="ingredientForm.brand" name="brand">
+            </mat-form-field>
 
             <div class="modal-actions">
-              <button type="submit" class="action-btn" [disabled]="!ingForm.valid">Speichern</button>
-              <button type="button" class="action-btn ghost" (click)="closeIngredientModal()">Abbrechen</button>
+              <button mat-flat-button type="submit" class="action-btn" [disabled]="!ingForm.valid">Speichern</button>
+              <button mat-flat-button type="button" class="action-btn ghost" (click)="closeIngredientModal()">Abbrechen</button>
             </div>
           </form>
         </div>
@@ -235,8 +277,10 @@ interface ParsedMacroInput {
         <div class="modal-card">
           <h2 class="title-font">{{ editingMeal() ? 'Mahlzeit bearbeiten' : 'Mahlzeit hinzufügen' }}</h2>
           <form (ngSubmit)="saveMeal()" #mealFormRef="ngForm" class="stack-form">
-            <label for="meal-name">Mahlzeitenname</label>
-            <input id="meal-name" type="text" [(ngModel)]="mealForm.name" name="name" required>
+            <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+              <mat-label>Mahlzeitenname</mat-label>
+              <input matInput id="meal-name" type="text" [(ngModel)]="mealForm.name" name="name" required>
+            </mat-form-field>
 
             <div class="meal-items">
               @for (item of mealItems; track $index) {
@@ -247,17 +291,17 @@ interface ParsedMacroInput {
                     }
                   </select>
                   <input type="number" [(ngModel)]="item.grams" [name]="'grams' + $index" placeholder="Gramm">
-                  <button type="button" class="action-btn danger compact" (click)="removeMealItem($index)">Entfernen</button>
+                  <button mat-flat-button type="button" class="action-btn danger compact" (click)="removeMealItem($index)">Entfernen</button>
                 </div>
               }
             </div>
 
             <p class="cost-preview">Geschätzte Mahlzeitenkosten: {{ draftMealCostLabel() }}</p>
-            <button type="button" class="action-btn tonal" (click)="addMealItem()">+ Zutat hinzufügen</button>
+            <button mat-flat-button type="button" class="action-btn tonal" (click)="addMealItem()">+ Zutat hinzufügen</button>
 
             <div class="modal-actions">
-              <button type="submit" class="action-btn" [disabled]="!mealFormRef.valid">Speichern</button>
-              <button type="button" class="action-btn ghost" (click)="closeMealModal()">Abbrechen</button>
+              <button mat-flat-button type="submit" class="action-btn" [disabled]="!mealFormRef.valid">Speichern</button>
+              <button mat-flat-button type="button" class="action-btn ghost" (click)="closeMealModal()">Abbrechen</button>
             </div>
           </form>
         </div>
@@ -285,7 +329,7 @@ interface ParsedMacroInput {
       margin-top: 0.7rem;
       display: grid;
       gap: 0.45rem;
-      grid-template-columns: 1fr 148px;
+      grid-template-columns: 1fr minmax(148px, 220px);
     }
 
     .list-head {
@@ -321,12 +365,6 @@ interface ParsedMacroInput {
       display: grid;
       gap: 0.55rem;
       margin-top: 0.7rem;
-    }
-
-    .stack-form label {
-      font-size: 0.9rem;
-      color: var(--m3-sys-color-on-surface-variant);
-      font-weight: 700;
     }
 
     .stack-form textarea {

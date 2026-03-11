@@ -1,6 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, effect, input, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
 
 export interface MacroTotals {
   kcal: number;
@@ -17,7 +20,7 @@ export interface AmountPickResult {
 @Component({
   selector: 'app-amount-picker-sheet',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, MatButtonModule, MatFormFieldModule, MatInputModule],
   template: `
     <div class="sheet-overlay" role="dialog" aria-modal="true" [attr.aria-label]="'Menge für ' + itemName()">
       <div class="sheet-card">
@@ -26,15 +29,17 @@ export interface AmountPickResult {
 
         <div class="preset-row" role="group" aria-label="Schnellmengen">
           @for (preset of presets(); track preset) {
-            <button type="button" class="action-btn ghost" [class.active]="amount() === preset" (click)="amount.set(preset)">
+            <button mat-flat-button type="button" class="action-btn ghost" [class.active]="amount() === preset" (click)="amount.set(preset)">
               {{ preset }}{{ unitLabel() }}
             </button>
           }
         </div>
 
-        <label for="custom-amount">Eigene Menge</label>
-        <input id="custom-amount" type="number" min="0.1" step="0.1" [(ngModel)]="customAmount">
-        <button type="button" class="action-btn ghost apply-btn" (click)="applyCustomAmount()">Übernehmen</button>
+        <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Eigene Menge</mat-label>
+          <input matInput id="custom-amount" type="number" min="0.1" step="0.1" [(ngModel)]="customAmount">
+        </mat-form-field>
+        <button mat-flat-button type="button" class="action-btn ghost apply-btn" (click)="applyCustomAmount()">Übernehmen</button>
 
         <div class="preview">
           <span>{{ amount() }}{{ unitLabel() }}</span>
@@ -42,8 +47,8 @@ export interface AmountPickResult {
         </div>
 
         <div class="actions">
-          <button type="button" class="action-btn" (click)="confirm()">Hinzufügen</button>
-          <button type="button" class="action-btn ghost" (click)="closed.emit()">Abbrechen</button>
+          <button mat-flat-button type="button" class="action-btn" (click)="confirm()">Hinzufügen</button>
+          <button mat-flat-button type="button" class="action-btn ghost" (click)="closed.emit()">Abbrechen</button>
         </div>
       </div>
     </div>
@@ -91,12 +96,6 @@ export interface AmountPickResult {
       border-color: var(--accent-500);
       background: var(--accent-soft);
       color: var(--ink-900);
-    }
-
-    label {
-      font-size: var(--text-sm);
-      font-weight: 700;
-      color: var(--ink-700);
     }
 
     .apply-btn {

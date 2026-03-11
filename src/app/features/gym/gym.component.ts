@@ -12,6 +12,11 @@ import {
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import {
   Activity,
   BarChart3,
@@ -81,7 +86,19 @@ interface ExerciseProgressRow {
 @Component({
   selector: 'app-gym',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterLink, LucideAngularModule, BottomSheetComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    ReactiveFormsModule,
+    RouterLink,
+    LucideAngularModule,
+    MatButtonModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+    MatSlideToggleModule,
+    BottomSheetComponent
+  ],
   template: `
     <main class="page gym-page">
       @if (errorMessage()) {
@@ -118,7 +135,7 @@ interface ExerciseProgressRow {
             <strong>{{ selectedOverview()!.dayName }}</strong>
             <p class="muted">{{ selectedOverview()!.totalExercises }} Übungen • {{ selectedOverview()!.totalSets }} Sätze</p>
           </div>
-          <button type="button" class="action-btn" (click)="startWorkout()">
+          <button mat-flat-button type="button" class="action-btn" (click)="startWorkout()">
             <lucide-icon [img]="icons.play" class="icon" aria-hidden="true"></lucide-icon>
             Schnellstart
           </button>
@@ -129,12 +146,13 @@ interface ExerciseProgressRow {
         @if (!activeSession()) {
           <section class="panel">
             <div class="week-nav">
-              <button type="button" class="week-btn" (click)="goPrevWeek()" aria-label="Vorherige Woche">
+              <button mat-icon-button type="button" class="week-btn" (click)="goPrevWeek()" aria-label="Vorherige Woche">
                 <lucide-icon [img]="icons.chevronLeft" aria-hidden="true"></lucide-icon>
               </button>
               <div class="week-scroll" role="tablist" aria-label="Wochentage">
                 @for (day of dashboardWeek()?.days || []; track day.iso) {
                   <button
+                    mat-button
                     type="button"
                     role="tab"
                     [attr.aria-selected]="selectedDate() === day.iso"
@@ -147,7 +165,7 @@ interface ExerciseProgressRow {
                   </button>
                 }
               </div>
-              <button type="button" class="week-btn" (click)="goNextWeek()" aria-label="Nächste Woche">
+              <button mat-icon-button type="button" class="week-btn" (click)="goNextWeek()" aria-label="Nächste Woche">
                 <lucide-icon [img]="icons.chevronRight" aria-hidden="true"></lucide-icon>
               </button>
             </div>
@@ -196,9 +214,9 @@ interface ExerciseProgressRow {
             }
 
             <div class="quick-actions">
-              <button type="button" class="action-btn ghost" (click)="openSheet('plans')">Alle Plaene</button>
-              <button type="button" class="action-btn ghost" (click)="openSheet('exercises')">Uebungen</button>
-              <button type="button" class="action-btn ghost" (click)="openSheet('help')">Hilfe</button>
+              <button mat-flat-button type="button" class="action-btn ghost" (click)="openSheet('plans')">Alle Plaene</button>
+              <button mat-flat-button type="button" class="action-btn ghost" (click)="openSheet('exercises')">Uebungen</button>
+              <button mat-flat-button type="button" class="action-btn ghost" (click)="openSheet('help')">Hilfe</button>
             </div>
           </section>
 
@@ -210,7 +228,7 @@ interface ExerciseProgressRow {
                   <p class="muted">{{ selectedOverview()!.planName }} • Woche {{ selectedOverview()!.weekNumber }}</p>
                   <p class="muted">{{ selectedOverview()!.totalExercises }} Uebungen • {{ selectedOverview()!.totalSets }} Saetze</p>
                 </div>
-                <button type="button" class="action-btn" (click)="startWorkout()">
+                <button mat-flat-button type="button" class="action-btn" (click)="startWorkout()">
                   <lucide-icon [img]="icons.play" class="icon" aria-hidden="true"></lucide-icon>
                   Start
                 </button>
@@ -308,7 +326,7 @@ interface ExerciseProgressRow {
                       <input type="number" min="0" step="0.5" [value]="setRow.weightKg ?? ''" (input)="onSetInput($event, setRow, 'weight')">
                       <input type="number" min="0" step="1" [value]="setRow.reps ?? ''" (input)="onSetInput($event, setRow, 'reps')">
                       <span>{{ setRow.estimated10Rm ? setRow.estimated10Rm.toFixed(1) : '--' }}</span>
-                      <button type="button" class="check-btn" [class.done]="setRow.isCompleted" (click)="toggleSetComplete(setRow)">
+                      <button mat-icon-button type="button" class="check-btn" [class.done]="setRow.isCompleted" (click)="toggleSetComplete(setRow)">
                         <lucide-icon [img]="icons.check" aria-hidden="true"></lucide-icon>
                       </button>
                     </div>
@@ -331,13 +349,13 @@ interface ExerciseProgressRow {
             }
 
             <div class="execution-actions">
-              <button type="button" class="action-btn ghost" [disabled]="activeExerciseIndex() === 0" (click)="goToPreviousExercise()">
+              <button mat-flat-button type="button" class="action-btn ghost" [disabled]="activeExerciseIndex() === 0" (click)="goToPreviousExercise()">
                 Zurück
               </button>
-              <button type="button" class="action-btn ghost" [disabled]="activeExerciseIndex() >= activeSession()!.exercises.length - 1" (click)="goToNextExercise()">
+              <button mat-flat-button type="button" class="action-btn ghost" [disabled]="activeExerciseIndex() >= activeSession()!.exercises.length - 1" (click)="goToNextExercise()">
                 Nächste Übung
               </button>
-              <button type="button" class="action-btn" (click)="finishWorkout()">Workout abschließen</button>
+              <button mat-flat-button type="button" class="action-btn" (click)="finishWorkout()">Workout abschließen</button>
             </div>
           </section>
         }
@@ -366,21 +384,27 @@ interface ExerciseProgressRow {
           </div>
 
           <form class="measurement-form" [formGroup]="measurementForm" (ngSubmit)="saveMeasurement()">
-            <label for="measure-type">Messung</label>
-            <select id="measure-type" formControlName="type">
-              <option value="weight">Gewicht</option>
-              <option value="bodyfat">Körperfett</option>
-              <option value="waist">Taille</option>
-              <option value="chest">Brust</option>
-            </select>
+            <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+              <mat-label>Messung</mat-label>
+              <mat-select id="measure-type" formControlName="type">
+                <mat-option value="weight">Gewicht</mat-option>
+                <mat-option value="bodyfat">Körperfett</mat-option>
+                <mat-option value="waist">Taille</mat-option>
+                <mat-option value="chest">Brust</mat-option>
+              </mat-select>
+            </mat-form-field>
 
-            <label for="measure-value">Wert</label>
-            <input id="measure-value" type="number" min="0" step="0.1" formControlName="value">
+            <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+              <mat-label>Wert</mat-label>
+              <input matInput id="measure-value" type="number" min="0" step="0.1" formControlName="value">
+            </mat-form-field>
 
-            <label for="measure-date">Datum</label>
-            <input id="measure-date" type="date" formControlName="measuredOn">
+            <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+              <mat-label>Datum</mat-label>
+              <input matInput id="measure-date" type="date" formControlName="measuredOn">
+            </mat-form-field>
 
-            <button type="submit" class="action-btn" [disabled]="measurementForm.invalid">Wert speichern</button>
+            <button mat-flat-button type="submit" class="action-btn" [disabled]="measurementForm.invalid">Wert speichern</button>
           </form>
         </section>
 
@@ -389,13 +413,19 @@ interface ExerciseProgressRow {
             <h2>Übungs-Progress</h2>
           </div>
 
-          <label for="progress-exercise">Übung</label>
-          <select id="progress-exercise" [value]="selectedProgressExerciseId()" (change)="onProgressExerciseChange($event)">
-            <option value="">Bitte wählen</option>
-            @for (exercise of exercises(); track exercise.id) {
-              <option [value]="exercise.id">{{ exercise.name }}</option>
-            }
-          </select>
+          <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Übung</mat-label>
+            <mat-select
+              id="progress-exercise"
+              [value]="selectedProgressExerciseId()"
+              (valueChange)="onProgressExerciseChange($event)"
+            >
+              <mat-option value="">Bitte wählen</mat-option>
+              @for (exercise of exercises(); track exercise.id) {
+                <mat-option [value]="exercise.id">{{ exercise.name }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
 
           @if (selectedProgressExercise()) {
             <p class="muted">{{ equipmentLabel(selectedProgressExercise()!.equipment) }} • {{ muscleLabel(selectedProgressExercise()!.primary_muscle) }}</p>
@@ -454,14 +484,14 @@ interface ExerciseProgressRow {
 
     <app-bottom-sheet [open]="activeSheet() === 'plans'" title="Alle Plaene" (closed)="closeSheet()">
       <div class="sheet-stack">
-        <button type="button" class="action-btn" (click)="startPlanBuilder()">Neuen Plan erstellen</button>
+        <button mat-flat-button type="button" class="action-btn" (click)="startPlanBuilder()">Neuen Plan erstellen</button>
         @for (plan of plans(); track plan.id) {
           <article class="list-card sheet-card">
             <div>
               <strong>{{ plan.name }}</strong>
               <p class="muted">{{ plan.days_per_week }} Tage • {{ plan.duration_weeks }} Wochen</p>
             </div>
-            <button type="button" class="action-btn ghost" [disabled]="plan.is_active" (click)="activatePlan(plan.id)">
+            <button mat-flat-button type="button" class="action-btn ghost" [disabled]="plan.is_active" (click)="activatePlan(plan.id)">
               {{ plan.is_active ? 'Aktiv' : 'Aktivieren' }}
             </button>
           </article>
@@ -471,26 +501,31 @@ interface ExerciseProgressRow {
 
     <app-bottom-sheet [open]="activeSheet() === 'builder'" [closeOnBackdrop]="false" title="Plan Builder" (closed)="closeSheet()">
       <form class="sheet-stack" [formGroup]="planMetaForm" (ngSubmit)="savePlan()">
-        <label for="plan-name">Plan Name</label>
-        <input id="plan-name" type="text" formControlName="name">
+        <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Plan Name</mat-label>
+          <input matInput id="plan-name" type="text" formControlName="name">
+        </mat-form-field>
 
-        <label for="plan-days">Frequenz</label>
-        <select id="plan-days" formControlName="daysPerWeek" (change)="syncBuilderDayCount()">
-          @for (freq of frequencies; track freq) {
-            <option [value]="freq">{{ freq }}x pro Woche</option>
-          }
-        </select>
+        <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Frequenz</mat-label>
+          <mat-select id="plan-days" formControlName="daysPerWeek" (valueChange)="syncBuilderDayCount()">
+            @for (freq of frequencies; track freq) {
+              <mat-option [value]="freq">{{ freq }}x pro Woche</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
 
-        <label for="plan-weeks">Dauer (Wochen)</label>
-        <input id="plan-weeks" type="number" min="1" max="52" formControlName="durationWeeks">
+        <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Dauer (Wochen)</mat-label>
+          <input matInput id="plan-weeks" type="number" min="1" max="52" formControlName="durationWeeks">
+        </mat-form-field>
 
-        <label for="plan-start">Startdatum</label>
-        <input id="plan-start" type="date" formControlName="startDate">
+        <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Startdatum</mat-label>
+          <input matInput id="plan-start" type="date" formControlName="startDate">
+        </mat-form-field>
 
-        <label class="switch-row">
-          <input type="checkbox" formControlName="isActive">
-          Als aktiven Plan setzen
-        </label>
+        <mat-slide-toggle formControlName="isActive">Als aktiven Plan setzen</mat-slide-toggle>
 
         @for (day of builderDays(); track $index; let dayIndex = $index) {
           <section class="list-card builder-day">
@@ -507,16 +542,16 @@ interface ExerciseProgressRow {
                 </select>
                 <input type="number" min="1" [value]="exercise.sets" (input)="setBuilderExercise(dayIndex, exerciseIndex, 'sets', $event)">
                 <input type="number" min="1" [value]="exercise.targetReps ?? ''" (input)="setBuilderExercise(dayIndex, exerciseIndex, 'targetReps', $event)" placeholder="Wdh">
-                <button type="button" class="action-btn ghost" (click)="removeBuilderExercise(dayIndex, exerciseIndex)">Entfernen</button>
+                <button mat-flat-button type="button" class="action-btn ghost" (click)="removeBuilderExercise(dayIndex, exerciseIndex)">Entfernen</button>
               </div>
             }
 
-            <button type="button" class="action-btn ghost" (click)="addBuilderExercise(dayIndex)">Uebung hinzufuegen</button>
+            <button mat-flat-button type="button" class="action-btn ghost" (click)="addBuilderExercise(dayIndex)">Uebung hinzufuegen</button>
           </section>
         }
 
-        <button type="button" class="action-btn ghost" [disabled]="builderDays().length >= 7" (click)="addBuilderDay()">Tag hinzufuegen</button>
-        <button type="submit" class="action-btn" [disabled]="planMetaForm.invalid || builderDays().length === 0">Plan speichern</button>
+        <button mat-flat-button type="button" class="action-btn ghost" [disabled]="builderDays().length >= 7" (click)="addBuilderDay()">Tag hinzufuegen</button>
+        <button mat-flat-button type="submit" class="action-btn" [disabled]="planMetaForm.invalid || builderDays().length === 0">Plan speichern</button>
       </form>
     </app-bottom-sheet>
 
@@ -526,35 +561,39 @@ interface ExerciseProgressRow {
           <div class="filter-head">
             <strong>Filter</strong>
             @if (activeExerciseFilterCount() > 0) {
-              <button type="button" class="action-btn ghost compact" (click)="resetExerciseFilters()">
+              <button mat-flat-button type="button" class="action-btn ghost compact" (click)="resetExerciseFilters()">
                 Zuruecksetzen
               </button>
             }
           </div>
 
-          <label for="exercise-filter-equipment">Equipment</label>
-          <select
-            id="exercise-filter-equipment"
-            [value]="exerciseEquipmentFilter()"
-            (change)="onExerciseEquipmentFilterChange($event)"
-          >
-            <option value="">Alle</option>
-            @for (equipment of exerciseEquipmentOptions(); track equipment) {
-              <option [value]="equipment">{{ equipmentLabel(equipment) }}</option>
-            }
-          </select>
+          <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Equipment</mat-label>
+            <mat-select
+              id="exercise-filter-equipment"
+              [value]="exerciseEquipmentFilter()"
+              (valueChange)="onExerciseEquipmentFilterChange($event)"
+            >
+              <mat-option value="">Alle</mat-option>
+              @for (equipment of exerciseEquipmentOptions(); track equipment) {
+                <mat-option [value]="equipment">{{ equipmentLabel(equipment) }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
 
-          <label for="exercise-filter-muscle">Muskel</label>
-          <select
-            id="exercise-filter-muscle"
-            [value]="exerciseMuscleFilter()"
-            (change)="onExerciseMuscleFilterChange($event)"
-          >
-            <option value="">Alle</option>
-            @for (muscle of exerciseMuscleOptions(); track muscle) {
-              <option [value]="muscle">{{ muscleLabel(muscle) }}</option>
-            }
-          </select>
+          <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Muskel</mat-label>
+            <mat-select
+              id="exercise-filter-muscle"
+              [value]="exerciseMuscleFilter()"
+              (valueChange)="onExerciseMuscleFilterChange($event)"
+            >
+              <mat-option value="">Alle</mat-option>
+              @for (muscle of exerciseMuscleOptions(); track muscle) {
+                <mat-option [value]="muscle">{{ muscleLabel(muscle) }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
 
           <p class="muted">{{ filteredExerciseLibrary().length }} von {{ exercises().length }} Uebungen</p>
         </section>
@@ -593,51 +632,59 @@ interface ExerciseProgressRow {
 
     <app-bottom-sheet [open]="activeSheet() === 'session-share'" [closeOnBackdrop]="false" title="Workout teilen" (closed)="closeSheet()">
       <p class="muted">{{ workoutShareSuggestion() }}</p>
-      <label for="session-share-note">Notiz (optional)</label>
-      <textarea id="session-share-note" rows="2" [(ngModel)]="workoutShareNote" placeholder="Wie lief das Training?"></textarea>
+      <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Notiz (optional)</mat-label>
+        <textarea matInput id="session-share-note" rows="2" [(ngModel)]="workoutShareNote" placeholder="Wie lief das Training?"></textarea>
+      </mat-form-field>
 
       <p class="file-label">Foto (optional)</p>
       <div class="file-row">
-        <button type="button" class="action-btn ghost compact" (click)="pickSessionSharePhoto()">Foto auswählen</button>
+        <button mat-flat-button type="button" class="action-btn ghost compact" (click)="pickSessionSharePhoto()">Foto auswählen</button>
         <span class="file-name">{{ workoutSharePhotoName() || 'Kein Foto gewählt' }}</span>
       </div>
       <input #sessionSharePhotoInput class="sr-only" type="file" accept="image/*" (change)="onSessionSharePhotoSelected($event)">
 
       <div class="action-list">
-        <button type="button" class="action-btn" [disabled]="sharingWorkoutPost()" (click)="submitSessionCommunityPost()">
+        <button mat-flat-button type="button" class="action-btn" [disabled]="sharingWorkoutPost()" (click)="submitSessionCommunityPost()">
           {{ sharingWorkoutPost() ? 'Wird gepostet...' : 'In Community posten' }}
         </button>
-        <button type="button" class="action-btn ghost" [disabled]="sharingWorkoutPost()" (click)="skipSessionShare()">Überspringen</button>
+        <button mat-flat-button type="button" class="action-btn ghost" [disabled]="sharingWorkoutPost()" (click)="skipSessionShare()">Überspringen</button>
       </div>
     </app-bottom-sheet>
 
     <app-bottom-sheet [open]="activeSheet() === 'graphs'" [closeOnBackdrop]="false" title="Graph hinzufuegen" (closed)="closeSheet()">
       <form class="sheet-stack" [formGroup]="graphForm" (ngSubmit)="addGraphWidget()">
-        <label for="graph-type">Graph-Typ</label>
-        <select id="graph-type" formControlName="graphType">
-          <option value="workout_count">Workouts pro Woche</option>
-          <option value="exercise_10rm">Uebung 10RM Verlauf</option>
-          <option value="muscle_volume">Muskelgruppen-Volumen</option>
-          <option value="bodyweight">Koerpergewicht</option>
-          <option value="total_volume">Gesamtvolumen</option>
-        </select>
+        <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Graph-Typ</mat-label>
+          <mat-select id="graph-type" formControlName="graphType">
+            <mat-option value="workout_count">Workouts pro Woche</mat-option>
+            <mat-option value="exercise_10rm">Uebung 10RM Verlauf</mat-option>
+            <mat-option value="muscle_volume">Muskelgruppen-Volumen</mat-option>
+            <mat-option value="bodyweight">Koerpergewicht</mat-option>
+            <mat-option value="total_volume">Gesamtvolumen</mat-option>
+          </mat-select>
+        </mat-form-field>
 
         @if (graphForm.value.graphType === 'exercise_10rm') {
-          <label for="graph-exercise">Uebung</label>
-          <select id="graph-exercise" formControlName="exerciseId">
-            <option value="">Bitte wählen</option>
-            @for (exercise of exercises(); track exercise.id) {
-              <option [value]="exercise.id">{{ exercise.name }}</option>
-            }
-          </select>
+          <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Uebung</mat-label>
+            <mat-select id="graph-exercise" formControlName="exerciseId">
+              <mat-option value="">Bitte wählen</mat-option>
+              @for (exercise of exercises(); track exercise.id) {
+                <mat-option [value]="exercise.id">{{ exercise.name }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
         }
 
         @if (graphForm.value.graphType === 'muscle_volume') {
-          <label for="graph-muscle">Muskelgruppe</label>
-          <input id="graph-muscle" type="text" formControlName="muscleGroup" placeholder="z.B. quads">
+          <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Muskelgruppe</mat-label>
+            <input matInput id="graph-muscle" type="text" formControlName="muscleGroup" placeholder="z.B. quads">
+          </mat-form-field>
         }
 
-        <button type="submit" class="action-btn" [disabled]="graphForm.invalid">Graph hinzufügen</button>
+        <button mat-flat-button type="submit" class="action-btn" [disabled]="graphForm.invalid">Graph hinzufügen</button>
       </form>
     </app-bottom-sheet>
 
@@ -646,16 +693,16 @@ interface ExerciseProgressRow {
         <div class="sheet-stack">
           <strong>{{ graphTitle(selectedDetailWidget()!) }}</strong>
           <div class="grid-two">
-            <div>
-              <label for="detail-from">Von</label>
-              <input id="detail-from" type="date" [value]="detailFrom()" (input)="onDetailDateChange($event, 'from')">
-            </div>
-            <div>
-              <label for="detail-to">Bis</label>
-              <input id="detail-to" type="date" [value]="detailTo()" (input)="onDetailDateChange($event, 'to')">
-            </div>
+            <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+              <mat-label>Von</mat-label>
+              <input matInput id="detail-from" type="date" [value]="detailFrom()" (input)="onDetailDateChange($event, 'from')">
+            </mat-form-field>
+            <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+              <mat-label>Bis</mat-label>
+              <input matInput id="detail-to" type="date" [value]="detailTo()" (input)="onDetailDateChange($event, 'to')">
+            </mat-form-field>
           </div>
-          <button type="button" class="action-btn ghost" (click)="reloadDetailSeries()">Neu laden</button>
+          <button mat-flat-button type="button" class="action-btn ghost" (click)="reloadDetailSeries()">Neu laden</button>
 
           @if (detailSeries().length > 0) {
             <svg class="graph detail" viewBox="0 0 100 40" preserveAspectRatio="none" aria-label="Detailgraph">
@@ -1871,18 +1918,17 @@ export class GymComponent implements OnInit, OnDestroy {
     }
   }
 
-  onProgressExerciseChange(event: Event): void {
-    const exerciseId = (event.target as HTMLSelectElement).value;
-    this.selectedProgressExerciseId.set(exerciseId);
+  onProgressExerciseChange(value: string): void {
+    this.selectedProgressExerciseId.set(value);
     void this.loadSelectedExerciseProgress(true);
   }
 
-  onExerciseEquipmentFilterChange(event: Event): void {
-    this.exerciseEquipmentFilter.set((event.target as HTMLSelectElement).value);
+  onExerciseEquipmentFilterChange(value: string): void {
+    this.exerciseEquipmentFilter.set(value);
   }
 
-  onExerciseMuscleFilterChange(event: Event): void {
-    this.exerciseMuscleFilter.set((event.target as HTMLSelectElement).value);
+  onExerciseMuscleFilterChange(value: string): void {
+    this.exerciseMuscleFilter.set(value);
   }
 
   resetExerciseFilters(): void {

@@ -2,6 +2,10 @@ import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@ang
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
+import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { AuthService } from '../../core/auth.service';
 import { SupabaseService } from '../../core/supabase.service';
 import { Profile } from '../../core/types';
@@ -10,7 +14,7 @@ import { formatAppError } from '../../core/error-format';
 @Component({
   selector: 'app-onboarding',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatSelectModule],
   template: `
     <main class="page onboarding-page">
       @if (errorMessage()) {
@@ -43,60 +47,76 @@ import { formatAppError } from '../../core/error-format';
             @if (step() === 1) {
               <h2>Basisdaten</h2>
 
-              <label for="display_name">Name</label>
-              <input id="display_name" type="text" formControlName="display_name" placeholder="Dein Name">
+              <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+                <mat-label>Name</mat-label>
+                <input matInput id="display_name" type="text" formControlName="display_name" placeholder="Dein Name">
+              </mat-form-field>
 
-              <label for="age">Alter</label>
-              <input id="age" type="number" min="10" max="120" formControlName="age">
+              <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+                <mat-label>Alter</mat-label>
+                <input matInput id="age" type="number" min="10" max="120" formControlName="age">
+              </mat-form-field>
 
-              <label for="height_cm">Größe (cm)</label>
-              <input id="height_cm" type="number" min="80" max="260" formControlName="height_cm">
+              <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+                <mat-label>Größe (cm)</mat-label>
+                <input matInput id="height_cm" type="number" min="80" max="260" formControlName="height_cm">
+              </mat-form-field>
 
-              <label for="current_weight_kg">Aktuelles Gewicht (kg)</label>
-              <input id="current_weight_kg" type="number" min="20" step="0.1" formControlName="current_weight_kg">
+              <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+                <mat-label>Aktuelles Gewicht (kg)</mat-label>
+                <input matInput id="current_weight_kg" type="number" min="20" step="0.1" formControlName="current_weight_kg">
+              </mat-form-field>
             }
 
             @if (step() === 2) {
               <h2>Dein Rhythmus</h2>
 
-              <label for="weekly_gym_target">Gym pro Woche</label>
-              <input id="weekly_gym_target" type="number" min="1" max="14" formControlName="weekly_gym_target">
+              <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+                <mat-label>Gym pro Woche</mat-label>
+                <input matInput id="weekly_gym_target" type="number" min="1" max="14" formControlName="weekly_gym_target">
+              </mat-form-field>
 
-              <label for="activity_level">Aktivitätslevel</label>
-              <select id="activity_level" formControlName="activity_level">
-                <option value="low">Niedrig</option>
-                <option value="moderate">Mittel</option>
-                <option value="high">Hoch</option>
-              </select>
+              <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+                <mat-label>Aktivitätslevel</mat-label>
+                <mat-select id="activity_level" formControlName="activity_level">
+                  <mat-option value="low">Niedrig</mat-option>
+                  <mat-option value="moderate">Mittel</mat-option>
+                  <mat-option value="high">Hoch</mat-option>
+                </mat-select>
+              </mat-form-field>
             }
 
             @if (step() === 3) {
               <h2>Tracking Setup</h2>
 
-              <label for="track_nutrition">Ernährung tracken</label>
-              <select id="track_nutrition" formControlName="track_nutrition">
-                <option [ngValue]="true">Ja</option>
-                <option [ngValue]="false">Nein</option>
-              </select>
+              <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+                <mat-label>Ernährung tracken</mat-label>
+                <mat-select id="track_nutrition" formControlName="track_nutrition">
+                  <mat-option [value]="true">Ja</mat-option>
+                  <mat-option [value]="false">Nein</mat-option>
+                </mat-select>
+              </mat-form-field>
 
-              <label for="track_gym">Gym tracken</label>
-              <select id="track_gym" formControlName="track_gym">
-                <option [ngValue]="true">Ja</option>
-                <option [ngValue]="false">Nein</option>
-              </select>
+              <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+                <mat-label>Gym tracken</mat-label>
+                <mat-select id="track_gym" formControlName="track_gym">
+                  <mat-option [value]="true">Ja</mat-option>
+                  <mat-option [value]="false">Nein</mat-option>
+                </mat-select>
+              </mat-form-field>
             }
 
             <div class="actions">
               @if (step() > 0) {
-                <button type="button" class="action-btn ghost" (click)="prevStep()">Zurück</button>
+                <button mat-flat-button type="button" class="action-btn ghost" (click)="prevStep()">Zurück</button>
               }
 
               @if (step() < totalSteps - 1) {
-                <button type="button" class="action-btn" (click)="nextStep()" [disabled]="!canGoNext()">
+                <button mat-flat-button type="button" class="action-btn" (click)="nextStep()" [disabled]="!canGoNext()">
                   Weiter
                 </button>
               } @else {
-                <button type="submit" class="action-btn" [disabled]="saving() || !canFinish()">
+                <button mat-flat-button type="submit" class="action-btn" [disabled]="saving() || !canFinish()">
                   {{ saving() ? 'Wird gespeichert...' : 'Starten' }}
                 </button>
               }
@@ -134,12 +154,6 @@ import { formatAppError } from '../../core/error-format';
     .stack-form {
       display: grid;
       gap: 0.55rem;
-    }
-
-    .stack-form label {
-      font-size: var(--text-sm);
-      color: var(--ink-700);
-      font-weight: 700;
     }
 
     .body-text {

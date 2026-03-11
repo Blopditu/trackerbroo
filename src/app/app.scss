@@ -4,13 +4,13 @@
 
 .offline-banner {
   margin: 0;
-  padding: 0.55rem 0.75rem;
+  padding: 0.65rem 1rem;
   border-bottom: 1px solid var(--m3-sys-color-outline-variant);
-  background: var(--m3-sys-color-surface-container-high);
+  background: var(--m3-sys-color-surface-container-low);
   color: var(--m3-sys-color-on-surface-variant);
-  font-size: 0.78rem;
-  font-weight: 700;
-  text-align: center;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  text-align: left;
 }
 
 .route-host {
@@ -27,22 +27,23 @@
   left: 50%;
   transform: translateX(-50%);
   bottom: calc(86px + env(safe-area-inset-bottom));
-  width: min(calc(100% - 1.25rem), 430px);
+  width: min(calc(100% - 1.5rem), 440px);
   z-index: 35;
   border: 1px solid var(--m3-sys-color-outline-variant);
-  border-radius: 16px;
+  border-radius: 24px;
   background: var(--m3-sys-color-surface-container);
-  padding: 0.75rem;
+  padding: 0.95rem 1rem;
+  box-shadow: var(--shadow-level-2);
   display: grid;
-  gap: 0.55rem;
+  gap: 0.75rem;
 }
 
 .install-text {
   margin: 0;
   color: var(--m3-sys-color-on-surface);
-  font-size: 0.82rem;
-  font-weight: 700;
-  line-height: 1.35;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.25rem;
 }
 
 .install-actions {
@@ -52,24 +53,24 @@
 }
 
 .install-btn {
-  min-height: 40px;
-  border: 1px solid var(--m3-sys-color-outline-variant);
+  min-height: 36px;
+  border: 1px solid var(--m3-sys-color-outline);
   border-radius: 999px;
-  background: var(--m3-sys-color-surface-container-high);
-  color: var(--m3-sys-color-on-surface);
-  padding: 0 0.8rem;
-  font-size: 0.82rem;
-  font-weight: 700;
+  background: transparent;
+  color: var(--m3-sys-color-primary);
+  padding: 0 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
 }
 
 .install-btn.primary {
-  border-color: var(--m3-sys-color-primary);
+  border-color: transparent;
   background: var(--m3-sys-color-primary);
   color: var(--m3-sys-color-on-primary);
 }
 
 .install-btn.ghost {
-  color: var(--m3-sys-color-on-surface-variant);
+  color: var(--m3-sys-color-primary);
 }
 
 @media (prefers-reduced-motion: reduce) {

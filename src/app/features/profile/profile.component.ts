@@ -2,6 +2,10 @@ import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, OnIni
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
+import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { AuthService } from '../../core/auth.service';
 import { SupabaseService } from '../../core/supabase.service';
 import { Profile, WeightLog } from '../../core/types';
@@ -11,7 +15,7 @@ import { ThemeService } from '../../core/theme.service';
 @Component({
   selector: 'app-profile',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatSelectModule],
   template: `
     <main class="page profile-page">
       @if (errorMessage()) {
@@ -56,48 +60,56 @@ import { ThemeService } from '../../core/theme.service';
           <form class="stack-form" [formGroup]="profileForm" (ngSubmit)="saveProfile()">
             <label for="avatar">Profilfoto</label>
             <div class="file-row">
-              <button type="button" class="action-btn ghost" (click)="pickAvatar()">Foto auswählen</button>
+              <button mat-flat-button type="button" class="action-btn ghost" (click)="pickAvatar()">Foto auswählen</button>
               <span class="file-name">{{ avatarFileName() || 'Kein Foto gewählt' }}</span>
             </div>
             <input #avatarInput id="avatar" class="sr-only" type="file" accept="image/*" (change)="onAvatarSelected($event)">
 
-            <label for="display-name">Anzeigename</label>
-            <input id="display-name" type="text" formControlName="display_name" placeholder="Dein Name">
+            <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+              <mat-label>Anzeigename</mat-label>
+              <input matInput id="display-name" type="text" formControlName="display_name" placeholder="Dein Name">
+            </mat-form-field>
 
-            <label for="bio">Kurzbeschreibung</label>
-            <textarea id="bio" formControlName="bio" rows="3" placeholder="Optionale Notiz zu deinem Ziel"></textarea>
+            <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+              <mat-label>Kurzbeschreibung</mat-label>
+              <textarea matInput id="bio" formControlName="bio" rows="3" placeholder="Optionale Notiz zu deinem Ziel"></textarea>
+            </mat-form-field>
 
-            <label for="gym-name">Gym Name</label>
-            <input id="gym-name" type="text" formControlName="gym_name" placeholder="z.B. Mein Gym">
+            <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+              <mat-label>Gym Name</mat-label>
+              <input matInput id="gym-name" type="text" formControlName="gym_name" placeholder="z.B. Mein Gym">
+            </mat-form-field>
 
             <div class="grid-two">
-              <div>
-                <label for="height">Größe (cm)</label>
-                <input id="height" type="number" min="80" max="260" formControlName="height_cm">
-              </div>
-              <div>
-                <label for="weekly-target">Gym-Ziel / Woche</label>
-                <input id="weekly-target" type="number" min="1" max="14" formControlName="weekly_gym_target">
-              </div>
+              <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+                <mat-label>Größe (cm)</mat-label>
+                <input matInput id="height" type="number" min="80" max="260" formControlName="height_cm">
+              </mat-form-field>
+              <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+                <mat-label>Gym-Ziel / Woche</mat-label>
+                <input matInput id="weekly-target" type="number" min="1" max="14" formControlName="weekly_gym_target">
+              </mat-form-field>
             </div>
 
             <div class="grid-two">
-              <div>
-                <label for="current-weight">Aktuelles Gewicht (kg)</label>
-                <input id="current-weight" type="number" min="20" step="0.1" formControlName="current_weight_kg">
-              </div>
-              <div>
-                <label for="target-weight">Zielgewicht (kg)</label>
-                <input id="target-weight" type="number" min="20" step="0.1" formControlName="target_weight_kg">
-              </div>
+              <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+                <mat-label>Aktuelles Gewicht (kg)</mat-label>
+                <input matInput id="current-weight" type="number" min="20" step="0.1" formControlName="current_weight_kg">
+              </mat-form-field>
+              <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+                <mat-label>Zielgewicht (kg)</mat-label>
+                <input matInput id="target-weight" type="number" min="20" step="0.1" formControlName="target_weight_kg">
+              </mat-form-field>
             </div>
 
-            <label for="activity-level">Aktivitätslevel</label>
-            <select id="activity-level" formControlName="activity_level">
-              <option value="low">Niedrig</option>
-              <option value="moderate">Mittel</option>
-              <option value="high">Hoch</option>
-            </select>
+            <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+              <mat-label>Aktivitätslevel</mat-label>
+              <mat-select id="activity-level" formControlName="activity_level">
+                <mat-option value="low">Niedrig</mat-option>
+                <mat-option value="moderate">Mittel</mat-option>
+                <mat-option value="high">Hoch</mat-option>
+              </mat-select>
+            </mat-form-field>
 
             <label for="theme-seed-text">Design-Farbe (Material 3)</label>
             <div class="theme-seed-row">
@@ -108,14 +120,18 @@ import { ThemeService } from '../../core/theme.service';
                 (input)="onThemeSeedPickerInput($event)"
                 aria-label="Design-Farbe auswählen"
               >
-              <input
-                id="theme-seed-text"
-                type="text"
-                formControlName="theme_seed_color"
-                placeholder="#4c8dff"
-                (input)="onThemeSeedTextInput($event)"
-                (blur)="normalizeThemeSeedControl()"
-              >
+              <mat-form-field class="m3-field theme-seed-text-field" appearance="outline" subscriptSizing="dynamic">
+                <mat-label>Hex</mat-label>
+                <input
+                  matInput
+                  id="theme-seed-text"
+                  type="text"
+                  formControlName="theme_seed_color"
+                  placeholder="#4c8dff"
+                  (input)="onThemeSeedTextInput($event)"
+                  (blur)="normalizeThemeSeedControl()"
+                >
+              </mat-form-field>
             </div>
             <div class="theme-preset-grid" role="list" aria-label="Farbvorschläge">
               @for (preset of themeSeedPresets; track preset) {
@@ -132,7 +148,7 @@ import { ThemeService } from '../../core/theme.service';
             </div>
             <p class="subtle">Die App nutzt daraus ein dynamisches Material-3-Farbsystem.</p>
 
-            <button type="submit" class="action-btn" [disabled]="savingProfile() || profileForm.invalid">
+            <button mat-flat-button type="submit" class="action-btn" [disabled]="savingProfile() || profileForm.invalid">
               {{ savingProfile() ? 'Wird gespeichert...' : 'Profil speichern' }}
             </button>
           </form>
@@ -154,20 +170,22 @@ import { ThemeService } from '../../core/theme.service';
 
         <form class="stack-form" [formGroup]="weightForm" (ngSubmit)="saveWeightLog()">
           <div class="grid-two">
-            <div>
-              <label for="logged-on">Datum</label>
-              <input id="logged-on" type="date" formControlName="logged_on">
-            </div>
-            <div>
-              <label for="weight-kg">Gewicht (kg)</label>
-              <input id="weight-kg" type="number" step="0.1" min="20" formControlName="weight_kg">
-            </div>
+            <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+              <mat-label>Datum</mat-label>
+              <input matInput id="logged-on" type="date" formControlName="logged_on">
+            </mat-form-field>
+            <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+              <mat-label>Gewicht (kg)</mat-label>
+              <input matInput id="weight-kg" type="number" step="0.1" min="20" formControlName="weight_kg">
+            </mat-form-field>
           </div>
 
-          <label for="weight-note">Notiz (optional)</label>
-          <textarea id="weight-note" formControlName="note" rows="2" placeholder="Kontext zu diesem Wiegen"></textarea>
+          <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Notiz (optional)</mat-label>
+            <textarea matInput id="weight-note" formControlName="note" rows="2" placeholder="Kontext zu diesem Wiegen"></textarea>
+          </mat-form-field>
 
-          <button type="submit" class="action-btn tonal" [disabled]="savingWeight() || weightForm.invalid">
+          <button mat-flat-button type="submit" class="action-btn tonal" [disabled]="savingWeight() || weightForm.invalid">
             {{ savingWeight() ? 'Wird gespeichert...' : 'Gewichtseintrag speichern' }}
           </button>
         </form>
@@ -196,7 +214,7 @@ import { ThemeService } from '../../core/theme.service';
           Setzt nur Profildaten zurück und startet das Onboarding neu. Zutaten, Mahlzeiten und Bibliothekseinträge
           bleiben erhalten.
         </p>
-        <button type="button" class="action-btn ghost danger-btn" (click)="resetOnboarding()" [disabled]="savingProfile()">
+        <button mat-flat-button type="button" class="action-btn ghost danger-btn" (click)="resetOnboarding()" [disabled]="savingProfile()">
           Onboarding neu starten
         </button>
       </section>

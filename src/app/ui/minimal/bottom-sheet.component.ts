@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, ElementRef, OnDestroy, effect, input, output, viewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { LucideAngularModule, X } from 'lucide-angular';
+import { MatButtonModule } from '@angular/material/button';
 
 let sheetTitleIdCounter = 0;
 
@@ -10,7 +11,7 @@ let sheetTitleIdCounter = 0;
   host: {
     '(document:keydown)': 'onDocumentKeydown($event)'
   },
-  imports: [CommonModule, LucideAngularModule],
+  imports: [CommonModule, LucideAngularModule, MatButtonModule],
   template: `
     @if (open()) {
       <div class="overlay" (click)="onBackdropClick()">
@@ -26,7 +27,7 @@ let sheetTitleIdCounter = 0;
           <div class="drag-handle" aria-hidden="true"></div>
           <div class="head">
             <h2 [id]="titleId">{{ title() }}</h2>
-            <button type="button" class="close" (click)="closed.emit()" aria-label="Schließen">
+            <button mat-icon-button type="button" class="close" (click)="closed.emit()" aria-label="Schließen">
               <lucide-icon [img]="icons.x" aria-hidden="true"></lucide-icon>
             </button>
           </div>

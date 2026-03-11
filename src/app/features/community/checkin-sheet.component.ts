@@ -1,6 +1,9 @@
 import { ChangeDetectionStrategy, Component, effect, input, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
 
 export interface PactCheckinPayload {
   day: string;
@@ -15,14 +18,16 @@ export interface PactCheckinPayload {
 @Component({
   selector: 'app-checkin-sheet',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, MatButtonModule, MatFormFieldModule, MatInputModule],
   template: `
     <div class="sheet-overlay" role="dialog" aria-modal="true" aria-label="Ritual-Check-in">
-      <div class="sheet-card">
+        <div class="sheet-card">
         <h2 class="title-font">Ritual-Check-in</h2>
 
-        <label for="checkin-day">Tag</label>
-        <input id="checkin-day" type="date" [(ngModel)]="day">
+        <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Tag</mat-label>
+          <input matInput id="checkin-day" type="date" [(ngModel)]="day">
+        </mat-form-field>
 
         <div class="toggles" role="group" aria-label="Rituale">
           <button type="button" class="toggle" [class.active]="gymDone" (click)="gymDone = !gymDone">Gym gemacht</button>
@@ -30,15 +35,17 @@ export interface PactCheckinPayload {
           <button type="button" class="toggle" [class.active]="confirmDone" (click)="confirmDone = !confirmDone">Morgen-Abend Meldung</button>
         </div>
 
-        <label for="checkin-note">Notiz (optional)</label>
-        <textarea id="checkin-note" rows="2" [(ngModel)]="note" placeholder="Kurzer Kontext"></textarea>
+        <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Notiz (optional)</mat-label>
+          <textarea matInput id="checkin-note" rows="2" [(ngModel)]="note" placeholder="Kurzer Kontext"></textarea>
+        </mat-form-field>
 
         <label for="checkin-photo">Foto (optional)</label>
         <input id="checkin-photo" type="file" accept="image/*" (change)="onPhotoSelected($event)">
 
         <div class="actions">
-          <button type="button" class="action-btn" [disabled]="saving()" (click)="submit()">{{ saving() ? 'Wird gepostet...' : 'Posten' }}</button>
-          <button type="button" class="action-btn ghost" [disabled]="saving()" (click)="closed.emit()">Abbrechen</button>
+          <button mat-flat-button type="button" class="action-btn" [disabled]="saving()" (click)="submit()">{{ saving() ? 'Wird gepostet...' : 'Posten' }}</button>
+          <button mat-flat-button type="button" class="action-btn ghost" [disabled]="saving()" (click)="closed.emit()">Abbrechen</button>
         </div>
       </div>
     </div>
@@ -61,12 +68,6 @@ export interface PactCheckinPayload {
       padding: 0.95rem;
       display: grid;
       gap: 0.55rem;
-    }
-
-    label {
-      font-size: var(--text-sm);
-      font-weight: 700;
-      color: var(--ink-700);
     }
 
     .toggles {
