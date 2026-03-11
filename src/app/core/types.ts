@@ -87,6 +87,7 @@ export interface Profile {
   bio: string | null;
   avatar_url: string | null;
   gym_name?: string | null;
+  theme_seed_color?: string | null;
   age: number | null;
   height_cm: number | null;
   current_weight_kg: number | null;

@@ -5,9 +5,9 @@
 .offline-banner {
   margin: 0;
   padding: 0.55rem 0.75rem;
-  border-bottom: 1px solid #704c13;
-  background: #2a210f;
-  color: #f4d39a;
+  border-bottom: 1px solid var(--m3-sys-color-outline-variant);
+  background: var(--m3-sys-color-surface-container-high);
+  color: var(--m3-sys-color-on-surface-variant);
   font-size: 0.78rem;
   font-weight: 700;
   text-align: center;
@@ -29,9 +29,9 @@
   bottom: calc(86px + env(safe-area-inset-bottom));
   width: min(calc(100% - 1.25rem), 430px);
   z-index: 35;
-  border: 1px solid #1b202b;
-  border-radius: 12px;
-  background: #151922;
+  border: 1px solid var(--m3-sys-color-outline-variant);
+  border-radius: 16px;
+  background: var(--m3-sys-color-surface-container);
   padding: 0.75rem;
   display: grid;
   gap: 0.55rem;
@@ -39,7 +39,7 @@
 
 .install-text {
   margin: 0;
-  color: #e6e8ec;
+  color: var(--m3-sys-color-on-surface);
   font-size: 0.82rem;
   font-weight: 700;
   line-height: 1.35;
@@ -53,23 +53,23 @@
 
 .install-btn {
   min-height: 40px;
-  border: 1px solid #1b202b;
+  border: 1px solid var(--m3-sys-color-outline-variant);
   border-radius: 999px;
-  background: #0f1115;
-  color: #e6e8ec;
+  background: var(--m3-sys-color-surface-container-high);
+  color: var(--m3-sys-color-on-surface);
   padding: 0 0.8rem;
   font-size: 0.82rem;
   font-weight: 700;
 }
 
 .install-btn.primary {
-  border-color: #5b8cff;
-  background: #5b8cff;
-  color: #0f1115;
+  border-color: var(--m3-sys-color-primary);
+  background: var(--m3-sys-color-primary);
+  color: var(--m3-sys-color-on-primary);
 }
 
 .install-btn.ghost {
-  color: #a4a9b6;
+  color: var(--m3-sys-color-on-surface-variant);
 }
 
 @media (prefers-reduced-motion: reduce) {

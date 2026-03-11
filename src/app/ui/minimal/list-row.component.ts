@@ -26,7 +26,7 @@ import { CommonModule } from '@angular/common';
       justify-content: space-between;
       gap: 12px;
       padding: 8px 0;
-      border-bottom: 1px solid #1B202B;
+      border-bottom: 1px solid var(--m3-sys-color-outline-variant);
     }
 
     .left {
@@ -36,20 +36,20 @@ import { CommonModule } from '@angular/common';
 
     strong {
       font-size: 16px;
-      color: #E6E8EC;
+      color: var(--m3-sys-color-on-surface);
       font-weight: 600;
       line-height: 1.2;
     }
 
     span {
       font-size: 13px;
-      color: #A4A9B6;
+      color: var(--m3-sys-color-on-surface-variant);
       line-height: 1.2;
     }
 
     .meta {
       font-size: 13px;
-      color: #6E7483;
+      color: color-mix(in srgb, var(--m3-sys-color-on-surface-variant) 72%, transparent);
       font-weight: 600;
       white-space: nowrap;
     }

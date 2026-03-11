@@ -43,14 +43,17 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
         <p class="toast success" aria-live="polite">{{ successMessage() }}</p>
       }
 
-      <section class="hero">
+      <section class="panel hero">
         <p class="period">Community</p>
         <h1>Aktivitätsfeed</h1>
         <p class="motto">Gym-Check-ins und 100g-Protein-Milestones für alle.</p>
       </section>
 
-      <section class="section">
-        <h2>Feed</h2>
+      <section class="panel section">
+        <div class="m3-section-head">
+          <h2>Feed</h2>
+          <span class="m3-section-meta">{{ posts().length }} Posts</span>
+        </div>
 
         @if (loadingInitial()) {
           <p class="muted">Lädt...</p>
@@ -65,7 +68,7 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
                   <div class="post-actions">
                     <span class="post-meta">{{ post.day }}</span>
                     @if (isOwnPost(post)) {
-                      <button type="button" class="btn-inline" (click)="openPostActions(post)">Mehr</button>
+                      <button type="button" class="action-btn ghost compact" (click)="openPostActions(post)">Mehr</button>
                     }
                   </div>
                 </div>
@@ -104,7 +107,7 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
                 </div>
 
                 <div class="post-inline-actions">
-                  <button type="button" class="btn-inline" (click)="toggleCommentComposer(post.id)">
+                  <button type="button" class="action-btn ghost compact" (click)="toggleCommentComposer(post.id)">
                     {{ expandedCommentPostId() === post.id ? 'Schließen' : 'Kommentieren' }}
                   </button>
                 </div>
@@ -118,7 +121,7 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
                       placeholder="Kommentar"
                       [attr.aria-label]="'Kommentar für Post von ' + displayName(post.user_id)"
                     >
-                    <button type="button" class="btn-inline" (click)="submitComment(post.id)">Senden</button>
+                    <button type="button" class="action-btn compact" (click)="submitComment(post.id)">Senden</button>
                   </div>
                 }
               </article>
@@ -136,7 +139,7 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
           }
 
           @if (hasMore()) {
-            <button type="button" class="btn load-more" (click)="loadMore()" [disabled]="loadingMore()">
+            <button type="button" class="action-btn ghost load-more" (click)="loadMore()" [disabled]="loadingMore()">
               Mehr laden
             </button>
           } @else if (posts().length > 0) {
@@ -156,12 +159,12 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
 
       <p class="file-label">Foto (optional)</p>
       <div class="file-row">
-        <button type="button" class="btn compact" (click)="pickGymPhoto()">Foto auswählen</button>
+        <button type="button" class="action-btn ghost compact" (click)="pickGymPhoto()">Foto auswählen</button>
         <span class="file-name">{{ gymPhotoName() || 'Kein Foto gewählt' }}</span>
       </div>
       <input #gymPhotoInput id="gym-photo" class="sr-only" type="file" accept="image/*" (change)="onGymPhotoSelected($event)">
 
-      <button type="button" class="btn" [disabled]="savingPost()" (click)="submitGymPost()">
+      <button type="button" class="action-btn" [disabled]="savingPost()" (click)="submitGymPost()">
         {{ savingPost() ? 'Wird gepostet...' : 'Gym-Check-in posten' }}
       </button>
     </app-bottom-sheet>
@@ -175,16 +178,16 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
           }
         </article>
         <div class="action-list">
-          <button type="button" class="btn danger" (click)="deleteSelectedPost()">Löschen</button>
-          <button type="button" class="btn" (click)="closePostActions()">Abbrechen</button>
+          <button type="button" class="action-btn danger" (click)="deleteSelectedPost()">Löschen</button>
+          <button type="button" class="action-btn ghost" (click)="closePostActions()">Abbrechen</button>
         </div>
       }
     </app-bottom-sheet>
   `,
   styles: [`
     .community-page {
-      background: #0F1115;
-      color: #E6E8EC;
+      background: var(--m3-sys-color-surface);
+      color: var(--m3-sys-color-on-surface);
       gap: 16px;
       padding: 16px;
     }
@@ -194,8 +197,11 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
     .post-card {
       display: grid;
       gap: 12px;
-      background: #151922;
-      border: 1px solid #1B202B;
+    }
+
+    .post-card {
+      background: var(--m3-sys-color-surface-container);
+      border: 1px solid var(--m3-sys-color-outline-variant);
       padding: 16px;
     }
 
@@ -214,7 +220,7 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
     .post-summary,
     .post-foods {
       margin: 0;
-      color: #A4A9B6;
+      color: var(--m3-sys-color-on-surface-variant);
       font-size: 13px;
       font-weight: 600;
     }
@@ -222,11 +228,11 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
     .day-divider {
       margin-top: 8px;
       padding: 6px 10px;
-      border: 1px solid #1B202B;
-      background: #0F1115;
+      border: 1px solid var(--m3-sys-color-outline-variant);
+      background: var(--m3-sys-color-surface);
       font-size: 12px;
       font-weight: 700;
-      color: #A4A9B6;
+      color: var(--m3-sys-color-on-surface-variant);
       letter-spacing: 0.04em;
       text-transform: uppercase;
     }
@@ -247,7 +253,7 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
     .post-note,
     .comment-item {
       margin: 0;
-      color: #E6E8EC;
+      color: var(--m3-sys-color-on-surface);
       font-size: 14px;
       font-weight: 500;
     }
@@ -264,29 +270,6 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
       align-items: center;
     }
 
-    .btn,
-    .btn-inline {
-      min-height: 44px;
-      border: 1px solid #1B202B;
-      background: #0F1115;
-      color: #E6E8EC;
-      padding: 0 12px;
-      font-size: 15px;
-      font-weight: 600;
-      text-align: left;
-    }
-
-    .btn-inline {
-      min-width: 78px;
-      text-align: center;
-    }
-
-    .danger {
-      border-color: #7f2a37;
-      color: #f3bdc7;
-      background: #2a151c;
-    }
-
     .post-inline-actions {
       display: flex;
       justify-content: flex-start;
@@ -295,7 +278,7 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
     .file-label {
       margin: 0;
       font-size: 13px;
-      color: #A4A9B6;
+      color: var(--m3-sys-color-on-surface-variant);
       font-weight: 600;
     }
 
@@ -307,14 +290,8 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
       margin-bottom: 8px;
     }
 
-    .btn.compact {
-      min-height: 40px;
-      padding: 0 12px;
-      width: auto;
-    }
-
     .file-name {
-      color: #A4A9B6;
+      color: var(--m3-sys-color-on-surface-variant);
       font-size: 13px;
       font-weight: 600;
       overflow: hidden;
@@ -335,8 +312,8 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
     }
 
     .action-card {
-      border: 1px solid #1B202B;
-      background: #0F1115;
+      border: 1px solid var(--m3-sys-color-outline-variant);
+      background: var(--m3-sys-color-surface);
       padding: 10px;
       display: grid;
       gap: 4px;
@@ -344,14 +321,14 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
 
     .action-title {
       margin: 0;
-      color: #E6E8EC;
+      color: var(--m3-sys-color-on-surface);
       font-size: 15px;
       font-weight: 700;
     }
 
     .action-sub {
       margin: 0;
-      color: #A4A9B6;
+      color: var(--m3-sys-color-on-surface-variant);
       font-size: 13px;
       font-weight: 600;
     }
@@ -384,17 +361,17 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
     input,
     textarea {
       width: 100%;
-      border: 1px solid #1B202B;
-      background: #0F1115;
-      color: #E6E8EC;
+      border: 1px solid var(--m3-sys-color-outline-variant);
+      background: var(--m3-sys-color-surface);
+      color: var(--m3-sys-color-on-surface);
       padding: 12px;
       font-size: 16px;
     }
 
     .photo {
       width: 100%;
-      border: 1px solid #1B202B;
-      background: #0F1115;
+      border: 1px solid var(--m3-sys-color-outline-variant);
+      background: var(--m3-sys-color-surface);
       min-height: 120px;
       object-fit: cover;
     }

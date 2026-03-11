@@ -42,26 +42,26 @@ import { Dumbbell, House, Library, LucideAngularModule, User, Users } from 'luci
       grid-template-columns: repeat(5, minmax(0, 1fr));
       gap: 0.3rem;
       padding: 0.4rem 0.65rem calc(0.75rem + env(safe-area-inset-bottom));
-      border-top: 1px solid var(--border-strong);
-      background: var(--bg-shell);
+      border-top: 1px solid var(--m3-sys-color-outline-variant);
+      background: var(--m3-sys-color-surface-container);
       z-index: 27;
     }
 
     a {
       min-height: 52px;
-      border: 1px solid var(--border-strong);
-      border-radius: 12px;
+      border: 1px solid transparent;
+      border-radius: 16px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       gap: 0.2rem;
       text-decoration: none;
-      color: var(--ink-500);
+      color: var(--m3-sys-color-on-surface-variant);
       font-weight: 700;
       font-size: 0.82rem;
       line-height: 1;
-      background: var(--bg-surface-2);
+      background: var(--m3-sys-color-surface-container-high);
     }
 
     .nav-icon {
@@ -72,10 +72,9 @@ import { Dumbbell, House, Library, LucideAngularModule, User, Users } from 'luci
     }
 
     a.active {
-      color: var(--ink-900);
-      border-color: var(--accent-500);
-      background: var(--accent-soft);
-      box-shadow: inset 0 0 0 1px rgba(91, 140, 255, 0.25);
+      color: var(--m3-sys-color-on-secondary-container);
+      border-color: var(--m3-sys-color-secondary-container);
+      background: var(--m3-sys-color-secondary-container);
     }
   `]
 })

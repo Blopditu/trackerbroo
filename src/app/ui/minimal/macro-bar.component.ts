@@ -21,20 +21,20 @@ import { CommonModule } from '@angular/common';
       align-items: center;
       gap: 8px;
       font-size: 13px;
-      color: #A4A9B6;
+      color: var(--m3-sys-color-on-surface-variant);
       font-weight: 600;
       margin-bottom: 4px;
     }
 
     .label-row strong {
-      color: #E6E8EC;
+      color: var(--m3-sys-color-on-surface);
       font-size: 13px;
       font-weight: 600;
     }
 
     .bar {
       height: 6px;
-      background: #1B202B;
+      background: var(--m3-sys-color-surface-container-highest);
       overflow: hidden;
       border-radius: 2px;
     }
@@ -50,7 +50,7 @@ export class MacroBarComponent {
   readonly value = input.required<number>();
   readonly target = input.required<number>();
   readonly unit = input('g');
-  readonly color = input('#5B8CFF');
+  readonly color = input('var(--m3-sys-color-primary)');
 
   readonly progress = computed(() => Math.max(0, Math.min((this.value() / Math.max(this.target(), 1)) * 100, 100)));
 }

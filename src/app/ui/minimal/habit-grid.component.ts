@@ -35,13 +35,13 @@ export type HabitState = 'empty' | 'complete' | 'missed';
       font-size: 11px;
       letter-spacing: 0.08em;
       text-transform: uppercase;
-      color: #A4A9B6;
+      color: var(--m3-sys-color-on-surface-variant);
       font-weight: 700;
     }
 
     .count {
       font-size: 13px;
-      color: #A4A9B6;
+      color: var(--m3-sys-color-on-surface-variant);
       font-weight: 600;
     }
 
@@ -53,7 +53,7 @@ export type HabitState = 'empty' | 'complete' | 'missed';
 
     .day-label {
       font-size: 11px;
-      color: #6E7483;
+      color: color-mix(in srgb, var(--m3-sys-color-on-surface-variant) 72%, transparent);
       text-align: center;
       text-transform: uppercase;
       letter-spacing: 0.08em;
@@ -65,15 +65,15 @@ export type HabitState = 'empty' | 'complete' | 'missed';
       aspect-ratio: 1;
       min-height: 10px;
       max-height: 12px;
-      background: #1B202B;
+      background: var(--m3-sys-color-surface-container-highest);
     }
 
     .cell.complete {
-      background: #3DBB78;
+      background: var(--success-500);
     }
 
     .cell.missed {
-      background: #E35D5D;
+      background: var(--m3-sys-color-error);
     }
   `]
 })

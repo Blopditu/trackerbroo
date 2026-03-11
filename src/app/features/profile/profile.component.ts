@@ -6,6 +6,7 @@ import { AuthService } from '../../core/auth.service';
 import { SupabaseService } from '../../core/supabase.service';
 import { Profile, WeightLog } from '../../core/types';
 import { formatAppError } from '../../core/error-format';
+import { ThemeService } from '../../core/theme.service';
 
 @Component({
   selector: 'app-profile',
@@ -98,6 +99,39 @@ import { formatAppError } from '../../core/error-format';
               <option value="high">Hoch</option>
             </select>
 
+            <label for="theme-seed-text">Design-Farbe (Material 3)</label>
+            <div class="theme-seed-row">
+              <input
+                id="theme-seed-picker"
+                type="color"
+                [value]="profileForm.controls.theme_seed_color.value"
+                (input)="onThemeSeedPickerInput($event)"
+                aria-label="Design-Farbe auswählen"
+              >
+              <input
+                id="theme-seed-text"
+                type="text"
+                formControlName="theme_seed_color"
+                placeholder="#4c8dff"
+                (input)="onThemeSeedTextInput($event)"
+                (blur)="normalizeThemeSeedControl()"
+              >
+            </div>
+            <div class="theme-preset-grid" role="list" aria-label="Farbvorschläge">
+              @for (preset of themeSeedPresets; track preset) {
+                <button
+                  type="button"
+                  role="listitem"
+                  class="theme-swatch"
+                  [class.active]="profileForm.controls.theme_seed_color.value === preset"
+                  [style.background]="preset"
+                  (click)="applyThemePreset(preset)"
+                  [attr.aria-label]="'Farbpreset ' + preset"
+                ></button>
+              }
+            </div>
+            <p class="subtle">Die App nutzt daraus ein dynamisches Material-3-Farbsystem.</p>
+
             <button type="submit" class="action-btn" [disabled]="savingProfile() || profileForm.invalid">
               {{ savingProfile() ? 'Wird gespeichert...' : 'Profil speichern' }}
             </button>
@@ -106,7 +140,7 @@ import { formatAppError } from '../../core/error-format';
       }
 
       <section class="panel" aria-labelledby="weight-log-title">
-        <div id="weight-log-title" class="section-head">
+        <div id="weight-log-title" class="m3-section-head">
           <div class="scroll-header">Tägliches Gewicht</div>
           <span class="mono-badge">Zuletzt {{ latestWeightLabel() }}</span>
         </div>
@@ -133,7 +167,7 @@ import { formatAppError } from '../../core/error-format';
           <label for="weight-note">Notiz (optional)</label>
           <textarea id="weight-note" formControlName="note" rows="2" placeholder="Kontext zu diesem Wiegen"></textarea>
 
-          <button type="submit" class="action-btn alt" [disabled]="savingWeight() || weightForm.invalid">
+          <button type="submit" class="action-btn tonal" [disabled]="savingWeight() || weightForm.invalid">
             {{ savingWeight() ? 'Wird gespeichert...' : 'Gewichtseintrag speichern' }}
           </button>
         </form>
@@ -199,7 +233,7 @@ import { formatAppError } from '../../core/error-format';
       height: 76px;
       border-radius: 16px;
       border: 1px solid var(--border-strong);
-      background: #1a2738;
+      background: var(--m3-sys-color-surface-container-high);
     }
 
     .avatar-image {
@@ -218,7 +252,7 @@ import { formatAppError } from '../../core/error-format';
       margin-top: 0.7rem;
       border: 1px solid var(--border-strong);
       border-radius: 12px;
-      background: #121f2f;
+      background: var(--m3-sys-color-surface-container-high);
       padding: 0.55rem;
       display: flex;
       align-items: center;
@@ -274,18 +308,10 @@ import { formatAppError } from '../../core/error-format';
       gap: 0.55rem;
     }
 
-    .section-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 0.5rem;
-      margin-bottom: 0.65rem;
-    }
-
     .sparkline-wrap {
       border: 1px solid var(--border-strong);
       border-radius: 12px;
-      background: #111a27;
+      background: var(--m3-sys-color-surface-container-low);
       padding: 0.5rem;
       margin-bottom: 0.65rem;
     }
@@ -330,8 +356,8 @@ import { formatAppError } from '../../core/error-format';
     }
 
     .danger-zone {
-      border-color: #5c202a;
-      background: #1a1114;
+      border-color: var(--m3-sys-color-error);
+      background: var(--m3-sys-color-error-container);
     }
 
     .subtle {
@@ -342,9 +368,41 @@ import { formatAppError } from '../../core/error-format';
     }
 
     .danger-btn {
-      border-color: #a34a5a;
-      color: #f3bdc7;
-      background: #2a151c;
+      border-color: var(--m3-sys-color-error);
+      color: var(--m3-sys-color-on-error-container);
+      background: color-mix(in srgb, var(--m3-sys-color-error-container) 90%, var(--m3-sys-color-surface-container-low));
+    }
+
+    .theme-seed-row {
+      display: grid;
+      grid-template-columns: 56px 1fr;
+      gap: 0.55rem;
+      align-items: center;
+    }
+
+    .theme-seed-row input[type='color'] {
+      padding: 0.2rem;
+      min-height: 44px;
+      border-radius: 12px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-surface-2);
+    }
+
+    .theme-preset-grid {
+      display: grid;
+      grid-template-columns: repeat(8, minmax(0, 1fr));
+      gap: 0.45rem;
+      margin-top: 0.15rem;
+    }
+
+    .theme-swatch {
+      min-height: 30px;
+      border-radius: 999px;
+      border: 1px solid var(--border-strong);
+    }
+
+    .theme-swatch.active {
+      box-shadow: inset 0 0 0 2px color-mix(in srgb, #ffffff 65%, transparent);
     }
   `]
 })
@@ -353,6 +411,7 @@ export class ProfileComponent implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly formBuilder = inject(FormBuilder);
   private readonly router = inject(Router);
+  private readonly themeService = inject(ThemeService);
 
   readonly savingProfile = signal(false);
   readonly savingWeight = signal(false);
@@ -365,6 +424,16 @@ export class ProfileComponent implements OnInit {
   readonly avatarFileName = signal<string | null>(null);
   readonly avatarInput = viewChild<ElementRef<HTMLInputElement>>('avatarInput');
   readonly gymWeekSessions = signal(0);
+  readonly themeSeedPresets = [
+    '#4c8dff',
+    '#0ea5e9',
+    '#14b8a6',
+    '#22c55e',
+    '#84cc16',
+    '#f59e0b',
+    '#ef4444',
+    '#a855f7'
+  ];
 
   private avatarFile: File | null = null;
 
@@ -376,7 +445,8 @@ export class ProfileComponent implements OnInit {
     current_weight_kg: [70, [Validators.min(20)]],
     target_weight_kg: [70, [Validators.min(20)]],
     weekly_gym_target: [3, [Validators.min(1), Validators.max(14)]],
-    activity_level: ['moderate' as 'low' | 'moderate' | 'high']
+    activity_level: ['moderate' as 'low' | 'moderate' | 'high'],
+    theme_seed_color: [this.themeService.getCurrentSeed(), [Validators.pattern(/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/)]]
   });
 
   readonly weightForm = this.formBuilder.nonNullable.group({
@@ -484,6 +554,7 @@ export class ProfileComponent implements OnInit {
       target_weight_kg: 70,
       weekly_gym_target: 3,
       activity_level: 'moderate',
+      theme_seed_color: this.themeService.getCurrentSeed(),
       onboarding_completed: false,
       track_nutrition: true,
       track_gym: true,
@@ -504,6 +575,7 @@ export class ProfileComponent implements OnInit {
           target_weight_kg: 70,
           weekly_gym_target: 3,
           activity_level: 'moderate',
+          theme_seed_color: this.themeService.getCurrentSeed(),
           onboarding_completed: false,
           track_nutrition: true,
           track_gym: true
@@ -514,7 +586,12 @@ export class ProfileComponent implements OnInit {
       }
     }
 
-    this.profile.set(resolvedProfile as Profile);
+    const resolvedThemeSeed = this.themeService.applySeed(
+      (resolvedProfile as Profile).theme_seed_color || this.themeService.getCurrentSeed(),
+      { persistLocal: true }
+    );
+
+    this.profile.set({ ...(resolvedProfile as Profile), theme_seed_color: resolvedThemeSeed });
     this.authService.setOnboardingCompleted(Boolean(resolvedProfile.onboarding_completed));
     this.avatarPreview.set(resolvedProfile.avatar_url || null);
     this.avatarFileName.set(null);
@@ -527,7 +604,8 @@ export class ProfileComponent implements OnInit {
       current_weight_kg: Number(resolvedProfile.current_weight_kg || 70),
       target_weight_kg: Number(resolvedProfile.target_weight_kg || 70),
       weekly_gym_target: Number(resolvedProfile.weekly_gym_target || 3),
-      activity_level: (resolvedProfile.activity_level || 'moderate') as 'low' | 'moderate' | 'high'
+      activity_level: (resolvedProfile.activity_level || 'moderate') as 'low' | 'moderate' | 'high',
+      theme_seed_color: resolvedThemeSeed
     });
   }
 
@@ -614,6 +692,7 @@ export class ProfileComponent implements OnInit {
       }
 
       const formValue = this.profileForm.getRawValue();
+      const normalizedThemeSeed = this.themeService.applySeed(formValue.theme_seed_color, { persistLocal: false });
 
       const payload = {
         user_id: user.id,
@@ -626,6 +705,7 @@ export class ProfileComponent implements OnInit {
         target_weight_kg: formValue.target_weight_kg,
         weekly_gym_target: formValue.weekly_gym_target,
         activity_level: formValue.activity_level,
+        theme_seed_color: normalizedThemeSeed,
         updated_at: new Date().toISOString()
       };
 
@@ -639,6 +719,8 @@ export class ProfileComponent implements OnInit {
 
       this.avatarFile = null;
       this.avatarFileName.set(null);
+      this.profileForm.controls.theme_seed_color.setValue(normalizedThemeSeed);
+      this.themeService.applySeed(normalizedThemeSeed, { persistLocal: true });
       this.successMessage.set('Profil gespeichert.');
       await this.loadAll();
     } catch (error) {
@@ -739,6 +821,7 @@ export class ProfileComponent implements OnInit {
             target_weight_kg: null,
             weekly_gym_target: 3,
             activity_level: 'moderate',
+            theme_seed_color: this.themeService.getDefaultSeed(),
             onboarding_completed: false,
             track_nutrition: true,
             track_gym: true,
@@ -763,6 +846,7 @@ export class ProfileComponent implements OnInit {
       }
 
       await this.router.navigate(['/onboarding']);
+      this.themeService.applySeed(this.themeService.getDefaultSeed(), { persistLocal: true });
     } catch (error: unknown) {
       this.errorMessage.set(formatAppError(error, 'Onboarding konnte nicht zurückgesetzt werden'));
     } finally {
@@ -799,5 +883,29 @@ export class ProfileComponent implements OnInit {
 
   private formatDate(date: Date): string {
     return date.toISOString().split('T')[0];
+  }
+
+  onThemeSeedPickerInput(event: Event): void {
+    const value = (event.target as HTMLInputElement).value;
+    this.profileForm.controls.theme_seed_color.setValue(value);
+    this.themeService.applySeed(value, { persistLocal: false });
+  }
+
+  onThemeSeedTextInput(event: Event): void {
+    const value = (event.target as HTMLInputElement).value.trim();
+    if (/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(value)) {
+      this.themeService.applySeed(value, { persistLocal: false });
+    }
+  }
+
+  normalizeThemeSeedControl(): void {
+    const rawValue = this.profileForm.controls.theme_seed_color.value;
+    const normalized = this.themeService.applySeed(rawValue, { persistLocal: false });
+    this.profileForm.controls.theme_seed_color.setValue(normalized);
+  }
+
+  applyThemePreset(seed: string): void {
+    this.profileForm.controls.theme_seed_color.setValue(seed);
+    this.themeService.applySeed(seed, { persistLocal: false });
   }
 }

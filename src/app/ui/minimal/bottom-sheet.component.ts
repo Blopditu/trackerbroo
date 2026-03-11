@@ -42,17 +42,17 @@ let sheetTitleIdCounter = 0;
       z-index: 40;
       display: grid;
       align-items: end;
-      background: rgba(4, 8, 12, 0.68);
+      background: rgba(4, 8, 12, 0.58);
       animation: overlay-in 160ms ease-out;
       touch-action: pan-y;
     }
 
     .sheet {
-      background: #151922;
-      border-top: 1px solid #1B202B;
-      border-left: 1px solid #1B202B;
-      border-right: 1px solid #1B202B;
-      border-radius: 18px 18px 0 0;
+      background: var(--m3-sys-color-surface-container);
+      border-top: 1px solid var(--m3-sys-color-outline-variant);
+      border-left: 1px solid var(--m3-sys-color-outline-variant);
+      border-right: 1px solid var(--m3-sys-color-outline-variant);
+      border-radius: 28px 28px 0 0;
       padding: 10px 16px calc(16px + env(safe-area-inset-bottom));
       max-height: 86vh;
       overflow: auto;
@@ -66,7 +66,7 @@ let sheetTitleIdCounter = 0;
       width: 52px;
       height: 5px;
       border-radius: 99px;
-      background: #2a3344;
+      background: var(--m3-sys-color-outline-variant);
       margin: 0 auto 10px;
     }
 
@@ -81,16 +81,16 @@ let sheetTitleIdCounter = 0;
     h2 {
       margin: 0;
       font-size: 20px;
-      color: #E6E8EC;
+      color: var(--m3-sys-color-on-surface);
       font-weight: 600;
     }
 
     .close {
       width: 44px;
       height: 44px;
-      border: 1px solid #1B202B;
-      background: #0F1115;
-      color: #A4A9B6;
+      border: 1px solid var(--m3-sys-color-outline-variant);
+      background: var(--m3-sys-color-surface-container-high);
+      color: var(--m3-sys-color-on-surface-variant);
       font-size: 13px;
       line-height: 1;
       border-radius: 10px;

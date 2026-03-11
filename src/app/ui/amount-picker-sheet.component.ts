@@ -55,14 +55,14 @@ export interface AmountPickResult {
       z-index: 33;
       display: grid;
       align-items: end;
-      background: rgba(4, 8, 12, 0.68);
+      background: rgba(4, 8, 12, 0.58);
       padding: 0.6rem;
     }
 
     .sheet-card {
       background: var(--bg-surface-2);
       border: 1px solid var(--border-strong);
-      border-radius: 16px 16px 10px 10px;
+      border-radius: 28px 28px 16px 16px;
       padding: 0.95rem;
       display: grid;
       gap: 0.55rem;
@@ -106,7 +106,7 @@ export interface AmountPickResult {
     .preview {
       border: 1px solid var(--border-strong);
       border-radius: 10px;
-      background: #131d2b;
+      background: var(--m3-sys-color-surface-container-high);
       padding: 0.55rem;
       display: flex;
       justify-content: space-between;

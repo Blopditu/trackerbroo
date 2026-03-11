@@ -17,23 +17,23 @@ import { CommonModule } from '@angular/common';
       left: 50%;
       transform: translateX(-50%);
       width: min(100%, 480px);
-      height: 52px;
+      height: 56px;
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 0.4rem 0.75rem;
-      background: var(--bg-shell);
-      border-bottom: 1px solid var(--border-strong);
+      background: var(--m3-sys-color-surface);
+      border-bottom: 1px solid var(--m3-sys-color-outline-variant);
       z-index: 28;
       text-align: center;
     }
 
     .brand {
       margin: 0;
-      border: 1px solid var(--border-strong);
+      border: 1px solid var(--m3-sys-color-outline-variant);
       border-radius: 999px;
-      background: var(--bg-surface-2);
-      color: var(--ink-700);
+      background: var(--m3-sys-color-surface-container-high);
+      color: var(--m3-sys-color-on-surface-variant);
       min-height: 34px;
       display: inline-flex;
       align-items: center;

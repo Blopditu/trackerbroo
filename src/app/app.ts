@@ -1,4 +1,4 @@
-import { Component, signal, computed, inject, OnDestroy } from '@angular/core';
+import { Component, signal, computed, inject, OnDestroy, effect } from '@angular/core';
 import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { filter } from 'rxjs/operators';
@@ -6,6 +6,9 @@ import { Subscription } from 'rxjs';
 import { BottomNavComponent } from './ui/bottom-nav.component';
 import { TopBarComponent } from './ui/top-bar.component';
 import { PwaInstallService } from './core/pwa-install.service';
+import { AuthService } from './core/auth.service';
+import { SupabaseService } from './core/supabase.service';
+import { ThemeService } from './core/theme.service';
 
 @Component({
   selector: 'app-root',
@@ -18,11 +21,16 @@ export class App implements OnDestroy {
 
   private readonly router = inject(Router);
   readonly pwaInstall = inject(PwaInstallService);
+  private readonly authService = inject(AuthService);
+  private readonly supabaseService = inject(SupabaseService);
+  private readonly themeService = inject(ThemeService);
   private readonly currentRoute = signal('/');
   private readonly isOnline = signal(typeof navigator === 'undefined' ? true : navigator.onLine);
   private readonly isKeyboardOpen = signal(false);
   private routeSubscription: Subscription | null = null;
   private viewportBaseHeight = 0;
+  private themeLoadRequestId = 0;
+  private lastThemeUserId: string | null = null;
 
   // Use computed signal to determine if nav should be shown
   showNav = computed(() => !this.currentRoute().includes('/login') && !this.currentRoute().includes('/onboarding'));
@@ -31,6 +39,13 @@ export class App implements OnDestroy {
   showInstallBanner = computed(() => this.showNav() && this.pwaInstall.canPrompt() && !this.isKeyboardOpen());
 
   constructor() {
+    this.themeService.initialize();
+
+    effect(() => {
+      const userId = this.authService.user()?.id || null;
+      void this.syncThemeForUser(userId);
+    });
+
     this.routeSubscription = this.router.events
       .pipe(filter(event => event instanceof NavigationEnd))
       .subscribe((event: NavigationEnd) => {
@@ -113,4 +128,44 @@ export class App implements OnDestroy {
 
     this.isKeyboardOpen.set(keyboardOpen);
   };
+
+  private async syncThemeForUser(userId: string | null): Promise<void> {
+    const requestId = this.themeLoadRequestId + 1;
+    this.themeLoadRequestId = requestId;
+
+    if (!userId) {
+      this.lastThemeUserId = null;
+      const seed = this.themeService.readStoredSeed() || this.themeService.getDefaultSeed();
+      this.themeService.applySeed(seed, { persistLocal: true });
+      return;
+    }
+
+    if (this.lastThemeUserId === userId) {
+      return;
+    }
+
+    this.lastThemeUserId = userId;
+
+    try {
+      const { data } = await this.supabaseService.client
+        .from('profiles')
+        .select('theme_seed_color')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (requestId !== this.themeLoadRequestId) {
+        return;
+      }
+
+      const profileSeed = (data as { theme_seed_color?: string | null } | null)?.theme_seed_color;
+      const resolvedSeed = profileSeed || this.themeService.readStoredSeed() || this.themeService.getDefaultSeed();
+      this.themeService.applySeed(resolvedSeed, { persistLocal: true });
+    } catch {
+      if (requestId !== this.themeLoadRequestId) {
+        return;
+      }
+      const fallbackSeed = this.themeService.readStoredSeed() || this.themeService.getDefaultSeed();
+      this.themeService.applySeed(fallbackSeed, { persistLocal: true });
+    }
+  }
 }

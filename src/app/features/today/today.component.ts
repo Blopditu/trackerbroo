@@ -63,7 +63,7 @@ interface TodaySnapshot {
         <p class="toast success" aria-live="polite">{{ successMessage() }}</p>
       }
 
-      <section class="hero">
+      <section class="panel hero">
         <p class="date-label"><lucide-icon [img]="icons.calendar" class="icon" aria-hidden="true"></lucide-icon> {{ todayLabel() }}</p>
 
         <div class="day-nav">
@@ -76,12 +76,22 @@ interface TodaySnapshot {
           </button>
         </div>
 
-        <app-hero-ring [value]="proteinToday()" [target]="proteinGoal" accentColor="#5B8CFF" />
+        <div class="hero-actions">
+          <button type="button" class="action-btn" (click)="openActions()">
+            <lucide-icon [img]="icons.plus" class="icon" aria-hidden="true"></lucide-icon>
+            Eintrag hinzufügen
+          </button>
+          <button type="button" class="action-btn ghost" [disabled]="today() === realToday" (click)="jumpToToday()">
+            Heute
+          </button>
+        </div>
+
+        <app-hero-ring [value]="proteinToday()" [target]="proteinGoal" accentColor="var(--m3-sys-color-primary)" />
 
         <div class="bars">
-          <app-macro-bar label="Protein" [value]="proteinToday()" [target]="proteinGoal" color="#5B8CFF" />
-          <app-macro-bar label="Fett" [value]="fatToday()" [target]="fatGoal" color="#F4B740" />
-          <app-macro-bar label="Kohlenhydrate" [value]="carbsToday()" [target]="carbGoal" color="#3DBB78" />
+          <app-macro-bar label="Protein" [value]="proteinToday()" [target]="proteinGoal" color="var(--m3-sys-color-primary)" />
+          <app-macro-bar label="Fett" [value]="fatToday()" [target]="fatGoal" color="var(--warning-500)" />
+          <app-macro-bar label="Kohlenhydrate" [value]="carbsToday()" [target]="carbGoal" color="var(--success-500)" />
         </div>
 
         <div class="kcal-row">
@@ -96,8 +106,11 @@ interface TodaySnapshot {
         </div>
       </section>
 
-      <section class="section">
-        <h2><lucide-icon [img]="icons.chartLine" class="icon" aria-hidden="true"></lucide-icon> Gewichtstrend</h2>
+      <section class="panel section">
+        <div class="m3-section-head">
+          <h2><lucide-icon [img]="icons.chartLine" class="icon" aria-hidden="true"></lucide-icon> Gewichtstrend</h2>
+          <span class="m3-section-meta">{{ recentWeightEntries().length }} Einträge</span>
+        </div>
         <div class="sparkline-wrap" aria-label="Gewichtstrend">
           <svg viewBox="0 0 100 28" preserveAspectRatio="none" class="sparkline">
             <polyline [attr.points]="weightSparklinePoints()" />
@@ -118,14 +131,20 @@ interface TodaySnapshot {
         </div>
       </section>
 
-      <section class="section">
-        <h2><lucide-icon [img]="icons.listChecks" class="icon" aria-hidden="true"></lucide-icon> Gewohnheiten</h2>
+      <section class="panel section">
+        <div class="m3-section-head">
+          <h2><lucide-icon [img]="icons.listChecks" class="icon" aria-hidden="true"></lucide-icon> Gewohnheiten</h2>
+          <span class="m3-section-meta">Diese Woche</span>
+        </div>
         <app-habit-grid label="Gym" [states]="gymHabitStates()" [targetPerWeek]="3" />
         <app-habit-grid label="Protein" [states]="proteinHabitStates()" [targetPerWeek]="7" />
       </section>
 
-      <section class="section">
-        <h2><lucide-icon [img]="icons.clock3" class="icon" aria-hidden="true"></lucide-icon> Geloggt am {{ today() }}</h2>
+      <section class="panel section">
+        <div class="m3-section-head">
+          <h2><lucide-icon [img]="icons.clock3" class="icon" aria-hidden="true"></lucide-icon> Geloggt am {{ today() }}</h2>
+          <span class="m3-section-meta">{{ todayEntries().length }} Einträge</span>
+        </div>
         @for (entry of todayEntries(); track entry.id) {
           <article class="entry-card">
             <div class="entry-main">
@@ -238,8 +257,8 @@ interface TodaySnapshot {
   `,
   styles: [`
     .today-page {
-      background: #0F1115;
-      color: #E6E8EC;
+      background: var(--m3-sys-color-surface);
+      color: var(--m3-sys-color-on-surface);
       gap: 16px;
       padding: 16px;
     }
@@ -248,14 +267,11 @@ interface TodaySnapshot {
     .section {
       display: grid;
       gap: 12px;
-      background: #151922;
-      border: 1px solid #1B202B;
-      padding: 16px;
     }
 
     .date-label {
       margin: 0;
-      color: #A4A9B6;
+      color: var(--m3-sys-color-on-surface-variant);
       font-size: 11px;
       letter-spacing: 0.08em;
       text-transform: uppercase;
@@ -271,9 +287,9 @@ interface TodaySnapshot {
 
     .nav-btn {
       min-height: 44px;
-      border: 1px solid #1B202B;
-      background: #0F1115;
-      color: #E6E8EC;
+      border: 1px solid var(--m3-sys-color-outline-variant);
+      background: var(--m3-sys-color-surface);
+      color: var(--m3-sys-color-on-surface);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -288,11 +304,22 @@ interface TodaySnapshot {
 
     .day-input {
       min-height: 44px;
-      border: 1px solid #1B202B;
-      background: #0F1115;
-      color: #E6E8EC;
+      border: 1px solid var(--m3-sys-color-outline-variant);
+      background: var(--m3-sys-color-surface);
+      color: var(--m3-sys-color-on-surface);
       padding: 0 12px;
       font-size: 16px;
+    }
+
+    .hero-actions {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .hero-actions .action-btn {
+      min-height: 42px;
     }
 
     .icon {
@@ -323,23 +350,23 @@ interface TodaySnapshot {
       justify-content: space-between;
       gap: 8px;
       padding-top: 8px;
-      border-top: 1px solid #1B202B;
+      border-top: 1px solid var(--m3-sys-color-outline-variant);
       font-size: 16px;
     }
 
     .kcal-row span,
     .weight-row span {
-      color: #A4A9B6;
+      color: var(--m3-sys-color-on-surface-variant);
     }
 
     .kcal-row strong,
     .weight-row strong {
-      color: #E6E8EC;
+      color: var(--m3-sys-color-on-surface);
       font-weight: 600;
     }
 
     .delta {
-      color: #6E7483;
+      color: color-mix(in srgb, var(--m3-sys-color-on-surface-variant) 72%, transparent);
       font-size: 13px;
     }
 
@@ -347,18 +374,18 @@ interface TodaySnapshot {
       margin: 0;
       font-size: 20px;
       font-weight: 600;
-      color: #E6E8EC;
+      color: var(--m3-sys-color-on-surface);
     }
 
     .muted {
       margin: 0;
-      color: #6E7483;
+      color: color-mix(in srgb, var(--m3-sys-color-on-surface-variant) 72%, transparent);
       font-size: 13px;
     }
 
     .sparkline-wrap {
-      border: 1px solid #1B202B;
-      background: #0F1115;
+      border: 1px solid var(--m3-sys-color-outline-variant);
+      background: var(--m3-sys-color-surface);
       padding: 10px;
       display: grid;
       gap: 8px;
@@ -371,7 +398,7 @@ interface TodaySnapshot {
 
     .sparkline polyline {
       fill: none;
-      stroke: #5B8CFF;
+      stroke: var(--m3-sys-color-primary);
       stroke-width: 2;
       stroke-linecap: round;
       stroke-linejoin: round;
@@ -379,7 +406,7 @@ interface TodaySnapshot {
 
     .trend-note {
       margin: 0;
-      color: #A4A9B6;
+      color: var(--m3-sys-color-on-surface-variant);
       font-size: 13px;
     }
 
@@ -393,16 +420,16 @@ interface TodaySnapshot {
       justify-content: space-between;
       align-items: center;
       gap: 8px;
-      border: 1px solid #1B202B;
-      background: #0F1115;
+      border: 1px solid var(--m3-sys-color-outline-variant);
+      background: var(--m3-sys-color-surface);
       padding: 10px;
     }
 
     .entry-card {
       display: grid;
       gap: 10px;
-      border: 1px solid #1B202B;
-      background: #0F1115;
+      border: 1px solid var(--m3-sys-color-outline-variant);
+      background: var(--m3-sys-color-surface);
       padding: 12px;
     }
 
@@ -412,7 +439,7 @@ interface TodaySnapshot {
     }
 
     .entry-title {
-      color: #E6E8EC;
+      color: var(--m3-sys-color-on-surface);
       font-size: 16px;
       font-weight: 600;
     }
@@ -420,7 +447,7 @@ interface TodaySnapshot {
     .entry-sub,
     .entry-meta {
       margin: 0;
-      color: #A4A9B6;
+      color: var(--m3-sys-color-on-surface-variant);
       font-size: 13px;
     }
 
@@ -432,9 +459,9 @@ interface TodaySnapshot {
 
     .entry-btn {
       min-height: 40px;
-      border: 1px solid #1B202B;
-      background: #151922;
-      color: #E6E8EC;
+      border: 1px solid var(--m3-sys-color-outline-variant);
+      background: var(--m3-sys-color-surface-container);
+      color: var(--m3-sys-color-on-surface);
       font-size: 14px;
       font-weight: 600;
     }
@@ -451,9 +478,9 @@ interface TodaySnapshot {
 
     .menu-btn {
       min-height: 64px;
-      border: 1px solid #1B202B;
-      background: #0F1115;
-      color: #E6E8EC;
+      border: 1px solid var(--m3-sys-color-outline-variant);
+      background: var(--m3-sys-color-surface);
+      color: var(--m3-sys-color-on-surface);
       font-size: 16px;
       font-weight: 600;
       text-align: left;
@@ -474,7 +501,7 @@ interface TodaySnapshot {
     .file-label {
       margin: 0;
       font-size: 13px;
-      color: #A4A9B6;
+      color: var(--m3-sys-color-on-surface-variant);
       font-weight: 600;
     }
 
@@ -497,7 +524,7 @@ interface TodaySnapshot {
     }
 
     .file-name {
-      color: #A4A9B6;
+      color: var(--m3-sys-color-on-surface-variant);
       font-size: 13px;
       font-weight: 600;
       overflow: hidden;
@@ -518,8 +545,8 @@ interface TodaySnapshot {
     }
 
     .entry-action-card {
-      border: 1px solid #1B202B;
-      background: #0F1115;
+      border: 1px solid var(--m3-sys-color-outline-variant);
+      background: var(--m3-sys-color-surface);
       padding: 10px;
       display: grid;
       gap: 4px;
@@ -527,28 +554,28 @@ interface TodaySnapshot {
 
     .entry-action-title {
       margin: 0;
-      color: #E6E8EC;
+      color: var(--m3-sys-color-on-surface);
       font-size: 15px;
       font-weight: 700;
     }
 
     .entry-action-sub {
       margin: 0;
-      color: #A4A9B6;
+      color: var(--m3-sys-color-on-surface-variant);
       font-size: 13px;
       font-weight: 600;
     }
 
     .danger-outline {
-      border-color: #7f2a37;
-      color: #f3bdc7;
-      background: #2a151c;
+      border-color: var(--m3-sys-color-error);
+      color: var(--m3-sys-color-on-error-container);
+      background: var(--m3-sys-color-error-container);
     }
 
     .food-name {
       display: block;
       font-size: 16px;
-      color: #E6E8EC;
+      color: var(--m3-sys-color-on-surface);
       font-weight: 600;
       line-height: 1.25;
     }
@@ -556,7 +583,7 @@ interface TodaySnapshot {
     .food-macros {
       display: block;
       font-size: 12px;
-      color: #A4A9B6;
+      color: var(--m3-sys-color-on-surface-variant);
       font-weight: 600;
       line-height: 1.25;
       white-space: normal;
@@ -565,25 +592,25 @@ interface TodaySnapshot {
 
     label {
       font-size: 13px;
-      color: #A4A9B6;
+      color: var(--m3-sys-color-on-surface-variant);
       font-weight: 600;
     }
 
     input {
       width: 100%;
       min-height: 44px;
-      border: 1px solid #1B202B;
-      background: #0F1115;
-      color: #E6E8EC;
+      border: 1px solid var(--m3-sys-color-outline-variant);
+      background: var(--m3-sys-color-surface);
+      color: var(--m3-sys-color-on-surface);
       padding: 0 12px;
       margin-bottom: 8px;
     }
 
     textarea {
       width: 100%;
-      border: 1px solid #1B202B;
-      background: #0F1115;
-      color: #E6E8EC;
+      border: 1px solid var(--m3-sys-color-outline-variant);
+      background: var(--m3-sys-color-surface);
+      color: var(--m3-sys-color-on-surface);
       padding: 12px;
       font-size: 16px;
       margin-bottom: 8px;
@@ -798,6 +825,14 @@ export class TodayComponent implements OnInit {
       return;
     }
     this.today.set(value > this.realToday ? this.realToday : value);
+    void this.loadData();
+  }
+
+  jumpToToday(): void {
+    if (this.today() === this.realToday) {
+      return;
+    }
+    this.today.set(this.realToday);
     void this.loadData();
   }
 

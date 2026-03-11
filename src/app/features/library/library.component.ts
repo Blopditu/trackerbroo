@@ -38,6 +38,17 @@ interface ParsedMacroInput {
           <span aria-hidden="true"></span>
         </div>
 
+        <div class="m3-section-head list-head">
+          <span class="m3-section-meta">
+            @if (activeTab() === 'ingredients') {
+              {{ filteredIngredients().length }} Zutaten
+            } @else {
+              {{ meals().length }} Mahlzeiten
+            }
+          </span>
+          <button type="button" class="action-btn tonal compact" (click)="openCreateModal()">Neu</button>
+        </div>
+
         @if (activeTab() === 'ingredients') {
           <div class="toolbar">
             <input type="search" [(ngModel)]="ingredientSearch" placeholder="Zutat suchen" aria-label="Zutaten suchen">
@@ -71,7 +82,7 @@ interface ParsedMacroInput {
                     }
                   </div>
                   <div class="actions">
-                    <button type="button" class="action-btn ghost mini" (click)="openIngredientActions(item)">Mehr</button>
+                    <button type="button" class="action-btn ghost compact" (click)="openIngredientActions(item)">Mehr</button>
                   </div>
                 </article>
               }
@@ -95,7 +106,7 @@ interface ParsedMacroInput {
                     <div class="sub">Geschätzte Kosten: {{ getMealCostLabel(item.id) }}</div>
                   </div>
                   <div class="actions">
-                    <button type="button" class="action-btn ghost mini" (click)="openMealActions(item)">Mehr</button>
+                    <button type="button" class="action-btn ghost compact" (click)="openMealActions(item)">Mehr</button>
                   </div>
                 </article>
               }
@@ -125,8 +136,8 @@ interface ParsedMacroInput {
         </article>
       }
       <div class="action-sheet-list">
-        <button type="button" class="action-btn ghost" (click)="editSelectedItem()">Bearbeiten</button>
-        <button type="button" class="action-btn ghost mini danger" (click)="deleteSelectedItem()">Löschen</button>
+        <button type="button" class="action-btn tonal" (click)="editSelectedItem()">Bearbeiten</button>
+        <button type="button" class="action-btn danger" (click)="deleteSelectedItem()">Löschen</button>
       </div>
     </app-bottom-sheet>
 
@@ -161,7 +172,7 @@ interface ParsedMacroInput {
                   <option [ngValue]="item.id">{{ item.name }}</option>
                 }
               </select>
-              <button type="button" class="action-btn ghost mini" (click)="copyNutritionFromBaseIngredient()">
+              <button type="button" class="action-btn tonal compact" (click)="copyNutritionFromBaseIngredient()">
                 BLV-Werte übernehmen
               </button>
             }
@@ -177,7 +188,7 @@ interface ParsedMacroInput {
               rows="4"
               placeholder="kcal: 230&#10;protein: 8.5&#10;carbs: 29&#10;fat: 6.2"
             ></textarea>
-            <button type="button" class="action-btn ghost mini" [disabled]="!macroPasteText.trim()" (click)="applyMacroPaste()">
+            <button type="button" class="action-btn tonal compact" [disabled]="!macroPasteText.trim()" (click)="applyMacroPaste()">
               Makros übernehmen
             </button>
             @if (macroPasteMessage()) {
@@ -212,7 +223,7 @@ interface ParsedMacroInput {
 
             <div class="modal-actions">
               <button type="submit" class="action-btn" [disabled]="!ingForm.valid">Speichern</button>
-              <button type="button" class="action-btn ghost" (click)="showIngredientModal.set(false)">Abbrechen</button>
+              <button type="button" class="action-btn ghost" (click)="closeIngredientModal()">Abbrechen</button>
             </div>
           </form>
         </div>
@@ -236,17 +247,17 @@ interface ParsedMacroInput {
                     }
                   </select>
                   <input type="number" [(ngModel)]="item.grams" [name]="'grams' + $index" placeholder="Gramm">
-                  <button type="button" class="action-btn ghost mini danger" (click)="removeMealItem($index)">Entfernen</button>
+                  <button type="button" class="action-btn danger compact" (click)="removeMealItem($index)">Entfernen</button>
                 </div>
               }
             </div>
 
             <p class="cost-preview">Geschätzte Mahlzeitenkosten: {{ draftMealCostLabel() }}</p>
-            <button type="button" class="action-btn ghost" (click)="addMealItem()">+ Zutat hinzufügen</button>
+            <button type="button" class="action-btn tonal" (click)="addMealItem()">+ Zutat hinzufügen</button>
 
             <div class="modal-actions">
               <button type="submit" class="action-btn" [disabled]="!mealFormRef.valid">Speichern</button>
-              <button type="button" class="action-btn ghost" (click)="showMealModal.set(false)">Abbrechen</button>
+              <button type="button" class="action-btn ghost" (click)="closeMealModal()">Abbrechen</button>
             </div>
           </form>
         </div>
@@ -255,7 +266,7 @@ interface ParsedMacroInput {
   `,
   styles: [`
     .library-page {
-      gap: 0.75rem;
+      gap: 1rem;
     }
 
     h1 {
@@ -265,8 +276,8 @@ interface ParsedMacroInput {
 
     .lead {
       margin: 0.35rem 0 0;
-      color: var(--ink-500);
-      font-size: var(--text-sm);
+      color: var(--m3-sys-color-on-surface-variant);
+      font-size: 0.9rem;
       font-weight: 600;
     }
 
@@ -274,7 +285,11 @@ interface ParsedMacroInput {
       margin-top: 0.7rem;
       display: grid;
       gap: 0.45rem;
-      grid-template-columns: 1fr 132px;
+      grid-template-columns: 1fr 148px;
+    }
+
+    .list-head {
+      margin-top: 0.65rem;
     }
 
     .items-list {
@@ -285,9 +300,9 @@ interface ParsedMacroInput {
 
     .sub {
       margin-top: 0.2rem;
-      color: var(--ink-500);
+      color: var(--m3-sys-color-on-surface-variant);
       font-weight: 600;
-      font-size: var(--text-sm);
+      font-size: 0.9rem;
     }
 
     .ingredient-card,
@@ -302,18 +317,6 @@ interface ParsedMacroInput {
       align-items: center;
     }
 
-    .mini {
-      min-height: 40px;
-      padding: 0.35rem 0.6rem;
-      font-size: var(--text-xs);
-    }
-
-    .danger {
-      border-color: var(--danger-500);
-      color: #f0b1bf;
-      background: #2a1720;
-    }
-
     .stack-form {
       display: grid;
       gap: 0.55rem;
@@ -321,8 +324,8 @@ interface ParsedMacroInput {
     }
 
     .stack-form label {
-      font-size: var(--text-sm);
-      color: var(--ink-700);
+      font-size: 0.9rem;
+      color: var(--m3-sys-color-on-surface-variant);
       font-weight: 700;
     }
 
@@ -339,7 +342,7 @@ interface ParsedMacroInput {
     .cost-preview {
       margin: 0.1rem 0 0;
       font-weight: 800;
-      color: var(--ink-700);
+      color: var(--m3-sys-color-on-surface);
     }
 
     .meal-item {
@@ -360,9 +363,9 @@ interface ParsedMacroInput {
     }
 
     .sheet-preview {
-      border: 1px solid var(--border-strong);
+      border: 1px solid var(--m3-sys-color-outline-variant);
       border-radius: 12px;
-      background: #0f1115;
+      background: var(--m3-sys-color-surface-container-high);
       padding: 0.7rem 0.75rem;
       display: grid;
       gap: 0.3rem;
@@ -370,7 +373,7 @@ interface ParsedMacroInput {
 
     .sheet-preview strong {
       font-size: 1rem;
-      color: var(--ink-900);
+      color: var(--m3-sys-color-on-surface);
     }
 
     .action-sheet-list {
@@ -382,6 +385,20 @@ interface ParsedMacroInput {
     .action-sheet-list .action-btn {
       width: 100%;
       justify-content: center;
+    }
+
+    @media (max-width: 480px) {
+      .toolbar {
+        grid-template-columns: 1fr;
+      }
+
+      .meal-item {
+        grid-template-columns: 1fr;
+      }
+
+      .actions {
+        width: 100%;
+      }
     }
   `]
 })
@@ -404,18 +421,7 @@ export class LibraryComponent implements OnInit {
   macroPasteText = '';
   macroPasteMessage = signal<string | null>(null);
 
-  ingredientForm = {
-    source_type: 'manual' as 'manual' | 'blv_generic' | 'custom_product',
-    base_ingredient_id: null as string | null,
-    name: '',
-    kcal_per_100: 0,
-    cost_per_100: null as number | null,
-    market_name: '',
-    protein_per_100: 0,
-    carbs_per_100: 0,
-    fat_per_100: 0,
-    brand: ''
-  };
+  ingredientForm = this.createEmptyIngredientForm();
 
   mealForm = { name: '' };
   mealItems: { ingredient_id: string; grams: number }[] = [];
@@ -482,12 +488,16 @@ export class LibraryComponent implements OnInit {
   openCreateModal() {
     if (this.activeTab() === 'ingredients') {
       this.editingIngredient.set(null);
+      this.ingredientForm = this.createEmptyIngredientForm();
       this.macroPasteText = '';
       this.macroPasteMessage.set(null);
       this.showIngredientModal.set(true);
       return;
     }
 
+    this.editingMeal.set(null);
+    this.mealForm = { name: '' };
+    this.mealItems = [];
     this.showMealModal.set(true);
   }
 
@@ -551,18 +561,7 @@ export class LibraryComponent implements OnInit {
       this.editingIngredient.set(null);
       this.macroPasteText = '';
       this.macroPasteMessage.set(null);
-      this.ingredientForm = {
-        source_type: 'manual',
-        base_ingredient_id: null,
-        name: '',
-        kcal_per_100: 0,
-        cost_per_100: null,
-        market_name: '',
-        protein_per_100: 0,
-        carbs_per_100: 0,
-        fat_per_100: 0,
-        brand: ''
-      };
+      this.ingredientForm = this.createEmptyIngredientForm();
 
       this.libraryDataService.invalidate(user.id);
       await this.loadData(true);
@@ -597,6 +596,18 @@ export class LibraryComponent implements OnInit {
     this.mealForm.name = meal.name;
     void this.loadMealItems(meal.id);
     this.showMealModal.set(true);
+  }
+
+  closeIngredientModal(): void {
+    this.showIngredientModal.set(false);
+    this.editingIngredient.set(null);
+    this.macroPasteText = '';
+    this.macroPasteMessage.set(null);
+  }
+
+  closeMealModal(): void {
+    this.showMealModal.set(false);
+    this.editingMeal.set(null);
   }
 
   async loadMealItems(mealId: string) {
@@ -780,6 +791,21 @@ export class LibraryComponent implements OnInit {
 
   private formatCurrency(value: number) {
     return `${value.toFixed(2)} €`;
+  }
+
+  private createEmptyIngredientForm() {
+    return {
+      source_type: 'manual' as 'manual' | 'blv_generic' | 'custom_product',
+      base_ingredient_id: null as string | null,
+      name: '',
+      kcal_per_100: 0,
+      cost_per_100: null as number | null,
+      market_name: '',
+      protein_per_100: 0,
+      carbs_per_100: 0,
+      fat_per_100: 0,
+      brand: ''
+    };
   }
 
   private parseMacroInput(input: string): ParsedMacroInput | null {

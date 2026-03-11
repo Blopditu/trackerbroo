@@ -111,6 +111,20 @@ interface ExerciseProgressRow {
         </div>
       </header>
 
+      @if (activeTab() === 'tracker' && !activeSession() && selectedOverview()) {
+        <section class="panel quick-start-strip" aria-label="Schnellstart">
+          <div class="quick-start-copy">
+            <p class="muted">Ausgewählt</p>
+            <strong>{{ selectedOverview()!.dayName }}</strong>
+            <p class="muted">{{ selectedOverview()!.totalExercises }} Übungen • {{ selectedOverview()!.totalSets }} Sätze</p>
+          </div>
+          <button type="button" class="action-btn" (click)="startWorkout()">
+            <lucide-icon [img]="icons.play" class="icon" aria-hidden="true"></lucide-icon>
+            Schnellstart
+          </button>
+        </section>
+      }
+
       @if (activeTab() === 'tracker') {
         @if (!activeSession()) {
           <section class="panel">
@@ -442,7 +456,7 @@ interface ExerciseProgressRow {
       <div class="sheet-stack">
         <button type="button" class="action-btn" (click)="startPlanBuilder()">Neuen Plan erstellen</button>
         @for (plan of plans(); track plan.id) {
-          <article class="sheet-card">
+          <article class="list-card sheet-card">
             <div>
               <strong>{{ plan.name }}</strong>
               <p class="muted">{{ plan.days_per_week }} Tage • {{ plan.duration_weeks }} Wochen</p>
@@ -479,13 +493,13 @@ interface ExerciseProgressRow {
         </label>
 
         @for (day of builderDays(); track $index; let dayIndex = $index) {
-          <section class="builder-day">
+          <section class="list-card builder-day">
             <h3>Day {{ dayIndex + 1 }}</h3>
             <input type="text" [value]="day.name" (input)="setBuilderDayName(dayIndex, $event)" placeholder="Day Name">
             <input type="text" [value]="day.targetMuscles" (input)="setBuilderDayMuscles(dayIndex, $event)" placeholder="Zielmuskeln (Komma-getrennt)">
 
             @for (exercise of day.exercises; track $index; let exerciseIndex = $index) {
-              <div class="builder-exercise">
+              <div class="sheet-stack builder-exercise">
                 <select [value]="exercise.exerciseId" (change)="setBuilderExercise(dayIndex, exerciseIndex, 'exerciseId', $event)">
                   @for (option of exercises(); track option.id) {
                     <option [value]="option.id">{{ option.name }}</option>
@@ -508,7 +522,7 @@ interface ExerciseProgressRow {
 
     <app-bottom-sheet [open]="activeSheet() === 'exercises'" [closeOnBackdrop]="false" title="Uebungen" (closed)="closeSheet()">
       <div class="sheet-stack">
-        <section class="sheet-card filter-card">
+        <section class="list-card sheet-card filter-card">
           <div class="filter-head">
             <strong>Filter</strong>
             @if (activeExerciseFilterCount() > 0) {
@@ -547,7 +561,7 @@ interface ExerciseProgressRow {
 
         <div class="sheet-scroll-list">
           @for (exercise of filteredExerciseLibrary(); track exercise.id) {
-            <article class="sheet-card">
+            <article class="list-card sheet-card">
               <img [src]="exercise.images[0] || placeholderImage" alt="{{ exercise.name }}" loading="lazy" decoding="async">
               <div>
                 <strong>{{ exercise.name }}</strong>
@@ -562,15 +576,15 @@ interface ExerciseProgressRow {
 
     <app-bottom-sheet [open]="activeSheet() === 'help'" title="Hilfe" (closed)="closeSheet()">
       <div class="sheet-stack">
-        <article class="sheet-card text-only">
+        <article class="list-card sheet-card text-only">
           <strong>Quick Logging</strong>
           <p class="muted">Gewicht wird aus dem letzten Workout als Empfehlung vorgeschlagen.</p>
         </article>
-        <article class="sheet-card text-only">
+        <article class="list-card sheet-card text-only">
           <strong>Smart Suggestions</strong>
           <p class="muted">Wenn alle Arbeitssätze das Ziel erreichen, wird +2.5kg fürs nächste Mal vorgeschlagen.</p>
         </article>
-        <article class="sheet-card text-only">
+        <article class="list-card sheet-card text-only">
           <strong>Offline First</strong>
           <p class="muted">Alle Schreibaktionen werden offline lokal gespeichert und automatisch synchronisiert.</p>
         </article>
@@ -655,103 +669,25 @@ interface ExerciseProgressRow {
     </app-bottom-sheet>
   `,
   styles: [`
-    .gym-page {
-      background: #0F1115;
-      color: #E6E8EC;
-      gap: 12px;
-      padding: 16px;
-    }
-
-    .panel {
-      display: grid;
-      gap: 12px;
-      background: #151922;
-      border: 1px solid #1B202B;
-      padding: 14px;
-      border-radius: 12px;
-    }
-
     .hero h1 {
       margin: 0;
       font-size: 22px;
     }
 
-    .tabs {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 8px;
-    }
-
-    .tabs button,
-    .tabs a {
-      min-height: 44px;
-      border: 1px solid #1B202B;
-      background: #0F1115;
-      color: #A4A9B6;
-      text-decoration: none;
-      font-size: 13px;
-      font-weight: 700;
-      display: flex;
+    .quick-start-strip {
+      grid-template-columns: 1fr auto;
       align-items: center;
-      justify-content: center;
-      gap: 6px;
-      padding: 0 8px;
+      gap: 10px;
     }
 
-    .tabs button.active {
-      background: #1B202B;
-      color: #E6E8EC;
-      border-color: #5B8CFF;
-    }
-
-    .icon {
-      width: 16px;
-      height: 16px;
-    }
-
-    .week-nav {
+    .quick-start-copy {
       display: grid;
-      grid-template-columns: 44px 1fr 44px;
-      gap: 8px;
-      align-items: center;
+      gap: 4px;
     }
 
-    .week-btn {
-      min-height: 44px;
-      border: 1px solid #1B202B;
-      background: #0F1115;
-      color: #E6E8EC;
-      display: grid;
-      place-items: center;
-    }
-
-    .week-scroll {
-      display: flex;
-      gap: 6px;
-      overflow-x: auto;
-      scrollbar-width: thin;
-      padding-bottom: 4px;
-    }
-
-    .day-pill {
-      min-height: 42px;
-      border: 1px solid #1B202B;
-      background: #0F1115;
-      color: #A4A9B6;
-      font-size: 12px;
-      font-weight: 700;
-      padding: 0 10px;
-      white-space: nowrap;
-    }
-
-    .day-pill.active {
-      border-color: #5B8CFF;
-      background: #1B202B;
-      color: #E6E8EC;
-    }
-
-    .day-pill.today {
-      box-shadow: inset 0 0 0 1px #3DBB78;
+    .quick-start-copy strong {
+      font-size: 18px;
+      color: var(--m3-sys-color-on-surface);
     }
 
     .active-plan-head {
@@ -772,9 +708,9 @@ interface ExerciseProgressRow {
     }
 
     .workout-day {
-      border: 1px solid #1B202B;
-      background: #0F1115;
-      color: #E6E8EC;
+      border: 1px solid var(--m3-sys-color-outline-variant);
+      background: var(--m3-sys-color-surface);
+      color: var(--m3-sys-color-on-surface);
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -785,8 +721,8 @@ interface ExerciseProgressRow {
     }
 
     .workout-day.completed {
-      border-color: #3DBB78;
-      background: #12251b;
+      border-color: var(--success-500);
+      background: color-mix(in srgb, var(--success-500) 20%, var(--m3-sys-color-surface-container-low));
     }
 
     .left,
@@ -808,30 +744,30 @@ interface ExerciseProgressRow {
       width: 40px;
       height: 40px;
       object-fit: cover;
-      border: 1px solid #1B202B;
+      border: 1px solid var(--m3-sys-color-outline-variant);
       border-radius: 8px;
-      background: #0F1115;
+      background: var(--m3-sys-color-surface);
     }
 
     .thumb-fallback,
     .exercise-thumb-fallback {
       width: 40px;
       height: 40px;
-      border: 1px solid #1B202B;
+      border: 1px solid var(--m3-sys-color-outline-variant);
       border-radius: 8px;
-      background: #1b2434;
+      background: var(--m3-sys-color-surface-container-high);
       display: inline-block;
-      box-shadow: inset 0 0 0 1px rgba(91, 140, 255, 0.16);
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--m3-sys-color-primary) 24%, transparent);
     }
 
     .thumb-more {
       font-size: 12px;
-      color: #A4A9B6;
+      color: var(--m3-sys-color-on-surface-variant);
       font-weight: 700;
     }
 
     .check-icon {
-      color: #3DBB78;
+      color: var(--success-500);
       width: 16px;
       height: 16px;
       justify-self: end;
@@ -850,16 +786,9 @@ interface ExerciseProgressRow {
       gap: 10px;
     }
 
-    .muted {
-      margin: 0;
-      color: #A4A9B6;
-      font-size: 13px;
-      font-weight: 600;
-    }
-
     .body-diagram {
-      border: 1px solid #1B202B;
-      background: #0F1115;
+      border: 1px solid var(--m3-sys-color-outline-variant);
+      background: var(--m3-sys-color-surface);
       padding: 10px;
       display: grid;
       place-items: center;
@@ -875,8 +804,8 @@ interface ExerciseProgressRow {
       grid-template-columns: 48px 1fr;
       gap: 10px;
       align-items: center;
-      border: 1px solid #1B202B;
-      background: #0F1115;
+      border: 1px solid var(--m3-sys-color-outline-variant);
+      background: var(--m3-sys-color-surface);
       padding: 10px;
     }
 
@@ -909,9 +838,9 @@ interface ExerciseProgressRow {
 
     .exercise-tabs button {
       min-height: 36px;
-      border: 1px solid #1B202B;
-      background: #0F1115;
-      color: #A4A9B6;
+      border: 1px solid var(--m3-sys-color-outline-variant);
+      background: var(--m3-sys-color-surface);
+      color: var(--m3-sys-color-on-surface-variant);
       font-size: 12px;
       font-weight: 700;
       padding: 0 10px;
@@ -919,16 +848,16 @@ interface ExerciseProgressRow {
     }
 
     .exercise-tabs button.active {
-      color: #E6E8EC;
-      border-color: #5B8CFF;
-      background: #1B202B;
+      color: var(--m3-sys-color-on-surface);
+      border-color: var(--m3-sys-color-primary);
+      background: var(--m3-sys-color-outline-variant);
     }
 
     .exercise-detail {
       display: grid;
       gap: 10px;
-      border: 1px solid #1B202B;
-      background: #0F1115;
+      border: 1px solid var(--m3-sys-color-outline-variant);
+      background: var(--m3-sys-color-surface);
       padding: 10px;
     }
 
@@ -952,20 +881,20 @@ interface ExerciseProgressRow {
 
     .recommended-row {
       min-height: 42px;
-      border: 1px solid #3DBB78;
-      background: #11241a;
-      color: #d7f3e3;
+      border: 1px solid var(--success-500);
+      background: color-mix(in srgb, var(--success-500) 20%, var(--m3-sys-color-surface-container-low));
+      color: var(--m3-sys-color-on-surface);
       font-weight: 700;
       text-align: left;
       padding: 0 12px;
     }
 
     .set-table {
-      border: 1px solid #1B202B;
+      border: 1px solid var(--m3-sys-color-outline-variant);
       display: grid;
       gap: 6px;
       padding: 8px;
-      background: #121721;
+      background: var(--m3-sys-color-surface-container-low);
     }
 
     .table-head,
@@ -978,35 +907,35 @@ interface ExerciseProgressRow {
 
     .table-head {
       font-size: 12px;
-      color: #A4A9B6;
+      color: var(--m3-sys-color-on-surface-variant);
       font-weight: 700;
     }
 
     .table-row input {
       min-height: 36px;
-      border: 1px solid #1B202B;
-      background: #0F1115;
-      color: #E6E8EC;
+      border: 1px solid var(--m3-sys-color-outline-variant);
+      background: var(--m3-sys-color-surface);
+      color: var(--m3-sys-color-on-surface);
       padding: 0 8px;
     }
 
     .check-btn {
       min-height: 36px;
-      border: 1px solid #1B202B;
-      background: #0F1115;
-      color: #A4A9B6;
+      border: 1px solid var(--m3-sys-color-outline-variant);
+      background: var(--m3-sys-color-surface);
+      color: var(--m3-sys-color-on-surface-variant);
       display: grid;
       place-items: center;
     }
 
     .check-btn.done {
-      border-color: #3DBB78;
-      color: #3DBB78;
-      background: #11241a;
+      border-color: var(--success-500);
+      color: var(--success-500);
+      background: color-mix(in srgb, var(--success-500) 20%, var(--m3-sys-color-surface-container-low));
     }
 
     .previous-block {
-      border-top: 1px solid #1B202B;
+      border-top: 1px solid var(--m3-sys-color-outline-variant);
       padding-top: 8px;
       display: grid;
       gap: 4px;
@@ -1015,60 +944,14 @@ interface ExerciseProgressRow {
     .previous-row {
       margin: 0;
       font-size: 13px;
-      color: #E6E8EC;
+      color: var(--m3-sys-color-on-surface);
     }
 
     .save-hint {
       margin: 0;
-      color: #A4A9B6;
+      color: var(--m3-sys-color-on-surface-variant);
       font-size: 12px;
       font-weight: 700;
-    }
-
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 8px;
-    }
-
-    .stat-box {
-      border: 1px solid #1B202B;
-      background: #0F1115;
-      padding: 10px;
-      display: grid;
-      gap: 4px;
-    }
-
-    .label {
-      margin: 0;
-      color: #A4A9B6;
-      font-size: 12px;
-      font-weight: 700;
-    }
-
-    .measurement-form {
-      display: grid;
-      gap: 6px;
-      margin-top: 8px;
-    }
-
-    .measurement-form input,
-    .measurement-form select,
-    .panel > select,
-    .panel > textarea,
-    .sheet-stack input,
-    .sheet-stack select {
-      min-height: 44px;
-      border: 1px solid #1B202B;
-      background: #0F1115;
-      color: #E6E8EC;
-      padding: 0 10px;
-    }
-
-    .panel > textarea {
-      min-height: 88px;
-      padding: 10px;
-      resize: vertical;
     }
 
     .progress-head {
@@ -1079,8 +962,8 @@ interface ExerciseProgressRow {
     }
 
     .graph-card {
-      border: 1px solid #1B202B;
-      background: #0F1115;
+      border: 1px solid var(--m3-sys-color-outline-variant);
+      background: var(--m3-sys-color-surface);
       padding: 10px;
       display: grid;
       gap: 8px;
@@ -1095,8 +978,8 @@ interface ExerciseProgressRow {
     .graph {
       width: 100%;
       height: 62px;
-      border: 1px solid #1B202B;
-      background: #11161f;
+      border: 1px solid var(--m3-sys-color-outline-variant);
+      background: var(--m3-sys-color-surface-container-low);
     }
 
     .graph.detail {
@@ -1105,7 +988,7 @@ interface ExerciseProgressRow {
 
     .graph polyline {
       fill: none;
-      stroke: #5B8CFF;
+      stroke: var(--m3-sys-color-primary);
       stroke-width: 2;
       stroke-linecap: round;
       stroke-linejoin: round;
@@ -1120,59 +1003,6 @@ interface ExerciseProgressRow {
       height: 24px;
     }
 
-    .sheet-stack {
-      display: grid;
-      gap: 8px;
-    }
-
-    .action-list {
-      display: grid;
-      gap: 8px;
-    }
-
-    .file-label {
-      margin: 0;
-      color: #A4A9B6;
-      font-size: 13px;
-      font-weight: 600;
-    }
-
-    .file-row {
-      display: grid;
-      grid-template-columns: auto 1fr;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .file-name {
-      color: #A4A9B6;
-      font-size: 13px;
-      font-weight: 600;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .sr-only {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      padding: 0;
-      margin: -1px;
-      overflow: hidden;
-      clip: rect(0, 0, 0, 0);
-      white-space: nowrap;
-      border: 0;
-    }
-
-    .sheet-card {
-      border: 1px solid #1B202B;
-      background: #0F1115;
-      padding: 10px;
-      display: grid;
-      gap: 8px;
-    }
-
     .filter-card {
       gap: 6px;
     }
@@ -1182,15 +1012,6 @@ interface ExerciseProgressRow {
       justify-content: space-between;
       align-items: center;
       gap: 8px;
-    }
-
-    .action-btn.compact {
-      min-height: 36px;
-      padding-inline: 10px;
-    }
-
-    .sheet-card.text-only {
-      gap: 4px;
     }
 
     .sheet-card img {
@@ -1205,31 +1026,9 @@ interface ExerciseProgressRow {
       overflow-y: auto;
     }
 
-    .builder-day {
-      display: grid;
-      gap: 8px;
-      border: 1px solid #1B202B;
-      background: #0F1115;
-      padding: 10px;
-    }
-
     .builder-day h3 {
       margin: 0;
       font-size: 16px;
-    }
-
-    .builder-exercise {
-      display: grid;
-      gap: 6px;
-    }
-
-    .switch-row {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-      color: #A4A9B6;
-      font-size: 13px;
-      font-weight: 700;
     }
 
     .grid-two {
@@ -1574,7 +1373,8 @@ export class GymComponent implements OnInit, OnDestroy {
         const activeSession = await this.trainingData.getSessionByClientRef(workout.currentSessionClientRef);
         if (activeSession && activeSession.status === 'in_progress') {
           this.activeSession.set(activeSession);
-          this.activeExerciseIndex.set(0);
+          const nextOpenIndex = this.findNextIncompleteExerciseIndex(activeSession, 0);
+          this.activeExerciseIndex.set(nextOpenIndex >= 0 ? nextOpenIndex : 0);
           await this.refreshPreviousPerformance();
         }
       }
@@ -1665,8 +1465,7 @@ export class GymComponent implements OnInit, OnDestroy {
 
   async toggleSetComplete(setRow: TrainingExecutionSet): Promise<void> {
     const exercise = this.currentExercise();
-    const session = this.activeSession();
-    if (!exercise || !session) {
+    if (!exercise || !this.activeSession()) {
       return;
     }
 
@@ -1699,9 +1498,27 @@ export class GymComponent implements OnInit, OnDestroy {
       return;
     }
 
-    if (this.activeExerciseIndex() < session.exercises.length - 1) {
-      this.goToNextExercise();
+    const updatedSession = this.activeSession();
+    if (!updatedSession) {
+      return;
+    }
+
+    const nextOpenIndex = this.findNextIncompleteExerciseIndex(updatedSession, this.activeExerciseIndex() + 1);
+    if (nextOpenIndex >= 0) {
+      this.setActiveExercise(nextOpenIndex);
       this.successMessage.set(`"${updatedExercise.name}" abgeschlossen. Weiter zur nächsten Übung.`);
+      return;
+    }
+
+    const fallbackOpenIndex = this.findNextIncompleteExerciseIndex(updatedSession, 0);
+    if (fallbackOpenIndex >= 0 && fallbackOpenIndex !== this.activeExerciseIndex()) {
+      this.setActiveExercise(fallbackOpenIndex);
+      this.successMessage.set(`"${updatedExercise.name}" abgeschlossen. Weiter zur nächsten offenen Übung.`);
+      return;
+    }
+
+    if (this.areAllSessionExercisesCompleted(updatedSession)) {
+      this.successMessage.set('Alle Übungen abgeschlossen. Workout jetzt beenden.');
     }
   }
 
@@ -2201,7 +2018,7 @@ export class GymComponent implements OnInit, OnDestroy {
   muscleColor(muscle: string): string {
     const overview = this.selectedOverview();
     const targets = overview?.targetMuscles || [];
-    return targets.includes(muscle) ? '#5B8CFF' : '#1B202B';
+    return targets.includes(muscle) ? 'var(--m3-sys-color-primary)' : 'var(--m3-sys-color-outline-variant)';
   }
 
   graphTitle(widget: TrainingGraphConfig): string {
@@ -2360,6 +2177,24 @@ export class GymComponent implements OnInit, OnDestroy {
     }
 
     return null;
+  }
+
+  private isExerciseCompleted(exercise: TrainingExecutionExercise): boolean {
+    return exercise.sets.length > 0 && exercise.sets.every(setRow => setRow.isCompleted);
+  }
+
+  private findNextIncompleteExerciseIndex(session: TrainingExecutionSession, startIndex: number): number {
+    for (let index = Math.max(0, startIndex); index < session.exercises.length; index += 1) {
+      if (!this.isExerciseCompleted(session.exercises[index])) {
+        return index;
+      }
+    }
+
+    return -1;
+  }
+
+  private areAllSessionExercisesCompleted(session: TrainingExecutionSession): boolean {
+    return session.exercises.every(exercise => this.isExerciseCompleted(exercise));
   }
 
   private scheduleSetSave(clientRef: string): void {
