@@ -1,13 +1,28 @@
-<div class="app-surface" [class.keyboard-open]="keyboardOpen()">
+<div
+  class="app-surface"
+  [class.keyboard-open]="keyboardOpen()"
+  [class.layout-compact]="isCompact()"
+  [class.layout-medium]="isMedium()"
+  [class.layout-expanded]="isExpanded()"
+>
   @if (showTopBar()) {
     <app-top-bar></app-top-bar>
   }
   @if (showOfflineBanner()) {
     <p class="offline-banner" role="status" aria-live="polite">Offline-Modus: zuletzt synchronisierte Daten werden angezeigt.</p>
   }
-  <section class="route-host">
-    <router-outlet></router-outlet>
+
+  <section class="layout-shell" [class.with-rail]="showNav() && !isCompact()">
+    @if (showNav() && !isCompact()) {
+      <aside class="rail-slot" aria-label="Navigation">
+        <app-bottom-nav mode="rail"></app-bottom-nav>
+      </aside>
+    }
+    <section class="route-host">
+      <router-outlet></router-outlet>
+    </section>
   </section>
+
   @if (showInstallBanner()) {
     <aside class="install-banner" aria-live="polite">
       <p class="install-text">Als App installieren für schnelleren Zugriff und Vollbildmodus.</p>
@@ -17,7 +32,7 @@
       </div>
     </aside>
   }
-  @if (showNav()) {
-    <app-bottom-nav></app-bottom-nav>
+  @if (showNav() && isCompact()) {
+    <app-bottom-nav mode="bottom"></app-bottom-nav>
   }
 </div>

@@ -17,6 +17,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import {
   Activity,
   BarChart3,
@@ -97,6 +98,7 @@ interface ExerciseProgressRow {
     MatInputModule,
     MatSelectModule,
     MatSlideToggleModule,
+    MatButtonToggleModule,
     BottomSheetComponent
   ],
   template: `
@@ -112,19 +114,25 @@ interface ExerciseProgressRow {
       <header class="panel hero">
         <p class="title-font">Gym</p>
         <h1>Krafttracker</h1>
-        <div class="tabs" role="tablist" aria-label="Gym Tabs">
-          <button type="button" role="tab" [attr.aria-selected]="activeTab() === 'tracker'" [class.active]="activeTab() === 'tracker'" (click)="activeTab.set('tracker')">
-            <lucide-icon [img]="icons.dumbbell" class="icon" aria-hidden="true"></lucide-icon>
-            Tracker
-          </button>
-          <button type="button" role="tab" [attr.aria-selected]="activeTab() === 'progress'" [class.active]="activeTab() === 'progress'" (click)="activateProgressTab()">
-            <lucide-icon [img]="icons.barChart" class="icon" aria-hidden="true"></lucide-icon>
-            Progress
-          </button>
-          <a routerLink="/profile" role="tab" aria-selected="false">
+        <div class="hero-controls">
+          <mat-button-toggle-group
+            class="gym-tabs"
+            [value]="activeTab()"
+            aria-label="Gym Ansicht"
+            (valueChange)="onHeroTabChange($event)"
+          >
+            <mat-button-toggle value="tracker">
+              <lucide-icon [img]="icons.dumbbell" class="icon" aria-hidden="true"></lucide-icon>
+              Tracker
+            </mat-button-toggle>
+            <mat-button-toggle value="progress">
+              <lucide-icon [img]="icons.barChart" class="icon" aria-hidden="true"></lucide-icon>
+              Progress
+            </mat-button-toggle>
+          </mat-button-toggle-group>
+          <button mat-icon-button type="button" routerLink="/profile" aria-label="Profil öffnen">
             <lucide-icon [img]="icons.user" class="icon" aria-hidden="true"></lucide-icon>
-            Profile
-          </a>
+          </button>
         </div>
       </header>
 
@@ -719,6 +727,23 @@ interface ExerciseProgressRow {
     .hero h1 {
       margin: 0;
       font-size: 22px;
+    }
+
+    .hero-controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .gym-tabs {
+      flex: 1;
+    }
+
+    .gym-tabs .mat-button-toggle-label-content {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
     }
 
     .quick-start-strip {
@@ -1359,6 +1384,14 @@ export class GymComponent implements OnInit, OnDestroy {
   async activateProgressTab(): Promise<void> {
     this.activeTab.set('progress');
     await this.loadProgressData();
+  }
+
+  onHeroTabChange(value: string): void {
+    if (value === 'progress') {
+      void this.activateProgressTab();
+      return;
+    }
+    this.activeTab.set('tracker');
   }
 
   async loadTrackerData(forceRefresh = false): Promise<void> {

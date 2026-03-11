@@ -15,14 +15,13 @@ import { MatToolbarModule } from '@angular/material/toolbar';
     .top-bar {
       position: fixed;
       top: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: min(100%, 480px);
+      left: 0;
+      width: 100%;
       height: 64px;
       display: flex;
       align-items: center;
       justify-content: flex-start;
-      padding: 0 20px;
+      padding: 0 clamp(16px, 4vw, 32px);
       background: var(--m3-sys-color-surface);
       border-bottom: 1px solid var(--m3-sys-color-outline-variant);
       z-index: 28;
@@ -36,6 +35,14 @@ import { MatToolbarModule } from '@angular/material/toolbar';
       line-height: 1.75rem;
       font-weight: 600;
       letter-spacing: 0;
+    }
+
+    :host-context(.layout-medium) .top-bar {
+      padding-left: 104px;
+    }
+
+    :host-context(.layout-expanded) .top-bar {
+      padding-left: 116px;
     }
   `]
 })

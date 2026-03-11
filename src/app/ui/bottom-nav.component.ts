@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { Dumbbell, House, Library, LucideAngularModule, User, Users } from 'lucide-angular';
@@ -7,6 +7,10 @@ import { MatRippleModule } from '@angular/material/core';
 @Component({
   selector: 'app-bottom-nav',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '[class.rail-mode]': "mode() === 'rail'",
+    '[class.bottom-mode]': "mode() === 'bottom'"
+  },
   imports: [CommonModule, RouterModule, LucideAngularModule, MatRippleModule],
   template: `
     <nav class="bottom-nav" aria-label="Hauptnavigation">
@@ -43,25 +47,46 @@ import { MatRippleModule } from '@angular/material/core';
     </nav>
   `,
   styles: [`
+    :host {
+      display: block;
+    }
+
     .bottom-nav {
-      position: fixed;
-      left: 50%;
-      bottom: 0;
-      transform: translateX(-50%);
-      width: min(100%, 480px);
+      width: 100%;
       display: grid;
       grid-template-columns: repeat(5, minmax(0, 1fr));
       gap: 0;
-      padding: 0.35rem 0.5rem calc(0.75rem + env(safe-area-inset-bottom));
-      border-top: 1px solid var(--m3-sys-color-outline-variant);
+      padding: 0.35rem 0.5rem;
       background: var(--m3-sys-color-surface);
       z-index: 27;
     }
 
+    :host.bottom-mode .bottom-nav {
+      position: fixed;
+      left: 50%;
+      bottom: 0;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 100%;
+      padding: 0.35rem 0.5rem calc(0.75rem + env(safe-area-inset-bottom));
+      border-top: 1px solid var(--m3-sys-color-outline-variant);
+    }
+
+    :host.rail-mode .bottom-nav {
+      position: static;
+      display: grid;
+      grid-template-columns: 1fr;
+      align-content: start;
+      padding: 0;
+      gap: 4px;
+      background: transparent;
+      border-top: none;
+    }
+
     a {
-      min-height: 64px;
+      min-height: 72px;
       border: none;
-      border-radius: 12px;
+      border-radius: 16px;
       overflow: hidden;
       display: flex;
       flex-direction: column;
@@ -74,6 +99,12 @@ import { MatRippleModule } from '@angular/material/core';
       transition: background-color 150ms ease, color 150ms ease;
     }
 
+    :host.rail-mode a {
+      min-height: 64px;
+      border-radius: 12px;
+      gap: 4px;
+    }
+
     .icon-wrap {
       width: 64px;
       height: 32px;
@@ -83,6 +114,10 @@ import { MatRippleModule } from '@angular/material/core';
       justify-content: center;
       color: inherit;
       transition: background-color 150ms ease, color 150ms ease;
+    }
+
+    :host.rail-mode .icon-wrap {
+      width: 56px;
     }
 
     .nav-icon {
@@ -117,6 +152,8 @@ import { MatRippleModule } from '@angular/material/core';
   `]
 })
 export class BottomNavComponent {
+  readonly mode = input<'bottom' | 'rail'>('bottom');
+
   readonly icons = {
     house: House,
     dumbbell: Dumbbell,

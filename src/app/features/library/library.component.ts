@@ -285,12 +285,18 @@ interface ParsedMacroInput {
             <div class="meal-items">
               @for (item of mealItems; track $index) {
                 <div class="meal-item">
-                  <select [(ngModel)]="item.ingredient_id" [name]="'ing' + $index">
-                    @for (ing of ingredients(); track ing.id) {
-                      <option [value]="ing.id">{{ ing.name }}</option>
-                    }
-                  </select>
-                  <input type="number" [(ngModel)]="item.grams" [name]="'grams' + $index" placeholder="Gramm">
+                  <mat-form-field class="m3-field meal-field" appearance="outline" subscriptSizing="dynamic">
+                    <mat-label>Zutat</mat-label>
+                    <mat-select [(ngModel)]="item.ingredient_id" [name]="'ing' + $index">
+                      @for (ing of ingredients(); track ing.id) {
+                        <mat-option [value]="ing.id">{{ ing.name }}</mat-option>
+                      }
+                    </mat-select>
+                  </mat-form-field>
+                  <mat-form-field class="m3-field meal-field grams" appearance="outline" subscriptSizing="dynamic">
+                    <mat-label>Gramm</mat-label>
+                    <input matInput type="number" [(ngModel)]="item.grams" [name]="'grams' + $index" placeholder="Gramm">
+                  </mat-form-field>
                   <button mat-flat-button type="button" class="action-btn danger compact" (click)="removeMealItem($index)">Entfernen</button>
                 </div>
               }
@@ -385,9 +391,17 @@ interface ParsedMacroInput {
 
     .meal-item {
       display: grid;
-      grid-template-columns: 1fr 92px auto;
+      grid-template-columns: 1fr 120px auto;
       gap: 0.45rem;
-      align-items: center;
+      align-items: start;
+    }
+
+    .meal-field .mat-mdc-form-field-subscript-wrapper {
+      display: none;
+    }
+
+    .meal-field.grams {
+      max-width: 120px;
     }
 
     .modal-actions {

@@ -28,6 +28,7 @@ export class App implements OnDestroy {
   private readonly currentRoute = signal('/');
   private readonly isOnline = signal(typeof navigator === 'undefined' ? true : navigator.onLine);
   private readonly isKeyboardOpen = signal(false);
+  private readonly viewportWidth = signal(typeof window === 'undefined' ? 390 : window.innerWidth);
   private routeSubscription: Subscription | null = null;
   private viewportBaseHeight = 0;
   private themeLoadRequestId = 0;
@@ -37,7 +38,22 @@ export class App implements OnDestroy {
   showNav = computed(() => !this.currentRoute().includes('/login') && !this.currentRoute().includes('/onboarding'));
   showTopBar = computed(() => !this.currentRoute().includes('/login') && !this.currentRoute().includes('/onboarding'));
   showOfflineBanner = computed(() => !this.isOnline() && this.showTopBar());
-  showInstallBanner = computed(() => this.showNav() && this.pwaInstall.canPrompt() && !this.isKeyboardOpen());
+  readonly layoutMode = computed<'compact' | 'medium' | 'expanded'>(() => {
+    const width = this.viewportWidth();
+    if (width >= 1200) {
+      return 'expanded';
+    }
+    if (width >= 840) {
+      return 'medium';
+    }
+    return 'compact';
+  });
+  readonly isCompact = computed(() => this.layoutMode() === 'compact');
+  readonly isMedium = computed(() => this.layoutMode() === 'medium');
+  readonly isExpanded = computed(() => this.layoutMode() === 'expanded');
+  showInstallBanner = computed(
+    () => this.showNav() && this.isCompact() && this.pwaInstall.canPrompt() && !this.isKeyboardOpen()
+  );
 
   constructor() {
     this.themeService.initialize();
@@ -56,6 +72,7 @@ export class App implements OnDestroy {
     if (typeof window !== 'undefined') {
       window.addEventListener('online', this.handleOnlineStatus);
       window.addEventListener('offline', this.handleOnlineStatus);
+      window.addEventListener('resize', this.handleWindowResize, { passive: true });
       this.setupMobileViewportHandlers();
     }
   }
@@ -69,11 +86,16 @@ export class App implements OnDestroy {
       window.visualViewport?.removeEventListener('scroll', this.handleViewportChange);
       window.removeEventListener('focusin', this.handleViewportChange);
       window.removeEventListener('focusout', this.handleViewportChange);
+      window.removeEventListener('resize', this.handleWindowResize);
     }
   }
 
   private readonly handleOnlineStatus = (): void => {
     this.isOnline.set(typeof navigator === 'undefined' ? true : navigator.onLine);
+  };
+
+  private readonly handleWindowResize = (): void => {
+    this.viewportWidth.set(window.innerWidth);
   };
 
   async installApp(): Promise<void> {
@@ -111,7 +133,9 @@ export class App implements OnDestroy {
       return;
     }
 
-    const isPhoneWidth = window.innerWidth <= 900;
+    this.viewportWidth.set(window.innerWidth);
+
+    const isPhoneWidth = this.isCompact();
     const currentHeight = visualViewport.height;
     const activeElement = document.activeElement;
     const activeIsInput =

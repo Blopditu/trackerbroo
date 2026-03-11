@@ -121,7 +121,8 @@ export class ThemeService {
 
       const sourceColor = materialUtils.argbFromHex(seed);
       const sourceHct = materialUtils.Hct.fromInt(sourceColor);
-      const scheme = new materialUtils.SchemeTonalSpot(sourceHct, true, 0);
+      const isDark = this.isDarkModePreferred();
+      const scheme = new materialUtils.SchemeTonalSpot(sourceHct, isDark, 0);
       const dynamicColors = materialUtils.MaterialDynamicColors as Record<string, DynamicRole>;
       const style = root.style;
 
@@ -143,6 +144,13 @@ export class ThemeService {
       this.materialUtilsPromise = import('@material/material-color-utilities') as unknown as Promise<MaterialColorUtilitiesModule>;
     }
     return this.materialUtilsPromise;
+  }
+
+  private isDarkModePreferred(): boolean {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      return true;
+    }
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
   }
 
   private normalizeSeed(seed: string | null | undefined): string | null {

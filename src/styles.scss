@@ -217,13 +217,11 @@ a:focus-visible {
 
 .app-surface {
   min-height: 100vh;
-  width: min(100%, 480px);
-  margin: 0 auto;
+  width: 100%;
+  margin: 0;
   padding-top: 64px;
   padding-bottom: 120px;
   background: var(--bg-shell);
-  border-left: 1px solid var(--border-soft);
-  border-right: 1px solid var(--border-soft);
   overscroll-behavior-y: contain;
   overflow-x: clip;
 }
@@ -233,7 +231,7 @@ button,
 .panel,
 .list-card,
 .modal-card {
-  transition: transform 180ms ease, background-color 180ms ease, border-color 180ms ease, opacity 180ms ease;
+  transition: background-color 180ms ease, border-color 180ms ease, opacity 180ms ease;
 }
 
 button,
@@ -244,10 +242,6 @@ a {
 button[disabled] {
   opacity: 0.48;
   cursor: not-allowed;
-}
-
-button:active {
-  transform: translateY(1px) scale(0.99);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -314,8 +308,8 @@ button:active {
   padding-bottom: var(--space-4);
 }
 
-.app-surface.keyboard-open .app-fab,
-.app-surface.keyboard-open app-bottom-nav {
+.app-surface.layout-compact.keyboard-open .app-fab,
+.app-surface.layout-compact.keyboard-open app-bottom-nav {
   opacity: 0;
   pointer-events: none;
 }
@@ -785,7 +779,7 @@ textarea {
 
 .app-fab {
   position: fixed;
-  right: max(14px, calc((100vw - min(100vw, 480px)) / 2 + 14px));
+  right: clamp(16px, 4vw, 32px);
   bottom: calc(96px + env(safe-area-inset-bottom));
   width: 56px;
   height: 56px;
@@ -798,4 +792,9 @@ textarea {
   font-size: 1.3rem;
   box-shadow: var(--shadow-level-3);
   z-index: 26;
+}
+
+.app-surface.layout-medium .app-fab,
+.app-surface.layout-expanded .app-fab {
+  bottom: calc(24px + env(safe-area-inset-bottom));
 }
