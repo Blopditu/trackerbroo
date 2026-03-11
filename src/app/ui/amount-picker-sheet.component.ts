@@ -62,6 +62,7 @@ export interface AmountPickResult {
       align-items: end;
       background: rgba(4, 8, 12, 0.58);
       padding: 0.6rem;
+      animation: overlay-enter var(--motion-duration-medium) var(--motion-easing-standard) both;
     }
 
     .sheet-card {
@@ -71,6 +72,7 @@ export interface AmountPickResult {
       padding: 0.95rem;
       display: grid;
       gap: 0.55rem;
+      animation: sheet-enter var(--motion-duration-long) var(--motion-easing-decelerate) both;
     }
 
     .item {
@@ -87,7 +89,7 @@ export interface AmountPickResult {
     }
 
     .preset-row button {
-      min-height: 40px;
+      min-height: var(--touch-target-compact);
       padding: 0.3rem;
       font-size: var(--text-xs);
     }
@@ -99,12 +101,12 @@ export interface AmountPickResult {
     }
 
     .apply-btn {
-      min-height: 40px;
+      min-height: var(--touch-target-compact);
     }
 
     .preview {
       border: 1px solid var(--border-strong);
-      border-radius: 10px;
+      border-radius: 14px;
       background: var(--m3-sys-color-surface-container-high);
       padding: 0.55rem;
       display: flex;
@@ -118,6 +120,26 @@ export interface AmountPickResult {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 0.5rem;
+    }
+
+    @keyframes overlay-enter {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    @keyframes sheet-enter {
+      from {
+        opacity: 0;
+        transform: translateY(22px) scale(0.986);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
     }
   `]
 })

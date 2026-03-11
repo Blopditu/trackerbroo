@@ -15,7 +15,7 @@ import { formatAppError } from '../../core/error-format';
   template: `
     <main class="page login-page">
       @if (message) {
-        <p class="toast" [class.error]="isError" [class.success]="!isError" aria-live="polite">{{ message }}</p>
+        <p class="toast" [class.error]="isError" [class.success]="!isError" role="status" aria-live="polite" aria-atomic="true">{{ message }}</p>
       }
 
       <section class="panel halftone hero" aria-labelledby="login-title">

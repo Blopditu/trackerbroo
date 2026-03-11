@@ -13,7 +13,7 @@ import { formatAppError } from '../../core/error-format';
   template: `
     <main class="page dashboard-page">
       @if (errorMessage()) {
-        <p class="toast error" aria-live="polite">{{ errorMessage() }}</p>
+        <p class="toast error" role="status" aria-live="polite" aria-atomic="true">{{ errorMessage() }}</p>
       }
 
       <header class="panel halftone">

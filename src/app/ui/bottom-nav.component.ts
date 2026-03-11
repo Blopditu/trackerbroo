@@ -96,7 +96,10 @@ import { MatRippleModule } from '@angular/material/core';
       text-decoration: none;
       color: var(--m3-sys-color-on-surface-variant);
       background: transparent;
-      transition: background-color 150ms ease, color 150ms ease;
+      transition:
+        background-color var(--motion-duration-short) var(--motion-easing-standard),
+        color var(--motion-duration-short) var(--motion-easing-standard),
+        transform var(--motion-duration-short) var(--motion-easing-standard);
     }
 
     :host.rail-mode a {
@@ -113,7 +116,10 @@ import { MatRippleModule } from '@angular/material/core';
       align-items: center;
       justify-content: center;
       color: inherit;
-      transition: background-color 150ms ease, color 150ms ease;
+      transition:
+        background-color var(--motion-duration-medium) var(--motion-easing-standard),
+        color var(--motion-duration-short) var(--motion-easing-standard),
+        transform var(--motion-duration-medium) var(--motion-easing-decelerate);
     }
 
     :host.rail-mode .icon-wrap {
@@ -137,6 +143,7 @@ import { MatRippleModule } from '@angular/material/core';
     a.active .icon-wrap {
       background: var(--m3-sys-color-secondary-container);
       color: var(--m3-sys-color-on-secondary-container);
+      transform: scale(1.03);
     }
 
     a.active .label {
@@ -148,6 +155,10 @@ import { MatRippleModule } from '@angular/material/core';
     a:focus-visible {
       outline: 2px solid var(--m3-sys-color-primary);
       outline-offset: -1px;
+    }
+
+    a:active {
+      transform: translateY(1px);
     }
   `]
 })

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ElementRef, OnDestroy, effect, input, output, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, OnDestroy, effect, input, output, signal, viewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { LucideAngularModule, X } from 'lucide-angular';
 import { MatButtonModule } from '@angular/material/button';
@@ -13,8 +13,8 @@ let sheetTitleIdCounter = 0;
   },
   imports: [CommonModule, LucideAngularModule, MatButtonModule],
   template: `
-    @if (open()) {
-      <div class="overlay" (click)="onBackdropClick()">
+    @if (rendered()) {
+      <div class="overlay" [class.active]="isActive()" (click)="onBackdropClick()">
         <section
           #sheet
           class="sheet"
@@ -44,8 +44,10 @@ let sheetTitleIdCounter = 0;
       display: grid;
       align-items: end;
       background: rgba(4, 8, 12, 0.58);
-      animation: overlay-in 160ms ease-out;
       touch-action: pan-y;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity var(--motion-duration-medium) var(--motion-easing-standard);
     }
 
     .sheet {
@@ -54,13 +56,27 @@ let sheetTitleIdCounter = 0;
       border-left: 1px solid var(--m3-sys-color-outline-variant);
       border-right: 1px solid var(--m3-sys-color-outline-variant);
       border-radius: 28px 28px 0 0;
-      padding: 10px 16px calc(16px + env(safe-area-inset-bottom));
+      padding: 12px 16px calc(16px + env(safe-area-inset-bottom));
       max-height: 86vh;
       overflow: auto;
       -webkit-overflow-scrolling: touch;
       overscroll-behavior: contain;
       box-shadow: 0 -12px 28px rgba(0, 0, 0, 0.35);
-      animation: sheet-in 190ms ease-out;
+      transform: translateY(28px) scale(0.985);
+      opacity: 0;
+      transition:
+        transform var(--motion-duration-long) var(--motion-easing-decelerate),
+        opacity var(--motion-duration-medium) var(--motion-easing-standard);
+    }
+
+    .overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .overlay.active .sheet {
+      transform: translateY(0) scale(1);
+      opacity: 1;
     }
 
     .drag-handle {
@@ -87,8 +103,8 @@ let sheetTitleIdCounter = 0;
     }
 
     .close {
-      width: 44px;
-      height: 44px;
+      width: 48px;
+      height: 48px;
       border: 1px solid var(--m3-sys-color-outline-variant);
       background: var(--m3-sys-color-surface-container-high);
       color: var(--m3-sys-color-on-surface-variant);
@@ -99,30 +115,10 @@ let sheetTitleIdCounter = 0;
       place-items: center;
     }
 
-    @keyframes sheet-in {
-      from {
-        transform: translateY(10px);
-        opacity: 0;
-      }
-      to {
-        transform: translateY(0);
-        opacity: 1;
-      }
-    }
-
-    @keyframes overlay-in {
-      from {
-        opacity: 0;
-      }
-      to {
-        opacity: 1;
-      }
-    }
-
     @media (prefers-reduced-motion: reduce) {
       .overlay,
       .sheet {
-        animation: none;
+        transition: none;
       }
     }
   `]
@@ -138,33 +134,33 @@ export class BottomSheetComponent implements OnDestroy {
   readonly title = input.required<string>();
   readonly closeOnBackdrop = input(true);
   readonly closed = output<void>();
+  readonly rendered = signal(false);
+  readonly isActive = signal(false);
 
   private previousFocusedElement: HTMLElement | null = null;
+  private closeTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor() {
     effect(() => {
-      if (!this.open()) {
-        this.restorePreviousFocus();
+      if (this.open()) {
+        this.openSheet();
         return;
       }
 
-      if (typeof document !== 'undefined') {
-        const active = document.activeElement;
-        this.previousFocusedElement = active instanceof HTMLElement ? active : null;
-      }
-
-      queueMicrotask(() => {
-        this.focusFirstElement();
-      });
+      this.closeSheet();
     });
   }
 
   ngOnDestroy(): void {
+    if (this.closeTimer) {
+      clearTimeout(this.closeTimer);
+      this.closeTimer = null;
+    }
     this.restorePreviousFocus();
   }
 
   onBackdropClick(): void {
-    if (this.closeOnBackdrop()) {
+    if (this.closeOnBackdrop() && this.isActive()) {
       this.closed.emit();
     }
   }
@@ -254,5 +250,48 @@ export class BottomSheetComponent implements OnDestroy {
       this.previousFocusedElement?.focus({ preventScroll: true });
     });
     this.previousFocusedElement = null;
+  }
+
+  private openSheet(): void {
+    if (typeof document !== 'undefined') {
+      const active = document.activeElement;
+      this.previousFocusedElement = active instanceof HTMLElement ? active : null;
+    }
+
+    if (this.closeTimer) {
+      clearTimeout(this.closeTimer);
+      this.closeTimer = null;
+    }
+
+    this.rendered.set(true);
+
+    if (typeof window !== 'undefined') {
+      requestAnimationFrame(() => {
+        this.isActive.set(true);
+        queueMicrotask(() => this.focusFirstElement());
+      });
+      return;
+    }
+
+    this.isActive.set(true);
+    queueMicrotask(() => this.focusFirstElement());
+  }
+
+  private closeSheet(): void {
+    if (!this.rendered()) {
+      return;
+    }
+
+    this.isActive.set(false);
+    this.restorePreviousFocus();
+
+    if (this.closeTimer) {
+      clearTimeout(this.closeTimer);
+    }
+
+    this.closeTimer = setTimeout(() => {
+      this.rendered.set(false);
+      this.closeTimer = null;
+    }, 280);
   }
 }

@@ -18,7 +18,13 @@ export type HabitState = 'empty' | 'complete' | 'missed';
         <span class="day-label">{{ day }}</span>
       }
       @for (state of states(); track $index) {
-        <span role="listitem" class="cell" [class.complete]="state === 'complete'" [class.missed]="state === 'missed'"></span>
+        <span
+          role="listitem"
+          class="cell"
+          [style.--index]="$index"
+          [class.complete]="state === 'complete'"
+          [class.missed]="state === 'missed'"
+        ></span>
       }
     </div>
   `,
@@ -66,6 +72,11 @@ export type HabitState = 'empty' | 'complete' | 'missed';
       min-height: 10px;
       max-height: 12px;
       background: var(--m3-sys-color-surface-container-highest);
+      border-radius: 999px;
+      opacity: 0;
+      transform: translateY(3px);
+      animation: cell-in var(--motion-duration-medium) var(--motion-easing-decelerate) both;
+      animation-delay: calc(var(--index, 0) * 24ms);
     }
 
     .cell.complete {
@@ -74,6 +85,17 @@ export type HabitState = 'empty' | 'complete' | 'missed';
 
     .cell.missed {
       background: var(--m3-sys-color-error);
+    }
+
+    @keyframes cell-in {
+      from {
+        opacity: 0;
+        transform: translateY(3px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
   `]
 })

@@ -100,6 +100,12 @@ $trackerbroo-theme: mat.define-theme((
   --space-5: 24px;
   --space-6: 32px;
 
+  --layout-margin: 16px;
+  --layout-gap: 12px;
+  --panel-padding: 16px;
+  --touch-target: 48px;
+  --touch-target-compact: 40px;
+
   --md-sys-shape-corner-extra-small: 8px;
   --md-sys-shape-corner-small: 12px;
   --md-sys-shape-corner-medium: 16px;
@@ -150,6 +156,18 @@ $trackerbroo-theme: mat.define-theme((
   --shadow-level-1: 0 1px 2px color-mix(in srgb, #000 28%, transparent);
   --shadow-level-2: 0 3px 6px color-mix(in srgb, #000 28%, transparent);
   --shadow-level-3: 0 6px 12px color-mix(in srgb, #000 30%, transparent);
+
+  /* M3 expressive motion */
+  --motion-duration-short: 140ms;
+  --motion-duration-medium: 220ms;
+  --motion-duration-long: 360ms;
+  --motion-easing-standard: cubic-bezier(0.2, 0, 0, 1);
+  --motion-easing-emphasized: cubic-bezier(0.2, 0, 0, 1);
+  --motion-easing-decelerate: cubic-bezier(0, 0, 0, 1);
+  --motion-easing-accelerate: cubic-bezier(0.3, 0, 1, 1);
+  --state-layer-hover: 0.08;
+  --state-layer-focus: 0.12;
+  --state-layer-pressed: 0.16;
 }
 
 * {
@@ -226,12 +244,41 @@ a:focus-visible {
   overflow-x: clip;
 }
 
+.app-surface.layout-compact {
+  --layout-margin: 16px;
+  --layout-gap: 12px;
+  --panel-padding: 16px;
+  --touch-target: 48px;
+  --touch-target-compact: 40px;
+}
+
+.app-surface.layout-medium {
+  --layout-margin: 24px;
+  --layout-gap: 16px;
+  --panel-padding: 20px;
+  --touch-target: 48px;
+  --touch-target-compact: 44px;
+}
+
+.app-surface.layout-expanded {
+  --layout-margin: 32px;
+  --layout-gap: 20px;
+  --panel-padding: 24px;
+  --touch-target: 52px;
+  --touch-target-compact: 44px;
+}
+
 a,
 button,
 .panel,
 .list-card,
 .modal-card {
-  transition: background-color 180ms ease, border-color 180ms ease, opacity 180ms ease;
+  transition:
+    background-color var(--motion-duration-medium) var(--motion-easing-standard),
+    border-color var(--motion-duration-medium) var(--motion-easing-standard),
+    box-shadow var(--motion-duration-medium) var(--motion-easing-standard),
+    opacity var(--motion-duration-short) var(--motion-easing-standard),
+    transform var(--motion-duration-short) var(--motion-easing-standard);
 }
 
 button,
@@ -258,8 +305,8 @@ button[disabled] {
 @media (prefers-reduced-motion: no-preference) {
   ::view-transition-old(root),
   ::view-transition-new(root) {
-    animation-duration: 260ms;
-    animation-timing-function: ease;
+    animation-duration: var(--motion-duration-long);
+    animation-timing-function: var(--motion-easing-emphasized);
   }
 
   ::view-transition-old(root) {
@@ -278,14 +325,14 @@ button[disabled] {
   }
   to {
     opacity: 0;
-    transform: translateX(-8px);
+    transform: translateX(-12px);
   }
 }
 
 @keyframes app-vt-new {
   from {
     opacity: 0;
-    transform: translateX(8px);
+    transform: translateX(12px);
   }
   to {
     opacity: 1;
@@ -293,11 +340,37 @@ button[disabled] {
   }
 }
 
+@keyframes panel-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 .page {
-  padding: var(--space-4);
+  padding: var(--layout-margin);
   display: grid;
-  gap: var(--space-3);
+  gap: var(--layout-gap);
   padding-bottom: calc(var(--space-5) + env(safe-area-inset-bottom));
+}
+
+.page > .panel,
+.page > .list-card {
+  animation: panel-enter var(--motion-duration-medium) var(--motion-easing-decelerate) both;
+}
+
+.page > .panel:nth-child(2),
+.page > .list-card:nth-child(2) {
+  animation-delay: 40ms;
+}
+
+.page > .panel:nth-child(3),
+.page > .list-card:nth-child(3) {
+  animation-delay: 80ms;
 }
 
 .app-surface.keyboard-open {
@@ -315,15 +388,50 @@ button[disabled] {
 }
 
 .panel {
-  background: var(--bg-surface-1);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--m3-sys-color-surface-container-high) 75%, transparent),
+      var(--m3-sys-color-surface-container)
+    );
   border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 84%, transparent);
   border-radius: var(--radius-lg);
-  padding: var(--space-4);
+  padding: var(--panel-padding);
   box-shadow: var(--shadow-level-1);
 }
 
 .panel.halftone {
   background: var(--bg-surface-2);
+}
+
+.panel.hero {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: 32px;
+  background:
+    radial-gradient(circle at 82% -10%, color-mix(in srgb, var(--m3-sys-color-primary) 30%, transparent) 0%, transparent 46%),
+    linear-gradient(160deg, var(--m3-sys-color-surface-container-high) 0%, var(--m3-sys-color-surface-container) 100%);
+}
+
+.panel.hero::after {
+  content: '';
+  position: absolute;
+  width: 160px;
+  height: 160px;
+  right: -56px;
+  bottom: -72px;
+  border-radius: 44px;
+  background: color-mix(in srgb, var(--m3-sys-color-secondary-container) 62%, transparent);
+  transform: rotate(-18deg);
+  z-index: -1;
+  transition: transform var(--motion-duration-long) var(--motion-easing-decelerate);
+}
+
+.panel.hero h1 {
+  font-size: clamp(2rem, 4.5vw, 2.6rem);
+  line-height: 1.02;
+  letter-spacing: -0.02em;
 }
 
 .scroll-header {
@@ -345,7 +453,7 @@ button[disabled] {
 }
 
 .segmented button {
-  min-height: 44px;
+  min-height: var(--touch-target);
   border: 1px solid var(--md-sys-color-outline);
   border-radius: var(--md-sys-shape-corner-full);
   background: transparent;
@@ -363,7 +471,7 @@ button[disabled] {
 }
 
 .action-btn {
-  min-height: 40px;
+  min-height: var(--touch-target);
   border: none;
   border-radius: var(--md-sys-shape-corner-full);
   background: var(--md-sys-color-primary);
@@ -377,7 +485,8 @@ button[disabled] {
 }
 
 .action-btn:hover:not([disabled]) {
-  filter: brightness(1.04);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-level-2);
 }
 
 .action-btn.tonal {
@@ -409,7 +518,7 @@ button[disabled] {
 }
 
 .action-btn.compact {
-  min-height: 32px;
+  min-height: var(--touch-target-compact);
   padding-inline: 12px;
 }
 
@@ -432,10 +541,82 @@ button[disabled] {
   justify-content: space-between;
   gap: var(--space-3);
   border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 75%, transparent);
-  border-radius: var(--radius-md);
+  border-radius: 24px;
   background: var(--m3-sys-color-surface-container-high);
   padding: var(--space-3);
   box-shadow: var(--shadow-level-1);
+}
+
+.action-btn,
+.entry-btn,
+.menu-btn,
+.workout-day,
+.list-card,
+.post-card,
+.day-pill,
+.exercise-tabs button,
+.check-btn,
+.week-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+.action-btn::after,
+.entry-btn::after,
+.menu-btn::after,
+.workout-day::after,
+.list-card::after,
+.post-card::after,
+.day-pill::after,
+.exercise-tabs button::after,
+.check-btn::after,
+.week-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: currentcolor;
+  opacity: 0;
+  transition: opacity var(--motion-duration-short) var(--motion-easing-standard);
+}
+
+.action-btn:hover::after,
+.entry-btn:hover::after,
+.menu-btn:hover::after,
+.workout-day:hover::after,
+.list-card:hover::after,
+.post-card:hover::after,
+.day-pill:hover::after,
+.exercise-tabs button:hover::after,
+.check-btn:hover::after,
+.week-btn:hover::after {
+  opacity: var(--state-layer-hover);
+}
+
+.action-btn:focus-visible::after,
+.entry-btn:focus-visible::after,
+.menu-btn:focus-visible::after,
+.workout-day:focus-visible::after,
+.list-card:focus-visible::after,
+.post-card:focus-visible::after,
+.day-pill:focus-visible::after,
+.exercise-tabs button:focus-visible::after,
+.check-btn:focus-visible::after,
+.week-btn:focus-visible::after {
+  opacity: var(--state-layer-focus);
+}
+
+.action-btn:active::after,
+.entry-btn:active::after,
+.menu-btn:active::after,
+.workout-day:active::after,
+.list-card:active::after,
+.post-card:active::after,
+.day-pill:active::after,
+.exercise-tabs button:active::after,
+.check-btn:active::after,
+.week-btn:active::after {
+  opacity: var(--state-layer-pressed);
 }
 
 .mono-badge {
@@ -545,7 +726,7 @@ button[disabled] {
 
 .gym-page .tabs button,
 .gym-page .tabs a {
-  min-height: 44px;
+  min-height: 48px;
   border: 1px solid var(--m3-sys-color-outline-variant);
   background: var(--m3-sys-color-surface);
   color: var(--m3-sys-color-on-surface-variant);
@@ -572,13 +753,13 @@ button[disabled] {
 
 .gym-page .week-nav {
   display: grid;
-  grid-template-columns: 44px 1fr 44px;
+  grid-template-columns: var(--touch-target) 1fr var(--touch-target);
   gap: 8px;
   align-items: center;
 }
 
 .gym-page .week-btn {
-  min-height: 44px;
+  min-height: var(--touch-target);
   border: 1px solid var(--m3-sys-color-outline-variant);
   background: var(--m3-sys-color-surface);
   color: var(--m3-sys-color-on-surface);
@@ -595,7 +776,7 @@ button[disabled] {
 }
 
 .gym-page .day-pill {
-  min-height: 42px;
+  min-height: var(--touch-target);
   border: 1px solid var(--m3-sys-color-outline-variant);
   background: var(--m3-sys-color-surface);
   color: var(--m3-sys-color-on-surface-variant);
@@ -627,7 +808,10 @@ textarea:not(.mdc-text-field__input) {
   color: var(--md-sys-color-on-surface);
   font-size: var(--md-sys-typescale-body-large-size);
   line-height: var(--md-sys-typescale-body-large-line-height);
-  transition: border-color 120ms ease, box-shadow 120ms ease, background-color 120ms ease;
+  transition:
+    border-color var(--motion-duration-short) var(--motion-easing-standard),
+    box-shadow var(--motion-duration-short) var(--motion-easing-standard),
+    background-color var(--motion-duration-short) var(--motion-easing-standard);
 }
 
 input:not(.mdc-text-field__input):not([type='color']):not([type='file']):focus-visible,
@@ -704,6 +888,11 @@ textarea {
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-soft);
   padding: var(--space-4);
+}
+
+.app-surface.layout-medium .modal-card,
+.app-surface.layout-expanded .modal-card {
+  width: min(100%, 520px);
 }
 
 .manga-bubble {

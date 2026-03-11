@@ -19,11 +19,11 @@ import { ThemeService } from '../../core/theme.service';
   template: `
     <main class="page profile-page">
       @if (errorMessage()) {
-        <p class="toast error" aria-live="polite">{{ errorMessage() }}</p>
+        <p class="toast error" role="status" aria-live="polite" aria-atomic="true">{{ errorMessage() }}</p>
       }
 
       @if (successMessage()) {
-        <p class="toast success" aria-live="polite">{{ successMessage() }}</p>
+        <p class="toast success" role="status" aria-live="polite" aria-atomic="true">{{ successMessage() }}</p>
       }
 
       <section class="panel halftone">
@@ -223,19 +223,20 @@ import { ThemeService } from '../../core/theme.service';
   styles: [`
     .profile-page {
       display: grid;
-      gap: 0.75rem;
+      gap: var(--layout-gap);
     }
 
     .profile-head {
       display: grid;
       grid-template-columns: auto 1fr;
-      gap: 0.7rem;
+      gap: 0.9rem;
       align-items: center;
     }
 
     h1 {
       margin-top: 0.2rem;
-      font-size: 1.45rem;
+      font-size: clamp(1.8rem, 4vw, 2.2rem);
+      line-height: 1.05;
     }
 
     .sub {
@@ -247,9 +248,9 @@ import { ThemeService } from '../../core/theme.service';
 
     .avatar-image,
     .avatar-fallback {
-      width: 76px;
-      height: 76px;
-      border-radius: 16px;
+      width: 84px;
+      height: 84px;
+      border-radius: 20px;
       border: 1px solid var(--border-strong);
       background: var(--m3-sys-color-surface-container-high);
     }
@@ -269,9 +270,9 @@ import { ThemeService } from '../../core/theme.service';
     .gym-target {
       margin-top: 0.7rem;
       border: 1px solid var(--border-strong);
-      border-radius: 12px;
+      border-radius: 18px;
       background: var(--m3-sys-color-surface-container-high);
-      padding: 0.55rem;
+      padding: 0.75rem 0.85rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -282,7 +283,7 @@ import { ThemeService } from '../../core/theme.service';
     .stack-form {
       margin-top: 0.75rem;
       display: grid;
-      gap: 0.55rem;
+      gap: 0.75rem;
     }
 
     .stack-form label {
@@ -295,7 +296,7 @@ import { ThemeService } from '../../core/theme.service';
       display: grid;
       grid-template-columns: auto 1fr;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.65rem;
       margin-bottom: 0.35rem;
     }
 
@@ -323,14 +324,14 @@ import { ThemeService } from '../../core/theme.service';
     .grid-two {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 0.55rem;
+      gap: 0.75rem;
     }
 
     .sparkline-wrap {
       border: 1px solid var(--border-strong);
-      border-radius: 12px;
-      background: var(--m3-sys-color-surface-container-low);
-      padding: 0.5rem;
+      border-radius: 20px;
+      background: var(--m3-sys-color-surface-container-high);
+      padding: 0.75rem;
       margin-bottom: 0.65rem;
     }
 
@@ -357,7 +358,7 @@ import { ThemeService } from '../../core/theme.service';
     .entries-list {
       margin-top: 0.75rem;
       display: grid;
-      gap: 0.5rem;
+      gap: 0.65rem;
     }
 
     .entry-sub {
@@ -394,14 +395,14 @@ import { ThemeService } from '../../core/theme.service';
     .theme-seed-row {
       display: grid;
       grid-template-columns: 56px 1fr;
-      gap: 0.55rem;
+      gap: 0.75rem;
       align-items: center;
     }
 
     .theme-seed-row input[type='color'] {
-      padding: 0.2rem;
-      min-height: 44px;
-      border-radius: 12px;
+      padding: 0.24rem;
+      min-height: var(--touch-target);
+      border-radius: 16px;
       border: 1px solid var(--border-strong);
       background: var(--bg-surface-2);
     }
@@ -409,12 +410,12 @@ import { ThemeService } from '../../core/theme.service';
     .theme-preset-grid {
       display: grid;
       grid-template-columns: repeat(8, minmax(0, 1fr));
-      gap: 0.45rem;
-      margin-top: 0.15rem;
+      gap: 0.55rem;
+      margin-top: 0.35rem;
     }
 
     .theme-swatch {
-      min-height: 30px;
+      min-height: 34px;
       border-radius: 999px;
       border: 1px solid var(--border-strong);
     }

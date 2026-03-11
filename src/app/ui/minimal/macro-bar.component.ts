@@ -33,15 +33,16 @@ import { CommonModule } from '@angular/common';
     }
 
     .bar {
-      height: 6px;
+      height: 8px;
       background: var(--m3-sys-color-surface-container-highest);
       overflow: hidden;
-      border-radius: 2px;
+      border-radius: 999px;
     }
 
     .fill {
       height: 100%;
-      transition: width 180ms ease;
+      border-radius: 999px;
+      transition: width var(--motion-duration-medium) var(--motion-easing-decelerate);
     }
   `]
 })

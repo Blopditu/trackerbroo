@@ -47,11 +47,11 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
   template: `
     <main class="page community-page">
       @if (errorMessage()) {
-        <p class="toast error" aria-live="polite">{{ errorMessage() }}</p>
+        <p class="toast error" role="status" aria-live="polite" aria-atomic="true">{{ errorMessage() }}</p>
       }
 
       @if (successMessage()) {
-        <p class="toast success" aria-live="polite">{{ successMessage() }}</p>
+        <p class="toast success" role="status" aria-live="polite" aria-atomic="true">{{ successMessage() }}</p>
       }
 
       <section class="panel hero">
@@ -203,23 +203,22 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
   `,
   styles: [`
     .community-page {
-      background: var(--m3-sys-color-surface);
       color: var(--m3-sys-color-on-surface);
-      gap: 16px;
-      padding: 16px;
+      gap: var(--layout-gap);
     }
 
     .hero,
     .section,
     .post-card {
       display: grid;
-      gap: 12px;
+      gap: var(--space-3);
     }
 
     .post-card {
-      background: var(--m3-sys-color-surface-container);
+      background: var(--m3-sys-color-surface-container-high);
       border: 1px solid var(--m3-sys-color-outline-variant);
-      padding: 16px;
+      border-radius: 20px;
+      padding: 14px;
     }
 
     .hero h1,
@@ -244,11 +243,13 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
 
     .day-divider {
       margin-top: 8px;
-      padding: 6px 10px;
+      width: fit-content;
+      padding: 8px 12px;
       border: 1px solid var(--m3-sys-color-outline-variant);
-      background: var(--m3-sys-color-surface);
+      border-radius: 999px;
+      background: var(--m3-sys-color-surface-container-high);
       font-size: 12px;
-      font-weight: 700;
+      font-weight: 600;
       color: var(--m3-sys-color-on-surface-variant);
       letter-spacing: 0.04em;
       text-transform: uppercase;
@@ -334,8 +335,9 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
 
     .action-card {
       border: 1px solid var(--m3-sys-color-outline-variant);
-      background: var(--m3-sys-color-surface);
-      padding: 10px;
+      border-radius: 16px;
+      background: var(--m3-sys-color-surface-container-high);
+      padding: 12px;
       display: grid;
       gap: 4px;
     }
@@ -379,20 +381,11 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
       height: 24px;
     }
 
-    input,
-    textarea {
-      width: 100%;
-      border: 1px solid var(--m3-sys-color-outline-variant);
-      background: var(--m3-sys-color-surface);
-      color: var(--m3-sys-color-on-surface);
-      padding: 12px;
-      font-size: 16px;
-    }
-
     .photo {
       width: 100%;
       border: 1px solid var(--m3-sys-color-outline-variant);
-      background: var(--m3-sys-color-surface);
+      border-radius: 16px;
+      background: var(--m3-sys-color-surface-container);
       min-height: 120px;
       object-fit: cover;
     }

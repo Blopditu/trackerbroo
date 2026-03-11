@@ -62,11 +62,11 @@ interface TodaySnapshot {
   template: `
     <main class="page today-page">
       @if (errorMessage()) {
-        <p class="toast error" aria-live="polite">{{ errorMessage() }}</p>
+        <p class="toast error" role="status" aria-live="polite" aria-atomic="true">{{ errorMessage() }}</p>
       }
 
       @if (successMessage()) {
-        <p class="toast success" aria-live="polite">{{ successMessage() }}</p>
+        <p class="toast success" role="status" aria-live="polite" aria-atomic="true">{{ successMessage() }}</p>
       }
 
       <section class="panel hero">
@@ -134,7 +134,7 @@ interface TodaySnapshot {
                 <strong>{{ entry.weight_kg }} kg</strong>
                 <p class="entry-meta">{{ entry.logged_on }}</p>
               </div>
-              <button type="button" class="entry-btn" (click)="editWeight(entry)">Bearbeiten</button>
+              <button mat-flat-button type="button" class="entry-btn" (click)="editWeight(entry)">Bearbeiten</button>
             </article>
           }
         </div>
@@ -170,7 +170,7 @@ interface TodaySnapshot {
               <p class="entry-meta">{{ entry.created_at.slice(11,16) }}</p>
             </div>
             <div class="entry-actions">
-              <button type="button" class="entry-btn" (click)="openEntryActions(entry)">Mehr</button>
+              <button mat-flat-button type="button" class="entry-btn" (click)="openEntryActions(entry)">Mehr</button>
             </div>
           </article>
         }
@@ -187,9 +187,9 @@ interface TodaySnapshot {
     <app-bottom-sheet [open]="showActionSheet()" [title]="sheetTitle()" (closed)="closeActions()">
       @if (sheetMode() === 'menu') {
         <div class="action-list">
-          <button type="button" class="menu-btn" (click)="setSheetMode('food')"><lucide-icon [img]="icons.utensils" class="icon" aria-hidden="true"></lucide-icon> Essen hinzufügen</button>
-          <button type="button" class="menu-btn" (click)="setSheetMode('weight')"><lucide-icon [img]="icons.weight" class="icon" aria-hidden="true"></lucide-icon> Gewicht eintragen</button>
-          <button type="button" class="menu-btn" (click)="setSheetMode('gym')"><lucide-icon [img]="icons.dumbbell" class="icon" aria-hidden="true"></lucide-icon> Gym erledigt</button>
+          <button mat-flat-button type="button" class="menu-btn" (click)="setSheetMode('food')"><lucide-icon [img]="icons.utensils" class="icon" aria-hidden="true"></lucide-icon> Essen hinzufügen</button>
+          <button mat-flat-button type="button" class="menu-btn" (click)="setSheetMode('weight')"><lucide-icon [img]="icons.weight" class="icon" aria-hidden="true"></lucide-icon> Gewicht eintragen</button>
+          <button mat-flat-button type="button" class="menu-btn" (click)="setSheetMode('gym')"><lucide-icon [img]="icons.dumbbell" class="icon" aria-hidden="true"></lucide-icon> Gym erledigt</button>
         </div>
       }
 
@@ -207,7 +207,7 @@ interface TodaySnapshot {
         </mat-form-field>
         <div class="food-list">
           @for (item of quickFoodItems(); track item.id) {
-            <button type="button" class="menu-btn" (click)="openAmountPicker(item)">
+            <button mat-flat-button type="button" class="menu-btn" (click)="openAmountPicker(item)">
               <span class="food-name">{{ item.name }}</span>
               <small class="food-macros">{{ quickItemMacroLine(item) }}</small>
             </button>
@@ -226,7 +226,7 @@ interface TodaySnapshot {
           <input matInput id="weight-input" type="number" min="20" step="0.1" [(ngModel)]="weightInput">
         </mat-form-field>
 
-        <button type="button" class="menu-btn" (click)="saveWeight()">Gewicht speichern</button>
+        <button mat-flat-button type="button" class="menu-btn" (click)="saveWeight()">Gewicht speichern</button>
       }
 
       @if (sheetMode() === 'gym') {
@@ -237,12 +237,12 @@ interface TodaySnapshot {
 
         <p class="file-label">Foto (optional)</p>
         <div class="file-row">
-          <button type="button" class="menu-btn compact" (click)="pickGymPhoto()">Foto auswählen</button>
+          <button mat-flat-button type="button" class="menu-btn compact" (click)="pickGymPhoto()">Foto auswählen</button>
           <span class="file-name">{{ gymPhotoName() || 'Kein Foto gewählt' }}</span>
         </div>
         <input #gymPhotoInput id="gym-photo-input" class="sr-only" type="file" accept="image/*" (change)="onGymPhotoSelected($event)">
 
-        <button type="button" class="menu-btn" [disabled]="savingGymPost()" (click)="submitGymPost()">
+        <button mat-flat-button type="button" class="menu-btn" [disabled]="savingGymPost()" (click)="submitGymPost()">
           {{ savingGymPost() ? 'Wird gepostet...' : 'Gym-Check-in posten' }}
         </button>
       }
@@ -254,8 +254,8 @@ interface TodaySnapshot {
             <p class="entry-action-sub">{{ selectedEntryForActions()!.quantity }}{{ selectedEntryForActions()!.entry_type === 'ingredient' ? 'g' : ' Portionen' }} • {{ selectedEntryForActions()!.kcal.toFixed(0) }} kcal</p>
           </article>
           <div class="action-list">
-            <button type="button" class="menu-btn" (click)="editSelectedEntry()">Bearbeiten</button>
-            <button type="button" class="menu-btn danger-outline" (click)="deleteSelectedEntry()">Löschen</button>
+            <button mat-flat-button type="button" class="menu-btn" (click)="editSelectedEntry()">Bearbeiten</button>
+            <button mat-flat-button type="button" class="menu-btn danger-outline" (click)="deleteSelectedEntry()">Löschen</button>
           </div>
         }
       }
@@ -276,38 +276,37 @@ interface TodaySnapshot {
   `,
   styles: [`
     .today-page {
-      background: var(--m3-sys-color-surface);
       color: var(--m3-sys-color-on-surface);
-      gap: 16px;
-      padding: 16px;
+      gap: var(--layout-gap);
     }
 
     .hero,
     .section {
       display: grid;
-      gap: 12px;
+      gap: var(--space-3);
     }
 
     .date-label {
       margin: 0;
       color: var(--m3-sys-color-on-surface-variant);
-      font-size: 11px;
-      letter-spacing: 0.08em;
+      font-size: 12px;
+      letter-spacing: 0.06em;
       text-transform: uppercase;
-      font-weight: 700;
+      font-weight: 600;
     }
 
     .day-nav {
       display: grid;
-      grid-template-columns: 44px 1fr 44px;
+      grid-template-columns: var(--touch-target) 1fr var(--touch-target);
       gap: 8px;
       align-items: center;
     }
 
     .nav-btn {
-      min-height: 44px;
+      min-height: var(--touch-target);
       border: 1px solid var(--m3-sys-color-outline-variant);
-      background: var(--m3-sys-color-surface);
+      border-radius: 999px;
+      background: var(--m3-sys-color-surface-container-high);
       color: var(--m3-sys-color-on-surface);
       display: flex;
       align-items: center;
@@ -326,8 +325,8 @@ interface TodaySnapshot {
     }
 
     .day-field .mat-mdc-text-field-wrapper {
-      min-height: 44px;
-      border-radius: 12px;
+      min-height: var(--touch-target);
+      border-radius: 18px;
     }
 
     .hero-actions {
@@ -335,10 +334,6 @@ interface TodaySnapshot {
       grid-template-columns: 1fr auto;
       gap: 8px;
       align-items: center;
-    }
-
-    .hero-actions .action-btn {
-      min-height: 42px;
     }
 
     .icon {
@@ -368,7 +363,7 @@ interface TodaySnapshot {
       align-items: center;
       justify-content: space-between;
       gap: 8px;
-      padding-top: 8px;
+      padding-top: 10px;
       border-top: 1px solid var(--m3-sys-color-outline-variant);
       font-size: 16px;
     }
@@ -404,8 +399,9 @@ interface TodaySnapshot {
 
     .sparkline-wrap {
       border: 1px solid var(--m3-sys-color-outline-variant);
-      background: var(--m3-sys-color-surface);
-      padding: 10px;
+      border-radius: 20px;
+      background: var(--m3-sys-color-surface-container-high);
+      padding: 12px;
       display: grid;
       gap: 8px;
     }
@@ -431,25 +427,27 @@ interface TodaySnapshot {
 
     .weight-list {
       display: grid;
-      gap: 8px;
+      gap: 10px;
     }
 
     .weight-entry {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 8px;
+      gap: 12px;
       border: 1px solid var(--m3-sys-color-outline-variant);
-      background: var(--m3-sys-color-surface);
-      padding: 10px;
+      border-radius: 20px;
+      background: var(--m3-sys-color-surface-container-high);
+      padding: 12px;
     }
 
     .entry-card {
       display: grid;
       gap: 10px;
       border: 1px solid var(--m3-sys-color-outline-variant);
-      background: var(--m3-sys-color-surface);
-      padding: 12px;
+      border-radius: 20px;
+      background: var(--m3-sys-color-surface-container-high);
+      padding: 14px;
     }
 
     .entry-main {
@@ -477,12 +475,14 @@ interface TodaySnapshot {
     }
 
     .entry-btn {
-      min-height: 40px;
+      min-height: var(--touch-target-compact);
       border: 1px solid var(--m3-sys-color-outline-variant);
-      background: var(--m3-sys-color-surface-container);
+      border-radius: 999px;
+      background: var(--m3-sys-color-secondary-container);
       color: var(--m3-sys-color-on-surface);
       font-size: 14px;
       font-weight: 600;
+      padding: 0 16px;
     }
 
     .today-fab {
@@ -496,9 +496,10 @@ interface TodaySnapshot {
     }
 
     .menu-btn {
-      min-height: 64px;
+      min-height: var(--touch-target);
       border: 1px solid var(--m3-sys-color-outline-variant);
-      background: var(--m3-sys-color-surface);
+      border-radius: 20px;
+      background: var(--m3-sys-color-surface-container-high);
       color: var(--m3-sys-color-on-surface);
       font-size: 16px;
       font-weight: 600;
@@ -510,7 +511,7 @@ interface TodaySnapshot {
     }
 
     .action-list .menu-btn {
-      min-height: 44px;
+      min-height: var(--touch-target-compact);
       display: flex;
       align-items: center;
       gap: 8px;
@@ -533,7 +534,7 @@ interface TodaySnapshot {
     }
 
     .menu-btn.compact {
-      min-height: 44px;
+      min-height: var(--touch-target-compact);
       padding: 0 14px;
       width: auto;
       display: inline-flex;
@@ -565,8 +566,9 @@ interface TodaySnapshot {
 
     .entry-action-card {
       border: 1px solid var(--m3-sys-color-outline-variant);
-      background: var(--m3-sys-color-surface);
-      padding: 10px;
+      border-radius: 16px;
+      background: var(--m3-sys-color-surface-container-high);
+      padding: 12px;
       display: grid;
       gap: 4px;
     }

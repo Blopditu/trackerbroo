@@ -5,6 +5,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { SupabaseService } from '../../core/supabase.service';
 import { AuthService } from '../../core/auth.service';
 import { Ingredient, Meal, MealItem } from '../../core/types';
@@ -26,6 +27,7 @@ interface ParsedMacroInput {
     CommonModule,
     FormsModule,
     MatButtonModule,
+    MatButtonToggleModule,
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
@@ -34,7 +36,7 @@ interface ParsedMacroInput {
   template: `
     <main class="page library-page">
       @if (errorMessage()) {
-        <p class="toast error" aria-live="polite">{{ errorMessage() }}</p>
+        <p class="toast error" role="status" aria-live="polite" aria-atomic="true">{{ errorMessage() }}</p>
       }
 
       <header class="panel halftone">
@@ -44,11 +46,15 @@ interface ParsedMacroInput {
       </header>
 
       <section class="panel">
-        <div class="segmented" role="tablist" aria-label="Bibliothek-Tabs">
-          <button type="button" role="tab" [attr.aria-selected]="activeTab() === 'ingredients'" [class.active]="activeTab() === 'ingredients'" (click)="activeTab.set('ingredients')">Zutaten</button>
-          <button type="button" role="tab" [attr.aria-selected]="activeTab() === 'meals'" [class.active]="activeTab() === 'meals'" (click)="activeTab.set('meals')">Mahlzeiten</button>
-          <span aria-hidden="true"></span>
-        </div>
+        <mat-button-toggle-group
+          class="tab-toggle"
+          [value]="activeTab()"
+          aria-label="Bibliothek-Tabs"
+          (valueChange)="onTabChanged($event)"
+        >
+          <mat-button-toggle value="ingredients">Zutaten</mat-button-toggle>
+          <mat-button-toggle value="meals">Mahlzeiten</mat-button-toggle>
+        </mat-button-toggle-group>
 
         <div class="m3-section-head list-head">
           <span class="m3-section-meta">
@@ -316,25 +322,38 @@ interface ParsedMacroInput {
   `,
   styles: [`
     .library-page {
-      gap: 1rem;
+      gap: var(--layout-gap);
+    }
+
+    .tab-toggle {
+      display: inline-flex;
+      border: 1px solid var(--m3-sys-color-outline-variant);
+      border-radius: 999px;
+      overflow: hidden;
+      background: var(--m3-sys-color-surface-container-high);
+    }
+
+    .tab-toggle .mat-button-toggle {
+      min-height: var(--touch-target);
     }
 
     h1 {
       margin-top: 0.2rem;
-      font-size: 1.7rem;
+      font-size: clamp(1.85rem, 4vw, 2.25rem);
+      line-height: 1.06;
     }
 
     .lead {
       margin: 0.35rem 0 0;
       color: var(--m3-sys-color-on-surface-variant);
-      font-size: 0.9rem;
+      font-size: 0.95rem;
       font-weight: 600;
     }
 
     .toolbar {
       margin-top: 0.7rem;
       display: grid;
-      gap: 0.45rem;
+      gap: 0.55rem;
       grid-template-columns: 1fr minmax(148px, 220px);
     }
 
@@ -345,7 +364,7 @@ interface ParsedMacroInput {
     .items-list {
       margin-top: 0.7rem;
       display: grid;
-      gap: 0.5rem;
+      gap: 0.65rem;
     }
 
     .sub {
@@ -358,7 +377,7 @@ interface ParsedMacroInput {
     .ingredient-card,
     .meal-card {
       align-items: flex-start;
-      gap: 0.6rem;
+      gap: 0.75rem;
     }
 
     .actions {
@@ -369,7 +388,7 @@ interface ParsedMacroInput {
 
     .stack-form {
       display: grid;
-      gap: 0.55rem;
+      gap: 0.7rem;
       margin-top: 0.7rem;
     }
 
@@ -380,7 +399,7 @@ interface ParsedMacroInput {
 
     .meal-items {
       display: grid;
-      gap: 0.5rem;
+      gap: 0.65rem;
     }
 
     .cost-preview {
@@ -392,7 +411,7 @@ interface ParsedMacroInput {
     .meal-item {
       display: grid;
       grid-template-columns: 1fr 120px auto;
-      gap: 0.45rem;
+      gap: 0.55rem;
       align-items: start;
     }
 
@@ -416,11 +435,11 @@ interface ParsedMacroInput {
 
     .sheet-preview {
       border: 1px solid var(--m3-sys-color-outline-variant);
-      border-radius: 12px;
+      border-radius: 16px;
       background: var(--m3-sys-color-surface-container-high);
-      padding: 0.7rem 0.75rem;
+      padding: 0.85rem 0.95rem;
       display: grid;
-      gap: 0.3rem;
+      gap: 0.4rem;
     }
 
     .sheet-preview strong {
@@ -511,6 +530,12 @@ export class LibraryComponent implements OnInit {
 
   ngOnInit() {
     void this.loadData();
+  }
+
+  onTabChanged(value: string): void {
+    if (value === 'ingredients' || value === 'meals') {
+      this.activeTab.set(value);
+    }
   }
 
   async loadData(forceRefresh = false) {

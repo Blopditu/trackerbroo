@@ -6,7 +6,7 @@ import { CommonModule } from '@angular/common';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule],
   template: `
-    <div class="hero-wrap" aria-label="Proteinfortschritt">
+    <div class="hero-wrap" [class.goal-reached]="value() >= target()" aria-label="Proteinfortschritt">
       <svg viewBox="0 0 120 120" class="ring" role="img" aria-label="{{ value() }} von {{ target() }} Gramm">
         <circle class="track" cx="60" cy="60" r="50"></circle>
         <circle class="progress" cx="60" cy="60" r="50" [style.stroke]="accentColor()" [style.stroke-dashoffset]="dashOffset()"></circle>
@@ -26,6 +26,7 @@ import { CommonModule } from '@angular/common';
       width: 180px;
       height: 180px;
       margin: 0 auto;
+      transition: transform var(--motion-duration-medium) var(--motion-easing-standard);
     }
 
     .ring {
@@ -47,7 +48,9 @@ import { CommonModule } from '@angular/common';
     .progress {
       stroke-linecap: round;
       stroke-dasharray: 314.16;
-      transition: stroke-dashoffset 180ms ease;
+      transition:
+        stroke-dashoffset var(--motion-duration-medium) var(--motion-easing-decelerate),
+        stroke var(--motion-duration-short) var(--motion-easing-standard);
     }
 
     .center {
@@ -63,6 +66,7 @@ import { CommonModule } from '@angular/common';
       font-size: 42px;
       line-height: 1;
       font-weight: 700;
+      transition: transform var(--motion-duration-short) var(--motion-easing-standard);
     }
 
     .center span {
@@ -78,6 +82,14 @@ import { CommonModule } from '@angular/common';
       font-size: 13px;
       color: var(--m3-sys-color-on-surface-variant);
       font-weight: 600;
+    }
+
+    .hero-wrap.goal-reached {
+      transform: scale(1.015);
+    }
+
+    .hero-wrap.goal-reached .center strong {
+      transform: translateY(-1px);
     }
   `]
 })

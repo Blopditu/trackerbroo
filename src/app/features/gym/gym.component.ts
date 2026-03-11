@@ -104,11 +104,11 @@ interface ExerciseProgressRow {
   template: `
     <main class="page gym-page">
       @if (errorMessage()) {
-        <p class="toast error" aria-live="polite">{{ errorMessage() }}</p>
+        <p class="toast error" role="status" aria-live="polite" aria-atomic="true">{{ errorMessage() }}</p>
       }
 
       @if (successMessage()) {
-        <p class="toast success" aria-live="polite">{{ successMessage() }}</p>
+        <p class="toast success" role="status" aria-live="polite" aria-atomic="true">{{ successMessage() }}</p>
       }
 
       <header class="panel hero">
@@ -164,6 +164,7 @@ interface ExerciseProgressRow {
                     type="button"
                     role="tab"
                     [attr.aria-selected]="selectedDate() === day.iso"
+                    [attr.tabindex]="selectedDate() === day.iso ? 0 : -1"
                     [class.day-pill]="true"
                     [class.active]="selectedDate() === day.iso"
                     [class.today]="day.isToday"
@@ -288,6 +289,7 @@ interface ExerciseProgressRow {
                   type="button"
                   role="tab"
                   [attr.aria-selected]="activeExerciseIndex() === $index"
+                  [attr.tabindex]="activeExerciseIndex() === $index ? 0 : -1"
                   [class.active]="activeExerciseIndex() === $index"
                   (click)="setActiveExercise($index)"
                 >
@@ -726,18 +728,23 @@ interface ExerciseProgressRow {
   styles: [`
     .hero h1 {
       margin: 0;
-      font-size: 22px;
+      font-size: clamp(1.95rem, 4vw, 2.4rem);
+      line-height: 1.04;
     }
 
     .hero-controls {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 8px;
+      gap: 10px;
     }
 
     .gym-tabs {
       flex: 1;
+    }
+
+    .gym-tabs .mat-button-toggle {
+      min-height: var(--touch-target);
     }
 
     .gym-tabs .mat-button-toggle-label-content {
@@ -749,7 +756,7 @@ interface ExerciseProgressRow {
     .quick-start-strip {
       grid-template-columns: 1fr auto;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
     }
 
     .quick-start-copy {
@@ -776,18 +783,19 @@ interface ExerciseProgressRow {
 
     .workout-days {
       display: grid;
-      gap: 8px;
+      gap: 10px;
     }
 
     .workout-day {
       border: 1px solid var(--m3-sys-color-outline-variant);
-      background: var(--m3-sys-color-surface);
+      border-radius: 20px;
+      background: var(--m3-sys-color-surface-container-high);
       color: var(--m3-sys-color-on-surface);
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 10px;
-      padding: 10px;
+      gap: 12px;
+      padding: 12px;
       text-align: left;
       width: 100%;
     }
@@ -817,8 +825,8 @@ interface ExerciseProgressRow {
       height: 40px;
       object-fit: cover;
       border: 1px solid var(--m3-sys-color-outline-variant);
-      border-radius: 8px;
-      background: var(--m3-sys-color-surface);
+      border-radius: 12px;
+      background: var(--m3-sys-color-surface-container);
     }
 
     .thumb-fallback,
@@ -826,7 +834,7 @@ interface ExerciseProgressRow {
       width: 40px;
       height: 40px;
       border: 1px solid var(--m3-sys-color-outline-variant);
-      border-radius: 8px;
+      border-radius: 12px;
       background: var(--m3-sys-color-surface-container-high);
       display: inline-block;
       box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--m3-sys-color-primary) 24%, transparent);
@@ -848,7 +856,7 @@ interface ExerciseProgressRow {
     .quick-actions {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 8px;
+      gap: 10px;
     }
 
     .overview-head {
@@ -860,15 +868,16 @@ interface ExerciseProgressRow {
 
     .body-diagram {
       border: 1px solid var(--m3-sys-color-outline-variant);
-      background: var(--m3-sys-color-surface);
-      padding: 10px;
+      border-radius: 20px;
+      background: var(--m3-sys-color-surface-container-high);
+      padding: 12px;
       display: grid;
       place-items: center;
     }
 
     .exercise-list {
       display: grid;
-      gap: 8px;
+      gap: 10px;
     }
 
     .exercise-row {
@@ -877,15 +886,16 @@ interface ExerciseProgressRow {
       gap: 10px;
       align-items: center;
       border: 1px solid var(--m3-sys-color-outline-variant);
-      background: var(--m3-sys-color-surface);
-      padding: 10px;
+      border-radius: 20px;
+      background: var(--m3-sys-color-surface-container-high);
+      padding: 12px;
     }
 
     .exercise-row img,
     .exercise-row .exercise-thumb-fallback {
       width: 48px;
       height: 48px;
-      border-radius: 8px;
+      border-radius: 12px;
     }
 
     .execution-head {
@@ -898,24 +908,25 @@ interface ExerciseProgressRow {
     .execution-actions {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 8px;
+      gap: 10px;
     }
 
     .exercise-tabs {
       display: flex;
-      gap: 6px;
+      gap: 8px;
       overflow-x: auto;
       padding-bottom: 4px;
     }
 
     .exercise-tabs button {
-      min-height: 36px;
+      min-height: var(--touch-target-compact);
       border: 1px solid var(--m3-sys-color-outline-variant);
-      background: var(--m3-sys-color-surface);
+      border-radius: 999px;
+      background: var(--m3-sys-color-surface-container-high);
       color: var(--m3-sys-color-on-surface-variant);
       font-size: 12px;
-      font-weight: 700;
-      padding: 0 10px;
+      font-weight: 600;
+      padding: 0 14px;
       white-space: nowrap;
     }
 
@@ -927,10 +938,11 @@ interface ExerciseProgressRow {
 
     .exercise-detail {
       display: grid;
-      gap: 10px;
+      gap: 12px;
       border: 1px solid var(--m3-sys-color-outline-variant);
-      background: var(--m3-sys-color-surface);
-      padding: 10px;
+      border-radius: 24px;
+      background: var(--m3-sys-color-surface-container-high);
+      padding: 14px;
     }
 
     .exercise-detail h3 {
@@ -948,12 +960,13 @@ interface ExerciseProgressRow {
     .media-carousel img {
       width: 148px;
       height: 92px;
-      border-radius: 10px;
+      border-radius: 14px;
     }
 
     .recommended-row {
-      min-height: 42px;
+      min-height: var(--touch-target-compact);
       border: 1px solid var(--success-500);
+      border-radius: 16px;
       background: color-mix(in srgb, var(--success-500) 20%, var(--m3-sys-color-surface-container-low));
       color: var(--m3-sys-color-on-surface);
       font-weight: 700;
@@ -963,10 +976,11 @@ interface ExerciseProgressRow {
 
     .set-table {
       border: 1px solid var(--m3-sys-color-outline-variant);
+      border-radius: 20px;
       display: grid;
-      gap: 6px;
-      padding: 8px;
-      background: var(--m3-sys-color-surface-container-low);
+      gap: 8px;
+      padding: 12px;
+      background: var(--m3-sys-color-surface-container);
     }
 
     .table-head,
@@ -984,17 +998,19 @@ interface ExerciseProgressRow {
     }
 
     .table-row input {
-      min-height: 36px;
+      min-height: var(--touch-target-compact);
       border: 1px solid var(--m3-sys-color-outline-variant);
-      background: var(--m3-sys-color-surface);
+      border-radius: 14px;
+      background: var(--m3-sys-color-surface-container-highest);
       color: var(--m3-sys-color-on-surface);
-      padding: 0 8px;
+      padding: 0 10px;
     }
 
     .check-btn {
-      min-height: 36px;
+      min-height: var(--touch-target-compact);
       border: 1px solid var(--m3-sys-color-outline-variant);
-      background: var(--m3-sys-color-surface);
+      border-radius: 14px;
+      background: var(--m3-sys-color-surface-container-highest);
       color: var(--m3-sys-color-on-surface-variant);
       display: grid;
       place-items: center;
@@ -1008,9 +1024,9 @@ interface ExerciseProgressRow {
 
     .previous-block {
       border-top: 1px solid var(--m3-sys-color-outline-variant);
-      padding-top: 8px;
+      padding-top: 10px;
       display: grid;
-      gap: 4px;
+      gap: 6px;
     }
 
     .previous-row {
@@ -1035,8 +1051,9 @@ interface ExerciseProgressRow {
 
     .graph-card {
       border: 1px solid var(--m3-sys-color-outline-variant);
-      background: var(--m3-sys-color-surface);
-      padding: 10px;
+      border-radius: 20px;
+      background: var(--m3-sys-color-surface-container-high);
+      padding: 12px;
       display: grid;
       gap: 8px;
       cursor: pointer;
@@ -1051,7 +1068,8 @@ interface ExerciseProgressRow {
       width: 100%;
       height: 62px;
       border: 1px solid var(--m3-sys-color-outline-variant);
-      background: var(--m3-sys-color-surface-container-low);
+      border-radius: 16px;
+      background: var(--m3-sys-color-surface-container);
     }
 
     .graph.detail {
@@ -1076,7 +1094,7 @@ interface ExerciseProgressRow {
     }
 
     .filter-card {
-      gap: 6px;
+      gap: 10px;
     }
 
     .filter-head {
@@ -1093,7 +1111,7 @@ interface ExerciseProgressRow {
 
     .sheet-scroll-list {
       display: grid;
-      gap: 8px;
+      gap: 10px;
       max-height: 46vh;
       overflow-y: auto;
     }
@@ -1106,7 +1124,7 @@ interface ExerciseProgressRow {
     .grid-two {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 8px;
+      gap: 10px;
     }
 
     @media (max-width: 420px) {
