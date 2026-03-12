@@ -113,14 +113,15 @@ export class AuthService {
   }
 
   private getAuthCallbackUrl(): string {
-    const baseUrl =
-      typeof document !== 'undefined'
-        ? document.baseURI
-        : typeof window !== 'undefined'
-          ? `${window.location.origin}/`
-          : 'http://localhost:4200/';
+    if (typeof window === 'undefined' || typeof document === 'undefined') {
+      return 'http://localhost:4200/auth/callback';
+    }
 
-    return new URL('auth/callback', baseUrl).toString();
+    const baseHref = document.querySelector('base')?.getAttribute('href') || '/';
+    const normalizedBaseHref = baseHref.startsWith('/') ? baseHref : `/${baseHref}`;
+    const appBaseUrl = new URL(normalizedBaseHref, window.location.origin);
+
+    return new URL('auth/callback', appBaseUrl).toString();
   }
 
   private readOnboardingFlag(userId: string): boolean | null {
