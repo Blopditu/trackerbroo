@@ -36,6 +36,9 @@ jobs:
           REPO_NAME="${GITHUB_REPOSITORY#*/}"
           npm run build -- --configuration production --base-href "/${REPO_NAME}/"
 
+      - name: Accessibility gate (AXE)
+        run: npm run a11y:check
+
       - name: Prepare Pages artifact
         run: |
           cp dist/proteintracker/browser/index.csr.html dist/proteintracker/browser/index.html

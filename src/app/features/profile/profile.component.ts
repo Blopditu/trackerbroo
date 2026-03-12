@@ -11,6 +11,7 @@ import { SupabaseService } from '../../core/supabase.service';
 import { Profile, WeightLog } from '../../core/types';
 import { formatAppError } from '../../core/error-format';
 import { ThemeService } from '../../core/theme.service';
+import { InteractionTelemetryService } from '../../core/interaction-telemetry.service';
 
 @Component({
   selector: 'app-profile',
@@ -49,15 +50,26 @@ import { ThemeService } from '../../core/theme.service';
         </div>
       </section>
 
+      <section class="panel profile-section-panel">
+        <div class="profile-section-nav segmented" role="group" aria-label="Profilbereiche">
+          <button type="button" [class.active]="activeProfileSection() === 'account'" (click)="setProfileSection('account')">Account</button>
+          <button type="button" [class.active]="activeProfileSection() === 'goals'" (click)="setProfileSection('goals')">Ziele</button>
+          <button type="button" [class.active]="activeProfileSection() === 'weight'" (click)="setProfileSection('weight')">Gewicht</button>
+          <button type="button" [class.active]="activeProfileSection() === 'appearance'" (click)="setProfileSection('appearance')">Design</button>
+        </div>
+      </section>
+
       @if (loading()) {
         <section class="panel">
           <div class="skeleton card"></div>
           <div class="skeleton card"></div>
         </section>
       } @else {
+        @if (activeProfileSection() !== 'weight') {
         <section class="panel" aria-labelledby="profile-form-title">
-          <div id="profile-form-title" class="scroll-header">Profil-Details</div>
+          <div id="profile-form-title" class="scroll-header">{{ activeProfileSectionLabel() }}</div>
           <form class="stack-form" [formGroup]="profileForm" (ngSubmit)="saveProfile()">
+            @if (activeProfileSection() === 'account') {
             <label for="avatar">Profilfoto</label>
             <div class="file-row">
               <button mat-flat-button type="button" class="action-btn ghost" (click)="pickAvatar()">Foto auswählen</button>
@@ -74,7 +86,9 @@ import { ThemeService } from '../../core/theme.service';
               <mat-label>Kurzbeschreibung</mat-label>
               <textarea matInput id="bio" formControlName="bio" rows="3" placeholder="Optionale Notiz zu deinem Ziel"></textarea>
             </mat-form-field>
+            }
 
+            @if (activeProfileSection() === 'goals') {
             <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
               <mat-label>Gym Name</mat-label>
               <input matInput id="gym-name" type="text" formControlName="gym_name" placeholder="z.B. Mein Gym">
@@ -110,7 +124,9 @@ import { ThemeService } from '../../core/theme.service';
                 <mat-option value="high">Hoch</mat-option>
               </mat-select>
             </mat-form-field>
+            }
 
+            @if (activeProfileSection() === 'appearance') {
             <label for="theme-seed-text">Design-Farbe (Material 3)</label>
             <div class="theme-seed-row">
               <input
@@ -147,25 +163,49 @@ import { ThemeService } from '../../core/theme.service';
               }
             </div>
             <p class="subtle">Die App nutzt daraus ein dynamisches Material-3-Farbsystem.</p>
+            }
 
             <button mat-flat-button type="submit" class="action-btn" [disabled]="savingProfile() || profileForm.invalid">
               {{ savingProfile() ? 'Wird gespeichert...' : 'Profil speichern' }}
             </button>
           </form>
         </section>
+        }
       }
 
+      @if (activeProfileSection() === 'weight') {
       <section class="panel" aria-labelledby="weight-log-title">
         <div id="weight-log-title" class="m3-section-head">
           <div class="scroll-header">Tägliches Gewicht</div>
           <span class="mono-badge">Zuletzt {{ latestWeightLabel() }}</span>
         </div>
 
-        <div class="sparkline-wrap" aria-label="7-Tage-Trend">
+        <div class="trend-range" role="group" aria-label="Zeitraum für Gewichtstrend">
+          <button
+            mat-flat-button
+            type="button"
+            class="trend-range-btn"
+            [class.active]="weightTrendDays() === 7"
+            (click)="setWeightTrendDays(7)"
+          >
+            7 Tage
+          </button>
+          <button
+            mat-flat-button
+            type="button"
+            class="trend-range-btn"
+            [class.active]="weightTrendDays() === 30"
+            (click)="setWeightTrendDays(30)"
+          >
+            30 Tage
+          </button>
+        </div>
+
+        <div class="sparkline-wrap" [attr.aria-label]="weightTrendDays() + '-Tage-Trend'">
           <svg viewBox="0 0 100 28" preserveAspectRatio="none" class="sparkline">
             <polyline [attr.points]="sparklinePoints()" />
           </svg>
-          <div class="trend-note">7-Tage-Veränderung: {{ weeklyTrendLabel() }}</div>
+          <div class="trend-note">{{ weightTrendDays() }}-Tage-Veränderung: {{ weeklyTrendLabel() }}</div>
         </div>
 
         <form class="stack-form" [formGroup]="weightForm" (ngSubmit)="saveWeightLog()">
@@ -207,7 +247,9 @@ import { ThemeService } from '../../core/theme.service';
           }
         </div>
       </section>
+      }
 
+      @if (activeProfileSection() === 'account') {
       <section class="panel danger-zone" aria-labelledby="reset-onboarding-title">
         <div id="reset-onboarding-title" class="scroll-header">Onboarding zurücksetzen</div>
         <p class="subtle">
@@ -218,12 +260,21 @@ import { ThemeService } from '../../core/theme.service';
           Onboarding neu starten
         </button>
       </section>
+      }
     </main>
   `,
   styles: [`
     .profile-page {
       display: grid;
       gap: var(--layout-gap);
+    }
+
+    .profile-section-panel {
+      padding: 12px;
+    }
+
+    .profile-section-nav {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .profile-head {
@@ -335,6 +386,31 @@ import { ThemeService } from '../../core/theme.service';
       margin-bottom: 0.65rem;
     }
 
+    .trend-range {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.5rem;
+      margin-bottom: 0.65rem;
+    }
+
+    .trend-range-btn {
+      min-height: 36px;
+      border: 1px solid var(--border-strong);
+      border-radius: 999px;
+      background: var(--m3-sys-color-surface-container-high);
+      color: var(--ink-700);
+      font-size: var(--text-xs);
+      font-weight: 700;
+      justify-content: center;
+      width: 100%;
+    }
+
+    .trend-range-btn.active {
+      border-color: transparent;
+      background: var(--m3-sys-color-secondary-container);
+      color: var(--m3-sys-color-on-secondary-container);
+    }
+
     .sparkline {
       width: 100%;
       height: 48px;
@@ -431,14 +507,18 @@ export class ProfileComponent implements OnInit {
   private readonly formBuilder = inject(FormBuilder);
   private readonly router = inject(Router);
   private readonly themeService = inject(ThemeService);
+  private readonly telemetry = inject(InteractionTelemetryService);
 
   readonly savingProfile = signal(false);
   readonly savingWeight = signal(false);
   readonly loading = signal(false);
   readonly successMessage = signal<string | null>(null);
   readonly errorMessage = signal<string | null>(null);
+  readonly activeProfileSection = signal<'account' | 'goals' | 'weight' | 'appearance'>('account');
+  readonly activeWeightJourneyId = signal<string | null>(null);
   readonly profile = signal<Profile | null>(null);
   readonly weightLogs = signal<WeightLog[]>([]);
+  readonly weightTrendDays = signal<7 | 30>(7);
   readonly avatarPreview = signal<string | null>(null);
   readonly avatarFileName = signal<string | null>(null);
   readonly avatarInput = viewChild<ElementRef<HTMLInputElement>>('avatarInput');
@@ -484,8 +564,10 @@ export class ProfileComponent implements OnInit {
     return `${this.gymWeekSessions()}/${target}`;
   });
 
+  readonly trendWeightLogs = computed(() => this.weightLogs().slice(0, this.weightTrendDays()));
+
   readonly sparklinePoints = computed(() => {
-    const points = [...this.weightLogs()].slice(0, 7).reverse();
+    const points = [...this.trendWeightLogs()].reverse();
     if (points.length === 0) {
       return '0,24 100,24';
     }
@@ -505,23 +587,13 @@ export class ProfileComponent implements OnInit {
   });
 
   readonly weeklyTrendLabel = computed(() => {
-    const logs = this.weightLogs();
+    const logs = this.trendWeightLogs();
     if (logs.length < 2) {
       return '--';
     }
 
-    const lastSevenDays = logs.filter(log => {
-      const loggedAt = new Date(`${log.logged_on}T00:00:00`);
-      const diffDays = (Date.now() - loggedAt.getTime()) / (1000 * 60 * 60 * 24);
-      return diffDays <= 7;
-    });
-
-    if (lastSevenDays.length < 2) {
-      return '--';
-    }
-
-    const newest = Number(lastSevenDays[0].weight_kg);
-    const oldest = Number(lastSevenDays[lastSevenDays.length - 1].weight_kg);
+    const newest = Number(logs[0].weight_kg);
+    const oldest = Number(logs[logs.length - 1].weight_kg);
     const delta = Number((newest - oldest).toFixed(1));
 
     if (delta > 0) {
@@ -533,6 +605,28 @@ export class ProfileComponent implements OnInit {
 
   ngOnInit(): void {
     void this.loadAll();
+  }
+
+  setProfileSection(section: 'account' | 'goals' | 'weight' | 'appearance'): void {
+    if (this.activeProfileSection() === 'weight' && section !== 'weight') {
+      this.cancelWeightJourney('section_switch');
+    }
+    if (section === 'weight') {
+      this.startWeightJourney('profile_section');
+    }
+    this.activeProfileSection.set(section);
+  }
+
+  activeProfileSectionLabel(): string {
+    const section = this.activeProfileSection();
+    if (section === 'account') return 'Account';
+    if (section === 'goals') return 'Ziele';
+    if (section === 'appearance') return 'Design';
+    return 'Profil-Details';
+  }
+
+  setWeightTrendDays(days: 7 | 30): void {
+    this.weightTrendDays.set(days);
   }
 
   async loadAll(): Promise<void> {
@@ -797,8 +891,10 @@ export class ProfileComponent implements OnInit {
         );
 
       this.successMessage.set('Gewichtseintrag gespeichert.');
+      this.completeWeightJourney('profile_save');
       await this.loadAll();
     } catch (error) {
+      this.failWeightJourney('profile_save_failed');
       this.errorMessage.set(formatAppError(error, 'Gewichtseintrag konnte nicht gespeichert werden'));
     } finally {
       this.savingWeight.set(false);
@@ -898,6 +994,54 @@ export class ProfileComponent implements OnInit {
       .getPublicUrl(filePath);
 
     return data.publicUrl;
+  }
+
+  private startWeightJourney(source: string): void {
+    if (this.activeWeightJourneyId()) {
+      return;
+    }
+    this.activeWeightJourneyId.set(
+      this.telemetry.startJourney('weight_log', {
+        source,
+        surface: 'profile'
+      })
+    );
+  }
+
+  private completeWeightJourney(action: string): void {
+    const journeyId = this.activeWeightJourneyId();
+    if (!journeyId) {
+      return;
+    }
+    this.telemetry.completeJourney(journeyId, 'success', {
+      action,
+      surface: 'profile'
+    });
+    this.activeWeightJourneyId.set(null);
+  }
+
+  private cancelWeightJourney(reason: string): void {
+    const journeyId = this.activeWeightJourneyId();
+    if (!journeyId) {
+      return;
+    }
+    this.telemetry.cancelJourney(journeyId, {
+      reason,
+      surface: 'profile'
+    });
+    this.activeWeightJourneyId.set(null);
+  }
+
+  private failWeightJourney(reason: string): void {
+    const journeyId = this.activeWeightJourneyId();
+    if (!journeyId) {
+      return;
+    }
+    this.telemetry.failJourney(journeyId, {
+      reason,
+      surface: 'profile'
+    });
+    this.activeWeightJourneyId.set(null);
   }
 
   private formatDate(date: Date): string {

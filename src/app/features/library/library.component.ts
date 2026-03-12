@@ -39,6 +39,10 @@ interface ParsedMacroInput {
         <p class="toast error" role="status" aria-live="polite" aria-atomic="true">{{ errorMessage() }}</p>
       }
 
+      @if (successMessage()) {
+        <p class="toast success" role="status" aria-live="polite" aria-atomic="true">{{ successMessage() }}</p>
+      }
+
       <header class="panel halftone">
         <p class="title-font">Bibliothek</p>
         <h1>Zutaten & Mahlzeiten</h1>
@@ -106,6 +110,7 @@ interface ParsedMacroInput {
                     }
                   </div>
                   <div class="actions">
+                    <button mat-flat-button type="button" class="action-btn tonal compact" (click)="logIngredientToday(item)">Loggen</button>
                     <button mat-flat-button type="button" class="action-btn ghost compact" (click)="openIngredientActions(item)">Mehr</button>
                   </div>
                 </article>
@@ -130,6 +135,7 @@ interface ParsedMacroInput {
                     <div class="sub">Geschätzte Kosten: {{ getMealCostLabel(item.id) }}</div>
                   </div>
                   <div class="actions">
+                    <button mat-flat-button type="button" class="action-btn tonal compact" (click)="logMealToday(item)">Loggen</button>
                     <button mat-flat-button type="button" class="action-btn ghost compact" (click)="openMealActions(item)">Mehr</button>
                   </div>
                 </article>
@@ -161,6 +167,7 @@ interface ParsedMacroInput {
         </article>
       }
       <div class="action-sheet-list">
+        <button mat-flat-button type="button" class="action-btn" (click)="logSelectedItemToday()">Heute loggen</button>
         <button mat-flat-button type="button" class="action-btn tonal" (click)="editSelectedItem()">Bearbeiten</button>
         <button mat-flat-button type="button" class="action-btn danger" (click)="deleteSelectedItem()">Löschen</button>
       </div>
@@ -483,6 +490,7 @@ export class LibraryComponent implements OnInit {
   editingMeal = signal<Meal | null>(null);
   loading = signal(false);
   errorMessage = signal<string | null>(null);
+  successMessage = signal<string | null>(null);
   selectedIngredientForActions = signal<Ingredient | null>(null);
   selectedMealForActions = signal<Meal | null>(null);
   actionSheetOpen = signal(false);
@@ -497,6 +505,7 @@ export class LibraryComponent implements OnInit {
   mealForm = { name: '' };
   mealItems: { ingredient_id: string; grams: number }[] = [];
   mealCosts = signal<Record<string, number>>({});
+  mealMacros = signal<Record<string, { kcal: number; protein: number; carbs: number; fat: number }>>({});
   private readonly allMealItems = signal<MealItem[]>([]);
 
   private readonly supabaseService = inject(SupabaseService);
@@ -544,6 +553,7 @@ export class LibraryComponent implements OnInit {
 
     this.loading.set(true);
     this.errorMessage.set(null);
+    this.successMessage.set(null);
 
     try {
       const snapshot = await this.libraryDataService.loadLibrary(user.id, {
@@ -555,6 +565,7 @@ export class LibraryComponent implements OnInit {
       this.meals.set(snapshot.meals);
       this.allMealItems.set(snapshot.mealItems);
       this.mealCosts.set(this.buildMealCosts(snapshot.meals, snapshot.mealItems, snapshot.ingredients));
+      this.mealMacros.set(snapshot.mealMacros);
     } catch (error: unknown) {
       this.errorMessage.set(formatAppError(error, 'Bibliothek konnte nicht geladen werden'));
     } finally {
@@ -1065,6 +1076,101 @@ export class LibraryComponent implements OnInit {
     }
   }
 
+  async logSelectedItemToday(): Promise<void> {
+    const ingredient = this.selectedIngredientForActions();
+    if (ingredient) {
+      await this.logIngredientToday(ingredient);
+      this.closeActionSheet();
+      return;
+    }
+
+    const meal = this.selectedMealForActions();
+    if (meal) {
+      await this.logMealToday(meal);
+      this.closeActionSheet();
+    }
+  }
+
+  async logIngredientToday(item: Ingredient): Promise<void> {
+    const user = this.authService.user();
+    if (!user) {
+      return;
+    }
+
+    const amount = 100;
+    const factor = amount / 100;
+    const success = await this.logTodayEntry({
+      owner_id: user.id,
+      group_id: null,
+      day: this.todayIso(),
+      entry_type: 'ingredient',
+      ref_id: item.id,
+      quantity: amount,
+      kcal: Number((Number(item.kcal_per_100) * factor).toFixed(2)),
+      protein: Number((Number(item.protein_per_100) * factor).toFixed(2)),
+      carbs: Number((Number(item.carbs_per_100) * factor).toFixed(2)),
+      fat: Number((Number(item.fat_per_100) * factor).toFixed(2)),
+      created_at: new Date().toISOString()
+    });
+
+    if (success) {
+      this.successMessage.set(`${item.name} für heute geloggt.`);
+    }
+  }
+
+  async logMealToday(item: Meal): Promise<void> {
+    const user = this.authService.user();
+    if (!user) {
+      return;
+    }
+
+    const macros = this.mealMacros()[item.id];
+    if (!macros) {
+      this.errorMessage.set('Mahlzeitenmakros konnten nicht geladen werden.');
+      return;
+    }
+
+    const success = await this.logTodayEntry({
+      owner_id: user.id,
+      group_id: null,
+      day: this.todayIso(),
+      entry_type: 'meal',
+      ref_id: item.id,
+      quantity: 1,
+      kcal: Number(macros.kcal.toFixed(2)),
+      protein: Number(macros.protein.toFixed(2)),
+      carbs: Number(macros.carbs.toFixed(2)),
+      fat: Number(macros.fat.toFixed(2)),
+      created_at: new Date().toISOString()
+    });
+
+    if (success) {
+      this.successMessage.set(`${item.name} für heute geloggt.`);
+    }
+  }
+
+  private async logTodayEntry(payload: {
+    owner_id: string;
+    group_id: string | null;
+    day: string;
+    entry_type: 'ingredient' | 'meal';
+    ref_id: string;
+    quantity: number;
+    kcal: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+    created_at: string;
+  }): Promise<boolean> {
+    const { error } = await this.supabaseService.client.from('log_entries').insert(payload);
+    if (error) {
+      this.errorMessage.set(formatAppError(error, 'Konnte nicht geloggt werden'));
+      return false;
+    }
+
+    return true;
+  }
+
   private buildMealCosts(meals: Meal[], mealItems: MealItem[], ingredients: Ingredient[]): Record<string, number> {
     const ingredientCostMap = new Map(
       ingredients.map(ingredient => [ingredient.id, Number(ingredient.cost_per_100 || 0)])
@@ -1085,5 +1191,9 @@ export class LibraryComponent implements OnInit {
     }
 
     return costs;
+  }
+
+  private todayIso(): string {
+    return new Date().toISOString().slice(0, 10);
   }
 }

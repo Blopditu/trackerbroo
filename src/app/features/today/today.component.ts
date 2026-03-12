@@ -1,12 +1,12 @@
-import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, OnInit, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, computed, inject, OnInit, signal, viewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import {
-  BookOpen,
   Calendar,
   ChevronLeft,
   ChevronRight,
@@ -17,7 +17,6 @@ import {
   ListChecks,
   LucideAngularModule,
   Plus,
-  Search,
   Star,
   Trash2,
   Utensils,
@@ -34,6 +33,7 @@ import { BottomSheetComponent } from '../../ui/minimal/bottom-sheet.component';
 import { formatAppError } from '../../core/error-format';
 import { LibraryDataService } from '../../core/library-data.service';
 import { QueryCacheService } from '../../core/query-cache.service';
+import { InteractionTelemetryService } from '../../core/interaction-telemetry.service';
 
 type QuickItem = Ingredient | Meal;
 
@@ -49,7 +49,7 @@ interface TodaySnapshot {
   proteinDaysThisWeek: string[];
 }
 
-type FoodFilter = 'all' | 'favorites' | 'recent';
+type FoodFilter = 'quick' | 'all' | 'favorites' | 'recent';
 type MealSlot = 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'other';
 
 interface FoodQueueItem {
@@ -71,6 +71,14 @@ interface FoodDayPreview {
   carbs: number;
   fat: number;
 }
+
+interface InstantLogState {
+  entryId: string;
+  name: string;
+  day: string;
+}
+
+type FoodStage = 'search' | 'queue' | 'confirm';
 
 @Component({
   selector: 'app-today',
@@ -145,18 +153,62 @@ interface FoodDayPreview {
           <strong>{{ weightValueLabel() }}</strong>
           <span class="delta">{{ weightDeltaLabel() }}</span>
         </div>
+
+        <div class="weight-quick" role="group" aria-label="Schnelles Gewichtloggen">
+          <button mat-flat-button type="button" class="day-chip compact-chip" (click)="adjustInlineWeight(-0.1)">-0.1</button>
+          <mat-form-field class="m3-field weight-quick-input" appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Heute (kg)</mat-label>
+            <input
+              matInput
+              type="number"
+              min="20"
+              step="0.1"
+              [ngModel]="inlineWeightInput()"
+              (ngModelChange)="onInlineWeightInput($event)"
+            >
+          </mat-form-field>
+          <button mat-flat-button type="button" class="day-chip compact-chip" (click)="adjustInlineWeight(0.1)">+0.1</button>
+          <button mat-flat-button type="button" class="entry-btn inline-save-btn" [disabled]="savingInlineWeight()" (click)="saveInlineWeight()">
+            {{ savingInlineWeight() ? '...' : 'Loggen' }}
+          </button>
+        </div>
       </section>
 
       <section class="panel section">
         <div class="m3-section-head">
           <h2><lucide-icon [img]="icons.chartLine" class="icon" aria-hidden="true"></lucide-icon> Gewichtstrend</h2>
-          <span class="m3-section-meta">{{ recentWeightEntries().length }} Einträge</span>
+          <span class="m3-section-meta">{{ trendWeightEntries().length }} Einträge</span>
+        </div>
+        <div
+          class="filter-toggle"
+          role="group"
+          aria-label="Zeitraum für Gewichtstrend"
+          style="grid-template-columns: repeat(2, minmax(0, 1fr));"
+        >
+          <button
+            mat-flat-button
+            type="button"
+            class="filter-btn"
+            [class.active]="weightTrendDays() === 7"
+            (click)="setWeightTrendDays(7)"
+          >
+            7 Tage
+          </button>
+          <button
+            mat-flat-button
+            type="button"
+            class="filter-btn"
+            [class.active]="weightTrendDays() === 30"
+            (click)="setWeightTrendDays(30)"
+          >
+            30 Tage
+          </button>
         </div>
         <div class="sparkline-wrap" aria-label="Gewichtstrend">
           <svg viewBox="0 0 100 28" preserveAspectRatio="none" class="sparkline">
             <polyline [attr.points]="weightSparklinePoints()" />
           </svg>
-          <div class="trend-note">7-Tage-Veränderung: {{ weeklyTrendLabel() }}</div>
+          <div class="trend-note">{{ weightTrendDays() }}-Tage-Veränderung: {{ weeklyTrendLabel() }}</div>
         </div>
 
         <div class="weight-list">
@@ -239,159 +291,227 @@ interface FoodDayPreview {
             </button>
           </div>
 
-          <div class="food-day-grid">
-            <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
-              <mat-label>Zieltag</mat-label>
-              <input matInput type="date" [ngModel]="foodTargetDay()" (ngModelChange)="onFoodTargetDayChange($event)">
+          <div class="stage-toggle" role="group" aria-label="Food Logging Schritte">
+            <button mat-flat-button type="button" class="stage-btn" [class.active]="foodStage() === 'search'" (click)="setFoodStage('search')">1. Suche</button>
+            <button mat-flat-button type="button" class="stage-btn" [class.active]="foodStage() === 'queue'" (click)="setFoodStage('queue')">2. Log-Liste</button>
+            <button mat-flat-button type="button" class="stage-btn" [class.active]="foodStage() === 'confirm'" (click)="setFoodStage('confirm')">3. Bestätigen</button>
+          </div>
+
+          @if (foodStage() === 'search') {
+            <mat-form-field class="m3-field food-search-field" appearance="outline" subscriptSizing="dynamic">
+              <mat-label>Lebensmittel suchen</mat-label>
+              <input
+                #foodSearchInput
+                matInput
+                type="search"
+                [ngModel]="foodSearch()"
+                (ngModelChange)="foodSearch.set($event)"
+                placeholder="Lebensmittel suchen"
+                aria-label="Lebensmittel suchen"
+              >
             </mat-form-field>
 
-            <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
-              <mat-label>Kopieren von</mat-label>
-              <input matInput type="date" [ngModel]="copySourceDay()" (ngModelChange)="onCopySourceDayChange($event)">
-            </mat-form-field>
-          </div>
+            @if (favoriteQuickItems().length > 0) {
+              <div class="favorite-row" role="group" aria-label="Favoriten">
+                @for (item of favoriteQuickItems(); track item.id) {
+                  <button mat-flat-button type="button" class="favorite-chip" (click)="addDefaultToQueue(item)">
+                    {{ item.name }}
+                  </button>
+                }
+              </div>
+            }
 
-          @if (isFoodTargetFuture()) {
-            <p class="muted">Du loggst für einen zukünftigen Tag: {{ foodTargetDay() }}.</p>
-          }
+            <div class="filter-toggle" role="group" aria-label="Food Filter">
+              <button
+                mat-flat-button
+                type="button"
+                class="filter-btn"
+                [class.active]="foodFilter() === 'quick'"
+                (click)="setFoodFilter('quick')"
+              >
+                Schnell
+              </button>
+              <button
+                mat-flat-button
+                type="button"
+                class="filter-btn"
+                [class.active]="foodFilter() === 'all'"
+                (click)="setFoodFilter('all')"
+              >
+                Alle
+              </button>
+              <button
+                mat-flat-button
+                type="button"
+                class="filter-btn"
+                [class.active]="foodFilter() === 'favorites'"
+                (click)="setFoodFilter('favorites')"
+              >
+                Favoriten
+              </button>
+              <button
+                mat-flat-button
+                type="button"
+                class="filter-btn"
+                [class.active]="foodFilter() === 'recent'"
+                (click)="setFoodFilter('recent')"
+              >
+                Zuletzt
+              </button>
+            </div>
 
-          @if (loadingFoodTargetPreview()) {
-            <p class="muted">Tagesstatus wird geladen...</p>
-          } @else if (foodTargetPreview()) {
-            <article class="food-day-preview">
-              <strong>{{ foodTargetPreview()!.day }}</strong>
-              <span>{{ foodTargetPreview()!.entryCount }} Einträge · {{ foodTargetPreview()!.kcal.toFixed(0) }} kcal</span>
-              <small>P {{ foodTargetPreview()!.protein.toFixed(0) }} · KH {{ foodTargetPreview()!.carbs.toFixed(0) }} · F {{ foodTargetPreview()!.fat.toFixed(0) }}</small>
-            </article>
-          }
+            <div class="food-list">
+              @for (item of quickFoodItems(); track item.id) {
+                <article class="food-row">
+                  <button mat-flat-button type="button" class="food-open-btn" (click)="openAmountPicker(item, 'queue')">
+                    <span class="food-name">{{ item.name }}</span>
+                    <small class="food-macros">{{ quickItemMacroLine(item) }}</small>
+                  </button>
+                  <div class="food-row-actions">
+                    <button
+                      mat-flat-button
+                      type="button"
+                      class="day-chip"
+                      style="width:auto; min-height:36px; padding-inline:12px;"
+                      (click)="quickLogFood(item)"
+                      aria-label="Sofort mit Standardmenge loggen"
+                    >
+                      Sofort
+                    </button>
+                    <button mat-icon-button type="button" class="round-icon-btn" (click)="toggleFavoriteFood(item.id)" [attr.aria-label]="isFavoriteFood(item.id) ? 'Favorit entfernen' : 'Als Favorit speichern'">
+                      <lucide-icon [img]="icons.star" [class.is-favorite]="isFavoriteFood(item.id)" aria-hidden="true"></lucide-icon>
+                    </button>
+                    <button mat-icon-button type="button" class="round-icon-btn primary" (click)="addDefaultToQueue(item)" aria-label="Zur Log-Liste hinzufügen">
+                      <lucide-icon [img]="icons.plus" aria-hidden="true"></lucide-icon>
+                    </button>
+                  </div>
+                </article>
+              }
+              @if (quickFoodItems().length === 0) {
+                <p class="muted">Keine Treffer für deinen Filter.</p>
+              }
+            </div>
 
-          <div class="day-quick-row">
-            <button mat-flat-button type="button" class="day-chip" (click)="setFoodTargetByOffset(-1)">-1 Tag</button>
-            <button mat-flat-button type="button" class="day-chip" (click)="setFoodTargetByOffset(1)">+1 Tag</button>
-            <button mat-flat-button type="button" class="day-chip" (click)="setFoodTargetByOffset(7)">+7 Tage</button>
-          </div>
-
-          <mat-form-field class="m3-field food-search-field" appearance="outline" subscriptSizing="dynamic">
-            <mat-label>Lebensmittel suchen</mat-label>
-            <input
-              #foodSearchInput
-              matInput
-              type="search"
-              [ngModel]="foodSearch()"
-              (ngModelChange)="foodSearch.set($event)"
-              placeholder="Lebensmittel suchen"
-              aria-label="Lebensmittel suchen"
-            >
-          </mat-form-field>
-
-          <div class="slot-row" role="group" aria-label="Mahlzeiten-Slot">
-            <button mat-flat-button type="button" class="slot-chip" [class.active]="selectedMealSlot() === 'breakfast'" (click)="setMealSlot('breakfast')">Frühstück</button>
-            <button mat-flat-button type="button" class="slot-chip" [class.active]="selectedMealSlot() === 'lunch'" (click)="setMealSlot('lunch')">Mittag</button>
-            <button mat-flat-button type="button" class="slot-chip" [class.active]="selectedMealSlot() === 'dinner'" (click)="setMealSlot('dinner')">Abend</button>
-            <button mat-flat-button type="button" class="slot-chip" [class.active]="selectedMealSlot() === 'snack'" (click)="setMealSlot('snack')">Snack</button>
-            <button mat-flat-button type="button" class="slot-chip" [class.active]="selectedMealSlot() === 'other'" (click)="setMealSlot('other')">Sonstiges</button>
-          </div>
-
-          <mat-form-field class="m3-field time-field" appearance="outline" subscriptSizing="dynamic">
-            <mat-label>Zeit</mat-label>
-            <input matInput type="time" [ngModel]="selectedMealTime()" (ngModelChange)="onMealTimeChange($event)">
-          </mat-form-field>
-
-          @if (favoriteQuickItems().length > 0) {
-            <div class="favorite-row" role="group" aria-label="Favoriten">
-              @for (item of favoriteQuickItems(); track item.id) {
-                <button mat-flat-button type="button" class="favorite-chip" (click)="addDefaultToQueue(item)">
-                  {{ item.name }}
+            @if (lastInstantLog()) {
+              <article class="food-day-preview">
+                <strong>{{ lastInstantLog()!.name }} geloggt für {{ lastInstantLog()!.day }}</strong>
+                <button
+                  mat-flat-button
+                  type="button"
+                  class="day-chip"
+                  style="width:auto; min-height:34px; justify-self:start; padding-inline:12px;"
+                  [disabled]="undoingInstantLog()"
+                  (click)="undoInstantLog()"
+                >
+                  {{ undoingInstantLog() ? '...' : 'Rückgängig' }}
                 </button>
+              </article>
+            }
+
+            @if (foodQueueCount() > 0) {
+              <button mat-flat-button type="button" class="menu-btn compact stage-next-btn" (click)="setFoodStage('queue')">
+                Zur Log-Liste ({{ foodQueueCount() }})
+              </button>
+            }
+          }
+
+          @if (foodStage() === 'queue' || foodStage() === 'confirm') {
+            <div class="slot-row" role="group" aria-label="Mahlzeiten-Slot">
+              <button mat-flat-button type="button" class="slot-chip" [class.active]="selectedMealSlot() === 'breakfast'" (click)="setMealSlot('breakfast')">Frühstück</button>
+              <button mat-flat-button type="button" class="slot-chip" [class.active]="selectedMealSlot() === 'lunch'" (click)="setMealSlot('lunch')">Mittag</button>
+              <button mat-flat-button type="button" class="slot-chip" [class.active]="selectedMealSlot() === 'dinner'" (click)="setMealSlot('dinner')">Abend</button>
+              <button mat-flat-button type="button" class="slot-chip" [class.active]="selectedMealSlot() === 'snack'" (click)="setMealSlot('snack')">Snack</button>
+              <button mat-flat-button type="button" class="slot-chip" [class.active]="selectedMealSlot() === 'other'" (click)="setMealSlot('other')">Sonstiges</button>
+            </div>
+
+            <mat-form-field class="m3-field time-field" appearance="outline" subscriptSizing="dynamic">
+              <mat-label>Zeit</mat-label>
+              <input matInput type="time" [ngModel]="selectedMealTime()" (ngModelChange)="onMealTimeChange($event)">
+            </mat-form-field>
+          }
+
+          @if (foodStage() === 'confirm') {
+            <div class="food-day-grid">
+              <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+                <mat-label>Zieltag</mat-label>
+                <input matInput type="date" [ngModel]="foodTargetDay()" (ngModelChange)="onFoodTargetDayChange($event)">
+              </mat-form-field>
+
+              <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+                <mat-label>Kopieren von</mat-label>
+                <input matInput type="date" [ngModel]="copySourceDay()" (ngModelChange)="onCopySourceDayChange($event)">
+              </mat-form-field>
+            </div>
+
+            @if (isFoodTargetFuture()) {
+              <p class="muted">Du loggst für einen zukünftigen Tag: {{ foodTargetDay() }}.</p>
+            }
+
+            @if (loadingFoodTargetPreview()) {
+              <p class="muted">Tagesstatus wird geladen...</p>
+            } @else if (foodTargetPreview()) {
+              <article class="food-day-preview">
+                <strong>{{ foodTargetPreview()!.day }}</strong>
+                <span>{{ foodTargetPreview()!.entryCount }} Einträge · {{ foodTargetPreview()!.kcal.toFixed(0) }} kcal</span>
+                <small>P {{ foodTargetPreview()!.protein.toFixed(0) }} · KH {{ foodTargetPreview()!.carbs.toFixed(0) }} · F {{ foodTargetPreview()!.fat.toFixed(0) }}</small>
+              </article>
+            }
+
+            <div class="day-quick-row">
+              <button mat-flat-button type="button" class="day-chip" (click)="setFoodTargetByOffset(-1)">-1 Tag</button>
+              <button mat-flat-button type="button" class="day-chip" (click)="setFoodTargetByOffset(1)">+1 Tag</button>
+              <button mat-flat-button type="button" class="day-chip" (click)="setFoodTargetByOffset(7)">+7 Tage</button>
+            </div>
+          }
+
+          @if (foodStage() !== 'search') {
+            <div class="queue-list">
+              @if (foodQueueCount() > 0) {
+                <p class="queue-head">Log-Liste ({{ foodQueueCount() }})</p>
+              }
+              @for (item of foodQueue(); track item.id) {
+                <article class="queue-item">
+                  <div class="queue-main">
+                    <strong>{{ item.name }}</strong>
+                    <small>{{ mealSlotLabel(item.mealSlot) }} · {{ item.mealTime }}</small>
+                    <small>P {{ item.totals.protein.toFixed(1) }} · KH {{ item.totals.carbs.toFixed(1) }} · F {{ item.totals.fat.toFixed(1) }} · {{ item.totals.kcal.toFixed(0) }} kcal</small>
+                  </div>
+                  <div class="queue-controls">
+                    <mat-form-field class="m3-field queue-amount-field" appearance="outline" subscriptSizing="dynamic">
+                      <mat-label>{{ queueUnitLabel(item) }}</mat-label>
+                      <input matInput type="number" min="0.1" step="0.1" [ngModel]="item.amount" (ngModelChange)="onQueueAmountChange(item.id, $event)">
+                    </mat-form-field>
+                    <button mat-icon-button type="button" class="round-icon-btn" (click)="removeFoodQueueItem(item.id)" aria-label="Aus Log-Liste entfernen">
+                      <lucide-icon [img]="icons.trash" aria-hidden="true"></lucide-icon>
+                    </button>
+                  </div>
+                </article>
+              }
+
+              @if (foodQueueCount() === 0) {
+                <p class="muted">Deine Log-Liste ist leer. Füge im Schritt "Suche" Lebensmittel hinzu.</p>
               }
             </div>
           }
 
-          <div class="filter-toggle" role="group" aria-label="Food Filter">
-            <button
-              mat-flat-button
-              type="button"
-              class="filter-btn"
-              [class.active]="foodFilter() === 'all'"
-              (click)="setFoodFilter('all')"
-            >
-              Alle
-            </button>
-            <button
-              mat-flat-button
-              type="button"
-              class="filter-btn"
-              [class.active]="foodFilter() === 'favorites'"
-              (click)="setFoodFilter('favorites')"
-            >
-              Favoriten
-            </button>
-            <button
-              mat-flat-button
-              type="button"
-              class="filter-btn"
-              [class.active]="foodFilter() === 'recent'"
-              (click)="setFoodFilter('recent')"
-            >
-              Zuletzt
-            </button>
-          </div>
-
-          <div class="food-list">
-            @for (item of quickFoodItems(); track item.id) {
-              <article class="food-row">
-                <button mat-flat-button type="button" class="food-open-btn" (click)="openAmountPicker(item, 'queue')">
-                  <span class="food-name">{{ item.name }}</span>
-                  <small class="food-macros">{{ quickItemMacroLine(item) }}</small>
-                </button>
-                <div class="food-row-actions">
-                  <button mat-icon-button type="button" class="round-icon-btn" (click)="toggleFavoriteFood(item.id)" [attr.aria-label]="isFavoriteFood(item.id) ? 'Favorit entfernen' : 'Als Favorit speichern'">
-                    <lucide-icon [img]="icons.star" [class.is-favorite]="isFavoriteFood(item.id)" aria-hidden="true"></lucide-icon>
-                  </button>
-                  <button mat-icon-button type="button" class="round-icon-btn primary" (click)="addDefaultToQueue(item)" aria-label="Zur Log-Liste hinzufügen">
-                    <lucide-icon [img]="icons.plus" aria-hidden="true"></lucide-icon>
-                  </button>
-                </div>
-              </article>
-            }
-            @if (quickFoodItems().length === 0) {
-              <p class="muted">Keine Treffer für deinen Filter.</p>
-            }
-          </div>
-
-          <div class="queue-list">
-            @if (foodQueueCount() > 0) {
-              <p class="queue-head">Log-Liste ({{ foodQueueCount() }})</p>
-            }
-            @for (item of foodQueue(); track item.id) {
-              <article class="queue-item">
-                <div class="queue-main">
-                  <strong>{{ item.name }}</strong>
-                  <small>{{ mealSlotLabel(item.mealSlot) }} · {{ item.mealTime }}</small>
-                  <small>P {{ item.totals.protein.toFixed(1) }} · KH {{ item.totals.carbs.toFixed(1) }} · F {{ item.totals.fat.toFixed(1) }} · {{ item.totals.kcal.toFixed(0) }} kcal</small>
-                </div>
-                <div class="queue-controls">
-                  <mat-form-field class="m3-field queue-amount-field" appearance="outline" subscriptSizing="dynamic">
-                    <mat-label>{{ queueUnitLabel(item) }}</mat-label>
-                    <input matInput type="number" min="0.1" step="0.1" [ngModel]="item.amount" (ngModelChange)="onQueueAmountChange(item.id, $event)">
-                  </mat-form-field>
-                  <button mat-icon-button type="button" class="round-icon-btn" (click)="removeFoodQueueItem(item.id)" aria-label="Aus Log-Liste entfernen">
-                    <lucide-icon [img]="icons.trash" aria-hidden="true"></lucide-icon>
-                  </button>
-                </div>
-              </article>
-            }
-          </div>
-
-          <div class="food-footer">
-            <div class="queue-total">
-              <small>P {{ queueTotals().protein.toFixed(0) }} · KH {{ queueTotals().carbs.toFixed(0) }} · F {{ queueTotals().fat.toFixed(0) }}</small>
-              <strong>{{ queueTotals().kcal.toFixed(0) }} kcal</strong>
+          @if (foodStage() === 'queue' && foodQueueCount() > 0) {
+            <div class="stage-footer-row">
+              <button mat-flat-button type="button" class="menu-btn compact stage-next-btn" (click)="setFoodStage('search')">Zur Suche</button>
+              <button mat-flat-button type="button" class="menu-btn compact stage-next-btn primary-stage" (click)="setFoodStage('confirm')">Weiter zu Bestätigen</button>
             </div>
-            <button mat-flat-button type="button" class="menu-btn apply-log-btn" [disabled]="foodQueueCount() === 0" (click)="applyFoodQueue()">
-              Foods loggen ({{ foodQueueCount() }})
-            </button>
-          </div>
+          }
+
+          @if (foodStage() === 'confirm') {
+            <div class="food-footer">
+              <div class="queue-total">
+                <small>P {{ queueTotals().protein.toFixed(0) }} · KH {{ queueTotals().carbs.toFixed(0) }} · F {{ queueTotals().fat.toFixed(0) }}</small>
+                <strong>{{ queueTotals().kcal.toFixed(0) }} kcal</strong>
+              </div>
+              <button mat-flat-button type="button" class="menu-btn apply-log-btn" [disabled]="foodQueueCount() === 0" (click)="applyFoodQueue()">
+                Log-Liste loggen ({{ foodQueueCount() }})
+              </button>
+            </div>
+          }
         </section>
       }
 
@@ -778,6 +898,7 @@ interface FoodDayPreview {
       padding: 10px 12px;
       display: grid;
       gap: 2px;
+      animation: sheet-item-enter var(--motion-duration-medium) var(--motion-easing-decelerate) both;
     }
 
     .food-day-preview strong {
@@ -816,7 +937,7 @@ interface FoodDayPreview {
 
     .filter-toggle {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 8px;
     }
 
@@ -841,7 +962,8 @@ interface FoodDayPreview {
     .food-list {
       display: grid;
       gap: 8px;
-      max-height: clamp(180px, 32vh, 320px);
+      max-height: clamp(160px, 34vh, 320px);
+      max-height: clamp(160px, 34dvh, 320px);
       overflow: auto;
       padding-right: 2px;
     }
@@ -855,6 +977,14 @@ interface FoodDayPreview {
       grid-template-columns: 1fr auto;
       gap: 8px;
       align-items: center;
+      animation: sheet-item-enter var(--motion-duration-medium) var(--motion-easing-decelerate) both;
+      transition:
+        transform var(--motion-duration-short) var(--motion-easing-standard),
+        border-color var(--motion-duration-short) var(--motion-easing-standard);
+    }
+
+    .food-row:active {
+      transform: translateY(1px);
     }
 
     .food-open-btn {
@@ -874,6 +1004,8 @@ interface FoodDayPreview {
     .food-row-actions {
       display: flex;
       align-items: center;
+      justify-content: flex-end;
+      flex-wrap: wrap;
       gap: 4px;
     }
 
@@ -1052,6 +1184,14 @@ interface FoodDayPreview {
       padding: 8px;
       display: grid;
       gap: 8px;
+      animation: sheet-item-enter var(--motion-duration-medium) var(--motion-easing-decelerate) both;
+      transition:
+        transform var(--motion-duration-short) var(--motion-easing-standard),
+        border-color var(--motion-duration-short) var(--motion-easing-standard);
+    }
+
+    .queue-item:active {
+      transform: translateY(1px);
     }
 
     .queue-main {
@@ -1137,6 +1277,17 @@ interface FoodDayPreview {
       margin-bottom: 2px;
     }
 
+    @keyframes sheet-item-enter {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
     @media (max-width: 440px) {
       .food-day-grid {
         grid-template-columns: 1fr;
@@ -1148,6 +1299,10 @@ interface FoodDayPreview {
 
       .quick-secondary-btn {
         min-width: 0;
+      }
+
+      .filter-toggle {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
       }
 
       .food-footer {
@@ -1177,8 +1332,6 @@ export class TodayComponent implements OnInit {
     plus: Plus,
     utensils: Utensils,
     dumbbell: Dumbbell,
-    search: Search,
-    library: BookOpen,
     copy: Copy,
     star: Star,
     trash: Trash2
@@ -1209,13 +1362,13 @@ export class TodayComponent implements OnInit {
   readonly gymPhotoName = signal<string | null>(null);
   readonly selectedEntryForActions = signal<LogEntry | null>(null);
   readonly gymPhotoInput = viewChild<ElementRef<HTMLInputElement>>('gymPhotoInput');
-  readonly foodSearchInput = viewChild<ElementRef<HTMLInputElement>>('foodSearchInput');
 
   readonly realToday = this.formatDate(new Date());
   readonly today = signal(this.realToday);
   readonly foodTargetDay = signal(this.realToday);
   readonly copySourceDay = signal(this.formatDate(new Date(Date.now() - 24 * 60 * 60 * 1000)));
-  readonly foodFilter = signal<FoodFilter>('all');
+  readonly foodFilter = signal<FoodFilter>('quick');
+  readonly foodStage = signal<FoodStage>('search');
   readonly selectedMealSlot = signal<MealSlot>('snack');
   readonly selectedMealTime = signal('12:00');
   readonly foodQueue = signal<FoodQueueItem[]>([]);
@@ -1223,6 +1376,13 @@ export class TodayComponent implements OnInit {
   readonly amountPickerMode = signal<'queue' | 'edit'>('queue');
   readonly foodTargetPreview = signal<FoodDayPreview | null>(null);
   readonly loadingFoodTargetPreview = signal(false);
+  readonly weightTrendDays = signal<7 | 30>(7);
+  readonly inlineWeightInput = signal(70);
+  readonly savingInlineWeight = signal(false);
+  readonly lastInstantLog = signal<InstantLogState | null>(null);
+  readonly undoingInstantLog = signal(false);
+  readonly activeFoodJourneyId = signal<string | null>(null);
+  readonly activeWeightJourneyId = signal<string | null>(null);
   weightDateInput = this.realToday;
   weightInput = 70;
   gymNote = '';
@@ -1235,7 +1395,10 @@ export class TodayComponent implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly libraryDataService = inject(LibraryDataService);
   private readonly queryCache = inject(QueryCacheService);
+  private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly telemetry = inject(InteractionTelemetryService);
 
   readonly todayLabel = computed(() =>
     this.parseIsoDate(this.today()).toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: '2-digit' })
@@ -1247,6 +1410,7 @@ export class TodayComponent implements OnInit {
 
   readonly todayEntries = computed(() => this.entries());
   readonly recentWeightEntries = computed(() => this.weightLogs().slice(0, 7));
+  readonly trendWeightEntries = computed(() => this.weightLogs().slice(0, this.weightTrendDays()));
 
   readonly selectedDayWeight = computed(() =>
     this.weightLogs().find(entry => entry.logged_on === this.today()) || null
@@ -1258,7 +1422,7 @@ export class TodayComponent implements OnInit {
   });
 
   readonly weightSparklinePoints = computed(() => {
-    const points = [...this.recentWeightEntries()].reverse();
+    const points = [...this.trendWeightEntries()].reverse();
     if (points.length === 0) {
       return '0,24 100,24';
     }
@@ -1290,10 +1454,14 @@ export class TodayComponent implements OnInit {
     const filter = this.foodFilter();
     const favorites = new Set(this.favoriteFoodIds());
     const recentIds = new Set(this.entries().map(entry => entry.ref_id));
+    const showQuickOnly = filter === 'quick' && (favorites.size > 0 || recentIds.size > 0);
 
     return this.allFoodItems()
       .filter(item => {
         if (query && !item.name.toLowerCase().includes(query)) {
+          return false;
+        }
+        if (showQuickOnly && !favorites.has(item.id) && !recentIds.has(item.id)) {
           return false;
         }
         if (filter === 'favorites' && !favorites.has(item.id)) {
@@ -1303,6 +1471,21 @@ export class TodayComponent implements OnInit {
           return false;
         }
         return true;
+      })
+      .sort((a, b) => {
+        const aFavorite = favorites.has(a.id) ? 1 : 0;
+        const bFavorite = favorites.has(b.id) ? 1 : 0;
+        if (aFavorite !== bFavorite) {
+          return bFavorite - aFavorite;
+        }
+
+        const aRecent = recentIds.has(a.id) ? 1 : 0;
+        const bRecent = recentIds.has(b.id) ? 1 : 0;
+        if (aRecent !== bRecent) {
+          return bRecent - aRecent;
+        }
+
+        return a.name.localeCompare(b.name, 'de-DE');
       })
       .slice(0, 24);
   });
@@ -1349,6 +1532,20 @@ export class TodayComponent implements OnInit {
     this.favoriteFoodIds.set(this.readFavoriteFoodIds());
     this.foodTargetDay.set(this.today());
     this.copySourceDay.set(this.shiftIsoDay(this.today(), -1));
+    this.route.queryParamMap
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(params => {
+        if (params.get('quick') !== 'food') {
+          return;
+        }
+        this.openActions();
+        void this.router.navigate([], {
+          relativeTo: this.route,
+          queryParams: { quick: null },
+          queryParamsHandling: 'merge',
+          replaceUrl: true
+        });
+      });
     void this.loadData();
   }
 
@@ -1391,6 +1588,7 @@ export class TodayComponent implements OnInit {
 
       const selectedWeight = this.weightLogs().find(entry => entry.logged_on === day);
       this.weightInput = Number(selectedWeight?.weight_kg || this.weightInput);
+      this.inlineWeightInput.set(Number(selectedWeight?.weight_kg || this.weightInput));
       this.weightDateInput = day;
 
       if (day === this.realToday && Number(dayResult.value.summary?.protein || 0) >= this.proteinGoal) {
@@ -1453,7 +1651,7 @@ export class TodayComponent implements OnInit {
   }
 
   weeklyTrendLabel(): string {
-    const logs = this.recentWeightEntries();
+    const logs = this.trendWeightEntries();
     if (logs.length < 2) {
       return '--';
     }
@@ -1482,6 +1680,13 @@ export class TodayComponent implements OnInit {
   }
 
   closeActions(): void {
+    const mode = this.sheetMode();
+    if (mode === 'food') {
+      this.cancelFoodJourney('sheet_closed');
+    } else if (mode === 'weight') {
+      this.cancelWeightJourney('sheet_closed');
+    }
+
     this.showActionSheet.set(false);
     this.sheetMode.set('menu');
     this.foodSearch.set('');
@@ -1496,8 +1701,18 @@ export class TodayComponent implements OnInit {
   }
 
   setSheetMode(mode: 'menu' | 'food' | 'weight' | 'gym' | 'entry'): void {
+    const currentMode = this.sheetMode();
+    if (currentMode === 'food' && mode !== 'food') {
+      this.cancelFoodJourney('mode_switch');
+    }
+    if (currentMode === 'weight' && mode !== 'weight') {
+      this.cancelWeightJourney('mode_switch');
+    }
+
     this.sheetMode.set(mode);
     if (mode === 'food') {
+      this.startFoodJourney('sheet_mode');
+      this.foodStage.set(this.foodQueueCount() > 0 ? 'queue' : 'search');
       if (this.foodQueueCount() === 0) {
         this.foodTargetDay.set(this.today());
         this.copySourceDay.set(this.shiftIsoDay(this.today(), -1));
@@ -1508,6 +1723,7 @@ export class TodayComponent implements OnInit {
       void this.loadFoodTargetPreview();
     }
     if (mode === 'weight') {
+      this.startWeightJourney('sheet_mode');
       this.weightDateInput = this.today();
       const selected = this.weightLogs().find(entry => entry.logged_on === this.today());
       if (selected) {
@@ -1544,17 +1760,34 @@ export class TodayComponent implements OnInit {
     return `${macros.kcal.toFixed(0)} kcal · P ${macros.protein.toFixed(1)} · KH ${macros.carbs.toFixed(1)} · F ${macros.fat.toFixed(1)} / ${unit}`;
   }
 
-  focusFoodSearch(): void {
-    this.foodSearchInput()?.nativeElement.focus();
-  }
-
-  openLibraryFromSheet(): void {
-    this.closeActions();
-    void this.router.navigate(['/library']);
-  }
-
   setFoodFilter(filter: FoodFilter): void {
     this.foodFilter.set(filter);
+  }
+
+  setFoodStage(stage: FoodStage): void {
+    if (stage !== 'search' && this.foodQueueCount() === 0) {
+      this.foodStage.set('search');
+      return;
+    }
+    this.foodStage.set(stage);
+  }
+
+  setWeightTrendDays(days: 7 | 30): void {
+    this.weightTrendDays.set(days);
+  }
+
+  onInlineWeightInput(value: string | number): void {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed)) {
+      return;
+    }
+    this.inlineWeightInput.set(Number(parsed.toFixed(1)));
+  }
+
+  adjustInlineWeight(delta: number): void {
+    const current = this.inlineWeightInput();
+    const next = Math.max(20, Number((current + delta).toFixed(1)));
+    this.inlineWeightInput.set(next);
   }
 
   setMealSlot(slot: MealSlot): void {
@@ -1600,10 +1833,95 @@ export class TodayComponent implements OnInit {
   addDefaultToQueue(item: QuickItem): void {
     const amount = this.isIngredient(item) ? 100 : 1;
     this.addToFoodQueue(item, amount, this.scaledMacros(item, amount), this.selectedMealSlot(), this.selectedMealTime());
+    this.foodStage.set('queue');
+  }
+
+  async quickLogFood(item: QuickItem): Promise<void> {
+    const user = this.authService.user();
+    if (!user) {
+      return;
+    }
+
+    const targetDay = this.foodTargetDay();
+    const amount = this.isIngredient(item) ? 100 : 1;
+    const totals = this.scaledMacros(item, amount);
+    const payload = {
+      owner_id: user.id,
+      group_id: null as string | null,
+      day: targetDay,
+      entry_type: this.isIngredient(item) ? 'ingredient' : 'meal',
+      ref_id: item.id,
+      quantity: Number(amount.toFixed(2)),
+      kcal: Number(totals.kcal.toFixed(2)),
+      protein: Number(totals.protein.toFixed(2)),
+      carbs: Number(totals.carbs.toFixed(2)),
+      fat: Number(totals.fat.toFixed(2)),
+      created_at: this.combineDayTimeToIso(targetDay, this.selectedMealTime())
+    };
+
+    const { data, error } = await this.supabaseService.client
+      .from('log_entries')
+      .insert(payload)
+      .select('id')
+      .single();
+
+    if (error) {
+      this.failFoodJourney('quick_log_error');
+      this.errorMessage.set(formatAppError(error, 'Sofort-Log fehlgeschlagen'));
+      return;
+    }
+
+    this.lastInstantLog.set({
+      entryId: String((data as { id: string }).id),
+      name: item.name,
+      day: targetDay
+    });
+    this.successMessage.set(`${item.name} sofort geloggt.`);
+    this.completeFoodJourney('quick_log');
+    this.invalidateDayCaches(user.id);
+    await this.loadFoodTargetPreview();
+    if (targetDay === this.today()) {
+      await this.loadData(true);
+    }
+  }
+
+  async undoInstantLog(): Promise<void> {
+    const user = this.authService.user();
+    const last = this.lastInstantLog();
+    if (!user || !last) {
+      return;
+    }
+
+    this.undoingInstantLog.set(true);
+    const { error } = await this.supabaseService.client
+      .from('log_entries')
+      .delete()
+      .eq('id', last.entryId)
+      .eq('owner_id', user.id);
+
+    this.undoingInstantLog.set(false);
+    if (error) {
+      this.errorMessage.set(formatAppError(error, 'Rückgängig fehlgeschlagen'));
+      return;
+    }
+
+    this.successMessage.set(`${last.name} wurde entfernt.`);
+    this.lastInstantLog.set(null);
+    this.invalidateDayCaches(user.id);
+    await this.loadFoodTargetPreview();
+    if (last.day === this.today()) {
+      await this.loadData(true);
+    }
   }
 
   removeFoodQueueItem(queueId: string): void {
-    this.foodQueue.update(current => current.filter(item => item.id !== queueId));
+    this.foodQueue.update(current => {
+      const next = current.filter(item => item.id !== queueId);
+      if (next.length === 0 && this.foodStage() !== 'search') {
+        this.foodStage.set('search');
+      }
+      return next;
+    });
   }
 
   onQueueAmountChange(queueId: string, value: string | number): void {
@@ -1678,12 +1996,15 @@ export class TodayComponent implements OnInit {
 
     const { error } = await this.supabaseService.client.from('log_entries').insert(payload);
     if (error) {
+      this.failFoodJourney('apply_queue_error');
       this.errorMessage.set(this.formatWriteError(error));
       return;
     }
 
     this.successMessage.set(`${queue.length} Einträge für ${targetDay} geloggt.`);
+    this.completeFoodJourney('apply_queue', { queue_count: queue.length });
     this.foodQueue.set([]);
+    this.foodStage.set('search');
     this.invalidateDayCaches(user.id);
     await this.loadFoodTargetPreview();
     if (targetDay === this.today()) {
@@ -1765,6 +2086,7 @@ export class TodayComponent implements OnInit {
       this.successMessage.set(`${item.name} zur Log-Liste hinzugefügt.`);
       this.closeAmountPicker();
       this.sheetMode.set('food');
+      this.foodStage.set('queue');
       this.showActionSheet.set(true);
       return;
     }
@@ -1791,11 +2113,17 @@ export class TodayComponent implements OnInit {
       : await this.supabaseService.client.from('log_entries').insert(payload);
 
     if (error) {
+      if (!editingId) {
+        this.failFoodJourney('confirm_add_error');
+      }
       this.errorMessage.set(this.formatWriteError(error));
       return;
     }
 
     this.successMessage.set('Eintrag aktualisiert.');
+    if (!editingId) {
+      this.completeFoodJourney('confirm_add');
+    }
     this.closeActions();
     this.closeAmountPicker();
     this.invalidateDayCaches(user.id);
@@ -1875,31 +2203,64 @@ export class TodayComponent implements OnInit {
       return;
     }
 
-    const { error } = await this.supabaseService.client
-      .from('weight_logs')
-      .upsert(
-        {
-          user_id: user.id,
-          logged_on: this.weightDateInput,
-          weight_kg: this.weightInput,
-          note: null
-        },
-        { onConflict: 'user_id,logged_on' }
-      );
-
-    if (error) {
-      this.errorMessage.set(formatAppError(error, 'Gewicht konnte nicht gespeichert werden'));
+    if (!(await this.upsertWeight(user.id, this.weightDateInput, this.weightInput))) {
       return;
     }
 
     this.successMessage.set('Gewicht gespeichert.');
+    this.completeWeightJourney('sheet_save');
     this.closeActions();
+    this.invalidateDayCaches(user.id);
+    await this.loadData(true);
+  }
+
+  async saveInlineWeight(): Promise<void> {
+    const user = this.authService.user();
+    const value = this.inlineWeightInput();
+    if (!user || value <= 0) {
+      this.errorMessage.set('Bitte gib ein gültiges Gewicht ein.');
+      return;
+    }
+
+    this.startWeightJourney('inline');
+    this.savingInlineWeight.set(true);
+    const saved = await this.upsertWeight(user.id, this.today(), value);
+    this.savingInlineWeight.set(false);
+    if (!saved) {
+      this.failWeightJourney('inline_save_error');
+      return;
+    }
+
+    this.successMessage.set('Gewicht für heute gespeichert.');
+    this.completeWeightJourney('inline_save');
     this.invalidateDayCaches(user.id);
     await this.loadData(true);
   }
 
   setWeightDateToToday(): void {
     this.weightDateInput = this.realToday;
+  }
+
+  private async upsertWeight(userId: string, day: string, weightKg: number): Promise<boolean> {
+    const { error } = await this.supabaseService.client
+      .from('weight_logs')
+      .upsert(
+        {
+          user_id: userId,
+          logged_on: day,
+          weight_kg: Number(weightKg.toFixed(1)),
+          note: null
+        },
+        { onConflict: 'user_id,logged_on' }
+      );
+
+    if (error) {
+      this.failWeightJourney('persist_error');
+      this.errorMessage.set(formatAppError(error, 'Gewicht konnte nicht gespeichert werden'));
+      return false;
+    }
+
+    return true;
   }
 
   onGymPhotoSelected(event: Event): void {
@@ -2380,6 +2741,89 @@ export class TodayComponent implements OnInit {
     this.editingEntryId.set(null);
     this.amountPickerMode.set('queue');
     this.selectedItemInitialAmount.set(100);
+  }
+
+  private startFoodJourney(source: string): void {
+    const current = this.activeFoodJourneyId();
+    if (current) {
+      return;
+    }
+    this.activeFoodJourneyId.set(
+      this.telemetry.startJourney('food_log', {
+        source,
+        selected_day: this.foodTargetDay()
+      })
+    );
+  }
+
+  private completeFoodJourney(action: string, context?: Record<string, unknown>): void {
+    const current = this.activeFoodJourneyId();
+    if (!current) {
+      return;
+    }
+    this.telemetry.completeJourney(current, 'success', {
+      action,
+      ...context
+    });
+    this.activeFoodJourneyId.set(null);
+  }
+
+  private cancelFoodJourney(reason: string): void {
+    const current = this.activeFoodJourneyId();
+    if (!current) {
+      return;
+    }
+    this.telemetry.cancelJourney(current, { reason });
+    this.activeFoodJourneyId.set(null);
+  }
+
+  private failFoodJourney(reason: string): void {
+    const current = this.activeFoodJourneyId();
+    if (!current) {
+      return;
+    }
+    this.telemetry.failJourney(current, { reason });
+    this.activeFoodJourneyId.set(null);
+  }
+
+  private startWeightJourney(source: string): void {
+    const current = this.activeWeightJourneyId();
+    if (current) {
+      return;
+    }
+    this.activeWeightJourneyId.set(
+      this.telemetry.startJourney('weight_log', {
+        source,
+        selected_day: this.today()
+      })
+    );
+  }
+
+  private completeWeightJourney(action: string): void {
+    const current = this.activeWeightJourneyId();
+    if (!current) {
+      return;
+    }
+    this.telemetry.completeJourney(current, 'success', { action });
+    this.activeWeightJourneyId.set(null);
+  }
+
+  private cancelWeightJourney(reason: string): void {
+    const current = this.activeWeightJourneyId();
+    if (!current) {
+      return;
+    }
+    this.telemetry.cancelJourney(current, { reason });
+    this.activeWeightJourneyId.set(null);
+  }
+
+  private failWeightJourney(reason: string): void {
+    const current = this.activeWeightJourneyId();
+    if (!current) {
+      return;
+    }
+    this.telemetry.failJourney(current, { reason });
+    this.activeWeightJourneyId.set(null);
   }
 
   private formatWriteError(error: unknown): string {

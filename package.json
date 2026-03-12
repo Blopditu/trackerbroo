@@ -5,6 +5,8 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
+    "a11y:check": "node scripts/a11y-check.mjs",
+    "ci:quality": "npm run build && npm run a11y:check",
     "import:wger": "node supabase/scripts/import_wger_exercises.mjs",
     "build:gh": "ng build --configuration production --base-href /proteintracker/",
     "watch": "ng build --watch --configuration development",
@@ -51,6 +53,7 @@
     "@angular/compiler-cli": "^21.2.0",
     "@types/express": "^5.0.1",
     "@types/node": "^20.17.19",
+    "axe-core": "^4.11.1",
     "jsdom": "^27.1.0",
     "typescript": "~5.9.2",
     "vitest": "^4.0.8"

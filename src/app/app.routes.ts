@@ -37,8 +37,13 @@ export const routes: Routes = [
   },
   {
     path: 'dashboard',
-    redirectTo: 'community',
+    redirectTo: 'insights',
     pathMatch: 'full'
+  },
+  {
+    path: 'insights',
+    loadComponent: () => import('./features/insights/insights.component').then(m => m.InsightsComponent),
+    canActivate: [AuthGuard]
   },
   {
     path: 'community',

@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { Dumbbell, House, Library, LucideAngularModule, User, Users } from 'lucide-angular';
+import { Dumbbell, House, Library, LucideAngularModule, Plus, User, Users } from 'lucide-angular';
 import { MatRippleModule } from '@angular/material/core';
 
 @Component({
@@ -25,6 +25,12 @@ import { MatRippleModule } from '@angular/material/core';
           <lucide-icon [img]="icons.dumbbell" class="nav-icon" aria-hidden="true"></lucide-icon>
         </span>
         <span class="label">Gym</span>
+      </a>
+      <a matRipple class="quick-link" routerLink="/today" [queryParams]="{ quick: 'food' }" aria-label="Schnelllog öffnen">
+        <span class="icon-wrap">
+          <lucide-icon [img]="icons.plus" class="nav-icon" aria-hidden="true"></lucide-icon>
+        </span>
+        <span class="label">Quick</span>
       </a>
       <a matRipple routerLink="/library" routerLinkActive="active">
         <span class="icon-wrap">
@@ -54,7 +60,7 @@ import { MatRippleModule } from '@angular/material/core';
     .bottom-nav {
       width: 100%;
       display: grid;
-      grid-template-columns: repeat(5, minmax(0, 1fr));
+      grid-template-columns: repeat(6, minmax(0, 1fr));
       gap: 0;
       padding: 0.35rem 0.5rem;
       background: var(--m3-sys-color-surface);
@@ -140,6 +146,30 @@ import { MatRippleModule } from '@angular/material/core';
       letter-spacing: 0.5px;
     }
 
+    .quick-link .icon-wrap {
+      width: 42px;
+      height: 42px;
+      background: var(--m3-sys-color-primary);
+      color: var(--m3-sys-color-on-primary);
+      box-shadow: var(--shadow-level-1);
+      transform: translateY(-4px);
+    }
+
+    .quick-link .label {
+      font-weight: 700;
+      color: var(--m3-sys-color-on-surface);
+    }
+
+    :host.rail-mode .quick-link .icon-wrap {
+      width: 56px;
+      height: 32px;
+      border-radius: 999px;
+      background: var(--m3-sys-color-secondary-container);
+      color: var(--m3-sys-color-on-secondary-container);
+      transform: none;
+      box-shadow: none;
+    }
+
     a.active .icon-wrap {
       background: var(--m3-sys-color-secondary-container);
       color: var(--m3-sys-color-on-secondary-container);
@@ -168,6 +198,7 @@ export class BottomNavComponent {
   readonly icons = {
     house: House,
     dumbbell: Dumbbell,
+    plus: Plus,
     library: Library,
     users: Users,
     user: User

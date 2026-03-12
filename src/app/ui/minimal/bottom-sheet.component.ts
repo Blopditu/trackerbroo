@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ElementRef, OnDestroy, effect, input, output, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, OnDestroy, computed, effect, input, output, signal, viewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { LucideAngularModule, X } from 'lucide-angular';
 import { MatButtonModule } from '@angular/material/button';
@@ -17,7 +17,10 @@ let sheetTitleIdCounter = 0;
       <div
         class="overlay"
         [class.active]="isActive()"
+        [class.dragging]="isDragging()"
         [style.--sheet-keyboard-inset.px]="keyboardInset()"
+        [style.--sheet-drag-y.px]="dragOffsetY()"
+        [style.--sheet-drag-progress]="dragProgress()"
         (click)="onBackdropClick()"
       >
         <section
@@ -29,7 +32,14 @@ let sheetTitleIdCounter = 0;
           tabindex="-1"
           (click)="$event.stopPropagation()"
         >
-          <div class="drag-handle" aria-hidden="true"></div>
+          <div
+            class="drag-handle"
+            aria-hidden="true"
+            (pointerdown)="onHandlePointerDown($event)"
+            (pointermove)="onHandlePointerMove($event)"
+            (pointerup)="onHandlePointerUp($event)"
+            (pointercancel)="onHandlePointerCancel($event)"
+          ></div>
           <div class="head">
             <h2 [id]="titleId">{{ title() }}</h2>
             <button mat-icon-button type="button" class="close" (click)="closed.emit()" aria-label="Schließen">
@@ -65,10 +75,11 @@ let sheetTitleIdCounter = 0;
       padding: 12px 16px calc(16px + env(safe-area-inset-bottom));
       max-height: min(86vh, calc(100vh - 12px - var(--sheet-keyboard-inset, 0px)));
       overflow: auto;
+      scroll-padding-bottom: calc(var(--sheet-keyboard-inset, 0px) + 96px);
       -webkit-overflow-scrolling: touch;
       overscroll-behavior: contain;
       box-shadow: 0 -12px 28px rgba(0, 0, 0, 0.35);
-      transform: translateY(28px) scale(0.985);
+      transform: translateY(calc(28px + var(--sheet-drag-y, 0px))) scale(0.985);
       opacity: 0;
       transition:
         transform var(--motion-duration-long) var(--motion-easing-decelerate),
@@ -76,13 +87,17 @@ let sheetTitleIdCounter = 0;
     }
 
     .overlay.active {
-      opacity: 1;
+      opacity: calc(1 - (var(--sheet-drag-progress, 0) * 0.35));
       pointer-events: auto;
     }
 
     .overlay.active .sheet {
-      transform: translateY(0) scale(1);
+      transform: translateY(var(--sheet-drag-y, 0px)) scale(1);
       opacity: 1;
+    }
+
+    .overlay.dragging .sheet {
+      transition: none;
     }
 
     .drag-handle {
@@ -91,6 +106,13 @@ let sheetTitleIdCounter = 0;
       border-radius: 99px;
       background: var(--m3-sys-color-outline-variant);
       margin: 0 auto 10px;
+      touch-action: none;
+      cursor: grab;
+      position: relative;
+    }
+
+    .overlay.dragging .drag-handle {
+      cursor: grabbing;
     }
 
     .head {
@@ -143,9 +165,14 @@ export class BottomSheetComponent implements OnDestroy {
   readonly rendered = signal(false);
   readonly isActive = signal(false);
   readonly keyboardInset = signal(0);
+  readonly dragOffsetY = signal(0);
+  readonly isDragging = signal(false);
+  readonly dragProgress = computed(() => Math.min(this.dragOffsetY() / 220, 1));
 
   private previousFocusedElement: HTMLElement | null = null;
   private closeTimer: ReturnType<typeof setTimeout> | null = null;
+  private dragPointerId: number | null = null;
+  private dragStartY = 0;
 
   constructor() {
     effect(() => {
@@ -199,6 +226,63 @@ export class BottomSheetComponent implements OnDestroy {
     if (event.key === 'Tab') {
       this.trapFocus(event);
     }
+  }
+
+  onHandlePointerDown(event: PointerEvent): void {
+    if (!this.open()) {
+      return;
+    }
+    if (event.pointerType === 'mouse' && event.button !== 0) {
+      return;
+    }
+
+    this.dragPointerId = event.pointerId;
+    this.dragStartY = event.clientY;
+    this.isDragging.set(true);
+    this.dragOffsetY.set(0);
+    (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+  }
+
+  onHandlePointerMove(event: PointerEvent): void {
+    if (!this.isDragging() || this.dragPointerId !== event.pointerId) {
+      return;
+    }
+
+    const offset = Math.max(0, event.clientY - this.dragStartY);
+    this.dragOffsetY.set(offset);
+    if (offset > 0) {
+      event.preventDefault();
+    }
+  }
+
+  onHandlePointerUp(event: PointerEvent): void {
+    if (!this.isDragging() || this.dragPointerId !== event.pointerId) {
+      return;
+    }
+
+    const target = event.currentTarget as HTMLElement;
+    if (target.hasPointerCapture(event.pointerId)) {
+      target.releasePointerCapture(event.pointerId);
+    }
+
+    const shouldClose = this.dragOffsetY() > 110;
+    this.resetDragState();
+    if (shouldClose) {
+      this.closed.emit();
+    }
+  }
+
+  onHandlePointerCancel(event: PointerEvent): void {
+    if (!this.isDragging() || this.dragPointerId !== event.pointerId) {
+      return;
+    }
+
+    const target = event.currentTarget as HTMLElement;
+    if (target.hasPointerCapture(event.pointerId)) {
+      target.releasePointerCapture(event.pointerId);
+    }
+
+    this.resetDragState();
   }
 
   private focusFirstElement(): void {
@@ -285,6 +369,7 @@ export class BottomSheetComponent implements OnDestroy {
 
     this.rendered.set(true);
     this.updateKeyboardInset();
+    this.resetDragState();
 
     if (typeof window !== 'undefined') {
       requestAnimationFrame(() => {
@@ -305,6 +390,7 @@ export class BottomSheetComponent implements OnDestroy {
 
     this.isActive.set(false);
     this.keyboardInset.set(0);
+    this.resetDragState();
     this.restorePreviousFocus();
 
     if (this.closeTimer) {
@@ -344,6 +430,20 @@ export class BottomSheetComponent implements OnDestroy {
       || (activeElement instanceof HTMLElement && activeElement.isContentEditable);
 
     const rawInset = Math.max(0, window.innerHeight - (viewport.height + viewport.offsetTop));
-    this.keyboardInset.set(activeIsInput && rawInset > 80 ? Math.round(rawInset) : 0);
+    const resolvedInset = activeIsInput && rawInset > 80 ? Math.round(rawInset) : 0;
+    this.keyboardInset.set(resolvedInset);
+
+    if (activeIsInput && resolvedInset > 0 && activeElement instanceof HTMLElement) {
+      requestAnimationFrame(() => {
+        activeElement.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      });
+    }
+  }
+
+  private resetDragState(): void {
+    this.dragPointerId = null;
+    this.dragStartY = 0;
+    this.isDragging.set(false);
+    this.dragOffsetY.set(0);
   }
 }

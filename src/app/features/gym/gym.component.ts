@@ -66,6 +66,7 @@ import {
 import { formatAppError } from '../../core/error-format';
 import { AuthService } from '../../core/auth.service';
 import { SupabaseService } from '../../core/supabase.service';
+import { InteractionTelemetryService } from '../../core/interaction-telemetry.service';
 
 interface BuilderDayDraft {
   name: string;
@@ -83,6 +84,8 @@ interface ExerciseProgressRow {
   tenRm: string;
   volume: string;
 }
+
+type DetailSource = 'widget' | 'progress-10rm' | 'progress-volume';
 
 @Component({
   selector: 'app-gym',
@@ -223,9 +226,9 @@ interface ExerciseProgressRow {
             }
 
             <div class="quick-actions">
-              <button mat-flat-button type="button" class="action-btn ghost" (click)="openSheet('plans')">Alle Plaene</button>
-              <button mat-flat-button type="button" class="action-btn ghost" (click)="openSheet('exercises')">Uebungen</button>
-              <button mat-flat-button type="button" class="action-btn ghost" (click)="openSheet('help')">Hilfe</button>
+              <button mat-flat-button type="button" class="action-btn ghost" (click)="openSessionHub('plans')">Alle Plaene</button>
+              <button mat-flat-button type="button" class="action-btn ghost" (click)="openSessionHub('exercises')">Uebungen</button>
+              <button mat-flat-button type="button" class="action-btn ghost" (click)="openSessionHub('help')">Hilfe</button>
             </div>
           </section>
 
@@ -410,6 +413,26 @@ interface ExerciseProgressRow {
         <section class="panel">
           <div class="progress-head">
             <h2>Übungs-Progress</h2>
+            <div class="progress-range" role="group" aria-label="Zeitraum für Progress">
+              <button
+                mat-flat-button
+                type="button"
+                class="progress-range-btn"
+                [class.active]="progressRangeDays() === 7"
+                (click)="setProgressRangeDays(7)"
+              >
+                7 Tage
+              </button>
+              <button
+                mat-flat-button
+                type="button"
+                class="progress-range-btn"
+                [class.active]="progressRangeDays() === 30"
+                (click)="setProgressRangeDays(30)"
+              >
+                30 Tage
+              </button>
+            </div>
           </div>
 
           <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
@@ -441,10 +464,10 @@ interface ExerciseProgressRow {
             </article>
           </div>
 
-          <article class="graph-card">
+          <button type="button" class="graph-card" (click)="openProgressDetail('10rm')" aria-label="10RM Verlauf im Detail öffnen">
             <div class="graph-head">
               <strong>10RM Verlauf</strong>
-              <span class="muted">Arbeitssets, pro Session</span>
+              <span class="muted">Arbeitssets, pro Session • {{ progressRangeLabel() }}</span>
             </div>
             @if (tenRmSeries().length > 0) {
               <svg class="graph" viewBox="0 0 100 34" preserveAspectRatio="none" aria-label="10RM Verlauf">
@@ -453,12 +476,12 @@ interface ExerciseProgressRow {
             } @else {
               <p class="muted">Noch keine 10RM-Daten für diese Übung.</p>
             }
-          </article>
+          </button>
 
-          <article class="graph-card">
+          <button type="button" class="graph-card" (click)="openProgressDetail('volume')" aria-label="Volumen Verlauf im Detail öffnen">
             <div class="graph-head">
               <strong>Volumen pro Session</strong>
-              <span class="muted">Summe aus Gewicht × Wdh</span>
+              <span class="muted">Summe aus Gewicht × Wdh • {{ progressRangeLabel() }}</span>
             </div>
             @if (exerciseVolumeSeries().length > 0) {
               <svg class="graph" viewBox="0 0 100 34" preserveAspectRatio="none" aria-label="Volumen pro Session">
@@ -467,11 +490,11 @@ interface ExerciseProgressRow {
             } @else {
               <p class="muted">Noch keine Volumen-Daten für diese Übung.</p>
             }
-          </article>
+          </button>
 
           @if (progressSessionRows().length > 0) {
             <div class="previous-block">
-              <p class="muted">Letzte Sessions</p>
+              <p class="muted">Letzte Sessions ({{ progressRangeLabel() }})</p>
               @for (row of progressSessionRows(); track row.date) {
                 <p class="previous-row">{{ row.date }} • 10RM {{ row.tenRm }} • Volumen {{ row.volume }}</p>
               }
@@ -481,21 +504,104 @@ interface ExerciseProgressRow {
       }
     </main>
 
-    <app-bottom-sheet [open]="activeSheet() === 'plans'" title="Alle Plaene" (closed)="closeSheet()">
-      <div class="sheet-stack">
-        <button mat-flat-button type="button" class="action-btn" (click)="startPlanBuilder()">Neuen Plan erstellen</button>
-        @for (plan of plans(); track plan.id) {
-          <article class="list-card sheet-card">
-            <div>
-              <strong>{{ plan.name }}</strong>
-              <p class="muted">{{ plan.days_per_week }} Tage • {{ plan.duration_weeks }} Wochen</p>
-            </div>
-            <button mat-flat-button type="button" class="action-btn ghost" [disabled]="plan.is_active" (click)="activatePlan(plan.id)">
-              {{ plan.is_active ? 'Aktiv' : 'Aktivieren' }}
-            </button>
-          </article>
-        }
+    <app-bottom-sheet [open]="activeSheet() === 'hub'" [title]="sessionHubTitle()" (closed)="closeSheet()">
+      <div class="hub-tabs" role="group" aria-label="Session Hub Tabs">
+        <button mat-flat-button type="button" class="hub-tab-btn" [class.active]="sessionHubTab() === 'plans'" (click)="setSessionHubTab('plans')">Plaene</button>
+        <button mat-flat-button type="button" class="hub-tab-btn" [class.active]="sessionHubTab() === 'exercises'" (click)="setSessionHubTab('exercises')">Uebungen</button>
+        <button mat-flat-button type="button" class="hub-tab-btn" [class.active]="sessionHubTab() === 'help'" (click)="setSessionHubTab('help')">Hilfe</button>
       </div>
+
+      @if (sessionHubTab() === 'plans') {
+        <div class="sheet-stack">
+          <button mat-flat-button type="button" class="action-btn" (click)="startPlanBuilder()">Neuen Plan erstellen</button>
+          @for (plan of plans(); track plan.id) {
+            <article class="list-card sheet-card">
+              <div>
+                <strong>{{ plan.name }}</strong>
+                <p class="muted">{{ plan.days_per_week }} Tage • {{ plan.duration_weeks }} Wochen</p>
+              </div>
+              <button mat-flat-button type="button" class="action-btn ghost" [disabled]="plan.is_active" (click)="activatePlan(plan.id)">
+                {{ plan.is_active ? 'Aktiv' : 'Aktivieren' }}
+              </button>
+            </article>
+          }
+        </div>
+      }
+
+      @if (sessionHubTab() === 'exercises') {
+        <div class="sheet-stack">
+          <section class="list-card sheet-card filter-card">
+            <div class="filter-head">
+              <strong>Filter</strong>
+              @if (activeExerciseFilterCount() > 0) {
+                <button mat-flat-button type="button" class="action-btn ghost compact" (click)="resetExerciseFilters()">
+                  Zuruecksetzen
+                </button>
+              }
+            </div>
+
+            <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+              <mat-label>Equipment</mat-label>
+              <mat-select
+                id="exercise-filter-equipment"
+                [value]="exerciseEquipmentFilter()"
+                (valueChange)="onExerciseEquipmentFilterChange($event)"
+              >
+                <mat-option value="">Alle</mat-option>
+                @for (equipment of exerciseEquipmentOptions(); track equipment) {
+                  <mat-option [value]="equipment">{{ equipmentLabel(equipment) }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+              <mat-label>Muskel</mat-label>
+              <mat-select
+                id="exercise-filter-muscle"
+                [value]="exerciseMuscleFilter()"
+                (valueChange)="onExerciseMuscleFilterChange($event)"
+              >
+                <mat-option value="">Alle</mat-option>
+                @for (muscle of exerciseMuscleOptions(); track muscle) {
+                  <mat-option [value]="muscle">{{ muscleLabel(muscle) }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <p class="muted">{{ filteredExerciseLibrary().length }} von {{ exercises().length }} Uebungen</p>
+          </section>
+
+          <div class="sheet-scroll-list">
+            @for (exercise of filteredExerciseLibrary(); track exercise.id) {
+              <article class="list-card sheet-card">
+                <img [src]="exercise.images[0] || placeholderImage" alt="{{ exercise.name }}" loading="lazy" decoding="async">
+                <div>
+                  <strong>{{ exercise.name }}</strong>
+                  <p class="muted">{{ equipmentLabel(exercise.equipment) }} • {{ muscleLabel(exercise.primary_muscle) }}</p>
+                  <p class="muted">{{ exercise.is_system ? 'System' : 'Eigen' }}</p>
+                </div>
+              </article>
+            }
+          </div>
+        </div>
+      }
+
+      @if (sessionHubTab() === 'help') {
+        <div class="sheet-stack">
+          <article class="list-card sheet-card text-only">
+            <strong>Quick Logging</strong>
+            <p class="muted">Gewicht wird aus dem letzten Workout als Empfehlung vorgeschlagen.</p>
+          </article>
+          <article class="list-card sheet-card text-only">
+            <strong>Smart Suggestions</strong>
+            <p class="muted">Wenn alle Arbeitssätze das Ziel erreichen, wird +2.5kg fürs nächste Mal vorgeschlagen.</p>
+          </article>
+          <article class="list-card sheet-card text-only">
+            <strong>Offline First</strong>
+            <p class="muted">Alle Schreibaktionen werden offline lokal gespeichert und automatisch synchronisiert.</p>
+          </article>
+        </div>
+      }
     </app-bottom-sheet>
 
     <app-bottom-sheet [open]="activeSheet() === 'builder'" [closeOnBackdrop]="false" title="Plan Builder" (closed)="closeSheet()">
@@ -552,81 +658,6 @@ interface ExerciseProgressRow {
         <button mat-flat-button type="button" class="action-btn ghost" [disabled]="builderDays().length >= 7" (click)="addBuilderDay()">Tag hinzufuegen</button>
         <button mat-flat-button type="submit" class="action-btn" [disabled]="planMetaForm.invalid || builderDays().length === 0">Plan speichern</button>
       </form>
-    </app-bottom-sheet>
-
-    <app-bottom-sheet [open]="activeSheet() === 'exercises'" [closeOnBackdrop]="false" title="Uebungen" (closed)="closeSheet()">
-      <div class="sheet-stack">
-        <section class="list-card sheet-card filter-card">
-          <div class="filter-head">
-            <strong>Filter</strong>
-            @if (activeExerciseFilterCount() > 0) {
-              <button mat-flat-button type="button" class="action-btn ghost compact" (click)="resetExerciseFilters()">
-                Zuruecksetzen
-              </button>
-            }
-          </div>
-
-          <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
-            <mat-label>Equipment</mat-label>
-            <mat-select
-              id="exercise-filter-equipment"
-              [value]="exerciseEquipmentFilter()"
-              (valueChange)="onExerciseEquipmentFilterChange($event)"
-            >
-              <mat-option value="">Alle</mat-option>
-              @for (equipment of exerciseEquipmentOptions(); track equipment) {
-                <mat-option [value]="equipment">{{ equipmentLabel(equipment) }}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
-
-          <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
-            <mat-label>Muskel</mat-label>
-            <mat-select
-              id="exercise-filter-muscle"
-              [value]="exerciseMuscleFilter()"
-              (valueChange)="onExerciseMuscleFilterChange($event)"
-            >
-              <mat-option value="">Alle</mat-option>
-              @for (muscle of exerciseMuscleOptions(); track muscle) {
-                <mat-option [value]="muscle">{{ muscleLabel(muscle) }}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
-
-          <p class="muted">{{ filteredExerciseLibrary().length }} von {{ exercises().length }} Uebungen</p>
-        </section>
-
-        <div class="sheet-scroll-list">
-          @for (exercise of filteredExerciseLibrary(); track exercise.id) {
-            <article class="list-card sheet-card">
-              <img [src]="exercise.images[0] || placeholderImage" alt="{{ exercise.name }}" loading="lazy" decoding="async">
-              <div>
-                <strong>{{ exercise.name }}</strong>
-                <p class="muted">{{ equipmentLabel(exercise.equipment) }} • {{ muscleLabel(exercise.primary_muscle) }}</p>
-                <p class="muted">{{ exercise.is_system ? 'System' : 'Eigen' }}</p>
-              </div>
-            </article>
-          }
-        </div>
-      </div>
-    </app-bottom-sheet>
-
-    <app-bottom-sheet [open]="activeSheet() === 'help'" title="Hilfe" (closed)="closeSheet()">
-      <div class="sheet-stack">
-        <article class="list-card sheet-card text-only">
-          <strong>Quick Logging</strong>
-          <p class="muted">Gewicht wird aus dem letzten Workout als Empfehlung vorgeschlagen.</p>
-        </article>
-        <article class="list-card sheet-card text-only">
-          <strong>Smart Suggestions</strong>
-          <p class="muted">Wenn alle Arbeitssätze das Ziel erreichen, wird +2.5kg fürs nächste Mal vorgeschlagen.</p>
-        </article>
-        <article class="list-card sheet-card text-only">
-          <strong>Offline First</strong>
-          <p class="muted">Alle Schreibaktionen werden offline lokal gespeichert und automatisch synchronisiert.</p>
-        </article>
-      </div>
     </app-bottom-sheet>
 
     <app-bottom-sheet [open]="activeSheet() === 'session-share'" [closeOnBackdrop]="false" title="Workout teilen" (closed)="closeSheet()">
@@ -687,10 +718,10 @@ interface ExerciseProgressRow {
       </form>
     </app-bottom-sheet>
 
-    <app-bottom-sheet [open]="activeSheet() === 'graph-detail'" title="Erweiterte Analyse" (closed)="closeSheet()">
-      @if (selectedDetailWidget()) {
+    <app-bottom-sheet [open]="activeSheet() === 'graph-detail'" [title]="detailSheetTitle()" (closed)="closeSheet()">
+      @if (hasDetailContext()) {
         <div class="sheet-stack">
-          <strong>{{ graphTitle(selectedDetailWidget()!) }}</strong>
+          <strong>{{ detailSheetTitle() }}</strong>
           <div class="grid-two">
             <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
               <mat-label>Von</mat-label>
@@ -701,12 +732,32 @@ interface ExerciseProgressRow {
               <input matInput id="detail-to" type="date" [value]="detailTo()" (input)="onDetailDateChange($event, 'to')">
             </mat-form-field>
           </div>
+          <div class="progress-range" role="group" aria-label="Zeitraum für Detailgraph">
+            <button mat-flat-button type="button" class="progress-range-btn" (click)="setDetailRangeDays(30)">30 Tage</button>
+            <button mat-flat-button type="button" class="progress-range-btn" (click)="setDetailRangeDays(90)">90 Tage</button>
+            <button mat-flat-button type="button" class="progress-range-btn" (click)="setDetailRangeDays(365)">365 Tage</button>
+          </div>
           <button mat-flat-button type="button" class="action-btn ghost" (click)="reloadDetailSeries()">Neu laden</button>
 
           @if (detailSeries().length > 0) {
             <svg class="graph detail" viewBox="0 0 100 40" preserveAspectRatio="none" aria-label="Detailgraph">
               <polyline [attr.points]="toLinePoints(detailSeries())"></polyline>
+              @for (point of detailChartPoints(); track point.date) {
+                <circle
+                  class="detail-dot"
+                  [class.active]="selectedDetailPointDate() === point.date"
+                  [attr.cx]="point.x"
+                  [attr.cy]="point.y"
+                  r="2"
+                  tabindex="0"
+                  role="button"
+                  [attr.aria-label]="detailPointLabel(point.date, point.value)"
+                  (click)="selectDetailPointDate(point.date)"
+                  (keydown)="onDetailPointKeydown($event, point.date)"
+                ></circle>
+              }
             </svg>
+            <p class="muted">{{ selectedDetailPointSummary() }}</p>
           } @else {
             <p class="muted">Keine Daten für den gewählten Zeitraum.</p>
           }
@@ -1056,6 +1107,31 @@ interface ExerciseProgressRow {
       gap: 8px;
     }
 
+    .progress-range {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px;
+      min-width: 170px;
+    }
+
+    .progress-range-btn {
+      min-height: 34px;
+      border: 1px solid var(--m3-sys-color-outline-variant);
+      border-radius: 999px;
+      background: var(--m3-sys-color-surface-container-high);
+      color: var(--m3-sys-color-on-surface-variant);
+      font-size: 12px;
+      font-weight: 700;
+      justify-content: center;
+      width: 100%;
+    }
+
+    .progress-range-btn.active {
+      border-color: transparent;
+      background: var(--m3-sys-color-secondary-container);
+      color: var(--m3-sys-color-on-secondary-container);
+    }
+
     .graph-card {
       border: 1px solid var(--m3-sys-color-outline-variant);
       border-radius: 20px;
@@ -1064,6 +1140,9 @@ interface ExerciseProgressRow {
       display: grid;
       gap: 8px;
       cursor: pointer;
+      width: 100%;
+      text-align: left;
+      color: var(--m3-sys-color-on-surface);
     }
 
     .graph-head {
@@ -1091,6 +1170,19 @@ interface ExerciseProgressRow {
       stroke-linejoin: round;
     }
 
+    .detail-dot {
+      fill: var(--m3-sys-color-surface-container-highest);
+      stroke: var(--m3-sys-color-primary);
+      stroke-width: 0.8;
+      cursor: pointer;
+    }
+
+    .detail-dot.active {
+      fill: var(--m3-sys-color-primary);
+      transform: scale(1.2);
+      transform-origin: center;
+    }
+
     .gym-fab {
       z-index: 35;
     }
@@ -1109,6 +1201,31 @@ interface ExerciseProgressRow {
       justify-content: space-between;
       align-items: center;
       gap: 8px;
+    }
+
+    .hub-tabs {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .hub-tab-btn {
+      min-height: var(--touch-target-compact);
+      border: 1px solid var(--m3-sys-color-outline-variant);
+      border-radius: 999px;
+      background: var(--m3-sys-color-surface-container-high);
+      color: var(--m3-sys-color-on-surface-variant);
+      font-size: 12px;
+      font-weight: 700;
+      justify-content: center;
+      width: 100%;
+    }
+
+    .hub-tab-btn.active {
+      border-color: transparent;
+      background: var(--m3-sys-color-secondary-container);
+      color: var(--m3-sys-color-on-secondary-container);
     }
 
     .sheet-card img {
@@ -1152,6 +1269,19 @@ interface ExerciseProgressRow {
       }
 
       .execution-actions {
+        grid-template-columns: 1fr;
+      }
+
+      .progress-head {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .progress-range {
+        min-width: 0;
+      }
+
+      .hub-tabs {
         grid-template-columns: 1fr;
       }
 
@@ -1207,9 +1337,12 @@ export class GymComponent implements OnInit, OnDestroy {
   readonly detailSeries = signal<TrainingGraphDataPoint[]>([]);
   readonly detailFrom = signal(toIsoDate(addDays(new Date(), -365)));
   readonly detailTo = signal(toIsoDate(new Date()));
+  readonly detailSource = signal<DetailSource>('widget');
+  readonly selectedDetailPointDate = signal<string | null>(null);
   readonly exerciseEquipmentFilter = signal('');
   readonly exerciseMuscleFilter = signal('');
   readonly selectedProgressExerciseId = signal('');
+  readonly progressRangeDays = signal<7 | 30>(30);
   readonly tenRmSeries = signal<TrainingGraphDataPoint[]>([]);
   readonly exerciseVolumeSeries = signal<TrainingGraphDataPoint[]>([]);
   readonly workoutShareSuggestion = signal('1/3 Workouts diese Woche');
@@ -1217,8 +1350,9 @@ export class GymComponent implements OnInit, OnDestroy {
   readonly sharingWorkoutPost = signal(false);
   readonly lastCompletedSessionDay = signal<string | null>(null);
   readonly sessionSharePhotoInput = viewChild<ElementRef<HTMLInputElement>>('sessionSharePhotoInput');
+  readonly sessionHubTab = signal<'plans' | 'exercises' | 'help'>('plans');
 
-  readonly activeSheet = signal<'none' | 'plans' | 'builder' | 'exercises' | 'help' | 'graphs' | 'graph-detail' | 'session-share'>('none');
+  readonly activeSheet = signal<'none' | 'hub' | 'builder' | 'graphs' | 'graph-detail' | 'session-share'>('none');
   readonly errorMessage = signal<string | null>(null);
   readonly successMessage = signal<string | null>(null);
   readonly setSaveState = signal<Record<string, 'idle' | 'saving' | 'saved' | 'error'>>({});
@@ -1300,6 +1434,8 @@ export class GymComponent implements OnInit, OnDestroy {
     return `${Math.round(Number(latest.point_value))} kg`;
   });
 
+  readonly progressRangeLabel = computed(() => `Letzte ${this.progressRangeDays()} Tage`);
+
   readonly progressSessionRows = computed<ExerciseProgressRow[]>(() => {
     const tenRmByDay = new Map<string, number>();
     const volumeByDay = new Map<string, number>();
@@ -1320,6 +1456,37 @@ export class GymComponent implements OnInit, OnDestroy {
       tenRm: tenRmByDay.has(date) ? `${tenRmByDay.get(date)!.toFixed(1)} kg` : '--',
       volume: volumeByDay.has(date) ? `${Math.round(volumeByDay.get(date)!)} kg` : '--'
     }));
+  });
+
+  readonly detailChartPoints = computed(() => {
+    const points = this.detailSeries();
+    if (points.length === 0) {
+      return [] as Array<{ date: string; value: number; x: number; y: number }>;
+    }
+
+    const values = points.map(point => Number(point.point_value));
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const range = Math.max(max - min, 1);
+
+    return points.map((point, index) => {
+      const x = (index / Math.max(points.length - 1, 1)) * 100;
+      const y = 36 - ((Number(point.point_value) - min) / range) * 32;
+      return {
+        date: point.point_date,
+        value: Number(point.point_value),
+        x: Number(roundTo(x, 2)),
+        y: Number(roundTo(y, 2))
+      };
+    });
+  });
+
+  readonly selectedDetailPoint = computed(() => {
+    const selectedDate = this.selectedDetailPointDate();
+    if (!selectedDate) {
+      return null;
+    }
+    return this.detailChartPoints().find(point => point.date === selectedDate) || null;
   });
   readonly currentExerciseSaveHint = computed(() => {
     const exercise = this.currentExercise();
@@ -1391,11 +1558,13 @@ export class GymComponent implements OnInit, OnDestroy {
   private readonly trainingData = inject(TrainingDataService);
   private readonly authService = inject(AuthService);
   private readonly supabaseService = inject(SupabaseService);
+  private readonly telemetry = inject(InteractionTelemetryService);
   private readonly pendingSetSaves = new Map<string, ReturnType<typeof setTimeout>>();
   private readonly pendingSetStateResets = new Map<string, ReturnType<typeof setTimeout>>();
   private readonly inFlightSetSaves = new Map<string, Promise<void>>();
   private workoutSharePhoto: File | null = null;
   workoutShareNote = '';
+  private activeGraphJourneyId: string | null = null;
 
   ngOnInit(): void {
     this.syncBuilderDayCount();
@@ -1420,6 +1589,7 @@ export class GymComponent implements OnInit, OnDestroy {
 
   async activateProgressTab(): Promise<void> {
     this.activeTab.set('progress');
+    this.startGraphJourney('progress_tab');
     await this.loadProgressData();
   }
 
@@ -1427,6 +1597,10 @@ export class GymComponent implements OnInit, OnDestroy {
     if (value === 'progress') {
       void this.activateProgressTab();
       return;
+    }
+    if (this.activeGraphJourneyId) {
+      this.telemetry.cancelJourney(this.activeGraphJourneyId, { surface: 'gym', reason: 'tab_switch' });
+      this.activeGraphJourneyId = null;
     }
     this.activeTab.set('tracker');
   }
@@ -1456,6 +1630,7 @@ export class GymComponent implements OnInit, OnDestroy {
 
   async loadProgressData(forceRefresh = false): Promise<void> {
     this.errorMessage.set(null);
+    this.startGraphJourney(forceRefresh ? 'progress_refresh' : 'progress_load');
 
     try {
       const [widgets, personalStats] = await Promise.all([
@@ -1475,6 +1650,10 @@ export class GymComponent implements OnInit, OnDestroy {
       this.personalStats.set(personalStats);
       this.widgets.set(widgets.sort((a, b) => a.position - b.position));
     } catch (error: unknown) {
+      if (this.activeGraphJourneyId) {
+        this.telemetry.failJourney(this.activeGraphJourneyId, { surface: 'gym', reason: 'progress_load_failed' });
+        this.activeGraphJourneyId = null;
+      }
       this.errorMessage.set(formatAppError(error, 'Progress Daten konnten nicht geladen werden'));
     }
   }
@@ -1698,13 +1877,32 @@ export class GymComponent implements OnInit, OnDestroy {
     }
   }
 
-  openSheet(sheet: 'plans' | 'builder' | 'exercises' | 'help' | 'graphs' | 'graph-detail' | 'session-share'): void {
-    this.activeSheet.set(sheet);
+  openSessionHub(tab: 'plans' | 'exercises' | 'help'): void {
+    this.sessionHubTab.set(tab);
+    this.activeSheet.set('hub');
+  }
+
+  setSessionHubTab(tab: 'plans' | 'exercises' | 'help'): void {
+    this.sessionHubTab.set(tab);
+  }
+
+  sessionHubTitle(): string {
+    const tab = this.sessionHubTab();
+    if (tab === 'plans') {
+      return 'Session Hub: Plaene';
+    }
+    if (tab === 'exercises') {
+      return 'Session Hub: Uebungen';
+    }
+    return 'Session Hub: Hilfe';
   }
 
   closeSheet(): void {
     if (this.activeSheet() === 'session-share') {
       this.resetWorkoutShareState();
+    }
+    if (this.activeSheet() === 'graph-detail') {
+      this.selectedDetailPointDate.set(null);
     }
     this.activeSheet.set('none');
   }
@@ -1858,7 +2056,8 @@ export class GymComponent implements OnInit, OnDestroy {
     try {
       await this.trainingData.savePlan(payload);
       this.successMessage.set('Plan gespeichert.');
-      this.activeSheet.set('plans');
+      this.sessionHubTab.set('plans');
+      this.activeSheet.set('hub');
       await this.loadTrackerData(true);
     } catch (error: unknown) {
       this.errorMessage.set(formatAppError(error, 'Plan konnte nicht gespeichert werden'));
@@ -1937,11 +2136,23 @@ export class GymComponent implements OnInit, OnDestroy {
     }
   }
 
+  async openProgressDetail(kind: '10rm' | 'volume'): Promise<void> {
+    this.detailSource.set(kind === '10rm' ? 'progress-10rm' : 'progress-volume');
+    this.selectedDetailWidget.set(null);
+    this.detailFrom.set(toIsoDate(addDays(new Date(), -180)));
+    this.detailTo.set(toIsoDate(new Date()));
+    this.activeSheet.set('graph-detail');
+    this.completeGraphJourney(kind === '10rm' ? 'open_progress_10rm' : 'open_progress_volume');
+    await this.reloadDetailSeries();
+  }
+
   async openGraphDetail(widget: TrainingGraphConfig): Promise<void> {
+    this.detailSource.set('widget');
     this.selectedDetailWidget.set(widget);
     this.detailFrom.set(toIsoDate(addDays(new Date(), -730)));
     this.detailTo.set(toIsoDate(new Date()));
     this.activeSheet.set('graph-detail');
+    this.completeGraphJourney('open_widget_detail');
     await this.reloadDetailSeries();
   }
 
@@ -1955,17 +2166,107 @@ export class GymComponent implements OnInit, OnDestroy {
   }
 
   async reloadDetailSeries(): Promise<void> {
-    const widget = this.selectedDetailWidget();
-    if (!widget) {
-      return;
-    }
-
-    const query = this.widgetToSeriesQuery(widget, this.detailFrom(), this.detailTo());
+    const source = this.detailSource();
     try {
-      this.detailSeries.set(await this.trainingData.getProgressSeries(query));
+      let series: TrainingGraphDataPoint[] = [];
+      if (source === 'widget') {
+        const widget = this.selectedDetailWidget();
+        if (!widget) {
+          this.detailSeries.set([]);
+          this.selectedDetailPointDate.set(null);
+          return;
+        }
+        const query = this.widgetToSeriesQuery(widget, this.detailFrom(), this.detailTo());
+        series = await this.trainingData.getProgressSeries(query);
+      } else if (source === 'progress-10rm') {
+        const exerciseId = this.selectedProgressExerciseId();
+        if (!exerciseId) {
+          this.detailSeries.set([]);
+          this.selectedDetailPointDate.set(null);
+          return;
+        }
+        series = await this.trainingData.getProgressSeries({
+          graphType: 'exercise_10rm',
+          exerciseId,
+          from: this.detailFrom(),
+          to: this.detailTo()
+        });
+      } else {
+        const exerciseId = this.selectedProgressExerciseId();
+        if (!exerciseId) {
+          this.detailSeries.set([]);
+          this.selectedDetailPointDate.set(null);
+          return;
+        }
+        series = await this.trainingData.getExerciseVolumeSeries(
+          exerciseId,
+          this.detailFrom(),
+          this.detailTo(),
+          true
+        );
+      }
+
+      this.detailSeries.set(series);
+      this.selectedDetailPointDate.set(series[series.length - 1]?.point_date || null);
     } catch (error: unknown) {
       this.errorMessage.set(formatAppError(error, 'Detail-Graph konnte nicht geladen werden'));
     }
+  }
+
+  setDetailRangeDays(days: 30 | 90 | 365): void {
+    const end = new Date();
+    const start = addDays(end, -(days - 1));
+    this.detailFrom.set(toIsoDate(start));
+    this.detailTo.set(toIsoDate(end));
+    void this.reloadDetailSeries();
+  }
+
+  hasDetailContext(): boolean {
+    return this.detailSource() !== 'widget' || this.selectedDetailWidget() !== null;
+  }
+
+  detailSheetTitle(): string {
+    const source = this.detailSource();
+    if (source === 'progress-10rm') {
+      return 'Erweiterte Analyse: 10RM Verlauf';
+    }
+    if (source === 'progress-volume') {
+      return 'Erweiterte Analyse: Volumen';
+    }
+    const widget = this.selectedDetailWidget();
+    return widget ? this.graphTitle(widget) : 'Erweiterte Analyse';
+  }
+
+  selectDetailPointDate(pointDate: string): void {
+    this.selectedDetailPointDate.set(pointDate);
+  }
+
+  onDetailPointKeydown(event: KeyboardEvent, pointDate: string): void {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      this.selectDetailPointDate(pointDate);
+    }
+  }
+
+  detailPointLabel(pointDate: string, value: number): string {
+    return `${pointDate}: ${Number(value).toFixed(1)}`;
+  }
+
+  selectedDetailPointSummary(): string {
+    const selected = this.selectedDetailPoint();
+    if (!selected) {
+      return 'Tippe auf einen Punkt fuer Details.';
+    }
+
+    if (this.detailSource() === 'progress-volume') {
+      return `${selected.date}: ${Math.round(selected.value)} kg Volumen`;
+    }
+
+    if (this.detailSource() === 'progress-10rm') {
+      return `${selected.date}: ${selected.value.toFixed(1)} kg 10RM`;
+    }
+
+    return `${selected.date}: ${selected.value.toFixed(1)}`;
   }
 
   goPrevWeek(): void {
@@ -1990,6 +2291,14 @@ export class GymComponent implements OnInit, OnDestroy {
 
   onProgressExerciseChange(value: string): void {
     this.selectedProgressExerciseId.set(value);
+    void this.loadSelectedExerciseProgress(true);
+  }
+
+  setProgressRangeDays(days: 7 | 30): void {
+    if (days === this.progressRangeDays()) {
+      return;
+    }
+    this.progressRangeDays.set(days);
     void this.loadSelectedExerciseProgress(true);
   }
 
@@ -2173,6 +2482,27 @@ export class GymComponent implements OnInit, OnDestroy {
       .join(' ');
   }
 
+  private startGraphJourney(source: string): void {
+    if (this.activeGraphJourneyId) {
+      return;
+    }
+    this.activeGraphJourneyId = this.telemetry.startJourney('graph_check', {
+      surface: 'gym',
+      source
+    });
+  }
+
+  private completeGraphJourney(action: string): void {
+    if (!this.activeGraphJourneyId) {
+      return;
+    }
+    this.telemetry.completeJourney(this.activeGraphJourneyId, 'success', {
+      surface: 'gym',
+      action
+    });
+    this.activeGraphJourneyId = null;
+  }
+
   private async loadSelectedExerciseProgress(forceRefresh = false): Promise<void> {
     const exerciseId = this.selectedProgressExerciseId();
     if (!exerciseId) {
@@ -2181,14 +2511,19 @@ export class GymComponent implements OnInit, OnDestroy {
       return;
     }
 
+    const to = toIsoDate(new Date());
+    const from = toIsoDate(addDays(new Date(), -(this.progressRangeDays() - 1)));
+
     const tenRm = await this.trainingData.getProgressSeries({
       graphType: 'exercise_10rm',
-      exerciseId
+      exerciseId,
+      from,
+      to
     });
 
     let volume: TrainingGraphDataPoint[] = [];
     try {
-      volume = await this.trainingData.getExerciseVolumeSeries(exerciseId, undefined, undefined, forceRefresh);
+      volume = await this.trainingData.getExerciseVolumeSeries(exerciseId, from, to, forceRefresh);
     } catch {
       volume = [];
     }
