@@ -1,22 +1,19 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatButtonModule } from '@angular/material/button';
 import { RouterModule } from '@angular/router';
-import { LucideAngularModule, ChartLine } from 'lucide-angular';
 
 @Component({
   selector: 'app-top-bar',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, RouterModule, MatToolbarModule, MatButtonModule, LucideAngularModule],
+  imports: [CommonModule, RouterModule],
   template: `
-    <mat-toolbar class="top-bar" role="banner">
+    <header class="top-bar" role="banner">
       <h1 class="title">Tracker Broo</h1>
-      <a mat-button class="insight-link" routerLink="/insights" aria-label="Insights öffnen">
-        <lucide-icon [img]="icons.chartLine" class="insight-icon" aria-hidden="true"></lucide-icon>
+      <a class="insight-link" routerLink="/insights" aria-label="Insights öffnen">
+        <span class="insight-dot" aria-hidden="true"></span>
         <span>Insights</span>
       </a>
-    </mat-toolbar>
+    </header>
   `,
   styles: [`
     .top-bar {
@@ -33,7 +30,6 @@ import { LucideAngularModule, ChartLine } from 'lucide-angular';
       border-bottom: 1px solid var(--m3-sys-color-outline-variant);
       z-index: 28;
       backdrop-filter: blur(6px);
-      transition: padding var(--motion-duration-medium) var(--motion-easing-standard);
     }
 
     .title {
@@ -44,7 +40,6 @@ import { LucideAngularModule, ChartLine } from 'lucide-angular';
       line-height: 1.75rem;
       font-weight: 600;
       letter-spacing: 0;
-      transition: letter-spacing var(--motion-duration-medium) var(--motion-easing-standard);
     }
 
     .insight-link {
@@ -68,9 +63,11 @@ import { LucideAngularModule, ChartLine } from 'lucide-angular';
       border-color: var(--m3-sys-color-primary);
     }
 
-    .insight-icon {
-      width: 16px;
-      height: 16px;
+    .insight-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--m3-sys-color-primary);
     }
 
     :host-context(.layout-medium) .top-bar {
@@ -82,8 +79,4 @@ import { LucideAngularModule, ChartLine } from 'lucide-angular';
     }
   `]
 })
-export class TopBarComponent {
-  readonly icons = {
-    chartLine: ChartLine
-  };
-}
+export class TopBarComponent {}

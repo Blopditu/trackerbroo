@@ -5,28 +5,22 @@ import { filter } from 'rxjs/operators';
 import { Subscription } from 'rxjs';
 import { BottomNavComponent } from './ui/bottom-nav.component';
 import { TopBarComponent } from './ui/top-bar.component';
-import { PwaInstallService } from './core/pwa-install.service';
 import { AuthService } from './core/auth.service';
 import { SupabaseService } from './core/supabase.service';
 import { ThemeService } from './core/theme.service';
-import { MatButtonModule } from '@angular/material/button';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, CommonModule, MatButtonModule, BottomNavComponent, TopBarComponent],
+  imports: [RouterOutlet, CommonModule, BottomNavComponent, TopBarComponent],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
 export class App implements OnDestroy {
-  protected readonly title = signal('proteintracker');
-
   private readonly router = inject(Router);
-  readonly pwaInstall = inject(PwaInstallService);
   private readonly authService = inject(AuthService);
   private readonly supabaseService = inject(SupabaseService);
   private readonly themeService = inject(ThemeService);
   private readonly currentRoute = signal('/');
-  private readonly isOnline = signal(typeof navigator === 'undefined' ? true : navigator.onLine);
   private readonly isKeyboardOpen = signal(false);
   private readonly viewportWidth = signal(typeof window === 'undefined' ? 390 : window.innerWidth);
   private routeSubscription: Subscription | null = null;
@@ -37,7 +31,6 @@ export class App implements OnDestroy {
   // Use computed signal to determine if nav should be shown
   showNav = computed(() => !this.currentRoute().includes('/login') && !this.currentRoute().includes('/onboarding'));
   showTopBar = computed(() => !this.currentRoute().includes('/login') && !this.currentRoute().includes('/onboarding'));
-  showOfflineBanner = computed(() => !this.isOnline() && this.showTopBar());
   readonly layoutMode = computed<'compact' | 'medium' | 'expanded'>(() => {
     const width = this.viewportWidth();
     if (width >= 1200) {
@@ -51,9 +44,6 @@ export class App implements OnDestroy {
   readonly isCompact = computed(() => this.layoutMode() === 'compact');
   readonly isMedium = computed(() => this.layoutMode() === 'medium');
   readonly isExpanded = computed(() => this.layoutMode() === 'expanded');
-  showInstallBanner = computed(
-    () => this.showNav() && this.isCompact() && this.pwaInstall.canPrompt() && !this.isKeyboardOpen()
-  );
 
   constructor() {
     this.themeService.initialize();
@@ -70,8 +60,6 @@ export class App implements OnDestroy {
       });
 
     if (typeof window !== 'undefined') {
-      window.addEventListener('online', this.handleOnlineStatus);
-      window.addEventListener('offline', this.handleOnlineStatus);
       window.addEventListener('resize', this.handleWindowResize, { passive: true });
       this.setupMobileViewportHandlers();
     }
@@ -80,8 +68,6 @@ export class App implements OnDestroy {
   ngOnDestroy(): void {
     this.routeSubscription?.unsubscribe();
     if (typeof window !== 'undefined') {
-      window.removeEventListener('online', this.handleOnlineStatus);
-      window.removeEventListener('offline', this.handleOnlineStatus);
       window.visualViewport?.removeEventListener('resize', this.handleViewportChange);
       window.visualViewport?.removeEventListener('scroll', this.handleViewportChange);
       window.removeEventListener('focusin', this.handleViewportChange);
@@ -90,21 +76,9 @@ export class App implements OnDestroy {
     }
   }
 
-  private readonly handleOnlineStatus = (): void => {
-    this.isOnline.set(typeof navigator === 'undefined' ? true : navigator.onLine);
-  };
-
   private readonly handleWindowResize = (): void => {
     this.viewportWidth.set(window.innerWidth);
   };
-
-  async installApp(): Promise<void> {
-    await this.pwaInstall.promptInstall();
-  }
-
-  dismissInstallBanner(): void {
-    this.pwaInstall.dismiss();
-  }
 
   protected keyboardOpen(): boolean {
     return this.isKeyboardOpen();

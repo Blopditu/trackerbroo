@@ -2,17 +2,6 @@
   display: block;
 }
 
-.offline-banner {
-  margin: 0;
-  padding: 0.65rem 1rem;
-  border-bottom: 1px solid var(--m3-sys-color-outline-variant);
-  background: var(--m3-sys-color-surface-container-low);
-  color: var(--m3-sys-color-on-surface-variant);
-  font-size: 0.8125rem;
-  font-weight: 500;
-  text-align: left;
-}
-
 .layout-shell {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -41,55 +30,6 @@
   margin: 0 auto;
 }
 
-.app-surface.keyboard-open .install-banner {
-  opacity: 0;
-  pointer-events: none;
-}
-
-.install-banner {
-  position: fixed;
-  left: 50%;
-  transform: translateX(-50%);
-  width: min(calc(100% - 1.5rem), 560px);
-  bottom: calc(24px + env(safe-area-inset-bottom));
-  z-index: 35;
-  border: 1px solid var(--m3-sys-color-outline-variant);
-  border-radius: 24px;
-  background: var(--m3-sys-color-surface-container);
-  padding: 0.95rem 1rem;
-  box-shadow: var(--shadow-level-2);
-  display: grid;
-  gap: 0.75rem;
-}
-
-.install-text {
-  margin: 0;
-  color: var(--m3-sys-color-on-surface);
-  font-size: 0.875rem;
-  font-weight: 500;
-  line-height: 1.25rem;
-}
-
-.install-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.5rem;
-}
-
-.install-btn {
-  min-height: 40px;
-  width: 100%;
-}
-
-.install-btn.primary {
-  box-shadow: var(--shadow-level-1);
-}
-
-.app-surface.layout-compact .install-banner {
-  bottom: calc(86px + env(safe-area-inset-bottom));
-  width: min(calc(100% - 1.5rem), 440px);
-}
-
 .app-surface.layout-expanded .layout-shell.with-rail {
   grid-template-columns: 104px minmax(0, 1fr);
 }
@@ -101,12 +41,6 @@
 .app-surface.layout-medium,
 .app-surface.layout-expanded {
   padding-bottom: 24px;
-}
-
-@media (max-width: 420px) {
-  .install-actions {
-    grid-template-columns: 1fr;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {

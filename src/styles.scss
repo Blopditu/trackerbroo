@@ -24,13 +24,8 @@ $trackerbroo-theme: mat.define-theme((
   @include mat.icon-button-theme($trackerbroo-theme);
   @include mat.fab-theme($trackerbroo-theme);
   @include mat.form-field-theme($trackerbroo-theme);
-  @include mat.input-theme($trackerbroo-theme);
   @include mat.select-theme($trackerbroo-theme);
-  @include mat.option-theme($trackerbroo-theme);
-  @include mat.toolbar-theme($trackerbroo-theme);
-  @include mat.card-theme($trackerbroo-theme);
   @include mat.system-level-colors($trackerbroo-theme);
-  @include mat.system-level-typography($trackerbroo-theme);
 }
 
 :root {

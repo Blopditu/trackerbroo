@@ -8,9 +8,6 @@
   @if (showTopBar()) {
     <app-top-bar></app-top-bar>
   }
-  @if (showOfflineBanner()) {
-    <p class="offline-banner" role="status" aria-live="polite">Offline-Modus: zuletzt synchronisierte Daten werden angezeigt.</p>
-  }
 
   <section class="layout-shell" [class.with-rail]="showNav() && !isCompact()">
     @if (showNav() && !isCompact()) {
@@ -23,15 +20,6 @@
     </section>
   </section>
 
-  @if (showInstallBanner()) {
-    <aside class="install-banner" aria-live="polite">
-      <p class="install-text">Als App installieren für schnelleren Zugriff und Vollbildmodus.</p>
-      <div class="install-actions">
-        <button mat-flat-button type="button" class="install-btn primary" (click)="installApp()">Installieren</button>
-        <button mat-stroked-button type="button" class="install-btn ghost" (click)="dismissInstallBanner()">Später</button>
-      </div>
-    </aside>
-  }
   @if (showNav() && isCompact()) {
     <app-bottom-nav mode="bottom"></app-bottom-nav>
   }

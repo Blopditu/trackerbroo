@@ -1,8 +1,6 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { Dumbbell, House, Library, LucideAngularModule, Plus, User, Users } from 'lucide-angular';
-import { MatRippleModule } from '@angular/material/core';
 
 @Component({
   selector: 'app-bottom-nav',
@@ -11,43 +9,31 @@ import { MatRippleModule } from '@angular/material/core';
     '[class.rail-mode]': "mode() === 'rail'",
     '[class.bottom-mode]': "mode() === 'bottom'"
   },
-  imports: [CommonModule, RouterModule, LucideAngularModule, MatRippleModule],
+  imports: [CommonModule, RouterModule],
   template: `
     <nav class="bottom-nav" aria-label="Hauptnavigation">
-      <a matRipple routerLink="/today" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
-        <span class="icon-wrap">
-          <lucide-icon [img]="icons.house" class="nav-icon" aria-hidden="true"></lucide-icon>
-        </span>
+      <a routerLink="/today" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+        <span class="icon-wrap" aria-hidden="true">T</span>
         <span class="label">Heute</span>
       </a>
-      <a matRipple routerLink="/gym" routerLinkActive="active">
-        <span class="icon-wrap">
-          <lucide-icon [img]="icons.dumbbell" class="nav-icon" aria-hidden="true"></lucide-icon>
-        </span>
+      <a routerLink="/gym" routerLinkActive="active">
+        <span class="icon-wrap" aria-hidden="true">G</span>
         <span class="label">Gym</span>
       </a>
-      <a matRipple class="quick-link" routerLink="/today" [queryParams]="{ quick: 'food' }" aria-label="Schnelllog öffnen">
-        <span class="icon-wrap">
-          <lucide-icon [img]="icons.plus" class="nav-icon" aria-hidden="true"></lucide-icon>
-        </span>
+      <a class="quick-link" routerLink="/today" [queryParams]="{ quick: 'food' }" aria-label="Schnelllog öffnen">
+        <span class="icon-wrap" aria-hidden="true">+</span>
         <span class="label">Quick</span>
       </a>
-      <a matRipple routerLink="/library" routerLinkActive="active">
-        <span class="icon-wrap">
-          <lucide-icon [img]="icons.library" class="nav-icon" aria-hidden="true"></lucide-icon>
-        </span>
+      <a routerLink="/library" routerLinkActive="active">
+        <span class="icon-wrap" aria-hidden="true">L</span>
         <span class="label">Bibliothek</span>
       </a>
-      <a matRipple routerLink="/community" routerLinkActive="active">
-        <span class="icon-wrap">
-          <lucide-icon [img]="icons.users" class="nav-icon" aria-hidden="true"></lucide-icon>
-        </span>
+      <a routerLink="/community" routerLinkActive="active">
+        <span class="icon-wrap" aria-hidden="true">C</span>
         <span class="label">Community</span>
       </a>
-      <a matRipple routerLink="/profile" routerLinkActive="active">
-        <span class="icon-wrap">
-          <lucide-icon [img]="icons.user" class="nav-icon" aria-hidden="true"></lucide-icon>
-        </span>
+      <a routerLink="/profile" routerLinkActive="active">
+        <span class="icon-wrap" aria-hidden="true">P</span>
         <span class="label">Profil</span>
       </a>
     </nav>
@@ -122,6 +108,8 @@ import { MatRippleModule } from '@angular/material/core';
       align-items: center;
       justify-content: center;
       color: inherit;
+      font-size: 13px;
+      font-weight: 700;
       transition:
         background-color var(--motion-duration-medium) var(--motion-easing-standard),
         color var(--motion-duration-short) var(--motion-easing-standard),
@@ -130,13 +118,6 @@ import { MatRippleModule } from '@angular/material/core';
 
     :host.rail-mode .icon-wrap {
       width: 56px;
-    }
-
-    .nav-icon {
-      width: 20px;
-      height: 20px;
-      display: block;
-      flex: 0 0 20px;
     }
 
     .label {
@@ -153,6 +134,7 @@ import { MatRippleModule } from '@angular/material/core';
       color: var(--m3-sys-color-on-primary);
       box-shadow: var(--shadow-level-1);
       transform: translateY(-4px);
+      font-weight: 700;
     }
 
     .quick-link .label {
@@ -194,13 +176,4 @@ import { MatRippleModule } from '@angular/material/core';
 })
 export class BottomNavComponent {
   readonly mode = input<'bottom' | 'rail'>('bottom');
-
-  readonly icons = {
-    house: House,
-    dumbbell: Dumbbell,
-    plus: Plus,
-    library: Library,
-    users: Users,
-    user: User
-  };
 }
