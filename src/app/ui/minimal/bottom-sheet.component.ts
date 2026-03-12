@@ -14,7 +14,12 @@ let sheetTitleIdCounter = 0;
   imports: [CommonModule, LucideAngularModule, MatButtonModule],
   template: `
     @if (rendered()) {
-      <div class="overlay" [class.active]="isActive()" (click)="onBackdropClick()">
+      <div
+        class="overlay"
+        [class.active]="isActive()"
+        [style.--sheet-keyboard-inset.px]="keyboardInset()"
+        (click)="onBackdropClick()"
+      >
         <section
           #sheet
           class="sheet"
@@ -43,6 +48,7 @@ let sheetTitleIdCounter = 0;
       z-index: 40;
       display: grid;
       align-items: end;
+      padding-bottom: var(--sheet-keyboard-inset, 0px);
       background: rgba(4, 8, 12, 0.58);
       touch-action: pan-y;
       opacity: 0;
@@ -57,7 +63,7 @@ let sheetTitleIdCounter = 0;
       border-right: 1px solid var(--m3-sys-color-outline-variant);
       border-radius: 28px 28px 0 0;
       padding: 12px 16px calc(16px + env(safe-area-inset-bottom));
-      max-height: 86vh;
+      max-height: min(86vh, calc(100vh - 12px - var(--sheet-keyboard-inset, 0px)));
       overflow: auto;
       -webkit-overflow-scrolling: touch;
       overscroll-behavior: contain;
@@ -136,6 +142,7 @@ export class BottomSheetComponent implements OnDestroy {
   readonly closed = output<void>();
   readonly rendered = signal(false);
   readonly isActive = signal(false);
+  readonly keyboardInset = signal(0);
 
   private previousFocusedElement: HTMLElement | null = null;
   private closeTimer: ReturnType<typeof setTimeout> | null = null;
@@ -149,12 +156,25 @@ export class BottomSheetComponent implements OnDestroy {
 
       this.closeSheet();
     });
+
+    if (typeof window !== 'undefined') {
+      window.visualViewport?.addEventListener('resize', this.handleViewportChange);
+      window.visualViewport?.addEventListener('scroll', this.handleViewportChange);
+      window.addEventListener('focusin', this.handleViewportChange);
+      window.addEventListener('focusout', this.handleViewportChange);
+    }
   }
 
   ngOnDestroy(): void {
     if (this.closeTimer) {
       clearTimeout(this.closeTimer);
       this.closeTimer = null;
+    }
+    if (typeof window !== 'undefined') {
+      window.visualViewport?.removeEventListener('resize', this.handleViewportChange);
+      window.visualViewport?.removeEventListener('scroll', this.handleViewportChange);
+      window.removeEventListener('focusin', this.handleViewportChange);
+      window.removeEventListener('focusout', this.handleViewportChange);
     }
     this.restorePreviousFocus();
   }
@@ -264,6 +284,7 @@ export class BottomSheetComponent implements OnDestroy {
     }
 
     this.rendered.set(true);
+    this.updateKeyboardInset();
 
     if (typeof window !== 'undefined') {
       requestAnimationFrame(() => {
@@ -283,6 +304,7 @@ export class BottomSheetComponent implements OnDestroy {
     }
 
     this.isActive.set(false);
+    this.keyboardInset.set(0);
     this.restorePreviousFocus();
 
     if (this.closeTimer) {
@@ -293,5 +315,35 @@ export class BottomSheetComponent implements OnDestroy {
       this.rendered.set(false);
       this.closeTimer = null;
     }, 280);
+  }
+
+  private readonly handleViewportChange = (): void => {
+    if (!this.open()) {
+      this.keyboardInset.set(0);
+      return;
+    }
+    this.updateKeyboardInset();
+  };
+
+  private updateKeyboardInset(): void {
+    if (typeof window === 'undefined') {
+      this.keyboardInset.set(0);
+      return;
+    }
+
+    const viewport = window.visualViewport;
+    if (!viewport) {
+      this.keyboardInset.set(0);
+      return;
+    }
+
+    const activeElement = document.activeElement;
+    const activeIsInput = activeElement instanceof HTMLInputElement
+      || activeElement instanceof HTMLTextAreaElement
+      || activeElement instanceof HTMLSelectElement
+      || (activeElement instanceof HTMLElement && activeElement.isContentEditable);
+
+    const rawInset = Math.max(0, window.innerHeight - (viewport.height + viewport.offsetTop));
+    this.keyboardInset.set(activeIsInput && rawInset > 80 ? Math.round(rawInset) : 0);
   }
 }

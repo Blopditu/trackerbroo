@@ -228,18 +228,14 @@ interface FoodDayPreview {
 
       @if (sheetMode() === 'food') {
         <section class="food-sheet">
-          <div class="food-shortcuts">
-            <button mat-flat-button type="button" class="menu-btn compact action-chip" (click)="focusFoodSearch()">
-              <lucide-icon [img]="icons.search" class="icon" aria-hidden="true"></lucide-icon>
-              Search
+          <div class="quick-primary-row">
+            <button mat-flat-button type="button" class="menu-btn compact quick-primary-btn" (click)="copyEntriesToTargetDay()">
+              <lucide-icon [img]="icons.copy" class="icon" aria-hidden="true"></lucide-icon>
+              Tag kopieren
             </button>
-            <button mat-flat-button type="button" class="menu-btn compact action-chip" (click)="openLibraryFromSheet()">
-              <lucide-icon [img]="icons.library" class="icon" aria-hidden="true"></lucide-icon>
-              Library
-            </button>
-            <button mat-flat-button type="button" class="menu-btn compact action-chip" (click)="setSheetMode('weight')">
+            <button mat-flat-button type="button" class="menu-btn compact quick-secondary-btn" (click)="setSheetMode('weight')">
               <lucide-icon [img]="icons.weight" class="icon" aria-hidden="true"></lucide-icon>
-              Weight
+              Gewicht
             </button>
           </div>
 
@@ -255,30 +251,6 @@ interface FoodDayPreview {
             </mat-form-field>
           </div>
 
-          <div class="day-quick-row">
-            <button mat-flat-button type="button" class="day-chip" (click)="setFoodTargetByOffset(-1)">-1 Tag</button>
-            <button mat-flat-button type="button" class="day-chip" (click)="setFoodTargetByOffset(1)">+1 Tag</button>
-            <button mat-flat-button type="button" class="day-chip" (click)="setFoodTargetByOffset(7)">+7 Tage</button>
-          </div>
-
-          <div class="slot-row" role="group" aria-label="Mahlzeiten-Slot">
-            <button mat-flat-button type="button" class="slot-chip" [class.active]="selectedMealSlot() === 'breakfast'" (click)="setMealSlot('breakfast')">Frühstück</button>
-            <button mat-flat-button type="button" class="slot-chip" [class.active]="selectedMealSlot() === 'lunch'" (click)="setMealSlot('lunch')">Mittag</button>
-            <button mat-flat-button type="button" class="slot-chip" [class.active]="selectedMealSlot() === 'dinner'" (click)="setMealSlot('dinner')">Abend</button>
-            <button mat-flat-button type="button" class="slot-chip" [class.active]="selectedMealSlot() === 'snack'" (click)="setMealSlot('snack')">Snack</button>
-            <button mat-flat-button type="button" class="slot-chip" [class.active]="selectedMealSlot() === 'other'" (click)="setMealSlot('other')">Sonstiges</button>
-          </div>
-
-          <mat-form-field class="m3-field time-field" appearance="outline" subscriptSizing="dynamic">
-            <mat-label>Zeit</mat-label>
-            <input matInput type="time" [ngModel]="selectedMealTime()" (ngModelChange)="onMealTimeChange($event)">
-          </mat-form-field>
-
-          <button mat-flat-button type="button" class="menu-btn compact" (click)="copyEntriesToTargetDay()">
-            <lucide-icon [img]="icons.copy" class="icon" aria-hidden="true"></lucide-icon>
-            Tag kopieren
-          </button>
-
           @if (isFoodTargetFuture()) {
             <p class="muted">Du loggst für einen zukünftigen Tag: {{ foodTargetDay() }}.</p>
           }
@@ -292,6 +264,38 @@ interface FoodDayPreview {
               <small>P {{ foodTargetPreview()!.protein.toFixed(0) }} · KH {{ foodTargetPreview()!.carbs.toFixed(0) }} · F {{ foodTargetPreview()!.fat.toFixed(0) }}</small>
             </article>
           }
+
+          <div class="day-quick-row">
+            <button mat-flat-button type="button" class="day-chip" (click)="setFoodTargetByOffset(-1)">-1 Tag</button>
+            <button mat-flat-button type="button" class="day-chip" (click)="setFoodTargetByOffset(1)">+1 Tag</button>
+            <button mat-flat-button type="button" class="day-chip" (click)="setFoodTargetByOffset(7)">+7 Tage</button>
+          </div>
+
+          <mat-form-field class="m3-field food-search-field" appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Lebensmittel suchen</mat-label>
+            <input
+              #foodSearchInput
+              matInput
+              type="search"
+              [ngModel]="foodSearch()"
+              (ngModelChange)="foodSearch.set($event)"
+              placeholder="Lebensmittel suchen"
+              aria-label="Lebensmittel suchen"
+            >
+          </mat-form-field>
+
+          <div class="slot-row" role="group" aria-label="Mahlzeiten-Slot">
+            <button mat-flat-button type="button" class="slot-chip" [class.active]="selectedMealSlot() === 'breakfast'" (click)="setMealSlot('breakfast')">Frühstück</button>
+            <button mat-flat-button type="button" class="slot-chip" [class.active]="selectedMealSlot() === 'lunch'" (click)="setMealSlot('lunch')">Mittag</button>
+            <button mat-flat-button type="button" class="slot-chip" [class.active]="selectedMealSlot() === 'dinner'" (click)="setMealSlot('dinner')">Abend</button>
+            <button mat-flat-button type="button" class="slot-chip" [class.active]="selectedMealSlot() === 'snack'" (click)="setMealSlot('snack')">Snack</button>
+            <button mat-flat-button type="button" class="slot-chip" [class.active]="selectedMealSlot() === 'other'" (click)="setMealSlot('other')">Sonstiges</button>
+          </div>
+
+          <mat-form-field class="m3-field time-field" appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Zeit</mat-label>
+            <input matInput type="time" [ngModel]="selectedMealTime()" (ngModelChange)="onMealTimeChange($event)">
+          </mat-form-field>
 
           @if (favoriteQuickItems().length > 0) {
             <div class="favorite-row" role="group" aria-label="Favoriten">
@@ -380,41 +384,36 @@ interface FoodDayPreview {
           </div>
 
           <div class="food-footer">
-            <mat-form-field class="m3-field footer-search-field" appearance="outline" subscriptSizing="dynamic">
-              <mat-label>Search</mat-label>
-              <input
-                #foodSearchInput
-                matInput
-                type="search"
-                [ngModel]="foodSearch()"
-                (ngModelChange)="foodSearch.set($event)"
-                placeholder="Lebensmittel suchen"
-                aria-label="Lebensmittel suchen"
-              >
-            </mat-form-field>
             <div class="queue-total">
               <small>P {{ queueTotals().protein.toFixed(0) }} · KH {{ queueTotals().carbs.toFixed(0) }} · F {{ queueTotals().fat.toFixed(0) }}</small>
               <strong>{{ queueTotals().kcal.toFixed(0) }} kcal</strong>
             </div>
             <button mat-flat-button type="button" class="menu-btn apply-log-btn" [disabled]="foodQueueCount() === 0" (click)="applyFoodQueue()">
-              Log Foods ({{ foodQueueCount() }})
+              Foods loggen ({{ foodQueueCount() }})
             </button>
           </div>
         </section>
       }
 
       @if (sheetMode() === 'weight') {
-        <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
-          <mat-label>Datum</mat-label>
-          <input matInput id="weight-day-input" type="date" [attr.max]="realToday" [(ngModel)]="weightDateInput">
-        </mat-form-field>
+        <section class="weight-sheet">
+          <div class="weight-actions">
+            <button mat-flat-button type="button" class="day-chip" (click)="setWeightDateToToday()">Heute</button>
+            <button mat-flat-button type="button" class="day-chip" (click)="setSheetMode('food')">Zu Essen</button>
+          </div>
 
-        <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
-          <mat-label>Gewicht (kg)</mat-label>
-          <input matInput id="weight-input" type="number" min="20" step="0.1" [(ngModel)]="weightInput">
-        </mat-form-field>
+          <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Datum</mat-label>
+            <input matInput id="weight-day-input" type="date" [attr.max]="realToday" [(ngModel)]="weightDateInput">
+          </mat-form-field>
 
-        <button mat-flat-button type="button" class="menu-btn" (click)="saveWeight()">Gewicht speichern</button>
+          <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Gewicht (kg)</mat-label>
+            <input matInput id="weight-input" type="number" min="20" step="0.1" [(ngModel)]="weightInput">
+          </mat-form-field>
+
+          <button mat-flat-button type="button" class="menu-btn apply-log-btn" (click)="saveWeight()">Gewicht speichern</button>
+        </section>
       }
 
       @if (sheetMode() === 'gym') {
@@ -691,20 +690,29 @@ interface FoodDayPreview {
 
     .food-sheet {
       display: grid;
-      gap: 10px;
-      padding-bottom: max(4px, env(safe-area-inset-bottom));
+      gap: 12px;
+      padding-bottom: max(8px, env(safe-area-inset-bottom));
     }
 
-    .food-shortcuts {
+    .quick-primary-row {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: 1fr auto;
       gap: 8px;
+      align-items: center;
     }
 
-    .action-chip {
+    .quick-primary-btn {
+      background: var(--m3-sys-color-primary);
+      border-color: transparent;
+      color: var(--m3-sys-color-on-primary);
       justify-content: center;
-      text-align: center;
-      width: 100%;
+    }
+
+    .quick-secondary-btn {
+      background: var(--m3-sys-color-surface-container-highest);
+      color: var(--m3-sys-color-on-surface);
+      justify-content: center;
+      min-width: 118px;
     }
 
     .food-day-grid {
@@ -720,12 +728,12 @@ interface FoodDayPreview {
     }
 
     .day-chip {
-      min-height: var(--touch-target-compact);
+      min-height: 38px;
       border: 1px solid var(--m3-sys-color-outline-variant);
       border-radius: 999px;
       background: var(--m3-sys-color-surface-container-high);
       color: var(--m3-sys-color-on-surface);
-      font-size: 12px;
+      font-size: 13px;
       font-weight: 700;
       width: 100%;
       justify-content: center;
@@ -753,11 +761,12 @@ interface FoodDayPreview {
     }
 
     .slot-chip.active {
-      background: var(--m3-sys-color-primary-container);
-      color: var(--m3-sys-color-on-primary-container);
-      border-color: var(--m3-sys-color-primary-container);
+      background: var(--m3-sys-color-primary);
+      color: var(--m3-sys-color-on-primary);
+      border-color: transparent;
     }
 
+    .food-search-field .mat-mdc-form-field-subscript-wrapper,
     .time-field .mat-mdc-form-field-subscript-wrapper {
       display: none;
     }
@@ -765,7 +774,7 @@ interface FoodDayPreview {
     .food-day-preview {
       border: 1px solid var(--m3-sys-color-outline-variant);
       border-radius: 16px;
-      background: var(--m3-sys-color-surface-container-high);
+      background: var(--m3-sys-color-surface-container-low);
       padding: 10px 12px;
       display: grid;
       gap: 2px;
@@ -790,15 +799,11 @@ interface FoodDayPreview {
       overflow-x: auto;
       padding-bottom: 2px;
       scrollbar-width: thin;
-      position: sticky;
-      top: 0;
-      z-index: 2;
-      background: var(--m3-sys-color-surface-container);
       padding-top: 2px;
     }
 
     .favorite-chip {
-      min-height: var(--touch-target-compact);
+      min-height: 36px;
       border: 1px solid var(--m3-sys-color-outline-variant);
       border-radius: 999px;
       background: var(--m3-sys-color-secondary-container);
@@ -828,15 +833,15 @@ interface FoodDayPreview {
     }
 
     .filter-btn.active {
-      background: var(--m3-sys-color-primary-container);
-      color: var(--m3-sys-color-on-primary-container);
-      border-color: var(--m3-sys-color-primary-container);
+      background: var(--m3-sys-color-primary);
+      color: var(--m3-sys-color-on-primary);
+      border-color: transparent;
     }
 
     .food-list {
       display: grid;
       gap: 8px;
-      max-height: 36vh;
+      max-height: clamp(180px, 32vh, 320px);
       overflow: auto;
       padding-right: 2px;
     }
@@ -844,7 +849,7 @@ interface FoodDayPreview {
     .food-row {
       border: 1px solid var(--m3-sys-color-outline-variant);
       border-radius: 16px;
-      background: var(--m3-sys-color-surface-container-high);
+      background: var(--m3-sys-color-surface-container-low);
       padding: 8px;
       display: grid;
       grid-template-columns: 1fr auto;
@@ -853,16 +858,17 @@ interface FoodDayPreview {
     }
 
     .food-open-btn {
-      min-height: var(--touch-target-compact);
+      min-height: 42px;
       border: none;
       border-radius: 12px;
-      background: transparent;
+      background: transparent !important;
       text-align: left;
-      padding: 0;
+      padding: 4px;
       display: grid;
       gap: 2px;
       align-content: center;
       color: inherit;
+      box-shadow: none;
     }
 
     .food-row-actions {
@@ -890,9 +896,9 @@ interface FoodDayPreview {
     }
 
     .round-icon-btn.primary {
-      background: var(--m3-sys-color-primary-container);
-      color: var(--m3-sys-color-on-primary-container);
-      border-color: var(--m3-sys-color-primary-container);
+      background: var(--m3-sys-color-primary);
+      color: var(--m3-sys-color-on-primary);
+      border-color: transparent;
     }
 
     .round-icon-btn lucide-icon.is-favorite {
@@ -901,15 +907,15 @@ interface FoodDayPreview {
     }
 
     .menu-btn {
-      min-height: var(--touch-target);
+      min-height: 44px;
       border: 1px solid var(--m3-sys-color-outline-variant);
-      border-radius: 20px;
+      border-radius: 16px;
       background: var(--m3-sys-color-surface-container-high);
       color: var(--m3-sys-color-on-surface);
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 600;
       text-align: left;
-      padding: 8px 12px;
+      padding: 6px 12px;
       display: grid;
       gap: 2px;
       align-content: center;
@@ -939,13 +945,24 @@ interface FoodDayPreview {
     }
 
     .menu-btn.compact {
-      min-height: var(--touch-target-compact);
+      min-height: 40px;
       padding: 0 14px;
       width: auto;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       white-space: nowrap;
+    }
+
+    .weight-sheet {
+      display: grid;
+      gap: 10px;
+    }
+
+    .weight-actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
     }
 
     .file-name {
@@ -1000,7 +1017,7 @@ interface FoodDayPreview {
 
     .food-name {
       display: block;
-      font-size: 16px;
+      font-size: 15px;
       color: var(--m3-sys-color-on-surface);
       font-weight: 600;
       line-height: 1.25;
@@ -1009,7 +1026,7 @@ interface FoodDayPreview {
     .food-macros {
       display: block;
       font-size: 12px;
-      color: var(--m3-sys-color-on-surface-variant);
+      color: color-mix(in srgb, var(--m3-sys-color-on-surface-variant) 92%, transparent);
       font-weight: 600;
       line-height: 1.25;
       white-space: normal;
@@ -1031,7 +1048,7 @@ interface FoodDayPreview {
     .queue-item {
       border: 1px solid var(--m3-sys-color-outline-variant);
       border-radius: 16px;
-      background: var(--m3-sys-color-surface-container-high);
+      background: var(--m3-sys-color-surface-container-low);
       padding: 8px;
       display: grid;
       gap: 8px;
@@ -1072,13 +1089,13 @@ interface FoodDayPreview {
       background: linear-gradient(
         180deg,
         color-mix(in srgb, var(--m3-sys-color-surface-container) 5%, transparent) 0%,
-        var(--m3-sys-color-surface-container) 26%
+        var(--m3-sys-color-surface-container) 36%
       );
       backdrop-filter: blur(8px);
-      padding-top: 8px;
+      padding-top: 10px;
       border-top: 1px solid color-mix(in srgb, var(--m3-sys-color-outline-variant) 65%, transparent);
       display: grid;
-      grid-template-columns: 1fr auto auto;
+      grid-template-columns: 1fr auto;
       gap: 8px;
       align-items: center;
     }
@@ -1086,7 +1103,7 @@ interface FoodDayPreview {
     .queue-total {
       display: grid;
       gap: 2px;
-      justify-items: end;
+      justify-items: start;
       min-width: 96px;
     }
 
@@ -1102,15 +1119,11 @@ interface FoodDayPreview {
       font-weight: 700;
     }
 
-    .footer-search-field .mat-mdc-form-field-subscript-wrapper {
-      display: none;
-    }
-
     .apply-log-btn {
-      min-height: var(--touch-target);
+      min-height: 44px;
       border-radius: 999px;
       white-space: nowrap;
-      padding-inline: 18px;
+      padding-inline: 16px;
       background: var(--m3-sys-color-primary);
       color: var(--m3-sys-color-on-primary);
       border-color: transparent;
@@ -1127,6 +1140,14 @@ interface FoodDayPreview {
     @media (max-width: 440px) {
       .food-day-grid {
         grid-template-columns: 1fr;
+      }
+
+      .quick-primary-row {
+        grid-template-columns: 1fr;
+      }
+
+      .quick-secondary-btn {
+        min-width: 0;
       }
 
       .food-footer {
@@ -1456,7 +1477,7 @@ export class TodayComponent implements OnInit {
   }
 
   openActions(): void {
-    this.sheetMode.set('menu');
+    this.setSheetMode('food');
     this.showActionSheet.set(true);
   }
 
@@ -1875,6 +1896,10 @@ export class TodayComponent implements OnInit {
     this.closeActions();
     this.invalidateDayCaches(user.id);
     await this.loadData(true);
+  }
+
+  setWeightDateToToday(): void {
+    this.weightDateInput = this.realToday;
   }
 
   onGymPhotoSelected(event: Event): void {
