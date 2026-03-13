@@ -6,7 +6,7 @@ import { AuthService } from '../../core/auth.service';
 import { SupabaseService } from '../../core/supabase.service';
 import { formatAppError } from '../../core/error-format';
 import { TrainingDataService, TrainingGraphDataPoint } from '../../core/training/training-data.service';
-import { InteractionTelemetryService, JourneyKey } from '../../core/interaction-telemetry.service';
+import { InteractionTelemetryService } from '../../core/interaction-telemetry.service';
 import { BottomSheetComponent } from '../../ui/minimal/bottom-sheet.component';
 
 interface TrendPoint {
@@ -28,10 +28,10 @@ type DetailKind = 'nutrition' | 'weight' | 'workouts' | 'volume';
 
       <section class="panel hero">
         <p class="title-font">Insights</p>
-        <h1>Trends auf einen Blick</h1>
-        <p class="subtle">Ernaehrung, Gewicht und Training in einem Screen.</p>
+        <h1>Vier klare Verläufe</h1>
+        <p class="subtle">Ernährung, Gewicht und Training auf einen Blick.</p>
 
-        <div class="range-toggle" role="group" aria-label="Zeitraum fuer Insights">
+        <div class="range-toggle" role="group" aria-label="Zeitraum für Insights">
           <button mat-flat-button type="button" class="range-btn" [class.active]="rangeDays() === 7" (click)="setRangeDays(7)">
             7 Tage
           </button>
@@ -42,19 +42,19 @@ type DetailKind = 'nutrition' | 'weight' | 'workouts' | 'volume';
       </section>
 
       <section class="insights-grid" aria-label="Trendkarten">
-        <button type="button" class="panel trend-card" (click)="openDetail('nutrition')" aria-label="Ernaehrungstrend ansehen">
+        <button type="button" class="panel trend-card" (click)="openDetail('nutrition')" aria-label="Ernährungsverlauf ansehen">
           <div class="card-head">
-            <h2><lucide-icon [img]="icons.flame" class="icon" aria-hidden="true"></lucide-icon> Ernaehrung</h2>
+            <h2><lucide-icon [img]="icons.flame" class="icon" aria-hidden="true"></lucide-icon> Ernährung</h2>
             <span class="badge">{{ rangeDays() }}d</span>
           </div>
           <p class="headline">{{ latestLabel(nutritionSeries(), 'kcal', 0) }}</p>
-          <p class="meta">Delta {{ deltaLabel(nutritionSeries(), 'kcal', 0) }}</p>
+          <p class="meta">Veränderung {{ deltaLabel(nutritionSeries(), 'kcal', 0) }}</p>
           @if (nutritionSeries().length > 0) {
             <svg class="mini-graph" viewBox="0 0 100 26" preserveAspectRatio="none" aria-hidden="true">
               <polyline [attr.points]="toLinePoints(nutritionSeries())"></polyline>
             </svg>
           } @else {
-            <p class="empty-note">Keine Daten.</p>
+            <p class="empty-note">Noch keine Einträge für diesen Zeitraum.</p>
           }
         </button>
 
@@ -64,23 +64,23 @@ type DetailKind = 'nutrition' | 'weight' | 'workouts' | 'volume';
             <span class="badge">{{ rangeDays() }}d</span>
           </div>
           <p class="headline">{{ latestLabel(weightSeries(), 'kg', 1) }}</p>
-          <p class="meta">Delta {{ deltaLabel(weightSeries(), 'kg', 1) }}</p>
+          <p class="meta">Veränderung {{ deltaLabel(weightSeries(), 'kg', 1) }}</p>
           @if (weightSeries().length > 0) {
             <svg class="mini-graph" viewBox="0 0 100 26" preserveAspectRatio="none" aria-hidden="true">
               <polyline [attr.points]="toLinePoints(weightSeries())"></polyline>
             </svg>
           } @else {
-            <p class="empty-note">Keine Daten.</p>
+            <p class="empty-note">Noch keine Gewichtswerte in diesem Zeitraum.</p>
           }
         </button>
 
         <button type="button" class="panel trend-card" (click)="openDetail('workouts')" aria-label="Workouttrend ansehen">
           <div class="card-head">
-            <h2><lucide-icon [img]="icons.dumbbell" class="icon" aria-hidden="true"></lucide-icon> Workouts</h2>
+            <h2><lucide-icon [img]="icons.dumbbell" class="icon" aria-hidden="true"></lucide-icon> Training</h2>
             <span class="badge">{{ rangeDays() }}d</span>
           </div>
           <p class="headline">{{ sumLabel(workoutSeries(), 'Sessions') }}</p>
-          <p class="meta">Aktuell {{ latestLabel(workoutSeries(), '', 0) }}</p>
+          <p class="meta">Zuletzt {{ latestLabel(workoutSeries(), '', 0) }}</p>
           <svg class="mini-graph" viewBox="0 0 100 26" preserveAspectRatio="none" aria-hidden="true">
             <polyline [attr.points]="toLinePoints(workoutSeries())"></polyline>
           </svg>
@@ -92,35 +92,11 @@ type DetailKind = 'nutrition' | 'weight' | 'workouts' | 'volume';
             <span class="badge">{{ rangeDays() }}d</span>
           </div>
           <p class="headline">{{ sumLabel(volumeSeries(), 'kg') }}</p>
-          <p class="meta">Delta {{ deltaLabel(volumeSeries(), 'kg', 0) }}</p>
+          <p class="meta">Veränderung {{ deltaLabel(volumeSeries(), 'kg', 0) }}</p>
           <svg class="mini-graph" viewBox="0 0 100 26" preserveAspectRatio="none" aria-hidden="true">
             <polyline [attr.points]="toLinePoints(volumeSeries())"></polyline>
           </svg>
         </button>
-      </section>
-
-      <section class="panel telemetry-panel" aria-label="Journey-Metriken">
-        <div class="card-head">
-          <h2>Journey Timing</h2>
-          <span class="badge">30d</span>
-        </div>
-        <div class="telemetry-grid">
-          <article class="stat-box">
-            <p class="label">Food Log</p>
-            <strong>{{ metricMedianLabel('food_log') }}</strong>
-            <span class="small">P75 {{ metricP75Label('food_log') }}</span>
-          </article>
-          <article class="stat-box">
-            <p class="label">Weight Log</p>
-            <strong>{{ metricMedianLabel('weight_log') }}</strong>
-            <span class="small">P75 {{ metricP75Label('weight_log') }}</span>
-          </article>
-          <article class="stat-box">
-            <p class="label">Graph Check</p>
-            <strong>{{ metricMedianLabel('graph_check') }}</strong>
-            <span class="small">P75 {{ metricP75Label('graph_check') }}</span>
-          </article>
-        </div>
       </section>
     </main>
 
@@ -131,7 +107,7 @@ type DetailKind = 'nutrition' | 'weight' | 'workouts' | 'volume';
           <span class="muted">{{ detailDeltaLabel() }}</span>
         </div>
 
-        <div class="range-toggle" role="group" aria-label="Zeitraum fuer Detailansicht">
+        <div class="range-toggle" role="group" aria-label="Zeitraum für die Detailansicht">
           <button mat-flat-button type="button" class="range-btn" [class.active]="rangeDays() === 7" (click)="setRangeDays(7)">7 Tage</button>
           <button mat-flat-button type="button" class="range-btn" [class.active]="rangeDays() === 30" (click)="setRangeDays(30)">30 Tage</button>
         </div>
@@ -157,7 +133,7 @@ type DetailKind = 'nutrition' | 'weight' | 'workouts' | 'volume';
 
           <p class="detail-note">{{ selectedDetailPointLabel() }}</p>
         } @else {
-          <p class="empty-note">Keine Daten fuer diesen Zeitraum.</p>
+          <p class="empty-note">Noch keine Daten für diesen Zeitraum.</p>
         }
       </div>
     </app-bottom-sheet>
@@ -317,50 +293,8 @@ type DetailKind = 'nutrition' | 'weight' | 'workouts' | 'volume';
       font-weight: 600;
     }
 
-    .telemetry-panel {
-      display: grid;
-      gap: 12px;
-    }
-
-    .telemetry-grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 10px;
-    }
-
-    .stat-box {
-      display: grid;
-      gap: 4px;
-      border: 1px solid var(--m3-sys-color-outline-variant);
-      border-radius: 16px;
-      background: var(--m3-sys-color-surface-container-high);
-      padding: 10px;
-    }
-
-    .label {
-      margin: 0;
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--m3-sys-color-on-surface-variant);
-    }
-
-    .stat-box strong {
-      font-size: 16px;
-      color: var(--m3-sys-color-on-surface);
-    }
-
-    .small {
-      font-size: 11px;
-      color: var(--m3-sys-color-on-surface-variant);
-      font-weight: 600;
-    }
-
     @media (max-width: 700px) {
       .insights-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .telemetry-grid {
         grid-template-columns: 1fr;
       }
     }
@@ -389,12 +323,6 @@ export class InsightsComponent implements OnInit {
   private readonly telemetry = inject(InteractionTelemetryService);
 
   private graphJourneyId: string | null = null;
-
-  readonly telemetryRevision = computed(() => this.telemetry.updatedAt());
-  readonly metrics = computed(() => {
-    this.telemetryRevision();
-    return this.telemetry.getJourneyMetrics(30);
-  });
 
   readonly detailSeries = computed<TrendPoint[]>(() => {
     const detail = this.activeDetail();
@@ -449,9 +377,9 @@ export class InsightsComponent implements OnInit {
 
   detailTitle(): string {
     const detail = this.activeDetail();
-    if (detail === 'nutrition') return 'Detail: Ernaehrung';
+    if (detail === 'nutrition') return 'Details zur Ernährung';
     if (detail === 'weight') return 'Detail: Gewicht';
-    if (detail === 'workouts') return 'Detail: Workouts';
+    if (detail === 'workouts') return 'Details zum Training';
     if (detail === 'volume') return 'Detail: Trainingsvolumen';
     return 'Detail';
   }
@@ -466,7 +394,7 @@ export class InsightsComponent implements OnInit {
       return this.latestLabel(series, 'kg', 1);
     }
     if (detail === 'workouts') {
-      return this.sumLabel(series, 'Sessions');
+      return this.sumLabel(series, 'Einheiten');
     }
     if (detail === 'volume') {
       return this.sumLabel(series, 'kg');
@@ -504,16 +432,16 @@ export class InsightsComponent implements OnInit {
     const selectedDate = this.selectedDetailDate();
     const series = this.detailSeries();
     if (!selectedDate || series.length === 0) {
-      return 'Tippe auf einen Punkt fuer Details.';
+      return 'Tippe auf einen Punkt für Details.';
     }
 
     const point = series.find(item => item.date === selectedDate);
     if (!point) {
-      return 'Tippe auf einen Punkt fuer Details.';
+      return 'Tippe auf einen Punkt für Details.';
     }
 
     const detail = this.activeDetail();
-    const unit = detail === 'weight' ? 'kg' : detail === 'nutrition' ? 'kcal' : detail === 'workouts' ? 'Sessions' : 'kg';
+    const unit = detail === 'weight' ? 'kg' : detail === 'nutrition' ? 'kcal' : detail === 'workouts' ? 'Einheiten' : 'kg';
     const precision = detail === 'weight' ? 1 : 0;
     return `${point.date}: ${this.formatNumber(point.value, precision)} ${unit}`.trim();
   }
@@ -603,22 +531,6 @@ export class InsightsComponent implements OnInit {
     const total = series.reduce((sum, point) => sum + point.value, 0);
     const suffix = unit ? ` ${unit}` : '';
     return `${this.formatNumber(total, 0)}${suffix}`;
-  }
-
-  metricMedianLabel(key: JourneyKey): string {
-    const metric = this.metrics().find(item => item.key === key);
-    if (!metric || !metric.medianMs) {
-      return '--';
-    }
-    return `${Math.round(metric.medianMs / 100) / 10}s`;
-  }
-
-  metricP75Label(key: JourneyKey): string {
-    const metric = this.metrics().find(item => item.key === key);
-    if (!metric || !metric.p75Ms) {
-      return '--';
-    }
-    return `${Math.round(metric.p75Ms / 100) / 10}s`;
   }
 
   private async loadData(forceRefresh = false): Promise<void> {

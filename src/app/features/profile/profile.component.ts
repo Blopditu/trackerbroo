@@ -10,7 +10,7 @@ import { AuthService } from '../../core/auth.service';
 import { SupabaseService } from '../../core/supabase.service';
 import { Profile, WeightLog } from '../../core/types';
 import { formatAppError } from '../../core/error-format';
-import { ThemeService } from '../../core/theme.service';
+import { ThemeMode, ThemeService } from '../../core/theme.service';
 import { InteractionTelemetryService } from '../../core/interaction-telemetry.service';
 
 @Component({
@@ -44,9 +44,9 @@ import { InteractionTelemetryService } from '../../core/interaction-telemetry.se
         </div>
 
         <div class="gym-target">
-          <span>Wöchentliches Gym-Ziel</span>
+          <span>Dein Wochenziel</span>
           <strong>{{ gymProgressLabel() }}</strong>
-          <span class="mono-badge">PIXEL-ABZEICHEN</span>
+          <span class="mono-badge">Konsistenz zählt</span>
         </div>
       </section>
 
@@ -55,7 +55,7 @@ import { InteractionTelemetryService } from '../../core/interaction-telemetry.se
           <button type="button" [class.active]="activeProfileSection() === 'account'" (click)="setProfileSection('account')">Account</button>
           <button type="button" [class.active]="activeProfileSection() === 'goals'" (click)="setProfileSection('goals')">Ziele</button>
           <button type="button" [class.active]="activeProfileSection() === 'weight'" (click)="setProfileSection('weight')">Gewicht</button>
-          <button type="button" [class.active]="activeProfileSection() === 'appearance'" (click)="setProfileSection('appearance')">Design</button>
+          <button type="button" [class.active]="activeProfileSection() === 'appearance'" (click)="setProfileSection('appearance')">Darstellung</button>
         </div>
       </section>
 
@@ -73,7 +73,7 @@ import { InteractionTelemetryService } from '../../core/interaction-telemetry.se
             <label for="avatar">Profilfoto</label>
             <div class="file-row">
               <button mat-flat-button type="button" class="action-btn ghost" (click)="pickAvatar()">Foto auswählen</button>
-              <span class="file-name">{{ avatarFileName() || 'Kein Foto gewählt' }}</span>
+              <span class="file-name">{{ avatarFileName() || 'Kein Foto ausgewählt' }}</span>
             </div>
             <input #avatarInput id="avatar" class="sr-only" type="file" accept="image/*" (change)="onAvatarSelected($event)">
 
@@ -90,7 +90,7 @@ import { InteractionTelemetryService } from '../../core/interaction-telemetry.se
 
             @if (activeProfileSection() === 'goals') {
             <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
-              <mat-label>Gym Name</mat-label>
+              <mat-label>Gym-Name</mat-label>
               <input matInput id="gym-name" type="text" formControlName="gym_name" placeholder="z.B. Mein Gym">
             </mat-form-field>
 
@@ -127,28 +127,21 @@ import { InteractionTelemetryService } from '../../core/interaction-telemetry.se
             }
 
             @if (activeProfileSection() === 'appearance') {
-            <label for="theme-seed-text">Design-Farbe (Material 3)</label>
-            <div class="theme-seed-row">
-              <input
-                id="theme-seed-picker"
-                type="color"
-                [value]="profileForm.controls.theme_seed_color.value"
-                (input)="onThemeSeedPickerInput($event)"
-                aria-label="Design-Farbe auswählen"
-              >
-              <mat-form-field class="m3-field theme-seed-text-field" appearance="outline" subscriptSizing="dynamic">
-                <mat-label>Hex</mat-label>
-                <input
-                  matInput
-                  id="theme-seed-text"
-                  type="text"
-                  formControlName="theme_seed_color"
-                  placeholder="#4c8dff"
-                  (input)="onThemeSeedTextInput($event)"
-                  (blur)="normalizeThemeSeedControl()"
+            <label>Thema</label>
+            <div class="mode-segmented" role="group" aria-label="Farbschema">
+              @for (mode of themeModes; track mode.value) {
+                <button
+                  type="button"
+                  [class.active]="profileForm.controls.theme_mode.value === mode.value"
+                  (click)="applyThemeMode(mode.value)"
                 >
-              </mat-form-field>
+                  {{ mode.label }}
+                </button>
+              }
             </div>
+            <p class="subtle">Hell und dunkel bleiben ruhig. Die Akzentfarbe gibt der App ihren Ton.</p>
+
+            <label>Akzentfarbe</label>
             <div class="theme-preset-grid" role="list" aria-label="Farbvorschläge">
               @for (preset of themeSeedPresets; track preset) {
                 <button
@@ -162,11 +155,35 @@ import { InteractionTelemetryService } from '../../core/interaction-telemetry.se
                 ></button>
               }
             </div>
-            <p class="subtle">Die App nutzt daraus ein dynamisches Material-3-Farbsystem.</p>
+            <details class="theme-advanced">
+              <summary>Eigene Farbe wählen</summary>
+              <p class="subtle compact">Wenn dir kein Vorschlag passt, kannst du hier deine eigene Nuance setzen.</p>
+              <div class="theme-seed-row advanced">
+                <input
+                  id="theme-seed-picker"
+                  type="color"
+                  [value]="profileForm.controls.theme_seed_color.value"
+                  (input)="onThemeSeedPickerInput($event)"
+                  aria-label="Akzentfarbe auswählen"
+                >
+                <mat-form-field class="m3-field theme-seed-text-field" appearance="outline" subscriptSizing="dynamic">
+                  <mat-label>Hex</mat-label>
+                  <input
+                    matInput
+                    id="theme-seed-text"
+                    type="text"
+                    formControlName="theme_seed_color"
+                    placeholder="#78b457"
+                    (input)="onThemeSeedTextInput($event)"
+                    (blur)="normalizeThemeSeedControl()"
+                  >
+                </mat-form-field>
+              </div>
+            </details>
             }
 
             <button mat-flat-button type="submit" class="action-btn" [disabled]="savingProfile() || profileForm.invalid">
-              {{ savingProfile() ? 'Wird gespeichert...' : 'Profil speichern' }}
+              {{ savingProfile() ? 'Wird aktualisiert …' : 'Änderungen speichern' }}
             </button>
           </form>
         </section>
@@ -226,7 +243,7 @@ import { InteractionTelemetryService } from '../../core/interaction-telemetry.se
           </mat-form-field>
 
           <button mat-flat-button type="submit" class="action-btn tonal" [disabled]="savingWeight() || weightForm.invalid">
-            {{ savingWeight() ? 'Wird gespeichert...' : 'Gewichtseintrag speichern' }}
+            {{ savingWeight() ? 'Wird gespeichert …' : 'Gewicht speichern' }}
           </button>
         </form>
 
@@ -394,7 +411,7 @@ import { InteractionTelemetryService } from '../../core/interaction-telemetry.se
     }
 
     .trend-range-btn {
-      min-height: 36px;
+      min-height: var(--touch-target-compact);
       border: 1px solid var(--border-strong);
       border-radius: 999px;
       background: var(--m3-sys-color-surface-container-high);
@@ -475,12 +492,39 @@ import { InteractionTelemetryService } from '../../core/interaction-telemetry.se
       align-items: center;
     }
 
+    .theme-seed-row.advanced {
+      margin-top: 0.55rem;
+    }
+
     .theme-seed-row input[type='color'] {
       padding: 0.24rem;
       min-height: var(--touch-target);
       border-radius: 16px;
       border: 1px solid var(--border-strong);
       background: var(--bg-surface-2);
+    }
+
+    .mode-segmented {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .mode-segmented button {
+      min-height: var(--touch-target-compact);
+      border: 1px solid var(--border-strong);
+      border-radius: 999px;
+      background: var(--m3-sys-color-surface-container-high);
+      color: var(--ink-700);
+      font-size: var(--text-xs);
+      font-weight: 700;
+    }
+
+    .mode-segmented button.active {
+      border-color: transparent;
+      background: var(--m3-sys-color-primary-container);
+      color: var(--m3-sys-color-on-primary-container);
     }
 
     .theme-preset-grid {
@@ -491,13 +535,35 @@ import { InteractionTelemetryService } from '../../core/interaction-telemetry.se
     }
 
     .theme-swatch {
-      min-height: 34px;
+      min-height: var(--touch-target-compact);
       border-radius: 999px;
       border: 1px solid var(--border-strong);
     }
 
     .theme-swatch.active {
       box-shadow: inset 0 0 0 2px color-mix(in srgb, #ffffff 65%, transparent);
+    }
+
+    .theme-advanced {
+      margin-top: 0.55rem;
+      border-top: 1px solid var(--border-strong);
+      padding-top: 0.7rem;
+    }
+
+    .theme-advanced summary {
+      cursor: pointer;
+      color: var(--m3-sys-color-on-surface);
+      font-size: var(--text-sm);
+      font-weight: 700;
+      list-style: none;
+    }
+
+    .theme-advanced summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .subtle.compact {
+      margin-bottom: 0;
     }
   `]
 })
@@ -523,15 +589,20 @@ export class ProfileComponent implements OnInit {
   readonly avatarFileName = signal<string | null>(null);
   readonly avatarInput = viewChild<ElementRef<HTMLInputElement>>('avatarInput');
   readonly gymWeekSessions = signal(0);
+  readonly themeModes: Array<{ value: ThemeMode; label: string }> = [
+    { value: 'system', label: 'System' },
+    { value: 'light', label: 'Hell' },
+    { value: 'dark', label: 'Dunkel' }
+  ];
   readonly themeSeedPresets = [
-    '#4c8dff',
-    '#0ea5e9',
-    '#14b8a6',
-    '#22c55e',
-    '#84cc16',
-    '#f59e0b',
-    '#ef4444',
-    '#a855f7'
+    '#78b457',
+    '#5f8f33',
+    '#98c85a',
+    '#4f7c31',
+    '#85b96a',
+    '#c59a52',
+    '#a5ba5d',
+    '#6f9d4a'
   ];
 
   private avatarFile: File | null = null;
@@ -545,6 +616,7 @@ export class ProfileComponent implements OnInit {
     target_weight_kg: [70, [Validators.min(20)]],
     weekly_gym_target: [3, [Validators.min(1), Validators.max(14)]],
     activity_level: ['moderate' as 'low' | 'moderate' | 'high'],
+    theme_mode: [this.themeService.getCurrentMode() as ThemeMode],
     theme_seed_color: [this.themeService.getCurrentSeed(), [Validators.pattern(/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/)]]
   });
 
@@ -621,8 +693,8 @@ export class ProfileComponent implements OnInit {
     const section = this.activeProfileSection();
     if (section === 'account') return 'Account';
     if (section === 'goals') return 'Ziele';
-    if (section === 'appearance') return 'Design';
-    return 'Profil-Details';
+    if (section === 'appearance') return 'Darstellung';
+    return 'Details';
   }
 
   setWeightTrendDays(days: 7 | 30): void {
@@ -703,6 +775,7 @@ export class ProfileComponent implements OnInit {
       (resolvedProfile as Profile).theme_seed_color || this.themeService.getCurrentSeed(),
       { persistLocal: true }
     );
+    const resolvedThemeMode = this.themeService.getCurrentMode();
 
     this.profile.set({ ...(resolvedProfile as Profile), theme_seed_color: resolvedThemeSeed });
     this.authService.setOnboardingCompleted(Boolean(resolvedProfile.onboarding_completed));
@@ -718,6 +791,7 @@ export class ProfileComponent implements OnInit {
       target_weight_kg: Number(resolvedProfile.target_weight_kg || 70),
       weekly_gym_target: Number(resolvedProfile.weekly_gym_target || 3),
       activity_level: (resolvedProfile.activity_level || 'moderate') as 'low' | 'moderate' | 'high',
+      theme_mode: resolvedThemeMode,
       theme_seed_color: resolvedThemeSeed
     });
   }
@@ -805,6 +879,7 @@ export class ProfileComponent implements OnInit {
       }
 
       const formValue = this.profileForm.getRawValue();
+      const normalizedThemeMode = this.themeService.applyMode(formValue.theme_mode, { persistLocal: true });
       const normalizedThemeSeed = this.themeService.applySeed(formValue.theme_seed_color, { persistLocal: false });
 
       const payload = {
@@ -832,9 +907,10 @@ export class ProfileComponent implements OnInit {
 
       this.avatarFile = null;
       this.avatarFileName.set(null);
+      this.profileForm.controls.theme_mode.setValue(normalizedThemeMode);
       this.profileForm.controls.theme_seed_color.setValue(normalizedThemeSeed);
       this.themeService.applySeed(normalizedThemeSeed, { persistLocal: true });
-      this.successMessage.set('Profil gespeichert.');
+      this.successMessage.set('Profil aktualisiert.');
       await this.loadAll();
     } catch (error) {
       this.errorMessage.set(formatAppError(error, 'Profil konnte nicht gespeichert werden'));
@@ -1070,5 +1146,10 @@ export class ProfileComponent implements OnInit {
   applyThemePreset(seed: string): void {
     this.profileForm.controls.theme_seed_color.setValue(seed);
     this.themeService.applySeed(seed, { persistLocal: false });
+  }
+
+  applyThemeMode(mode: ThemeMode): void {
+    this.profileForm.controls.theme_mode.setValue(mode);
+    this.themeService.applyMode(mode, { persistLocal: false });
   }
 }

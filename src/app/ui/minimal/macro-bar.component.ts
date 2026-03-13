@@ -11,7 +11,7 @@ import { CommonModule } from '@angular/common';
       <strong>{{ value() }} / {{ target() }}{{ unit() }}</strong>
     </div>
     <div class="bar">
-      <div class="fill" [style.width.%]="progress()" [style.background]="color()"></div>
+      <div class="fill" [style.transform]="'scaleX(' + (progress() / 100) + ')'" [style.background]="color()"></div>
     </div>
   `,
   styles: [`
@@ -40,9 +40,11 @@ import { CommonModule } from '@angular/common';
     }
 
     .fill {
+      width: 100%;
       height: 100%;
       border-radius: 999px;
-      transition: width var(--motion-duration-medium) var(--motion-easing-decelerate);
+      transform-origin: left center;
+      transition: transform var(--motion-duration-medium) var(--motion-easing-decelerate);
     }
   `]
 })

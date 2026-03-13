@@ -1,11 +1,20 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal, OnInit } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  OnDestroy,
+  OnInit,
+  computed,
+  inject,
+  signal,
+  viewChild
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { SupabaseService } from '../../core/supabase.service';
 import { AuthService } from '../../core/auth.service';
 import { Ingredient, Meal, MealItem } from '../../core/types';
@@ -23,11 +32,13 @@ interface ParsedMacroInput {
 @Component({
   selector: 'app-library',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '(document:keydown)': 'onDocumentKeydown($event)'
+  },
   imports: [
     CommonModule,
     FormsModule,
     MatButtonModule,
-    MatButtonToggleModule,
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
@@ -50,15 +61,30 @@ interface ParsedMacroInput {
       </header>
 
       <section class="panel">
-        <mat-button-toggle-group
-          class="tab-toggle"
-          [value]="activeTab()"
-          aria-label="Bibliothek-Tabs"
-          (valueChange)="onTabChanged($event)"
-        >
-          <mat-button-toggle value="ingredients">Zutaten</mat-button-toggle>
-          <mat-button-toggle value="meals">Mahlzeiten</mat-button-toggle>
-        </mat-button-toggle-group>
+        <div class="tab-toggle" role="tablist" aria-label="Bibliothek-Tabs">
+          <button
+            type="button"
+            role="tab"
+            class="tab-toggle-btn"
+            [class.active]="activeTab() === 'ingredients'"
+            [attr.aria-selected]="activeTab() === 'ingredients'"
+            [attr.tabindex]="activeTab() === 'ingredients' ? 0 : -1"
+            (click)="onTabChanged('ingredients')"
+          >
+            Zutaten
+          </button>
+          <button
+            type="button"
+            role="tab"
+            class="tab-toggle-btn"
+            [class.active]="activeTab() === 'meals'"
+            [attr.aria-selected]="activeTab() === 'meals'"
+            [attr.tabindex]="activeTab() === 'meals' ? 0 : -1"
+            (click)="onTabChanged('meals')"
+          >
+            Mahlzeiten
+          </button>
+        </div>
 
         <div class="m3-section-head list-head">
           <span class="m3-section-meta">
@@ -111,7 +137,7 @@ interface ParsedMacroInput {
                   </div>
                   <div class="actions">
                     <button mat-flat-button type="button" class="action-btn tonal compact" (click)="logIngredientToday(item)">Loggen</button>
-                    <button mat-flat-button type="button" class="action-btn ghost compact" (click)="openIngredientActions(item)">Mehr</button>
+                    <button mat-flat-button type="button" class="action-btn ghost compact" (click)="openIngredientActions(item)">Verwalten</button>
                   </div>
                 </article>
               }
@@ -136,12 +162,12 @@ interface ParsedMacroInput {
                   </div>
                   <div class="actions">
                     <button mat-flat-button type="button" class="action-btn tonal compact" (click)="logMealToday(item)">Loggen</button>
-                    <button mat-flat-button type="button" class="action-btn ghost compact" (click)="openMealActions(item)">Mehr</button>
+                    <button mat-flat-button type="button" class="action-btn ghost compact" (click)="openMealActions(item)">Verwalten</button>
                   </div>
                 </article>
               }
               @if (meals().length === 0) {
-                <p class="empty-state">Noch keine Mahlzeiten. Erstelle eine aus Zutaten.</p>
+                <p class="empty-state">Noch keine Mahlzeiten. Lege deine erste Mahlzeit an, damit du später schneller loggen kannst.</p>
               }
             </div>
           }
@@ -174,9 +200,17 @@ interface ParsedMacroInput {
     </app-bottom-sheet>
 
     @if (showIngredientModal()) {
-      <div class="modal" role="dialog" aria-modal="true" aria-label="Zutateneditor">
-        <div class="modal-card">
-          <h2 class="title-font">{{ editingIngredient() ? 'Zutat bearbeiten' : 'Zutat hinzufügen' }}</h2>
+      <div class="modal" role="presentation" (click)="onModalBackdropClick($event, 'ingredient')">
+        <div
+          #ingredientDialog
+          class="modal-card"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="ingredient-modal-title"
+          tabindex="-1"
+          (click)="$event.stopPropagation()"
+        >
+          <h2 id="ingredient-modal-title" class="title-font">{{ editingIngredient() ? 'Zutat bearbeiten' : 'Zutat hinzufügen' }}</h2>
           <form (ngSubmit)="saveIngredient()" #ingForm="ngForm" class="stack-form">
             <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
               <mat-label>Quelle</mat-label>
@@ -286,9 +320,17 @@ interface ParsedMacroInput {
     }
 
     @if (showMealModal()) {
-      <div class="modal" role="dialog" aria-modal="true" aria-label="Mahlzeiteneditor">
-        <div class="modal-card">
-          <h2 class="title-font">{{ editingMeal() ? 'Mahlzeit bearbeiten' : 'Mahlzeit hinzufügen' }}</h2>
+      <div class="modal" role="presentation" (click)="onModalBackdropClick($event, 'meal')">
+        <div
+          #mealDialog
+          class="modal-card"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="meal-modal-title"
+          tabindex="-1"
+          (click)="$event.stopPropagation()"
+        >
+          <h2 id="meal-modal-title" class="title-font">{{ editingMeal() ? 'Mahlzeit bearbeiten' : 'Mahlzeit hinzufügen' }}</h2>
           <form (ngSubmit)="saveMeal()" #mealFormRef="ngForm" class="stack-form">
             <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
               <mat-label>Mahlzeitenname</mat-label>
@@ -340,8 +382,20 @@ interface ParsedMacroInput {
       background: var(--m3-sys-color-surface-container-high);
     }
 
-    .tab-toggle .mat-button-toggle {
+    .tab-toggle-btn {
       min-height: var(--touch-target);
+      border: 0;
+      border-radius: 999px;
+      background: transparent;
+      color: var(--m3-sys-color-on-surface-variant);
+      font-size: var(--text-sm);
+      font-weight: 700;
+      padding: 0 16px;
+    }
+
+    .tab-toggle-btn.active {
+      background: var(--m3-sys-color-secondary-container);
+      color: var(--m3-sys-color-on-secondary-container);
     }
 
     h1 {
@@ -480,7 +534,7 @@ interface ParsedMacroInput {
     }
   `]
 })
-export class LibraryComponent implements OnInit {
+export class LibraryComponent implements OnInit, OnDestroy {
   activeTab = signal<'ingredients' | 'meals'>('ingredients');
   ingredients = signal<Ingredient[]>([]);
   meals = signal<Meal[]>([]);
@@ -494,6 +548,8 @@ export class LibraryComponent implements OnInit {
   selectedIngredientForActions = signal<Ingredient | null>(null);
   selectedMealForActions = signal<Meal | null>(null);
   actionSheetOpen = signal(false);
+  readonly ingredientDialog = viewChild<ElementRef<HTMLElement>>('ingredientDialog');
+  readonly mealDialog = viewChild<ElementRef<HTMLElement>>('mealDialog');
 
   ingredientSearch = '';
   marketFilter = '';
@@ -511,6 +567,7 @@ export class LibraryComponent implements OnInit {
   private readonly supabaseService = inject(SupabaseService);
   private readonly authService = inject(AuthService);
   private readonly libraryDataService = inject(LibraryDataService);
+  private previousFocusedElement: HTMLElement | null = null;
 
   marketSuggestions = computed(() => {
     const markets = this.ingredients()
@@ -539,6 +596,10 @@ export class LibraryComponent implements OnInit {
 
   ngOnInit() {
     void this.loadData();
+  }
+
+  ngOnDestroy(): void {
+    this.restorePreviousFocus();
   }
 
   onTabChanged(value: string): void {
@@ -579,14 +640,14 @@ export class LibraryComponent implements OnInit {
       this.ingredientForm = this.createEmptyIngredientForm();
       this.macroPasteText = '';
       this.macroPasteMessage.set(null);
-      this.showIngredientModal.set(true);
+      this.openIngredientModal();
       return;
     }
 
     this.editingMeal.set(null);
     this.mealForm = { name: '' };
     this.mealItems = [];
-    this.showMealModal.set(true);
+    this.openMealModal();
   }
 
   editIngredient(ingredient: Ingredient) {
@@ -605,7 +666,7 @@ export class LibraryComponent implements OnInit {
       fat_per_100: ingredient.fat_per_100,
       brand: ingredient.brand || ''
     };
-    this.showIngredientModal.set(true);
+    this.openIngredientModal();
   }
 
   async saveIngredient() {
@@ -645,10 +706,7 @@ export class LibraryComponent implements OnInit {
         }
       }
 
-      this.showIngredientModal.set(false);
-      this.editingIngredient.set(null);
-      this.macroPasteText = '';
-      this.macroPasteMessage.set(null);
+      this.closeIngredientModal();
       this.ingredientForm = this.createEmptyIngredientForm();
 
       this.libraryDataService.invalidate(user.id);
@@ -683,7 +741,7 @@ export class LibraryComponent implements OnInit {
     this.editingMeal.set(meal);
     this.mealForm.name = meal.name;
     void this.loadMealItems(meal.id);
-    this.showMealModal.set(true);
+    this.openMealModal();
   }
 
   closeIngredientModal(): void {
@@ -691,11 +749,13 @@ export class LibraryComponent implements OnInit {
     this.editingIngredient.set(null);
     this.macroPasteText = '';
     this.macroPasteMessage.set(null);
+    this.restorePreviousFocus();
   }
 
   closeMealModal(): void {
     this.showMealModal.set(false);
     this.editingMeal.set(null);
+    this.restorePreviousFocus();
   }
 
   async loadMealItems(mealId: string) {
@@ -779,8 +839,7 @@ export class LibraryComponent implements OnInit {
         }
       }
 
-      this.showMealModal.set(false);
-      this.editingMeal.set(null);
+      this.closeMealModal();
       this.mealForm = { name: '' };
       this.mealItems = [];
 
@@ -879,6 +938,122 @@ export class LibraryComponent implements OnInit {
 
   private formatCurrency(value: number) {
     return `${value.toFixed(2)} €`;
+  }
+
+  private openIngredientModal(): void {
+    this.captureFocusBeforeModal();
+    this.showIngredientModal.set(true);
+    this.scheduleDialogFocus();
+  }
+
+  private openMealModal(): void {
+    this.captureFocusBeforeModal();
+    this.showMealModal.set(true);
+    this.scheduleDialogFocus();
+  }
+
+  private scheduleDialogFocus(): void {
+    if (typeof window !== 'undefined') {
+      requestAnimationFrame(() => this.focusActiveDialog());
+      return;
+    }
+
+    queueMicrotask(() => this.focusActiveDialog());
+  }
+
+  private focusActiveDialog(): void {
+    const host = this.getActiveDialog();
+    if (!host) {
+      return;
+    }
+
+    const focusables = this.getFocusableElements(host);
+    const target = focusables[0] || host;
+    target.focus({ preventScroll: true });
+  }
+
+  private trapFocus(event: KeyboardEvent): void {
+    const host = this.getActiveDialog();
+    if (!host || typeof document === 'undefined') {
+      return;
+    }
+
+    const focusables = this.getFocusableElements(host);
+    if (focusables.length === 0) {
+      event.preventDefault();
+      host.focus({ preventScroll: true });
+      return;
+    }
+
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    const active = document.activeElement as HTMLElement | null;
+
+    if (!active || !host.contains(active)) {
+      event.preventDefault();
+      first.focus({ preventScroll: true });
+      return;
+    }
+
+    if (event.shiftKey && active === first) {
+      event.preventDefault();
+      last.focus({ preventScroll: true });
+      return;
+    }
+
+    if (!event.shiftKey && active === last) {
+      event.preventDefault();
+      first.focus({ preventScroll: true });
+    }
+  }
+
+  private getFocusableElements(root: HTMLElement): HTMLElement[] {
+    const selectors = [
+      'button:not([disabled])',
+      'a[href]',
+      'input:not([disabled])',
+      'select:not([disabled])',
+      'textarea:not([disabled])',
+      '[tabindex]:not([tabindex="-1"])'
+    ];
+
+    return Array.from(root.querySelectorAll<HTMLElement>(selectors.join(',')))
+      .filter(element => !element.hasAttribute('hidden') && element.getAttribute('aria-hidden') !== 'true');
+  }
+
+  private getActiveDialog(): HTMLElement | null {
+    if (this.showIngredientModal()) {
+      return this.ingredientDialog()?.nativeElement ?? null;
+    }
+
+    if (this.showMealModal()) {
+      return this.mealDialog()?.nativeElement ?? null;
+    }
+
+    return null;
+  }
+
+  private captureFocusBeforeModal(): void {
+    if (typeof document === 'undefined' || this.previousFocusedElement) {
+      return;
+    }
+
+    const active = document.activeElement;
+    if (!(active instanceof HTMLElement) || active.closest('[aria-modal="true"]')) {
+      return;
+    }
+
+    this.previousFocusedElement = active;
+  }
+
+  private restorePreviousFocus(): void {
+    if (!this.previousFocusedElement) {
+      return;
+    }
+
+    const target = this.previousFocusedElement;
+    this.previousFocusedElement = null;
+    queueMicrotask(() => target.focus({ preventScroll: true }));
   }
 
   private createEmptyIngredientForm() {
@@ -1050,14 +1225,47 @@ export class LibraryComponent implements OnInit {
     const ingredient = this.selectedIngredientForActions();
     if (ingredient) {
       this.closeActionSheet();
-      this.editIngredient(ingredient);
+      queueMicrotask(() => this.editIngredient(ingredient));
       return;
     }
 
     const meal = this.selectedMealForActions();
     if (meal) {
       this.closeActionSheet();
-      this.editMeal(meal);
+      queueMicrotask(() => this.editMeal(meal));
+    }
+  }
+
+  onModalBackdropClick(event: MouseEvent, modal: 'ingredient' | 'meal'): void {
+    if (event.target !== event.currentTarget) {
+      return;
+    }
+
+    if (modal === 'ingredient') {
+      this.closeIngredientModal();
+      return;
+    }
+
+    this.closeMealModal();
+  }
+
+  onDocumentKeydown(event: KeyboardEvent): void {
+    if (!this.showIngredientModal() && !this.showMealModal()) {
+      return;
+    }
+
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      if (this.showIngredientModal()) {
+        this.closeIngredientModal();
+        return;
+      }
+      this.closeMealModal();
+      return;
+    }
+
+    if (event.key === 'Tab') {
+      this.trapFocus(event);
     }
   }
 

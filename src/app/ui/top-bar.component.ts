@@ -8,7 +8,7 @@ import { RouterModule } from '@angular/router';
   imports: [CommonModule, RouterModule],
   template: `
     <header class="top-bar" role="banner">
-      <h1 class="title">Tracker Broo</h1>
+      <p class="title">Tracker Broo</p>
       <a class="insight-link" routerLink="/insights" aria-label="Insights öffnen">
         <span class="insight-dot" aria-hidden="true"></span>
         <span>Insights</span>
@@ -43,7 +43,7 @@ import { RouterModule } from '@angular/router';
     }
 
     .insight-link {
-      min-height: 40px;
+      min-height: 44px;
       border-radius: 999px;
       color: var(--m3-sys-color-on-surface-variant);
       border: 1px solid var(--m3-sys-color-outline-variant);

@@ -24,7 +24,7 @@ import {
 } from 'lucide-angular';
 import { SupabaseService } from '../../core/supabase.service';
 import { AuthService } from '../../core/auth.service';
-import { DailySummary, Ingredient, LogEntry, Meal, WeightLog } from '../../core/types';
+import { CommunityPost, DailySummary, Ingredient, LogEntry, Meal, WeightLog } from '../../core/types';
 import { AmountPickerSheetComponent, AmountPickResult, MacroTotals } from '../../ui/amount-picker-sheet.component';
 import { HeroRingComponent } from '../../ui/minimal/hero-ring.component';
 import { MacroBarComponent } from '../../ui/minimal/macro-bar.component';
@@ -34,6 +34,7 @@ import { formatAppError } from '../../core/error-format';
 import { LibraryDataService } from '../../core/library-data.service';
 import { QueryCacheService } from '../../core/query-cache.service';
 import { InteractionTelemetryService } from '../../core/interaction-telemetry.service';
+import { CommunityFeedService, CommunityProfileDirectoryEntry } from '../../core/community-feed.service';
 
 type QuickItem = Ingredient | Meal;
 
@@ -49,7 +50,7 @@ interface TodaySnapshot {
   proteinDaysThisWeek: string[];
 }
 
-type FoodFilter = 'quick' | 'all' | 'favorites' | 'recent';
+type FoodFilter = 'all' | 'favorites' | 'recent';
 type MealSlot = 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'other';
 
 interface FoodQueueItem {
@@ -72,13 +73,11 @@ interface FoodDayPreview {
   fat: number;
 }
 
-interface InstantLogState {
-  entryId: string;
-  name: string;
-  day: string;
+interface BrooBoardPost {
+  post: CommunityPost;
+  displayName: string;
+  photoUrl: string | null;
 }
-
-type FoodStage = 'search' | 'queue' | 'confirm';
 
 @Component({
   selector: 'app-today',
@@ -106,8 +105,62 @@ type FoodStage = 'search' | 'queue' | 'confirm';
         <p class="toast success" role="status" aria-live="polite" aria-atomic="true">{{ successMessage() }}</p>
       }
 
-      <section class="panel hero">
-        <p class="date-label"><lucide-icon [img]="icons.calendar" class="icon" aria-hidden="true"></lucide-icon> {{ todayLabel() }}</p>
+      <section class="panel broo-board" aria-labelledby="broo-board-title">
+        <div class="broo-board-head">
+          <div>
+            <p class="title-font">Broo Board</p>
+            <h1 id="broo-board-title">Wer war zuletzt im Gym?</h1>
+            <p class="broo-lead">Wie im WhatsApp-Chat: sehen, was läuft, und direkt mitziehen.</p>
+          </div>
+          <span class="board-badge">{{ brooBoardPosts().length }} Einträge</span>
+        </div>
+
+        <div class="board-actions">
+          <button mat-flat-button type="button" class="action-btn board-primary-btn" (click)="openGymCheckInComposer()">
+            <lucide-icon [img]="icons.dumbbell" class="icon" aria-hidden="true"></lucide-icon>
+            Auch im Gym gewesen
+          </button>
+          <button mat-flat-button type="button" class="action-btn tonal board-secondary-btn" (click)="openFoodQuickLog()">
+            <lucide-icon [img]="icons.utensils" class="icon" aria-hidden="true"></lucide-icon>
+            Protein jetzt loggen
+          </button>
+        </div>
+
+        @if (loadingBrooBoard()) {
+          <p class="muted">Der Gruppenrhythmus wird geladen …</p>
+        } @else if (brooBoardPosts().length > 0) {
+          <div class="board-stream" aria-label="Letzte Gruppenaktivität">
+            @for (item of brooBoardPosts(); track item.post.id; let index = $index) {
+              <article class="board-post" [style.--stagger]="index">
+                <div class="board-post-top">
+                  <div>
+                    <strong>{{ item.displayName }}</strong>
+                    <p class="board-post-meta">{{ brooPostLabel(item.post) }}</p>
+                  </div>
+                  <span class="board-post-day">{{ brooPostDayLabel(item.post.day) }}</span>
+                </div>
+
+                <p class="board-post-copy">{{ brooPostSummary(item.post) }}</p>
+
+                @if (item.photoUrl) {
+                  <img [src]="item.photoUrl" alt="" class="board-post-photo" loading="lazy" decoding="async">
+                }
+              </article>
+            }
+          </div>
+        } @else {
+          <p class="muted">Heute hat noch niemand etwas geteilt. Starte den ersten Check-in für eure Woche.</p>
+        }
+      </section>
+
+      <section class="panel hero my-day-panel">
+        <div class="my-day-head">
+          <div>
+            <p class="title-font">Mein Tag</p>
+            <h2>{{ todayLabel() }}</h2>
+          </div>
+          <p class="date-label"><lucide-icon [img]="icons.calendar" class="icon" aria-hidden="true"></lucide-icon> {{ today() }}</p>
+        </div>
 
         <div class="day-nav">
           <button mat-icon-button type="button" class="nav-btn" (click)="goPreviousDay()" aria-label="Vorheriger Tag">
@@ -133,6 +186,10 @@ type FoodStage = 'search' | 'queue' | 'confirm';
           <button mat-flat-button type="button" class="action-btn ghost" [disabled]="today() === realToday" (click)="jumpToToday()">
             Heute
           </button>
+          <button mat-flat-button type="button" class="action-btn ghost compact hero-copy-btn" (click)="copyFromPreviousDay()">
+            <lucide-icon [img]="icons.copy" class="icon" aria-hidden="true"></lucide-icon>
+            Tag kopieren
+          </button>
         </div>
 
         <app-hero-ring [value]="proteinToday()" [target]="proteinGoal" accentColor="var(--m3-sys-color-primary)" />
@@ -152,25 +209,6 @@ type FoodStage = 'search' | 'queue' | 'confirm';
           <span><lucide-icon [img]="icons.weight" class="icon" aria-hidden="true"></lucide-icon> Gewicht</span>
           <strong>{{ weightValueLabel() }}</strong>
           <span class="delta">{{ weightDeltaLabel() }}</span>
-        </div>
-
-        <div class="weight-quick" role="group" aria-label="Schnelles Gewichtloggen">
-          <button mat-flat-button type="button" class="day-chip compact-chip" (click)="adjustInlineWeight(-0.1)">-0.1</button>
-          <mat-form-field class="m3-field weight-quick-input" appearance="outline" subscriptSizing="dynamic">
-            <mat-label>Heute (kg)</mat-label>
-            <input
-              matInput
-              type="number"
-              min="20"
-              step="0.1"
-              [ngModel]="inlineWeightInput()"
-              (ngModelChange)="onInlineWeightInput($event)"
-            >
-          </mat-form-field>
-          <button mat-flat-button type="button" class="day-chip compact-chip" (click)="adjustInlineWeight(0.1)">+0.1</button>
-          <button mat-flat-button type="button" class="entry-btn inline-save-btn" [disabled]="savingInlineWeight()" (click)="saveInlineWeight()">
-            {{ savingInlineWeight() ? '...' : 'Loggen' }}
-          </button>
         </div>
       </section>
 
@@ -254,19 +292,15 @@ type FoodStage = 'search' | 'queue' | 'confirm';
               <p class="entry-meta">{{ entryTimeLabel(entry.created_at) }}</p>
             </div>
             <div class="entry-actions">
-              <button mat-flat-button type="button" class="entry-btn" (click)="openEntryActions(entry)">Mehr</button>
+              <button mat-flat-button type="button" class="entry-btn" (click)="openEntryActions(entry)">Verwalten</button>
             </div>
           </article>
         }
       @if (todayEntries().length === 0) {
-          <p class="muted">Für {{ today() }} noch keine Einträge.</p>
+          <p class="muted">Für heute ist noch nichts geloggt. Starte mit einem schnellen Eintrag oder zieh beim Gruppenrhythmus mit.</p>
         }
       </section>
 
-      <button mat-fab extended class="app-fab today-fab" type="button" (click)="openActions()" aria-label="Eintrag hinzufügen">
-        <lucide-icon [img]="icons.plus" class="fab-icon" aria-hidden="true"></lucide-icon>
-        Eintrag hinzufügen
-      </button>
     </main>
 
     <app-bottom-sheet [open]="showActionSheet()" [title]="sheetTitle()" (closed)="closeActions()">
@@ -274,241 +308,171 @@ type FoodStage = 'search' | 'queue' | 'confirm';
         <div class="action-list">
           <button mat-flat-button type="button" class="menu-btn" (click)="setSheetMode('food')"><lucide-icon [img]="icons.utensils" class="icon" aria-hidden="true"></lucide-icon> Essen hinzufügen</button>
           <button mat-flat-button type="button" class="menu-btn" (click)="setSheetMode('weight')"><lucide-icon [img]="icons.weight" class="icon" aria-hidden="true"></lucide-icon> Gewicht eintragen</button>
-          <button mat-flat-button type="button" class="menu-btn" (click)="setSheetMode('gym')"><lucide-icon [img]="icons.dumbbell" class="icon" aria-hidden="true"></lucide-icon> Gym erledigt</button>
+          <button mat-flat-button type="button" class="menu-btn" (click)="setSheetMode('gym')"><lucide-icon [img]="icons.dumbbell" class="icon" aria-hidden="true"></lucide-icon> Gym-Check-in teilen</button>
         </div>
       }
 
       @if (sheetMode() === 'food') {
         <section class="food-sheet">
-          <div class="quick-primary-row">
-            <button mat-flat-button type="button" class="menu-btn compact quick-primary-btn" (click)="copyEntriesToTargetDay()">
-              <lucide-icon [img]="icons.copy" class="icon" aria-hidden="true"></lucide-icon>
-              Tag kopieren
-            </button>
-            <button mat-flat-button type="button" class="menu-btn compact quick-secondary-btn" (click)="setSheetMode('weight')">
-              <lucide-icon [img]="icons.weight" class="icon" aria-hidden="true"></lucide-icon>
-              Gewicht
-            </button>
-          </div>
-
-          <div class="stage-toggle" role="group" aria-label="Food Logging Schritte">
-            <button mat-flat-button type="button" class="stage-btn" [class.active]="foodStage() === 'search'" (click)="setFoodStage('search')">1. Suche</button>
-            <button mat-flat-button type="button" class="stage-btn" [class.active]="foodStage() === 'queue'" (click)="setFoodStage('queue')">2. Log-Liste</button>
-            <button mat-flat-button type="button" class="stage-btn" [class.active]="foodStage() === 'confirm'" (click)="setFoodStage('confirm')">3. Bestätigen</button>
-          </div>
-
-          @if (foodStage() === 'search') {
-            <mat-form-field class="m3-field food-search-field" appearance="outline" subscriptSizing="dynamic">
-              <mat-label>Lebensmittel suchen</mat-label>
-              <input
-                #foodSearchInput
-                matInput
-                type="search"
-                [ngModel]="foodSearch()"
-                (ngModelChange)="foodSearch.set($event)"
-                placeholder="Lebensmittel suchen"
-                aria-label="Lebensmittel suchen"
-              >
+          <div class="food-day-grid">
+            <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+              <mat-label>Zieltag</mat-label>
+              <input matInput type="date" [ngModel]="foodTargetDay()" (ngModelChange)="onFoodTargetDayChange($event)">
             </mat-form-field>
 
-            @if (favoriteQuickItems().length > 0) {
-              <div class="favorite-row" role="group" aria-label="Favoriten">
-                @for (item of favoriteQuickItems(); track item.id) {
-                  <button mat-flat-button type="button" class="favorite-chip" (click)="addDefaultToQueue(item)">
-                    {{ item.name }}
+            <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+              <mat-label>Kopieren von</mat-label>
+              <input matInput type="date" [ngModel]="copySourceDay()" (ngModelChange)="onCopySourceDayChange($event)">
+            </mat-form-field>
+          </div>
+
+          <div class="slot-row" role="group" aria-label="Mahlzeiten-Slot">
+            <button mat-flat-button type="button" class="slot-chip" [class.active]="selectedMealSlot() === 'breakfast'" (click)="setMealSlot('breakfast')">Frühstück</button>
+            <button mat-flat-button type="button" class="slot-chip" [class.active]="selectedMealSlot() === 'lunch'" (click)="setMealSlot('lunch')">Mittag</button>
+            <button mat-flat-button type="button" class="slot-chip" [class.active]="selectedMealSlot() === 'dinner'" (click)="setMealSlot('dinner')">Abend</button>
+            <button mat-flat-button type="button" class="slot-chip" [class.active]="selectedMealSlot() === 'snack'" (click)="setMealSlot('snack')">Snack</button>
+            <button mat-flat-button type="button" class="slot-chip" [class.active]="selectedMealSlot() === 'other'" (click)="setMealSlot('other')">Sonstiges</button>
+          </div>
+
+          <mat-form-field class="m3-field time-field" appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Zeit</mat-label>
+            <input matInput type="time" [ngModel]="selectedMealTime()" (ngModelChange)="onMealTimeChange($event)">
+          </mat-form-field>
+
+          <mat-form-field class="m3-field food-search-field" appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Lebensmittel suchen</mat-label>
+            <input
+              #foodSearchInput
+              matInput
+              type="search"
+              [ngModel]="foodSearch()"
+              (ngModelChange)="foodSearch.set($event)"
+              placeholder="Lebensmittel suchen"
+              aria-label="Lebensmittel suchen"
+            >
+          </mat-form-field>
+
+          @if (favoriteQuickItems().length > 0) {
+            <div class="favorite-row" role="group" aria-label="Favoriten">
+              @for (item of favoriteQuickItems(); track item.id) {
+                <button mat-flat-button type="button" class="favorite-chip" (click)="addDefaultToQueue(item)">
+                  {{ item.name }}
+                </button>
+              }
+            </div>
+          }
+
+          <div class="filter-toggle compact-filter" role="group" aria-label="Food Filter">
+            <button
+              mat-flat-button
+              type="button"
+              class="filter-btn"
+              [class.active]="foodFilter() === 'recent'"
+              (click)="setFoodFilter('recent')"
+            >
+              Zuletzt
+            </button>
+            <button
+              mat-flat-button
+              type="button"
+              class="filter-btn"
+              [class.active]="foodFilter() === 'favorites'"
+              (click)="setFoodFilter('favorites')"
+            >
+              Favoriten
+            </button>
+            <button
+              mat-flat-button
+              type="button"
+              class="filter-btn"
+              [class.active]="foodFilter() === 'all'"
+              (click)="setFoodFilter('all')"
+            >
+              Alle
+            </button>
+          </div>
+
+          <div class="food-list">
+            @for (item of quickFoodItems(); track item.id) {
+              <article class="food-row">
+                <button mat-flat-button type="button" class="food-open-btn" (click)="openAmountPicker(item, 'queue')">
+                  <span class="food-name">{{ item.name }}</span>
+                  <small class="food-macros">{{ quickItemMacroLine(item) }}</small>
+                </button>
+                <div class="food-row-actions">
+                  <button mat-icon-button type="button" class="round-icon-btn" (click)="toggleFavoriteFood(item.id)" [attr.aria-label]="isFavoriteFood(item.id) ? 'Favorit entfernen' : 'Als Favorit speichern'">
+                    <lucide-icon [img]="icons.star" [class.is-favorite]="isFavoriteFood(item.id)" aria-hidden="true"></lucide-icon>
                   </button>
-                }
+                  <button mat-icon-button type="button" class="round-icon-btn primary" (click)="addDefaultToQueue(item)" aria-label="Zur Log-Liste hinzufügen">
+                    <lucide-icon [img]="icons.plus" aria-hidden="true"></lucide-icon>
+                  </button>
+                </div>
+              </article>
+            }
+            @if (quickFoodItems().length === 0) {
+              <p class="muted">Keine Treffer für deinen Filter.</p>
+            }
+          </div>
+
+          @if (isFoodTargetFuture()) {
+            <p class="muted">Du loggst für einen zukünftigen Tag: {{ foodTargetDay() }}.</p>
+          }
+
+          @if (loadingFoodTargetPreview()) {
+            <p class="muted">Tagesstatus wird geladen...</p>
+          } @else if (foodTargetPreview()) {
+            <article class="food-day-preview">
+              <strong>{{ foodTargetPreview()!.day }}</strong>
+              <span>{{ foodTargetPreview()!.entryCount }} Einträge · {{ foodTargetPreview()!.kcal.toFixed(0) }} kcal</span>
+              <small>P {{ foodTargetPreview()!.protein.toFixed(0) }} · KH {{ foodTargetPreview()!.carbs.toFixed(0) }} · F {{ foodTargetPreview()!.fat.toFixed(0) }}</small>
+            </article>
+          }
+
+          <div class="day-quick-row">
+            <button mat-flat-button type="button" class="day-chip" (click)="setFoodTargetByOffset(-1)">-1 Tag</button>
+            <button mat-flat-button type="button" class="day-chip" (click)="setFoodTargetByOffset(1)">+1 Tag</button>
+            <button mat-flat-button type="button" class="day-chip" (click)="setFoodTargetByOffset(7)">+7 Tage</button>
+          </div>
+
+          <div class="queue-list">
+            @if (foodQueueCount() > 0) {
+              <div class="queue-head-row">
+                <p class="queue-head">Log-Liste ({{ foodQueueCount() }})</p>
+                <button mat-flat-button type="button" class="day-chip queue-clear-btn" (click)="clearFoodQueue()">Leeren</button>
               </div>
             }
-
-            <div class="filter-toggle" role="group" aria-label="Food Filter">
-              <button
-                mat-flat-button
-                type="button"
-                class="filter-btn"
-                [class.active]="foodFilter() === 'quick'"
-                (click)="setFoodFilter('quick')"
-              >
-                Schnell
-              </button>
-              <button
-                mat-flat-button
-                type="button"
-                class="filter-btn"
-                [class.active]="foodFilter() === 'all'"
-                (click)="setFoodFilter('all')"
-              >
-                Alle
-              </button>
-              <button
-                mat-flat-button
-                type="button"
-                class="filter-btn"
-                [class.active]="foodFilter() === 'favorites'"
-                (click)="setFoodFilter('favorites')"
-              >
-                Favoriten
-              </button>
-              <button
-                mat-flat-button
-                type="button"
-                class="filter-btn"
-                [class.active]="foodFilter() === 'recent'"
-                (click)="setFoodFilter('recent')"
-              >
-                Zuletzt
-              </button>
-            </div>
-
-            <div class="food-list">
-              @for (item of quickFoodItems(); track item.id) {
-                <article class="food-row">
-                  <button mat-flat-button type="button" class="food-open-btn" (click)="openAmountPicker(item, 'queue')">
-                    <span class="food-name">{{ item.name }}</span>
-                    <small class="food-macros">{{ quickItemMacroLine(item) }}</small>
+            @for (item of foodQueue(); track item.id) {
+              <article class="queue-item">
+                <div class="queue-main">
+                  <strong>{{ item.name }}</strong>
+                  <small>{{ mealSlotLabel(item.mealSlot) }} · {{ item.mealTime }}</small>
+                  <small>P {{ item.totals.protein.toFixed(1) }} · KH {{ item.totals.carbs.toFixed(1) }} · F {{ item.totals.fat.toFixed(1) }} · {{ item.totals.kcal.toFixed(0) }} kcal</small>
+                </div>
+                <div class="queue-controls">
+                  <mat-form-field class="m3-field queue-amount-field" appearance="outline" subscriptSizing="dynamic">
+                    <mat-label>{{ queueUnitLabel(item) }}</mat-label>
+                    <input matInput type="number" min="0.1" step="0.1" [ngModel]="item.amount" (ngModelChange)="onQueueAmountChange(item.id, $event)">
+                  </mat-form-field>
+                  <button mat-icon-button type="button" class="round-icon-btn" (click)="removeFoodQueueItem(item.id)" aria-label="Aus Log-Liste entfernen">
+                    <lucide-icon [img]="icons.trash" aria-hidden="true"></lucide-icon>
                   </button>
-                  <div class="food-row-actions">
-                    <button
-                      mat-flat-button
-                      type="button"
-                      class="day-chip"
-                      style="width:auto; min-height:36px; padding-inline:12px;"
-                      (click)="quickLogFood(item)"
-                      aria-label="Sofort mit Standardmenge loggen"
-                    >
-                      Sofort
-                    </button>
-                    <button mat-icon-button type="button" class="round-icon-btn" (click)="toggleFavoriteFood(item.id)" [attr.aria-label]="isFavoriteFood(item.id) ? 'Favorit entfernen' : 'Als Favorit speichern'">
-                      <lucide-icon [img]="icons.star" [class.is-favorite]="isFavoriteFood(item.id)" aria-hidden="true"></lucide-icon>
-                    </button>
-                    <button mat-icon-button type="button" class="round-icon-btn primary" (click)="addDefaultToQueue(item)" aria-label="Zur Log-Liste hinzufügen">
-                      <lucide-icon [img]="icons.plus" aria-hidden="true"></lucide-icon>
-                    </button>
-                  </div>
-                </article>
-              }
-              @if (quickFoodItems().length === 0) {
-                <p class="muted">Keine Treffer für deinen Filter.</p>
-              }
-            </div>
-
-            @if (lastInstantLog()) {
-              <article class="food-day-preview">
-                <strong>{{ lastInstantLog()!.name }} geloggt für {{ lastInstantLog()!.day }}</strong>
-                <button
-                  mat-flat-button
-                  type="button"
-                  class="day-chip"
-                  style="width:auto; min-height:34px; justify-self:start; padding-inline:12px;"
-                  [disabled]="undoingInstantLog()"
-                  (click)="undoInstantLog()"
-                >
-                  {{ undoingInstantLog() ? '...' : 'Rückgängig' }}
-                </button>
+                </div>
               </article>
             }
 
-            @if (foodQueueCount() > 0) {
-              <button mat-flat-button type="button" class="menu-btn compact stage-next-btn" (click)="setFoodStage('queue')">
-                Zur Log-Liste ({{ foodQueueCount() }})
-              </button>
+            @if (foodQueueCount() === 0) {
+              <p class="muted">Suche ein Lebensmittel und tippe auf +, um es zur Log-Liste hinzuzufügen.</p>
             }
-          }
+          </div>
 
-          @if (foodStage() === 'queue' || foodStage() === 'confirm') {
-            <div class="slot-row" role="group" aria-label="Mahlzeiten-Slot">
-              <button mat-flat-button type="button" class="slot-chip" [class.active]="selectedMealSlot() === 'breakfast'" (click)="setMealSlot('breakfast')">Frühstück</button>
-              <button mat-flat-button type="button" class="slot-chip" [class.active]="selectedMealSlot() === 'lunch'" (click)="setMealSlot('lunch')">Mittag</button>
-              <button mat-flat-button type="button" class="slot-chip" [class.active]="selectedMealSlot() === 'dinner'" (click)="setMealSlot('dinner')">Abend</button>
-              <button mat-flat-button type="button" class="slot-chip" [class.active]="selectedMealSlot() === 'snack'" (click)="setMealSlot('snack')">Snack</button>
-              <button mat-flat-button type="button" class="slot-chip" [class.active]="selectedMealSlot() === 'other'" (click)="setMealSlot('other')">Sonstiges</button>
-            </div>
-
-            <mat-form-field class="m3-field time-field" appearance="outline" subscriptSizing="dynamic">
-              <mat-label>Zeit</mat-label>
-              <input matInput type="time" [ngModel]="selectedMealTime()" (ngModelChange)="onMealTimeChange($event)">
-            </mat-form-field>
-          }
-
-          @if (foodStage() === 'confirm') {
-            <div class="food-day-grid">
-              <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
-                <mat-label>Zieltag</mat-label>
-                <input matInput type="date" [ngModel]="foodTargetDay()" (ngModelChange)="onFoodTargetDayChange($event)">
-              </mat-form-field>
-
-              <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
-                <mat-label>Kopieren von</mat-label>
-                <input matInput type="date" [ngModel]="copySourceDay()" (ngModelChange)="onCopySourceDayChange($event)">
-              </mat-form-field>
-            </div>
-
-            @if (isFoodTargetFuture()) {
-              <p class="muted">Du loggst für einen zukünftigen Tag: {{ foodTargetDay() }}.</p>
-            }
-
-            @if (loadingFoodTargetPreview()) {
-              <p class="muted">Tagesstatus wird geladen...</p>
-            } @else if (foodTargetPreview()) {
-              <article class="food-day-preview">
-                <strong>{{ foodTargetPreview()!.day }}</strong>
-                <span>{{ foodTargetPreview()!.entryCount }} Einträge · {{ foodTargetPreview()!.kcal.toFixed(0) }} kcal</span>
-                <small>P {{ foodTargetPreview()!.protein.toFixed(0) }} · KH {{ foodTargetPreview()!.carbs.toFixed(0) }} · F {{ foodTargetPreview()!.fat.toFixed(0) }}</small>
-              </article>
-            }
-
-            <div class="day-quick-row">
-              <button mat-flat-button type="button" class="day-chip" (click)="setFoodTargetByOffset(-1)">-1 Tag</button>
-              <button mat-flat-button type="button" class="day-chip" (click)="setFoodTargetByOffset(1)">+1 Tag</button>
-              <button mat-flat-button type="button" class="day-chip" (click)="setFoodTargetByOffset(7)">+7 Tage</button>
-            </div>
-          }
-
-          @if (foodStage() !== 'search') {
-            <div class="queue-list">
-              @if (foodQueueCount() > 0) {
-                <p class="queue-head">Log-Liste ({{ foodQueueCount() }})</p>
-              }
-              @for (item of foodQueue(); track item.id) {
-                <article class="queue-item">
-                  <div class="queue-main">
-                    <strong>{{ item.name }}</strong>
-                    <small>{{ mealSlotLabel(item.mealSlot) }} · {{ item.mealTime }}</small>
-                    <small>P {{ item.totals.protein.toFixed(1) }} · KH {{ item.totals.carbs.toFixed(1) }} · F {{ item.totals.fat.toFixed(1) }} · {{ item.totals.kcal.toFixed(0) }} kcal</small>
-                  </div>
-                  <div class="queue-controls">
-                    <mat-form-field class="m3-field queue-amount-field" appearance="outline" subscriptSizing="dynamic">
-                      <mat-label>{{ queueUnitLabel(item) }}</mat-label>
-                      <input matInput type="number" min="0.1" step="0.1" [ngModel]="item.amount" (ngModelChange)="onQueueAmountChange(item.id, $event)">
-                    </mat-form-field>
-                    <button mat-icon-button type="button" class="round-icon-btn" (click)="removeFoodQueueItem(item.id)" aria-label="Aus Log-Liste entfernen">
-                      <lucide-icon [img]="icons.trash" aria-hidden="true"></lucide-icon>
-                    </button>
-                  </div>
-                </article>
-              }
-
-              @if (foodQueueCount() === 0) {
-                <p class="muted">Deine Log-Liste ist leer. Füge im Schritt "Suche" Lebensmittel hinzu.</p>
-              }
-            </div>
-          }
-
-          @if (foodStage() === 'queue' && foodQueueCount() > 0) {
-            <div class="stage-footer-row">
-              <button mat-flat-button type="button" class="menu-btn compact stage-next-btn" (click)="setFoodStage('search')">Zur Suche</button>
-              <button mat-flat-button type="button" class="menu-btn compact stage-next-btn primary-stage" (click)="setFoodStage('confirm')">Weiter zu Bestätigen</button>
-            </div>
-          }
-
-          @if (foodStage() === 'confirm') {
+          @if (foodQueueCount() > 0) {
             <div class="food-footer">
               <div class="queue-total">
                 <small>P {{ queueTotals().protein.toFixed(0) }} · KH {{ queueTotals().carbs.toFixed(0) }} · F {{ queueTotals().fat.toFixed(0) }}</small>
                 <strong>{{ queueTotals().kcal.toFixed(0) }} kcal</strong>
               </div>
-              <button mat-flat-button type="button" class="menu-btn apply-log-btn" [disabled]="foodQueueCount() === 0" (click)="applyFoodQueue()">
-                Log-Liste loggen ({{ foodQueueCount() }})
+              <button mat-flat-button type="button" class="menu-btn apply-log-btn" (click)="applyFoodQueue()">
+                Loggen ({{ foodQueueCount() }})
               </button>
             </div>
           }
@@ -545,12 +509,12 @@ type FoodStage = 'search' | 'queue' | 'confirm';
         <p class="file-label">Foto (optional)</p>
         <div class="file-row">
           <button mat-flat-button type="button" class="menu-btn compact" (click)="pickGymPhoto()">Foto auswählen</button>
-          <span class="file-name">{{ gymPhotoName() || 'Kein Foto gewählt' }}</span>
+          <span class="file-name">{{ gymPhotoName() || 'Kein Foto ausgewählt' }}</span>
         </div>
         <input #gymPhotoInput id="gym-photo-input" class="sr-only" type="file" accept="image/*" (change)="onGymPhotoSelected($event)">
 
         <button mat-flat-button type="button" class="menu-btn" [disabled]="savingGymPost()" (click)="submitGymPost()">
-          {{ savingGymPost() ? 'Wird gepostet...' : 'Gym-Check-in posten' }}
+          {{ savingGymPost() ? 'Wird geteilt …' : 'Gym-Check-in teilen' }}
         </button>
       }
 
@@ -637,11 +601,17 @@ type FoodStage = 'search' | 'queue' | 'confirm';
     }
 
     .hero-actions {
-      display: grid;
-      grid-template-columns: 1fr;
+      display: flex;
+      flex-wrap: wrap;
       gap: 8px;
       align-items: center;
-      justify-items: end;
+      justify-content: flex-end;
+    }
+
+    .hero-copy-btn {
+      min-height: var(--touch-target-compact);
+      padding-inline: 12px;
+      color: var(--m3-sys-color-on-surface-variant);
     }
 
     .icon {
@@ -653,11 +623,6 @@ type FoodStage = 'search' | 'queue' | 'confirm';
       flex: 0 0 16px;
       margin-right: 8px;
       vertical-align: middle;
-    }
-
-    .fab-icon {
-      width: 24px;
-      height: 24px;
     }
 
     .bars {
@@ -793,16 +758,6 @@ type FoodStage = 'search' | 'queue' | 'confirm';
       padding: 0 16px;
     }
 
-    .today-fab {
-      z-index: 31;
-      width: auto;
-      min-width: max-content;
-      height: var(--touch-target);
-      border-radius: 999px;
-      padding-inline: 18px;
-      gap: 8px;
-    }
-
     .action-list {
       display: grid;
       gap: 8px;
@@ -812,27 +767,6 @@ type FoodStage = 'search' | 'queue' | 'confirm';
       display: grid;
       gap: 12px;
       padding-bottom: max(8px, env(safe-area-inset-bottom));
-    }
-
-    .quick-primary-row {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 8px;
-      align-items: center;
-    }
-
-    .quick-primary-btn {
-      background: var(--m3-sys-color-primary);
-      border-color: transparent;
-      color: var(--m3-sys-color-on-primary);
-      justify-content: center;
-    }
-
-    .quick-secondary-btn {
-      background: var(--m3-sys-color-surface-container-highest);
-      color: var(--m3-sys-color-on-surface);
-      justify-content: center;
-      min-width: 118px;
     }
 
     .food-day-grid {
@@ -848,13 +782,13 @@ type FoodStage = 'search' | 'queue' | 'confirm';
     }
 
     .day-chip {
-      min-height: 38px;
+      min-height: var(--touch-target-compact);
       border: 1px solid var(--m3-sys-color-outline-variant);
       border-radius: 999px;
       background: var(--m3-sys-color-surface-container-high);
       color: var(--m3-sys-color-on-surface);
-      font-size: 13px;
-      font-weight: 700;
+      font-size: 12px;
+      font-weight: 600;
       width: 100%;
       justify-content: center;
     }
@@ -881,8 +815,8 @@ type FoodStage = 'search' | 'queue' | 'confirm';
     }
 
     .slot-chip.active {
-      background: var(--m3-sys-color-primary);
-      color: var(--m3-sys-color-on-primary);
+      background: var(--m3-sys-color-secondary-container);
+      color: var(--m3-sys-color-on-secondary-container);
       border-color: transparent;
     }
 
@@ -898,7 +832,6 @@ type FoodStage = 'search' | 'queue' | 'confirm';
       padding: 10px 12px;
       display: grid;
       gap: 2px;
-      animation: sheet-item-enter var(--motion-duration-medium) var(--motion-easing-decelerate) both;
     }
 
     .food-day-preview strong {
@@ -924,15 +857,15 @@ type FoodStage = 'search' | 'queue' | 'confirm';
     }
 
     .favorite-chip {
-      min-height: 36px;
+      min-height: var(--touch-target-compact);
       border: 1px solid var(--m3-sys-color-outline-variant);
       border-radius: 999px;
-      background: var(--m3-sys-color-secondary-container);
-      color: var(--m3-sys-color-on-secondary-container);
-      font-size: 13px;
+      background: var(--m3-sys-color-surface-container-high);
+      color: var(--m3-sys-color-on-surface);
+      font-size: 12px;
       font-weight: 600;
       white-space: nowrap;
-      padding: 0 14px;
+      padding: 0 12px;
     }
 
     .filter-toggle {
@@ -941,21 +874,25 @@ type FoodStage = 'search' | 'queue' | 'confirm';
       gap: 8px;
     }
 
+    .compact-filter {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
     .filter-btn {
       min-height: var(--touch-target-compact);
       border: 1px solid var(--m3-sys-color-outline-variant);
       border-radius: 999px;
       background: var(--m3-sys-color-surface-container-high);
       color: var(--m3-sys-color-on-surface-variant);
-      font-size: 13px;
-      font-weight: 700;
+      font-size: 12px;
+      font-weight: 600;
       justify-content: center;
       width: 100%;
     }
 
     .filter-btn.active {
-      background: var(--m3-sys-color-primary);
-      color: var(--m3-sys-color-on-primary);
+      background: var(--m3-sys-color-secondary-container);
+      color: var(--m3-sys-color-on-secondary-container);
       border-color: transparent;
     }
 
@@ -977,7 +914,6 @@ type FoodStage = 'search' | 'queue' | 'confirm';
       grid-template-columns: 1fr auto;
       gap: 8px;
       align-items: center;
-      animation: sheet-item-enter var(--motion-duration-medium) var(--motion-easing-decelerate) both;
       transition:
         transform var(--motion-duration-short) var(--motion-easing-standard),
         border-color var(--motion-duration-short) var(--motion-easing-standard);
@@ -988,7 +924,7 @@ type FoodStage = 'search' | 'queue' | 'confirm';
     }
 
     .food-open-btn {
-      min-height: 42px;
+      min-height: var(--touch-target-compact);
       border: none;
       border-radius: 12px;
       background: transparent !important;
@@ -1010,8 +946,8 @@ type FoodStage = 'search' | 'queue' | 'confirm';
     }
 
     .round-icon-btn {
-      width: 40px;
-      height: 40px;
+      width: 44px;
+      height: 44px;
       border: 1px solid var(--m3-sys-color-outline-variant);
       border-radius: 999px;
       background: var(--m3-sys-color-surface-container);
@@ -1028,8 +964,8 @@ type FoodStage = 'search' | 'queue' | 'confirm';
     }
 
     .round-icon-btn.primary {
-      background: var(--m3-sys-color-primary);
-      color: var(--m3-sys-color-on-primary);
+      background: var(--m3-sys-color-primary-container);
+      color: var(--m3-sys-color-on-primary-container);
       border-color: transparent;
     }
 
@@ -1039,15 +975,15 @@ type FoodStage = 'search' | 'queue' | 'confirm';
     }
 
     .menu-btn {
-      min-height: 44px;
+      min-height: var(--touch-target-compact);
       border: 1px solid var(--m3-sys-color-outline-variant);
-      border-radius: 16px;
+      border-radius: 14px;
       background: var(--m3-sys-color-surface-container-high);
       color: var(--m3-sys-color-on-surface);
-      font-size: 15px;
+      font-size: 14px;
       font-weight: 600;
       text-align: left;
-      padding: 6px 12px;
+      padding: 6px 10px;
       display: grid;
       gap: 2px;
       align-content: center;
@@ -1077,8 +1013,8 @@ type FoodStage = 'search' | 'queue' | 'confirm';
     }
 
     .menu-btn.compact {
-      min-height: 40px;
-      padding: 0 14px;
+      min-height: var(--touch-target-compact);
+      padding: 0 12px;
       width: auto;
       display: inline-flex;
       align-items: center;
@@ -1177,6 +1113,18 @@ type FoodStage = 'search' | 'queue' | 'confirm';
       font-weight: 700;
     }
 
+    .queue-head-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .queue-clear-btn {
+      width: auto;
+      padding-inline: 12px;
+    }
+
     .queue-item {
       border: 1px solid var(--m3-sys-color-outline-variant);
       border-radius: 16px;
@@ -1184,7 +1132,6 @@ type FoodStage = 'search' | 'queue' | 'confirm';
       padding: 8px;
       display: grid;
       gap: 8px;
-      animation: sheet-item-enter var(--motion-duration-medium) var(--motion-easing-decelerate) both;
       transition:
         transform var(--motion-duration-short) var(--motion-easing-standard),
         border-color var(--motion-duration-short) var(--motion-easing-standard);
@@ -1260,7 +1207,7 @@ type FoodStage = 'search' | 'queue' | 'confirm';
     }
 
     .apply-log-btn {
-      min-height: 44px;
+      min-height: var(--touch-target-compact);
       border-radius: 999px;
       white-space: nowrap;
       padding-inline: 16px;
@@ -1277,32 +1224,17 @@ type FoodStage = 'search' | 'queue' | 'confirm';
       margin-bottom: 2px;
     }
 
-    @keyframes sheet-item-enter {
-      from {
-        opacity: 0;
-        transform: translateY(8px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
     @media (max-width: 440px) {
       .food-day-grid {
         grid-template-columns: 1fr;
       }
 
-      .quick-primary-row {
-        grid-template-columns: 1fr;
-      }
-
-      .quick-secondary-btn {
-        min-width: 0;
-      }
-
       .filter-toggle {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .compact-filter {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
       }
 
       .food-footer {
@@ -1351,7 +1283,11 @@ export class TodayComponent implements OnInit {
   readonly gymDaysThisWeek = signal<Set<string>>(new Set<string>());
   readonly proteinDaysThisWeek = signal<Set<string>>(new Set<string>());
   readonly weightLogs = signal<WeightLog[]>([]);
+  readonly brooPosts = signal<CommunityPost[]>([]);
+  readonly brooProfiles = signal<Record<string, CommunityProfileDirectoryEntry>>({});
+  readonly brooPhotoSrcMap = signal<Record<string, string>>({});
   readonly loading = signal(false);
+  readonly loadingBrooBoard = signal(false);
   readonly errorMessage = signal<string | null>(null);
   readonly successMessage = signal<string | null>(null);
 
@@ -1367,8 +1303,7 @@ export class TodayComponent implements OnInit {
   readonly today = signal(this.realToday);
   readonly foodTargetDay = signal(this.realToday);
   readonly copySourceDay = signal(this.formatDate(new Date(Date.now() - 24 * 60 * 60 * 1000)));
-  readonly foodFilter = signal<FoodFilter>('quick');
-  readonly foodStage = signal<FoodStage>('search');
+  readonly foodFilter = signal<FoodFilter>('recent');
   readonly selectedMealSlot = signal<MealSlot>('snack');
   readonly selectedMealTime = signal('12:00');
   readonly foodQueue = signal<FoodQueueItem[]>([]);
@@ -1377,10 +1312,6 @@ export class TodayComponent implements OnInit {
   readonly foodTargetPreview = signal<FoodDayPreview | null>(null);
   readonly loadingFoodTargetPreview = signal(false);
   readonly weightTrendDays = signal<7 | 30>(7);
-  readonly inlineWeightInput = signal(70);
-  readonly savingInlineWeight = signal(false);
-  readonly lastInstantLog = signal<InstantLogState | null>(null);
-  readonly undoingInstantLog = signal(false);
   readonly activeFoodJourneyId = signal<string | null>(null);
   readonly activeWeightJourneyId = signal<string | null>(null);
   weightDateInput = this.realToday;
@@ -1399,6 +1330,7 @@ export class TodayComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
   private readonly telemetry = inject(InteractionTelemetryService);
+  private readonly communityFeed = inject(CommunityFeedService);
 
   readonly todayLabel = computed(() =>
     this.parseIsoDate(this.today()).toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: '2-digit' })
@@ -1411,6 +1343,13 @@ export class TodayComponent implements OnInit {
   readonly todayEntries = computed(() => this.entries());
   readonly recentWeightEntries = computed(() => this.weightLogs().slice(0, 7));
   readonly trendWeightEntries = computed(() => this.weightLogs().slice(0, this.weightTrendDays()));
+  readonly brooBoardPosts = computed<BrooBoardPost[]>(() =>
+    this.brooPosts().map(post => ({
+      post,
+      displayName: this.brooProfiles()[post.user_id]?.display_name || 'Broo',
+      photoUrl: this.brooPhotoSrcMap()[post.id] || null
+    }))
+  );
 
   readonly selectedDayWeight = computed(() =>
     this.weightLogs().find(entry => entry.logged_on === this.today()) || null
@@ -1451,17 +1390,17 @@ export class TodayComponent implements OnInit {
 
   readonly quickFoodItems = computed(() => {
     const query = this.foodSearch().trim().toLowerCase();
-    const filter = this.foodFilter();
+    const requestedFilter = this.foodFilter();
     const favorites = new Set(this.favoriteFoodIds());
     const recentIds = new Set(this.entries().map(entry => entry.ref_id));
-    const showQuickOnly = filter === 'quick' && (favorites.size > 0 || recentIds.size > 0);
+    const filter: FoodFilter =
+      requestedFilter === 'recent' && recentIds.size === 0
+        ? (favorites.size > 0 ? 'favorites' : 'all')
+        : requestedFilter;
 
     return this.allFoodItems()
       .filter(item => {
         if (query && !item.name.toLowerCase().includes(query)) {
-          return false;
-        }
-        if (showQuickOnly && !favorites.has(item.id) && !recentIds.has(item.id)) {
           return false;
         }
         if (filter === 'favorites' && !favorites.has(item.id)) {
@@ -1588,12 +1527,12 @@ export class TodayComponent implements OnInit {
 
       const selectedWeight = this.weightLogs().find(entry => entry.logged_on === day);
       this.weightInput = Number(selectedWeight?.weight_kg || this.weightInput);
-      this.inlineWeightInput.set(Number(selectedWeight?.weight_kg || this.weightInput));
       this.weightDateInput = day;
 
       if (day === this.realToday && Number(dayResult.value.summary?.protein || 0) >= this.proteinGoal) {
-        await this.ensureProteinMilestonePost(user.id, day, dayResult.value.summary);
+        await this.communityFeed.ensureProteinMilestonePost(user.id, day, dayResult.value.summary);
       }
+      await this.loadBrooBoard();
     } catch (error: unknown) {
       this.errorMessage.set(formatAppError(error, 'Heute-Daten konnten nicht geladen werden'));
     } finally {
@@ -1679,6 +1618,15 @@ export class TodayComponent implements OnInit {
     this.showActionSheet.set(true);
   }
 
+  openFoodQuickLog(): void {
+    this.openActions();
+  }
+
+  openGymCheckInComposer(): void {
+    this.showActionSheet.set(true);
+    this.setSheetMode('gym');
+  }
+
   closeActions(): void {
     const mode = this.sheetMode();
     if (mode === 'food') {
@@ -1712,7 +1660,6 @@ export class TodayComponent implements OnInit {
     this.sheetMode.set(mode);
     if (mode === 'food') {
       this.startFoodJourney('sheet_mode');
-      this.foodStage.set(this.foodQueueCount() > 0 ? 'queue' : 'search');
       if (this.foodQueueCount() === 0) {
         this.foodTargetDay.set(this.today());
         this.copySourceDay.set(this.shiftIsoDay(this.today(), -1));
@@ -1733,11 +1680,11 @@ export class TodayComponent implements OnInit {
   }
 
   sheetTitle(): string {
-    if (this.sheetMode() === 'food') return 'Essen hinzufügen';
+    if (this.sheetMode() === 'food') return 'Protein und Mahlzeiten loggen';
     if (this.sheetMode() === 'weight') return 'Gewicht eintragen';
-    if (this.sheetMode() === 'gym') return 'Gym posten';
-    if (this.sheetMode() === 'entry') return 'Eintrag';
-    return 'Schnellaktionen';
+    if (this.sheetMode() === 'gym') return 'Gym-Check-in teilen';
+    if (this.sheetMode() === 'entry') return 'Eintrag verwalten';
+    return 'Heute erledigen';
   }
 
   isIngredient(item: QuickItem): item is Ingredient {
@@ -1764,30 +1711,8 @@ export class TodayComponent implements OnInit {
     this.foodFilter.set(filter);
   }
 
-  setFoodStage(stage: FoodStage): void {
-    if (stage !== 'search' && this.foodQueueCount() === 0) {
-      this.foodStage.set('search');
-      return;
-    }
-    this.foodStage.set(stage);
-  }
-
   setWeightTrendDays(days: 7 | 30): void {
     this.weightTrendDays.set(days);
-  }
-
-  onInlineWeightInput(value: string | number): void {
-    const parsed = Number(value);
-    if (!Number.isFinite(parsed)) {
-      return;
-    }
-    this.inlineWeightInput.set(Number(parsed.toFixed(1)));
-  }
-
-  adjustInlineWeight(delta: number): void {
-    const current = this.inlineWeightInput();
-    const next = Math.max(20, Number((current + delta).toFixed(1)));
-    this.inlineWeightInput.set(next);
   }
 
   setMealSlot(slot: MealSlot): void {
@@ -1807,6 +1732,13 @@ export class TodayComponent implements OnInit {
     this.foodTargetDay.set(target);
     this.copySourceDay.set(this.shiftIsoDay(target, -1));
     void this.loadFoodTargetPreview();
+  }
+
+  async copyFromPreviousDay(): Promise<void> {
+    const targetDay = this.today();
+    this.foodTargetDay.set(targetDay);
+    this.copySourceDay.set(this.shiftIsoDay(targetDay, -1));
+    await this.copyEntriesToTargetDay();
   }
 
   onMealTimeChange(value: string): void {
@@ -1833,95 +1765,14 @@ export class TodayComponent implements OnInit {
   addDefaultToQueue(item: QuickItem): void {
     const amount = this.isIngredient(item) ? 100 : 1;
     this.addToFoodQueue(item, amount, this.scaledMacros(item, amount), this.selectedMealSlot(), this.selectedMealTime());
-    this.foodStage.set('queue');
-  }
-
-  async quickLogFood(item: QuickItem): Promise<void> {
-    const user = this.authService.user();
-    if (!user) {
-      return;
-    }
-
-    const targetDay = this.foodTargetDay();
-    const amount = this.isIngredient(item) ? 100 : 1;
-    const totals = this.scaledMacros(item, amount);
-    const payload = {
-      owner_id: user.id,
-      group_id: null as string | null,
-      day: targetDay,
-      entry_type: this.isIngredient(item) ? 'ingredient' : 'meal',
-      ref_id: item.id,
-      quantity: Number(amount.toFixed(2)),
-      kcal: Number(totals.kcal.toFixed(2)),
-      protein: Number(totals.protein.toFixed(2)),
-      carbs: Number(totals.carbs.toFixed(2)),
-      fat: Number(totals.fat.toFixed(2)),
-      created_at: this.combineDayTimeToIso(targetDay, this.selectedMealTime())
-    };
-
-    const { data, error } = await this.supabaseService.client
-      .from('log_entries')
-      .insert(payload)
-      .select('id')
-      .single();
-
-    if (error) {
-      this.failFoodJourney('quick_log_error');
-      this.errorMessage.set(formatAppError(error, 'Sofort-Log fehlgeschlagen'));
-      return;
-    }
-
-    this.lastInstantLog.set({
-      entryId: String((data as { id: string }).id),
-      name: item.name,
-      day: targetDay
-    });
-    this.successMessage.set(`${item.name} sofort geloggt.`);
-    this.completeFoodJourney('quick_log');
-    this.invalidateDayCaches(user.id);
-    await this.loadFoodTargetPreview();
-    if (targetDay === this.today()) {
-      await this.loadData(true);
-    }
-  }
-
-  async undoInstantLog(): Promise<void> {
-    const user = this.authService.user();
-    const last = this.lastInstantLog();
-    if (!user || !last) {
-      return;
-    }
-
-    this.undoingInstantLog.set(true);
-    const { error } = await this.supabaseService.client
-      .from('log_entries')
-      .delete()
-      .eq('id', last.entryId)
-      .eq('owner_id', user.id);
-
-    this.undoingInstantLog.set(false);
-    if (error) {
-      this.errorMessage.set(formatAppError(error, 'Rückgängig fehlgeschlagen'));
-      return;
-    }
-
-    this.successMessage.set(`${last.name} wurde entfernt.`);
-    this.lastInstantLog.set(null);
-    this.invalidateDayCaches(user.id);
-    await this.loadFoodTargetPreview();
-    if (last.day === this.today()) {
-      await this.loadData(true);
-    }
   }
 
   removeFoodQueueItem(queueId: string): void {
-    this.foodQueue.update(current => {
-      const next = current.filter(item => item.id !== queueId);
-      if (next.length === 0 && this.foodStage() !== 'search') {
-        this.foodStage.set('search');
-      }
-      return next;
-    });
+    this.foodQueue.update(current => current.filter(item => item.id !== queueId));
+  }
+
+  clearFoodQueue(): void {
+    this.foodQueue.set([]);
   }
 
   onQueueAmountChange(queueId: string, value: string | number): void {
@@ -2004,7 +1855,6 @@ export class TodayComponent implements OnInit {
     this.successMessage.set(`${queue.length} Einträge für ${targetDay} geloggt.`);
     this.completeFoodJourney('apply_queue', { queue_count: queue.length });
     this.foodQueue.set([]);
-    this.foodStage.set('search');
     this.invalidateDayCaches(user.id);
     await this.loadFoodTargetPreview();
     if (targetDay === this.today()) {
@@ -2086,7 +1936,6 @@ export class TodayComponent implements OnInit {
       this.successMessage.set(`${item.name} zur Log-Liste hinzugefügt.`);
       this.closeAmountPicker();
       this.sheetMode.set('food');
-      this.foodStage.set('queue');
       this.showActionSheet.set(true);
       return;
     }
@@ -2214,29 +2063,6 @@ export class TodayComponent implements OnInit {
     await this.loadData(true);
   }
 
-  async saveInlineWeight(): Promise<void> {
-    const user = this.authService.user();
-    const value = this.inlineWeightInput();
-    if (!user || value <= 0) {
-      this.errorMessage.set('Bitte gib ein gültiges Gewicht ein.');
-      return;
-    }
-
-    this.startWeightJourney('inline');
-    this.savingInlineWeight.set(true);
-    const saved = await this.upsertWeight(user.id, this.today(), value);
-    this.savingInlineWeight.set(false);
-    if (!saved) {
-      this.failWeightJourney('inline_save_error');
-      return;
-    }
-
-    this.successMessage.set('Gewicht für heute gespeichert.');
-    this.completeWeightJourney('inline_save');
-    this.invalidateDayCaches(user.id);
-    await this.loadData(true);
-  }
-
   setWeightDateToToday(): void {
     this.weightDateInput = this.realToday;
   }
@@ -2284,33 +2110,12 @@ export class TodayComponent implements OnInit {
 
     this.savingGymPost.set(true);
     try {
-      let photoUrl: string | null = null;
-      if (this.gymPhoto) {
-        photoUrl = await this.uploadImage(this.gymPhoto, 'gym-checkins', user.id);
-      }
-
-      const { error } = await this.supabaseService.client
-        .from('community_posts')
-        .upsert(
-          {
-            user_id: user.id,
-            post_type: 'gym_checkin',
-            day: this.today(),
-            note: this.gymNote.trim() || null,
-            summary: null,
-            photo_url: photoUrl
-          },
-          { onConflict: 'user_id,day,post_type' }
-        );
-
-      if (error) {
-        throw error;
-      }
+      await this.communityFeed.createGymCheckinPost(user.id, this.today(), this.gymNote, this.gymPhoto);
 
       this.gymNote = '';
       this.gymPhoto = null;
       this.gymPhotoName.set(null);
-      this.successMessage.set('Gym-Check-in gepostet.');
+      this.successMessage.set('Dein Gym-Check-in ist im Board.');
       this.closeActions();
       this.invalidateDayCaches(user.id);
       await this.loadData(true);
@@ -2339,6 +2144,43 @@ export class TodayComponent implements OnInit {
       return '--:--';
     }
     return parsed.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', hour12: false });
+  }
+
+  brooPostLabel(post: CommunityPost): string {
+    if (post.post_type === 'gym_checkin') {
+      return 'Gym-Check-in';
+    }
+    if (post.post_type === 'protein_milestone') {
+      return 'Protein-Ziel erreicht';
+    }
+    return 'Update aus der Gruppe';
+  }
+
+  brooPostSummary(post: CommunityPost): string {
+    if (post.post_type === 'gym_checkin') {
+      return post.note?.trim() || 'War im Gym und hat die Woche weitergeschoben.';
+    }
+
+    const summary = post.summary as { protein?: number; foods?: string[] } | null;
+    const foods = summary?.foods?.slice(0, 2) || [];
+    if (foods.length > 0) {
+      return `${Number(summary?.protein || 0).toFixed(0)}g Protein mit ${foods.join(' und ')}.`;
+    }
+
+    return `${Number(summary?.protein || 0).toFixed(0)}g Protein heute geschafft.`;
+  }
+
+  brooPostDayLabel(day: string): string {
+    if (day === this.realToday) {
+      return 'Heute';
+    }
+
+    const yesterday = this.shiftIsoDay(this.realToday, -1);
+    if (day === yesterday) {
+      return 'Gestern';
+    }
+
+    return this.parseIsoDate(day).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
   }
 
   private async loadFoodTargetPreview(): Promise<void> {
@@ -2386,6 +2228,20 @@ export class TodayComponent implements OnInit {
       this.foodTargetPreview.set(null);
     } finally {
       this.loadingFoodTargetPreview.set(false);
+    }
+  }
+
+  private async loadBrooBoard(): Promise<void> {
+    this.loadingBrooBoard.set(true);
+    try {
+      const page = await this.communityFeed.fetchFeedPage(0, 5);
+      this.brooPosts.set(page.posts);
+      this.brooProfiles.set(page.profiles);
+      this.brooPhotoSrcMap.set(page.photoSrcMap);
+    } catch (error: unknown) {
+      this.errorMessage.set(formatAppError(error, 'Die letzten Gruppen-Updates konnten nicht geladen werden'));
+    } finally {
+      this.loadingBrooBoard.set(false);
     }
   }
 
@@ -2591,67 +2447,6 @@ export class TodayComponent implements OnInit {
     }
 
     return this.mealMacros[item.id] || { kcal: 0, protein: 0, carbs: 0, fat: 0 };
-  }
-
-  private async ensureProteinMilestonePost(
-    userId: string,
-    day: string,
-    initialSummary?: Pick<DailySummary, 'protein' | 'kcal' | 'carbs' | 'fat'> | null
-  ): Promise<void> {
-    if (this.queryCache.getFresh<boolean>(this.getProteinMilestoneCacheKey(userId, day))) {
-      return;
-    }
-
-    let summaryData = initialSummary;
-    if (!summaryData) {
-      const { data } = await this.supabaseService.client
-        .from('daily_summaries')
-        .select('protein,kcal,carbs,fat')
-        .eq('owner_id', userId)
-        .is('group_id', null)
-        .eq('day', day)
-        .maybeSingle();
-      summaryData = data as Pick<DailySummary, 'protein' | 'kcal' | 'carbs' | 'fat'> | null;
-    }
-
-    const protein = Number(summaryData?.protein || 0);
-    if (protein < this.proteinGoal) {
-      return;
-    }
-
-    await this.supabaseService.client.from('community_posts').upsert(
-      {
-        user_id: userId,
-        post_type: 'protein_milestone',
-        day,
-        note: '100g Protein erreicht.',
-        summary: {
-          protein,
-          carbs: Number(summaryData?.carbs || 0),
-          fat: Number(summaryData?.fat || 0),
-          kcal: Number(summaryData?.kcal || 0)
-        },
-        photo_url: null
-      },
-      { onConflict: 'user_id,day,post_type' }
-    );
-
-    this.queryCache.set(this.getProteinMilestoneCacheKey(userId, day), true, 1000 * 60 * 60 * 6);
-  }
-
-  private async uploadImage(file: File, bucketName: string, userId: string): Promise<string> {
-    const extension = file.name.split('.').pop() || 'jpg';
-    const filePath = `${userId}/${Date.now()}.${extension}`;
-
-    const { error: uploadError } = await this.supabaseService.client.storage
-      .from(bucketName)
-      .upload(filePath, file, { upsert: true });
-
-    if (uploadError) {
-      throw uploadError;
-    }
-
-    return filePath;
   }
 
   private formatDate(date: Date): string {

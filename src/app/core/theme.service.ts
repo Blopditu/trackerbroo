@@ -2,7 +2,10 @@ import { DOCUMENT } from '@angular/common';
 import { Injectable, inject, signal } from '@angular/core';
 
 const THEME_SEED_STORAGE_KEY = 'trackerbroo:theme-seed';
-const DEFAULT_THEME_SEED = '#4c8dff';
+const THEME_MODE_STORAGE_KEY = 'trackerbroo:theme-mode';
+const DEFAULT_THEME_SEED = '#78b457';
+
+export type ThemeMode = 'system' | 'light' | 'dark';
 
 type DynamicRole = {
   getArgb: (scheme: unknown) => number;
@@ -22,8 +25,10 @@ type MaterialColorUtilitiesModule = {
 export class ThemeService {
   private readonly document = inject(DOCUMENT);
   private readonly currentSeed = signal(DEFAULT_THEME_SEED);
+  private readonly currentMode = signal<ThemeMode>('system');
   private materialUtilsPromise: Promise<MaterialColorUtilitiesModule> | null = null;
   private applyRequestId = 0;
+  private mediaQueryListenerBound = false;
 
   private readonly roleMap: Record<string, string> = {
     '--m3-sys-color-primary': 'primary',
@@ -59,8 +64,10 @@ export class ThemeService {
   };
 
   initialize(): void {
+    this.applyMode(this.readStoredMode(), { persistLocal: false });
     const storedSeed = this.readStoredSeed();
     this.applySeed(storedSeed ?? DEFAULT_THEME_SEED, { persistLocal: false });
+    this.bindSystemPreferenceListener();
   }
 
   getDefaultSeed(): string {
@@ -69,6 +76,10 @@ export class ThemeService {
 
   getCurrentSeed(): string {
     return this.currentSeed();
+  }
+
+  getCurrentMode(): ThemeMode {
+    return this.currentMode();
   }
 
   applySeed(seed: string | null | undefined, options?: { persistLocal?: boolean }): string {
@@ -91,6 +102,20 @@ export class ThemeService {
     return normalizedSeed;
   }
 
+  applyMode(mode: ThemeMode | null | undefined, options?: { persistLocal?: boolean }): ThemeMode {
+    const normalizedMode = this.normalizeMode(mode);
+    this.currentMode.set(normalizedMode);
+
+    if (options?.persistLocal !== false && typeof localStorage !== 'undefined') {
+      localStorage.setItem(THEME_MODE_STORAGE_KEY, normalizedMode);
+    }
+
+    this.syncRootThemeMode();
+    this.applySeed(this.currentSeed(), { persistLocal: false });
+
+    return normalizedMode;
+  }
+
   readStoredSeed(): string | null {
     if (typeof localStorage === 'undefined') {
       return null;
@@ -98,6 +123,14 @@ export class ThemeService {
 
     const rawSeed = localStorage.getItem(THEME_SEED_STORAGE_KEY);
     return this.normalizeSeed(rawSeed);
+  }
+
+  readStoredMode(): ThemeMode {
+    if (typeof localStorage === 'undefined') {
+      return 'system';
+    }
+
+    return this.normalizeMode(localStorage.getItem(THEME_MODE_STORAGE_KEY));
   }
 
   private persistSeed(seed: string): void {
@@ -121,7 +154,7 @@ export class ThemeService {
 
       const sourceColor = materialUtils.argbFromHex(seed);
       const sourceHct = materialUtils.Hct.fromInt(sourceColor);
-      const isDark = this.isDarkModePreferred();
+      const isDark = this.resolveActiveTheme() === 'dark';
       const scheme = new materialUtils.SchemeTonalSpot(sourceHct, isDark, 0);
       const dynamicColors = materialUtils.MaterialDynamicColors as Record<string, DynamicRole>;
       const style = root.style;
@@ -134,6 +167,11 @@ export class ThemeService {
 
         style.setProperty(cssVar, materialUtils.hexFromArgb(role.getArgb(scheme)));
       }
+
+      this.updateBrowserChrome(
+        style.getPropertyValue('--m3-sys-color-surface').trim()
+        || materialUtils.hexFromArgb(dynamicColors['surface'].getArgb(scheme))
+      );
     } catch {
       // Keep fallback CSS vars when dynamic color utilities fail to load.
     }
@@ -146,11 +184,74 @@ export class ThemeService {
     return this.materialUtilsPromise;
   }
 
+  private resolveActiveTheme(): 'light' | 'dark' {
+    const mode = this.currentMode();
+    if (mode === 'light' || mode === 'dark') {
+      return mode;
+    }
+    return this.isDarkModePreferred() ? 'dark' : 'light';
+  }
+
   private isDarkModePreferred(): boolean {
     if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
-      return true;
+      return false;
     }
     return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  }
+
+  private syncRootThemeMode(): void {
+    const root = this.document?.documentElement;
+    if (!root) {
+      return;
+    }
+
+    const resolvedTheme = this.resolveActiveTheme();
+    root.setAttribute('data-theme', resolvedTheme);
+    root.style.colorScheme = resolvedTheme;
+    this.updateBrowserChrome(root.style.getPropertyValue('--m3-sys-color-surface').trim());
+  }
+
+  private updateBrowserChrome(themeColor: string): void {
+    if (!themeColor) {
+      return;
+    }
+
+    const metaTheme = this.document?.querySelector('meta[name="theme-color"]');
+    if (metaTheme) {
+      metaTheme.setAttribute('content', themeColor);
+    }
+
+    const appleStatusBar = this.document?.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+    if (appleStatusBar) {
+      appleStatusBar.setAttribute('content', this.resolveActiveTheme() === 'dark' ? 'black-translucent' : 'default');
+    }
+  }
+
+  private normalizeMode(mode: string | null | undefined): ThemeMode {
+    return mode === 'light' || mode === 'dark' || mode === 'system' ? mode : 'system';
+  }
+
+  private bindSystemPreferenceListener(): void {
+    if (this.mediaQueryListenerBound || typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      return;
+    }
+
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const onChange = () => {
+      if (this.currentMode() !== 'system') {
+        return;
+      }
+      this.syncRootThemeMode();
+      this.applySeed(this.currentSeed(), { persistLocal: false });
+    };
+
+    if (typeof mediaQuery.addEventListener === 'function') {
+      mediaQuery.addEventListener('change', onChange);
+    } else if (typeof mediaQuery.addListener === 'function') {
+      mediaQuery.addListener(onChange);
+    }
+
+    this.mediaQueryListenerBound = true;
   }
 
   private normalizeSeed(seed: string | null | undefined): string | null {

@@ -23,7 +23,7 @@
 }
 
 .route-host {
-  animation: route-enter 220ms ease-out;
+  animation: route-enter var(--motion-duration-medium) var(--motion-easing-emphasized);
   min-width: 0;
   width: 100%;
   max-width: 1080px;
@@ -52,10 +52,10 @@
 @keyframes route-enter {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateY(8px) scale(0.995);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
 }

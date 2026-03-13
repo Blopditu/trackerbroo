@@ -44,7 +44,7 @@ export interface PactCheckinPayload {
         <input id="checkin-photo" type="file" accept="image/*" (change)="onPhotoSelected($event)">
 
         <div class="actions">
-          <button mat-flat-button type="button" class="action-btn" [disabled]="saving()" (click)="submit()">{{ saving() ? 'Wird gepostet...' : 'Posten' }}</button>
+          <button mat-flat-button type="button" class="action-btn" [disabled]="saving()" (click)="submit()">{{ saving() ? 'Wird geteilt …' : 'Teilen' }}</button>
           <button mat-flat-button type="button" class="action-btn ghost" [disabled]="saving()" (click)="closed.emit()">Abbrechen</button>
         </div>
       </div>
@@ -77,7 +77,7 @@ export interface PactCheckinPayload {
     }
 
     .toggle {
-      min-height: 40px;
+      min-height: 44px;
       border: 1px solid var(--border-strong);
       border-radius: 10px;
       background: #142031;

@@ -19,11 +19,10 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { AuthService } from '../../core/auth.service';
 import { SupabaseService } from '../../core/supabase.service';
-import { CommunityComment, CommunityPost, LogEntry, Profile } from '../../core/types';
+import { CommunityComment, CommunityPost, Profile } from '../../core/types';
 import { formatAppError } from '../../core/error-format';
 import { BottomSheetComponent } from '../../ui/minimal/bottom-sheet.component';
-import { LibraryDataService } from '../../core/library-data.service';
-import { QueryCacheService } from '../../core/query-cache.service';
+import { CommunityFeedPage, CommunityFeedService } from '../../core/community-feed.service';
 
 interface DayGroup {
   day: string;
@@ -56,30 +55,30 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
 
       <section class="panel hero">
         <p class="period">Community</p>
-        <h1>Aktivitätsfeed</h1>
-        <p class="motto">Gym-Check-ins und 100g-Protein-Milestones für alle.</p>
+        <h1>Euer gemeinsamer Rhythmus</h1>
+        <p class="motto">Gym-Check-ins und Protein-Ziele an einem Ort, wie im Gruppenchat.</p>
       </section>
 
       <section class="panel section">
         <div class="m3-section-head">
-          <h2>Feed</h2>
-          <span class="m3-section-meta">{{ posts().length }} Posts</span>
+          <h2>Aktuelle Updates</h2>
+          <span class="m3-section-meta">{{ posts().length }} Einträge</span>
         </div>
 
         @if (loadingInitial()) {
-          <p class="muted">Lädt...</p>
+          <p class="muted">Die Community wird geladen …</p>
         } @else {
-          @for (group of groupedPosts(); track group.day) {
-            <div class="day-divider">{{ dayLabel(group.day) }}</div>
+          @for (group of groupedPosts(); track group.day; let groupIndex = $index) {
+            <div class="day-divider" [style.--stagger]="groupIndex">{{ dayLabel(group.day) }}</div>
 
-            @for (post of group.posts; track post.id) {
-              <article class="post-card">
+            @for (post of group.posts; track post.id; let index = $index) {
+              <article class="post-card" [style.--stagger]="index">
                 <div class="post-head">
                   <strong>{{ displayName(post.user_id) }}</strong>
                   <div class="post-actions">
                     <span class="post-meta">{{ post.day }}</span>
                     @if (isOwnPost(post)) {
-                      <button mat-flat-button type="button" class="action-btn ghost compact" (click)="openPostActions(post)">Mehr</button>
+                      <button mat-flat-button type="button" class="action-btn ghost compact" (click)="openPostActions(post)">Verwalten</button>
                     }
                   </div>
                 </div>
@@ -144,31 +143,31 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
           }
 
           @if (posts().length === 0) {
-            <p class="muted">Noch keine Posts.</p>
+            <p class="muted">Noch keine Updates. Starte den ersten Gym-Check-in oder erreiche heute dein Protein-Ziel.</p>
           }
 
           <div #loadMoreAnchor class="load-anchor" aria-hidden="true"></div>
 
           @if (loadingMore()) {
-            <p class="muted">Weitere Posts werden geladen...</p>
+            <p class="muted">Weitere Einträge werden geladen …</p>
           }
 
           @if (hasMore()) {
             <button mat-flat-button type="button" class="action-btn ghost load-more" (click)="loadMore()" [disabled]="loadingMore()">
-              Mehr laden
+              Weitere Einträge laden
             </button>
           } @else if (posts().length > 0) {
-            <p class="muted">Ende des Feeds.</p>
+            <p class="muted">Du bist am Anfang eurer letzten Updates angekommen.</p>
           }
         }
       </section>
 
-      <button mat-fab class="app-fab community-fab" type="button" (click)="openGymSheet()" aria-label="Gym-Post erstellen">
+      <button mat-fab class="app-fab community-fab" type="button" (click)="openGymSheet()" aria-label="Gym-Check-in teilen">
         <lucide-icon [img]="icons.plus" class="fab-icon" aria-hidden="true"></lucide-icon>
       </button>
     </main>
 
-    <app-bottom-sheet [open]="showGymSheet()" title="Gym posten" (closed)="closeGymSheet()">
+    <app-bottom-sheet [open]="showGymSheet()" title="Gym-Check-in teilen" (closed)="closeGymSheet()">
       <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
         <mat-label>Notiz (optional)</mat-label>
         <textarea matInput id="gym-note" rows="2" [(ngModel)]="gymNote" placeholder="Was lief heute gut?"></textarea>
@@ -177,16 +176,16 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
       <p class="file-label">Foto (optional)</p>
       <div class="file-row">
         <button mat-flat-button type="button" class="action-btn ghost compact" (click)="pickGymPhoto()">Foto auswählen</button>
-        <span class="file-name">{{ gymPhotoName() || 'Kein Foto gewählt' }}</span>
+        <span class="file-name">{{ gymPhotoName() || 'Kein Foto ausgewählt' }}</span>
       </div>
       <input #gymPhotoInput id="gym-photo" class="sr-only" type="file" accept="image/*" (change)="onGymPhotoSelected($event)">
 
       <button mat-flat-button type="button" class="action-btn" [disabled]="savingPost()" (click)="submitGymPost()">
-        {{ savingPost() ? 'Wird gepostet...' : 'Gym-Check-in posten' }}
+        {{ savingPost() ? 'Wird geteilt …' : 'Gym-Check-in teilen' }}
       </button>
     </app-bottom-sheet>
 
-    <app-bottom-sheet [open]="selectedPostForActions() !== null" title="Post-Aktionen" (closed)="closePostActions()">
+    <app-bottom-sheet [open]="selectedPostForActions() !== null" title="Beitrag verwalten" (closed)="closePostActions()">
       @if (selectedPostForActions()) {
         <article class="action-card">
           <p class="action-title">{{ postTypeLabel(selectedPostForActions()!) }}</p>
@@ -437,8 +436,7 @@ export class CommunityComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private readonly authService = inject(AuthService);
   private readonly supabaseService = inject(SupabaseService);
-  private readonly libraryDataService = inject(LibraryDataService);
-  private readonly queryCache = inject(QueryCacheService);
+  private readonly communityFeed = inject(CommunityFeedService);
 
   @ViewChild('loadMoreAnchor') loadMoreAnchor?: ElementRef<HTMLElement>;
   private loadObserver: IntersectionObserver | null = null;
@@ -476,7 +474,7 @@ export class CommunityComponent implements OnInit, AfterViewInit, OnDestroy {
     this.hasMore.set(true);
 
     try {
-      await this.ensureProteinMilestonePost(user.id, this.today());
+      await this.communityFeed.ensureProteinMilestonePost(user.id, this.today());
       await this.fetchNextPage();
     } catch (error: unknown) {
       this.errorMessage.set(formatAppError(error, 'Community-Daten konnten nicht geladen werden'));
@@ -494,7 +492,7 @@ export class CommunityComponent implements OnInit, AfterViewInit, OnDestroy {
     try {
       await this.fetchNextPage();
     } catch (error: unknown) {
-      this.errorMessage.set(formatAppError(error, 'Weitere Posts konnten nicht geladen werden'));
+      this.errorMessage.set(formatAppError(error, 'Weitere Einträge konnten nicht geladen werden'));
     } finally {
       this.loadingMore.set(false);
     }
@@ -512,37 +510,16 @@ export class CommunityComponent implements OnInit, AfterViewInit, OnDestroy {
     this.savingPost.set(true);
 
     try {
-      let photoUrl: string | null = null;
-      if (this.gymPhoto) {
-        photoUrl = await this.uploadImage(this.gymPhoto, 'gym-checkins', user.id);
-      }
-
-      const { error } = await this.supabaseService.client
-        .from('community_posts')
-        .upsert(
-          {
-            user_id: user.id,
-            post_type: 'gym_checkin',
-            day: this.today(),
-            note: this.gymNote.trim() || null,
-            summary: null,
-            photo_url: photoUrl
-          },
-          { onConflict: 'user_id,day,post_type' }
-        );
-
-      if (error) {
-        throw error;
-      }
+      await this.communityFeed.createGymCheckinPost(user.id, this.today(), this.gymNote, this.gymPhoto);
 
       this.gymNote = '';
       this.gymPhoto = null;
       this.gymPhotoName.set(null);
       this.showGymSheet.set(false);
-      this.successMessage.set('Gym-Check-in gepostet.');
+      this.successMessage.set('Dein Check-in ist jetzt in der Community.');
       await this.loadInitial();
     } catch (error: unknown) {
-      this.errorMessage.set(formatAppError(error, 'Gym-Check-in konnte nicht gepostet werden'));
+      this.errorMessage.set(formatAppError(error, 'Gym-Check-in konnte nicht geteilt werden'));
     } finally {
       this.savingPost.set(false);
     }
@@ -607,11 +584,11 @@ export class CommunityComponent implements OnInit, AfterViewInit, OnDestroy {
       .eq('user_id', user.id);
 
     if (error) {
-      this.errorMessage.set(formatAppError(error, 'Post konnte nicht gelöscht werden'));
+      this.errorMessage.set(formatAppError(error, 'Beitrag konnte nicht gelöscht werden'));
       return;
     }
 
-    this.successMessage.set('Post gelöscht.');
+    this.successMessage.set('Beitrag gelöscht.');
     await this.loadInitial();
   }
 
@@ -699,7 +676,7 @@ export class CommunityComponent implements OnInit, AfterViewInit, OnDestroy {
       return 'Gym-Check-in';
     }
     if (post.post_type === 'protein_milestone') {
-      return '100g Protein erreicht';
+      return 'Protein-Ziel erreicht';
     }
     return 'Update';
   }
@@ -728,252 +705,18 @@ export class CommunityComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.photoSrcMap()[post.id] || null;
   }
 
-  private getProteinMilestoneCacheKey(userId: string, day: string): string {
-    return `protein-posted:${userId}:${day}`;
-  }
-
   private async fetchNextPage(): Promise<void> {
-    const from = this.nextOffset();
-    const to = from + this.pageSize - 1;
-
-    const { data: postsData, error: postsError } = await this.supabaseService.client
-      .from('community_posts')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .range(from, to);
-
-    if (postsError) {
-      throw postsError;
-    }
-
-    const newPosts = (postsData || []) as CommunityPost[];
-
-    this.posts.update(current => [...current, ...newPosts]);
-    this.nextOffset.set(from + newPosts.length);
-
-    if (newPosts.length < this.pageSize) {
-      this.hasMore.set(false);
-    }
-
-    if (newPosts.length === 0) {
-      return;
-    }
-
-    await Promise.all([this.mergeComments(newPosts), this.mergeProfiles(newPosts), this.resolvePostPhotoUrls(newPosts)]);
+    const page = await this.communityFeed.fetchFeedPage(this.nextOffset(), this.pageSize);
+    this.applyFeedPage(page);
   }
 
-  private async mergeComments(newPosts: CommunityPost[]): Promise<void> {
-    const postIds = newPosts.map(post => post.id);
-    const { data: commentsData, error } = await this.supabaseService.client
-      .from('community_comments')
-      .select('*')
-      .in('post_id', postIds)
-      .order('created_at', { ascending: true });
-
-    if (error) {
-      throw error;
-    }
-
-    const grouped: Record<string, CommunityComment[]> = {};
-    for (const comment of (commentsData || []) as CommunityComment[]) {
-      if (!grouped[comment.post_id]) {
-        grouped[comment.post_id] = [];
-      }
-      grouped[comment.post_id].push(comment);
-    }
-
-    this.commentsByPost.update(current => ({ ...current, ...grouped }));
-  }
-
-  private async mergeProfiles(newPosts: CommunityPost[]): Promise<void> {
-    const commentAuthors = Object.values(this.commentsByPost())
-      .flat()
-      .map(comment => comment.user_id);
-
-    const userIds = Array.from(new Set([...newPosts.map(post => post.user_id), ...commentAuthors]));
-    const knownUserIds = new Set(Object.keys(this.profiles()));
-    const missingUserIds = userIds.filter(userId => !knownUserIds.has(userId));
-
-    if (missingUserIds.length === 0) {
-      return;
-    }
-
-    const { data: profilesData } = await this.supabaseService.client
-      .from('profiles')
-      .select('user_id,display_name,avatar_url')
-      .in('user_id', missingUserIds);
-
-    if (!profilesData) {
-      return;
-    }
-
-    const merged: Record<string, ProfileDirectoryEntry> = {};
-    for (const row of profilesData) {
-      const profile = row as ProfileDirectoryEntry;
-      merged[profile.user_id] = profile;
-    }
-
-    this.profiles.update(current => ({ ...current, ...merged }));
-  }
-
-  private async ensureProteinMilestonePost(userId: string, day: string): Promise<void> {
-    const markerKey = this.getProteinMilestoneCacheKey(userId, day);
-    if (this.queryCache.getFresh<boolean>(markerKey)) {
-      return;
-    }
-
-    const { data: summaryData } = await this.supabaseService.client
-      .from('daily_summaries')
-      .select('*')
-      .eq('owner_id', userId)
-      .is('group_id', null)
-      .eq('day', day)
-      .maybeSingle();
-
-    const summary = summaryData as { protein?: number; kcal?: number; carbs?: number; fat?: number } | null;
-    if (!summary || Number(summary.protein || 0) < 100) {
-      return;
-    }
-
-    const { data: entriesData } = await this.supabaseService.client
-      .from('log_entries')
-      .select('*')
-      .eq('owner_id', userId)
-      .is('group_id', null)
-      .eq('day', day)
-      .order('protein', { ascending: false })
-      .limit(20);
-
-    const entries = (entriesData || []) as LogEntry[];
-    const library = await this.libraryDataService.loadLibrary(userId, { allowStaleOnError: true });
-    const nameMap = new Map<string, string>();
-    for (const ingredient of library.ingredients) {
-      nameMap.set(ingredient.id, ingredient.name);
-    }
-    for (const meal of library.meals) {
-      nameMap.set(meal.id, meal.name);
-    }
-
-    const foods = entries
-      .slice(0, 4)
-      .map(entry => {
-        const name = nameMap.get(entry.ref_id) || 'Unbekannt';
-        const protein = Number(entry.protein || 0);
-        return `${name} (${protein.toFixed(1)}g)`;
-      });
-
-    await this.supabaseService.client.from('community_posts').upsert(
-      {
-        user_id: userId,
-        post_type: 'protein_milestone',
-        day,
-        note: '100g Protein erreicht.',
-        summary: {
-          protein: Number(summary.protein || 0),
-          carbs: Number(summary.carbs || 0),
-          fat: Number(summary.fat || 0),
-          kcal: Number(summary.kcal || 0),
-          foods
-        },
-        photo_url: null
-      },
-      { onConflict: 'user_id,day,post_type' }
-    );
-
-    this.queryCache.set(markerKey, true, 1000 * 60 * 60 * 6);
-  }
-
-  private async uploadImage(file: File, bucketName: string, userId: string): Promise<string> {
-    const extension = file.name.split('.').pop() || 'jpg';
-    const filePath = `${userId}/${Date.now()}.${extension}`;
-
-    const { error: uploadError } = await this.supabaseService.client.storage
-      .from(bucketName)
-      .upload(filePath, file, { upsert: true });
-
-    if (uploadError) {
-      throw uploadError;
-    }
-
-    return filePath;
-  }
-
-  private async resolvePostPhotoUrls(posts: CommunityPost[]): Promise<void> {
-    const resolvedEntries = await Promise.all(
-      posts.map(async post => {
-        const resolvedUrl = await this.resolvePhotoUrl(post.photo_url, 'gym-checkins');
-        return [post.id, resolvedUrl] as const;
-      })
-    );
-
-    const toMerge: Record<string, string> = {};
-    for (const [id, url] of resolvedEntries) {
-      if (url) {
-        toMerge[id] = url;
-      }
-    }
-
-    this.photoSrcMap.update(current => ({ ...current, ...toMerge }));
-  }
-
-  private async resolvePhotoUrl(photoUrlOrPath: string | null, bucketName: string): Promise<string | null> {
-    if (!photoUrlOrPath) {
-      return null;
-    }
-
-    if (/^https?:\/\//i.test(photoUrlOrPath)) {
-      if (photoUrlOrPath.includes(`/storage/v1/object/public/${bucketName}/`)) {
-        return photoUrlOrPath;
-      }
-
-      const extractedPath = this.extractStoragePath(photoUrlOrPath, bucketName);
-      if (!extractedPath) {
-        return photoUrlOrPath;
-      }
-
-      const { data, error } = await this.supabaseService.client.storage
-        .from(bucketName)
-        .createSignedUrl(extractedPath, 60 * 60);
-
-      if (error || !data?.signedUrl) {
-        return photoUrlOrPath;
-      }
-
-      return data.signedUrl;
-    }
-
-    const { data, error } = await this.supabaseService.client.storage
-      .from(bucketName)
-      .createSignedUrl(photoUrlOrPath, 60 * 60);
-
-    if (!error && data?.signedUrl) {
-      return data.signedUrl;
-    }
-
-    const { data: publicData } = this.supabaseService.client.storage
-      .from(bucketName)
-      .getPublicUrl(photoUrlOrPath);
-
-    return publicData.publicUrl || null;
-  }
-
-  private extractStoragePath(url: string, bucketName: string): string | null {
-    const markers = [
-      `/storage/v1/object/sign/${bucketName}/`,
-      `/storage/v1/object/authenticated/${bucketName}/`,
-      `/storage/v1/object/public/${bucketName}/`
-    ];
-
-    for (const marker of markers) {
-      const markerIndex = url.indexOf(marker);
-      if (markerIndex === -1) {
-        continue;
-      }
-      const path = url.slice(markerIndex + marker.length).split('?')[0];
-      return path || null;
-    }
-
-    return null;
+  private applyFeedPage(page: CommunityFeedPage): void {
+    this.posts.update(current => [...current, ...page.posts]);
+    this.commentsByPost.update(current => ({ ...current, ...page.commentsByPost }));
+    this.profiles.update(current => ({ ...current, ...page.profiles }));
+    this.photoSrcMap.update(current => ({ ...current, ...page.photoSrcMap }));
+    this.nextOffset.set(page.nextOffset);
+    this.hasMore.set(page.hasMore);
   }
 
   private setupInfiniteObserver(): void {

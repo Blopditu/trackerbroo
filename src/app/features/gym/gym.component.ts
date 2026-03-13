@@ -16,8 +16,6 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import {
   Activity,
   BarChart3,
@@ -100,8 +98,6 @@ type DetailSource = 'widget' | 'progress-10rm' | 'progress-volume';
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
-    MatSlideToggleModule,
-    MatButtonToggleModule,
     BottomSheetComponent
   ],
   template: `
@@ -118,21 +114,32 @@ type DetailSource = 'widget' | 'progress-10rm' | 'progress-volume';
         <p class="title-font">Gym</p>
         <h1>Krafttracker</h1>
         <div class="hero-controls">
-          <mat-button-toggle-group
-            class="gym-tabs"
-            [value]="activeTab()"
-            aria-label="Gym Ansicht"
-            (valueChange)="onHeroTabChange($event)"
-          >
-            <mat-button-toggle value="tracker">
+          <div class="gym-tabs" role="tablist" aria-label="Gym Ansicht">
+            <button
+              type="button"
+              role="tab"
+              class="gym-tab-btn"
+              [class.active]="activeTab() === 'tracker'"
+              [attr.aria-selected]="activeTab() === 'tracker'"
+              [attr.tabindex]="activeTab() === 'tracker' ? 0 : -1"
+              (click)="onHeroTabChange('tracker')"
+            >
               <lucide-icon [img]="icons.dumbbell" class="icon" aria-hidden="true"></lucide-icon>
               Tracker
-            </mat-button-toggle>
-            <mat-button-toggle value="progress">
+            </button>
+            <button
+              type="button"
+              role="tab"
+              class="gym-tab-btn"
+              [class.active]="activeTab() === 'progress'"
+              [attr.aria-selected]="activeTab() === 'progress'"
+              [attr.tabindex]="activeTab() === 'progress' ? 0 : -1"
+              (click)="onHeroTabChange('progress')"
+            >
               <lucide-icon [img]="icons.barChart" class="icon" aria-hidden="true"></lucide-icon>
               Progress
-            </mat-button-toggle>
-          </mat-button-toggle-group>
+            </button>
+          </div>
           <button mat-icon-button type="button" class="hero-profile-btn" routerLink="/profile" aria-label="Profil öffnen">
             <lucide-icon [img]="icons.user" class="icon" aria-hidden="true"></lucide-icon>
           </button>
@@ -226,8 +233,8 @@ type DetailSource = 'widget' | 'progress-10rm' | 'progress-volume';
             }
 
             <div class="quick-actions">
-              <button mat-flat-button type="button" class="action-btn ghost" (click)="openSessionHub('plans')">Alle Plaene</button>
-              <button mat-flat-button type="button" class="action-btn ghost" (click)="openSessionHub('exercises')">Uebungen</button>
+              <button mat-flat-button type="button" class="action-btn ghost" (click)="openSessionHub('plans')">Alle Pläne</button>
+              <button mat-flat-button type="button" class="action-btn ghost" (click)="openSessionHub('exercises')">Übungen</button>
               <button mat-flat-button type="button" class="action-btn ghost" (click)="openSessionHub('help')">Hilfe</button>
             </div>
           </section>
@@ -238,7 +245,7 @@ type DetailSource = 'widget' | 'progress-10rm' | 'progress-volume';
                 <div>
                   <h2>{{ selectedOverview()!.dayName }}</h2>
                   <p class="muted">{{ selectedOverview()!.planName }} • Woche {{ selectedOverview()!.weekNumber }}</p>
-                  <p class="muted">{{ selectedOverview()!.totalExercises }} Uebungen • {{ selectedOverview()!.totalSets }} Saetze</p>
+                  <p class="muted">{{ selectedOverview()!.totalExercises }} Übungen • {{ selectedOverview()!.totalSets }} Sätze</p>
                 </div>
                 <button mat-flat-button type="button" class="action-btn" (click)="startWorkout()">
                   <lucide-icon [img]="icons.play" class="icon" aria-hidden="true"></lucide-icon>
@@ -506,8 +513,8 @@ type DetailSource = 'widget' | 'progress-10rm' | 'progress-volume';
 
     <app-bottom-sheet [open]="activeSheet() === 'hub'" [title]="sessionHubTitle()" (closed)="closeSheet()">
       <div class="hub-tabs" role="group" aria-label="Session Hub Tabs">
-        <button mat-flat-button type="button" class="hub-tab-btn" [class.active]="sessionHubTab() === 'plans'" (click)="setSessionHubTab('plans')">Plaene</button>
-        <button mat-flat-button type="button" class="hub-tab-btn" [class.active]="sessionHubTab() === 'exercises'" (click)="setSessionHubTab('exercises')">Uebungen</button>
+        <button mat-flat-button type="button" class="hub-tab-btn" [class.active]="sessionHubTab() === 'plans'" (click)="setSessionHubTab('plans')">Pläne</button>
+        <button mat-flat-button type="button" class="hub-tab-btn" [class.active]="sessionHubTab() === 'exercises'" (click)="setSessionHubTab('exercises')">Übungen</button>
         <button mat-flat-button type="button" class="hub-tab-btn" [class.active]="sessionHubTab() === 'help'" (click)="setSessionHubTab('help')">Hilfe</button>
       </div>
 
@@ -568,7 +575,7 @@ type DetailSource = 'widget' | 'progress-10rm' | 'progress-volume';
               </mat-select>
             </mat-form-field>
 
-            <p class="muted">{{ filteredExerciseLibrary().length }} von {{ exercises().length }} Uebungen</p>
+            <p class="muted">{{ filteredExerciseLibrary().length }} von {{ exercises().length }} Übungen</p>
           </section>
 
           <div class="sheet-scroll-list">
@@ -630,7 +637,10 @@ type DetailSource = 'widget' | 'progress-10rm' | 'progress-volume';
           <input matInput id="plan-start" type="date" formControlName="startDate">
         </mat-form-field>
 
-        <mat-slide-toggle formControlName="isActive">Als aktiven Plan setzen</mat-slide-toggle>
+        <label class="switch-row plan-active-toggle">
+          <input type="checkbox" formControlName="isActive">
+          <span>Als aktiven Plan setzen</span>
+        </label>
 
         @for (day of builderDays(); track $index; let dayIndex = $index) {
           <section class="list-card builder-day">
@@ -651,7 +661,7 @@ type DetailSource = 'widget' | 'progress-10rm' | 'progress-volume';
               </div>
             }
 
-            <button mat-flat-button type="button" class="action-btn ghost" (click)="addBuilderExercise(dayIndex)">Uebung hinzufuegen</button>
+            <button mat-flat-button type="button" class="action-btn ghost" (click)="addBuilderExercise(dayIndex)">Übung hinzufügen</button>
           </section>
         }
 
@@ -670,13 +680,13 @@ type DetailSource = 'widget' | 'progress-10rm' | 'progress-volume';
       <p class="file-label">Foto (optional)</p>
       <div class="file-row">
         <button mat-flat-button type="button" class="action-btn ghost compact" (click)="pickSessionSharePhoto()">Foto auswählen</button>
-        <span class="file-name">{{ workoutSharePhotoName() || 'Kein Foto gewählt' }}</span>
+        <span class="file-name">{{ workoutSharePhotoName() || 'Kein Foto ausgewählt' }}</span>
       </div>
       <input #sessionSharePhotoInput class="sr-only" type="file" accept="image/*" (change)="onSessionSharePhotoSelected($event)">
 
       <div class="action-list">
         <button mat-flat-button type="button" class="action-btn" [disabled]="sharingWorkoutPost()" (click)="submitSessionCommunityPost()">
-          {{ sharingWorkoutPost() ? 'Wird gepostet...' : 'In Community posten' }}
+          {{ sharingWorkoutPost() ? 'Wird geteilt …' : 'In der Community teilen' }}
         </button>
         <button mat-flat-button type="button" class="action-btn ghost" [disabled]="sharingWorkoutPost()" (click)="skipSessionShare()">Überspringen</button>
       </div>
@@ -688,7 +698,7 @@ type DetailSource = 'widget' | 'progress-10rm' | 'progress-volume';
           <mat-label>Graph-Typ</mat-label>
           <mat-select id="graph-type" formControlName="graphType">
             <mat-option value="workout_count">Workouts pro Woche</mat-option>
-            <mat-option value="exercise_10rm">Uebung 10RM Verlauf</mat-option>
+            <mat-option value="exercise_10rm">Übung: 10RM-Verlauf</mat-option>
             <mat-option value="muscle_volume">Muskelgruppen-Volumen</mat-option>
             <mat-option value="bodyweight">Koerpergewicht</mat-option>
             <mat-option value="total_volume">Gesamtvolumen</mat-option>
@@ -697,7 +707,7 @@ type DetailSource = 'widget' | 'progress-10rm' | 'progress-volume';
 
         @if (graphForm.value.graphType === 'exercise_10rm') {
           <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
-            <mat-label>Uebung</mat-label>
+            <mat-label>Übung</mat-label>
             <mat-select id="graph-exercise" formControlName="exerciseId">
               <mat-option value="">Bitte wählen</mat-option>
               @for (exercise of exercises(); track exercise.id) {
@@ -787,26 +797,31 @@ type DetailSource = 'widget' | 'progress-10rm' | 'progress-volume';
       padding: 4px;
     }
 
-    .gym-tabs .mat-button-toggle {
+    .gym-tab-btn {
       min-height: var(--touch-target);
-      border: 0;
       border-radius: 999px;
-      overflow: hidden;
-    }
-
-    .gym-tabs .mat-button-toggle + .mat-button-toggle {
-      margin-left: 4px;
-    }
-
-    .gym-tabs .mat-button-toggle-label-content {
+      border: 0;
+      background: transparent;
+      color: var(--m3-sys-color-on-surface-variant);
       display: inline-flex;
       align-items: center;
       gap: 6px;
+      justify-content: center;
+      padding: 0 16px;
+      font-size: 14px;
+      font-weight: 700;
     }
 
-    .gym-tabs .mat-button-toggle-checked {
+    .gym-tab-btn.active {
       background: var(--m3-sys-color-secondary-container);
       color: var(--m3-sys-color-on-secondary-container);
+    }
+
+    .plan-active-toggle input {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--m3-sys-color-primary);
+      flex: 0 0 auto;
     }
 
     .hero-profile-btn {
@@ -1115,7 +1130,7 @@ type DetailSource = 'widget' | 'progress-10rm' | 'progress-volume';
     }
 
     .progress-range-btn {
-      min-height: 34px;
+      min-height: var(--touch-target-compact);
       border: 1px solid var(--m3-sys-color-outline-variant);
       border-radius: 999px;
       background: var(--m3-sys-color-surface-container-high);
@@ -1309,7 +1324,7 @@ export class GymComponent implements OnInit, OnDestroy {
 
   readonly frequencies = [1, 2, 3, 4, 5, 6, 7];
   readonly equipmentOptions: TrainingExercise['equipment'][] = ['barbell', 'dumbbell', 'machine', 'cable', 'bodyweight', 'bands', 'other'];
-  readonly placeholderImage = 'https://dummyimage.com/640x360/1b202b/a4a9b6&text=Uebung';
+  readonly placeholderImage = 'https://dummyimage.com/640x360/1b202b/a4a9b6&text=%C3%9Cbung';
 
   readonly activeTab = signal<'tracker' | 'progress'>('tracker');
   readonly selectedDate = signal(toIsoDate(new Date()));
@@ -1889,10 +1904,10 @@ export class GymComponent implements OnInit, OnDestroy {
   sessionHubTitle(): string {
     const tab = this.sessionHubTab();
     if (tab === 'plans') {
-      return 'Session Hub: Plaene';
+      return 'Session-Hub: Pläne';
     }
     if (tab === 'exercises') {
-      return 'Session Hub: Uebungen';
+      return 'Session-Hub: Übungen';
     }
     return 'Session Hub: Hilfe';
   }
@@ -2255,7 +2270,7 @@ export class GymComponent implements OnInit, OnDestroy {
   selectedDetailPointSummary(): string {
     const selected = this.selectedDetailPoint();
     if (!selected) {
-      return 'Tippe auf einen Punkt fuer Details.';
+      return 'Tippe auf einen Punkt für Details.';
     }
 
     if (this.detailSource() === 'progress-volume') {
@@ -2450,7 +2465,7 @@ export class GymComponent implements OnInit, OnDestroy {
     if (widget.graph_type === 'workout_count') return 'Workout-Haeufigkeit';
     if (widget.graph_type === 'exercise_10rm') {
       const exerciseName = this.exercises().find(item => item.id === widget.exercise_id)?.name;
-      return `${exerciseName || 'Uebung'} 10RM`;
+      return `${exerciseName || 'Übung'} 10RM`;
     }
     if (widget.graph_type === 'muscle_volume') return `Muskelvolumen (${widget.muscle_group || 'alle'})`;
     if (widget.graph_type === 'bodyweight') return 'Koerpergewicht';
@@ -2458,9 +2473,9 @@ export class GymComponent implements OnInit, OnDestroy {
   }
 
   graphSubtitle(widget: TrainingGraphConfig): string {
-    if (widget.graph_type === 'exercise_10rm' && !widget.exercise_id) return 'Bitte Uebung waehlen';
+    if (widget.graph_type === 'exercise_10rm' && !widget.exercise_id) return 'Bitte Übung wählen';
     if (widget.graph_type === 'muscle_volume' && !widget.muscle_group) return 'Alle Muskelgruppen';
-    return 'Tippen fuer erweiterte Analyse';
+    return 'Tippen für eine genauere Analyse';
   }
 
   toLinePoints(points: TrainingGraphDataPoint[]): string {

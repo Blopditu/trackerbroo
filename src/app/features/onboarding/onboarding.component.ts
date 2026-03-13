@@ -117,7 +117,7 @@ import { formatAppError } from '../../core/error-format';
                 </button>
               } @else {
                 <button mat-flat-button type="submit" class="action-btn" [disabled]="saving() || !canFinish()">
-                  {{ saving() ? 'Wird gespeichert...' : 'Starten' }}
+                  {{ saving() ? 'Wird eingerichtet …' : 'Loslegen' }}
                 </button>
               }
             </div>
