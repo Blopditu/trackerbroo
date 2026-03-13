@@ -180,6 +180,10 @@ CREATE POLICY "Users can update their own profile" ON profiles
 CREATE POLICY "Users can CRUD their own weight logs" ON weight_logs
   FOR ALL USING (auth.uid() = user_id);
 
+-- Step logs policies
+CREATE POLICY "Users can CRUD their own step logs" ON step_logs
+  FOR ALL USING (auth.uid() = user_id);
+
 -- Gym check-ins policies
 CREATE POLICY "Group members can view check-ins in their groups" ON gym_checkins
   FOR SELECT USING (

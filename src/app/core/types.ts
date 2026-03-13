@@ -97,6 +97,8 @@ export interface Profile {
   onboarding_completed: boolean;
   track_nutrition: boolean;
   track_gym: boolean;
+  track_steps: boolean;
+  daily_steps_target: number;
   updated_at: string;
 }
 
@@ -105,6 +107,15 @@ export interface WeightLog {
   user_id: string;
   logged_on: string;
   weight_kg: number;
+  note: string | null;
+  created_at: string;
+}
+
+export interface StepLog {
+  id: string;
+  user_id: string;
+  logged_on: string;
+  steps: number;
   note: string | null;
   created_at: string;
 }
@@ -134,7 +145,7 @@ export interface GroupActivity {
   created_at: string;
 }
 
-export type CommunityPostType = 'gym_checkin' | 'protein_milestone' | 'custom';
+export type CommunityPostType = 'gym_checkin' | 'protein_milestone' | 'steps_milestone' | 'custom';
 
 export interface CommunityPost {
   id: string;

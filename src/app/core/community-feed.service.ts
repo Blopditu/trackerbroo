@@ -149,8 +149,34 @@ export class CommunityFeedService {
     }
   }
 
+  async createStepsMilestonePost(userId: string, day: string, steps: number, target: number): Promise<void> {
+    const { error } = await this.supabaseService.client
+      .from('community_posts')
+      .upsert(
+        {
+          user_id: userId,
+          post_type: 'steps_milestone',
+          day,
+          note: 'Schrittziel erreicht.',
+          summary: {
+            steps,
+            target
+          },
+          photo_url: null
+        },
+        { onConflict: 'user_id,day,post_type' }
+      );
+
+    if (error) {
+      throw error;
+    }
+
+    this.queryCache.set(this.getStepsMilestoneCacheKey(userId, day), true, 1000 * 60 * 60 * 6);
+  }
+
   invalidateFeedCache(userId: string, day: string): void {
     this.queryCache.invalidate(this.getProteinMilestoneCacheKey(userId, day));
+    this.queryCache.invalidate(this.getStepsMilestoneCacheKey(userId, day));
   }
 
   private async loadComments(posts: CommunityPost[]): Promise<Record<string, CommunityComment[]>> {
@@ -307,5 +333,9 @@ export class CommunityFeedService {
 
   private getProteinMilestoneCacheKey(userId: string, day: string): string {
     return `protein-posted:${userId}:${day}`;
+  }
+
+  private getStepsMilestoneCacheKey(userId: string, day: string): string {
+    return `steps-posted:${userId}:${day}`;
   }
 }

@@ -56,7 +56,7 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
       <section class="panel hero">
         <p class="period">Community</p>
         <h1>Euer gemeinsamer Rhythmus</h1>
-        <p class="motto">Gym-Check-ins und Protein-Ziele an einem Ort, wie im Gruppenchat.</p>
+        <p class="motto">Gym-Check-ins, Protein-Ziele und Schritte an einem Ort, wie im Gruppenchat.</p>
       </section>
 
       <section class="panel section">
@@ -91,6 +91,10 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
 
                 @if (post.post_type === 'protein_milestone') {
                   <p class="post-summary">{{ proteinSummary(post) }}</p>
+                }
+
+                @if (post.post_type === 'steps_milestone') {
+                  <p class="post-summary">{{ stepsSummary(post) }}</p>
                 }
 
                 @if (foodSummary(post).length > 0) {
@@ -143,7 +147,7 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
           }
 
           @if (posts().length === 0) {
-            <p class="muted">Noch keine Updates. Starte den ersten Gym-Check-in oder erreiche heute dein Protein-Ziel.</p>
+            <p class="muted">Noch keine Updates. Starte den ersten Gym-Check-in oder teile heute ein erreichtes Ziel.</p>
           }
 
           <div #loadMoreAnchor class="load-anchor" aria-hidden="true"></div>
@@ -678,6 +682,9 @@ export class CommunityComponent implements OnInit, AfterViewInit, OnDestroy {
     if (post.post_type === 'protein_milestone') {
       return 'Protein-Ziel erreicht';
     }
+    if (post.post_type === 'steps_milestone') {
+      return 'Schrittziel erreicht';
+    }
     return 'Update';
   }
 
@@ -699,6 +706,16 @@ export class CommunityComponent implements OnInit, AfterViewInit, OnDestroy {
       return '';
     }
     return `Essen: ${foods.join(', ')}`;
+  }
+
+  stepsSummary(post: CommunityPost): string {
+    const summary = post.summary as { steps?: number; target?: number } | null;
+    const steps = Number(summary?.steps || 0);
+    const target = Number(summary?.target || 0);
+    if (!steps && !target) {
+      return '';
+    }
+    return `${steps.toLocaleString('de-CH')} / ${target.toLocaleString('de-CH')} Schritte`;
   }
 
   getPhotoSrc(post: CommunityPost): string | null {

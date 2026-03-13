@@ -104,6 +104,21 @@ import { formatAppError } from '../../core/error-format';
                   <mat-option [value]="false">Nein</mat-option>
                 </mat-select>
               </mat-form-field>
+
+              <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+                <mat-label>Schritte tracken</mat-label>
+                <mat-select id="track_steps" formControlName="track_steps">
+                  <mat-option [value]="true">Ja</mat-option>
+                  <mat-option [value]="false">Nein</mat-option>
+                </mat-select>
+              </mat-form-field>
+
+              @if (onboardingForm.controls.track_steps.value) {
+                <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+                  <mat-label>Schrittziel pro Tag</mat-label>
+                  <input matInput id="daily_steps_target" type="number" min="1000" max="50000" formControlName="daily_steps_target">
+                </mat-form-field>
+              }
             }
 
             @if (step() === 4) {
@@ -248,7 +263,9 @@ export class OnboardingComponent implements OnInit {
       weekly_gym_target: [3, [Validators.required, Validators.min(1), Validators.max(14)]],
       activity_level: ['moderate' as 'low' | 'moderate' | 'high', [Validators.required]],
       track_nutrition: [true, [Validators.required]],
-      track_gym: [true, [Validators.required]]
+      track_gym: [true, [Validators.required]],
+      track_steps: [false, [Validators.required]],
+      daily_steps_target: [8000, [Validators.min(1000), Validators.max(50000)]]
     },
     { updateOn: 'change' }
   );
@@ -297,7 +314,9 @@ export class OnboardingComponent implements OnInit {
       weekly_gym_target: profile?.weekly_gym_target || 3,
       activity_level: profile?.activity_level || 'moderate',
       track_nutrition: profile?.track_nutrition ?? true,
-      track_gym: profile?.track_gym ?? true
+      track_gym: profile?.track_gym ?? true,
+      track_steps: profile?.track_steps ?? false,
+      daily_steps_target: Number(profile?.daily_steps_target || 8000)
     });
 
     this.loading.set(false);
@@ -342,6 +361,8 @@ export class OnboardingComponent implements OnInit {
         activity_level: formValue.activity_level,
         track_nutrition: formValue.track_nutrition,
         track_gym: formValue.track_gym,
+        track_steps: formValue.track_steps,
+        daily_steps_target: formValue.track_steps ? formValue.daily_steps_target : 8000,
         onboarding_completed: true,
         updated_at: new Date().toISOString()
       };
@@ -373,10 +394,14 @@ export class OnboardingComponent implements OnInit {
     if (this.step() === 2) {
       return this.isValid(['weekly_gym_target', 'activity_level']);
     }
-    return this.isValid(['track_nutrition', 'track_gym']);
+    if (this.step() === 3) {
+      return this.isValid(['track_nutrition', 'track_gym', 'track_steps'])
+        && (!this.onboardingForm.controls.track_steps.value || this.isValid(['daily_steps_target']));
+    }
+    return true;
   }
 
   canFinish(): boolean {
-    return this.onboardingForm.valid;
+    return this.canGoNext() && this.onboardingForm.valid;
   }
 }

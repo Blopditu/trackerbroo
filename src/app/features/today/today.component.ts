@@ -13,6 +13,7 @@ import {
   ChartLine,
   Clock3,
   Dumbbell,
+  Footprints,
   ListChecks,
   LucideAngularModule,
   Plus,
@@ -23,7 +24,7 @@ import {
 } from 'lucide-angular';
 import { SupabaseService } from '../../core/supabase.service';
 import { AuthService } from '../../core/auth.service';
-import { CommunityPost, DailySummary, Ingredient, LogEntry, Meal, WeightLog } from '../../core/types';
+import { CommunityPost, DailySummary, Ingredient, LogEntry, Meal, Profile, StepLog, WeightLog } from '../../core/types';
 import { AmountPickerSheetComponent, AmountPickResult, MacroTotals } from '../../ui/amount-picker-sheet.component';
 import { HeroRingComponent } from '../../ui/minimal/hero-ring.component';
 import { MacroBarComponent } from '../../ui/minimal/macro-bar.component';
@@ -45,9 +46,12 @@ interface TodaySnapshot {
   entries: LogEntry[];
   summary: DailySummary | null;
   weightLogs: WeightLog[];
+  stepLogs: StepLog[];
   gymDaysThisWeek: string[];
   proteinDaysThisWeek: string[];
   proteinMilestonePosted: boolean;
+  stepsMilestonePosted: boolean;
+  profile: Profile | null;
 }
 
 type FoodFilter = 'all' | 'favorites' | 'recent';
@@ -99,7 +103,7 @@ interface BrooBoardPost {
         <div class="broo-board-head">
           <div>
             <p class="title-font">Broo Board</p>
-            <h1 id="broo-board-title">Wer war zuletzt im Gym?</h1>
+            <h1 id="broo-board-title">Was lief zuletzt bei den Broos?</h1>
             <p class="broo-lead">Wie im WhatsApp-Chat: sehen, was läuft, und direkt mitziehen.</p>
           </div>
           <span class="board-badge">{{ brooBoardPosts().length }} Einträge</span>
@@ -183,6 +187,12 @@ interface BrooBoardPost {
           </button>
         }
 
+        @if (canShareStepsMilestone()) {
+          <button mat-flat-button type="button" class="action-btn tonal protein-share-btn" (click)="shareStepsMilestone()">
+            Schrittziel im Board teilen
+          </button>
+        }
+
         <app-hero-ring [value]="proteinToday()" [target]="proteinGoal" accentColor="var(--m3-sys-color-primary)" />
 
         <div class="bars">
@@ -201,6 +211,14 @@ interface BrooBoardPost {
           <strong>{{ weightValueLabel() }}</strong>
           <span class="delta">{{ weightDeltaLabel() }}</span>
         </div>
+
+        @if (trackStepsEnabled()) {
+          <div class="weight-row">
+            <span><lucide-icon [img]="icons.footsteps" class="icon" aria-hidden="true"></lucide-icon> Schritte</span>
+            <strong>{{ stepsValueLabel() }}</strong>
+            <span class="delta">{{ stepsGoalLabel() }}</span>
+          </div>
+        }
       </section>
 
       <section class="panel section">
@@ -298,6 +316,9 @@ interface BrooBoardPost {
         <div class="action-list">
           <button mat-flat-button type="button" class="menu-btn" (click)="setSheetMode('food')"><lucide-icon [img]="icons.utensils" class="icon" aria-hidden="true"></lucide-icon> Essen loggen</button>
           <button mat-flat-button type="button" class="menu-btn" (click)="setSheetMode('weight')"><lucide-icon [img]="icons.weight" class="icon" aria-hidden="true"></lucide-icon> Gewicht eintragen</button>
+          @if (trackStepsEnabled()) {
+            <button mat-flat-button type="button" class="menu-btn" (click)="setSheetMode('steps')"><lucide-icon [img]="icons.footsteps" class="icon" aria-hidden="true"></lucide-icon> Schritte eintragen</button>
+          }
           <button mat-flat-button type="button" class="menu-btn" (click)="setSheetMode('gym')"><lucide-icon [img]="icons.dumbbell" class="icon" aria-hidden="true"></lucide-icon> Gym-Check-in teilen</button>
         </div>
       }
@@ -533,6 +554,27 @@ interface BrooBoardPost {
           </mat-form-field>
 
           <button mat-flat-button type="button" class="menu-btn apply-log-btn" (click)="saveWeight()">Gewicht speichern</button>
+        </section>
+      }
+
+      @if (sheetMode() === 'steps') {
+        <section class="weight-sheet">
+          <div class="weight-actions">
+            <button mat-flat-button type="button" class="day-chip" (click)="setStepsDateToToday()">Heute</button>
+            <button mat-flat-button type="button" class="day-chip" (click)="setSheetMode('menu')">Anderes loggen</button>
+          </div>
+
+          <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Datum</mat-label>
+            <input matInput id="steps-day-input" type="date" [(ngModel)]="stepsDateInput">
+          </mat-form-field>
+
+          <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Schritte</mat-label>
+            <input matInput id="steps-input" type="number" min="0" step="1" [(ngModel)]="stepsInput">
+          </mat-form-field>
+
+          <button mat-flat-button type="button" class="menu-btn apply-log-btn" (click)="saveSteps()">Schritte speichern</button>
         </section>
       }
 
@@ -1345,6 +1387,7 @@ export class TodayComponent implements OnInit {
     plus: Plus,
     utensils: Utensils,
     dumbbell: Dumbbell,
+    footsteps: Footprints,
     star: Star,
     trash: Trash2
   };
@@ -1363,16 +1406,18 @@ export class TodayComponent implements OnInit {
   readonly gymDaysThisWeek = signal<Set<string>>(new Set<string>());
   readonly proteinDaysThisWeek = signal<Set<string>>(new Set<string>());
   readonly weightLogs = signal<WeightLog[]>([]);
+  readonly stepLogs = signal<StepLog[]>([]);
   readonly brooPosts = signal<CommunityPost[]>([]);
   readonly brooProfiles = signal<Record<string, CommunityProfileDirectoryEntry>>({});
   readonly brooPhotoSrcMap = signal<Record<string, string>>({});
+  readonly profile = signal<Profile | null>(null);
   readonly loading = signal(false);
   readonly loadingBrooBoard = signal(false);
   readonly errorMessage = signal<string | null>(null);
   readonly successMessage = signal<string | null>(null);
 
   readonly showActionSheet = signal(false);
-  readonly sheetMode = signal<'menu' | 'food' | 'copy' | 'mealprep' | 'weight' | 'gym' | 'entry'>('menu');
+  readonly sheetMode = signal<'menu' | 'food' | 'copy' | 'mealprep' | 'weight' | 'steps' | 'gym' | 'entry'>('menu');
   readonly foodSearch = signal('');
   readonly savingGymPost = signal(false);
   readonly gymPhotoName = signal<string | null>(null);
@@ -1391,6 +1436,8 @@ export class TodayComponent implements OnInit {
   readonly activeWeightJourneyId = signal<string | null>(null);
   weightDateInput = this.realToday;
   weightInput = 70;
+  stepsDateInput = this.realToday;
+  stepsInput = 8000;
   gymNote = '';
   private gymPhoto: File | null = null;
 
@@ -1415,6 +1462,7 @@ export class TodayComponent implements OnInit {
   readonly carbsToday = computed(() => Math.round(Number(this.summary()?.carbs || 0)));
   readonly caloriesToday = computed(() => Math.round(Number(this.summary()?.kcal || 0)));
   readonly proteinMilestonePosted = signal(false);
+  readonly stepsMilestonePosted = signal(false);
 
   readonly todayEntries = computed(() => this.entries());
   readonly recentWeightEntries = computed(() => this.weightLogs().slice(0, 7));
@@ -1430,6 +1478,11 @@ export class TodayComponent implements OnInit {
   readonly selectedDayWeight = computed(() =>
     this.weightLogs().find(entry => entry.logged_on === this.today()) || null
   );
+  readonly selectedDaySteps = computed(() =>
+    this.stepLogs().find(entry => entry.logged_on === this.today()) || null
+  );
+  readonly trackStepsEnabled = computed(() => Boolean(this.profile()?.track_steps));
+  readonly stepsGoal = computed(() => Number(this.profile()?.daily_steps_target || 8000));
 
   readonly previousWeightForDay = computed(() => {
     const day = this.today();
@@ -1544,6 +1597,11 @@ export class TodayComponent implements OnInit {
   readonly canShareProteinMilestone = computed(() =>
     this.proteinToday() >= this.proteinGoal && !this.proteinMilestonePosted()
   );
+  readonly canShareStepsMilestone = computed(() =>
+    this.trackStepsEnabled()
+    && Number(this.selectedDaySteps()?.steps || 0) >= this.stepsGoal()
+    && !this.stepsMilestonePosted()
+  );
   readonly copySourceDay = signal(this.realToday);
   readonly copySourceEntries = signal<LogEntry[]>([]);
   readonly copySelectedEntryIds = signal<string[]>([]);
@@ -1621,14 +1679,20 @@ export class TodayComponent implements OnInit {
 
       this.entries.set(dayResult.value.entries);
       this.summary.set(dayResult.value.summary);
+      this.profile.set(dayResult.value.profile);
       this.weightLogs.set(dayResult.value.weightLogs);
+      this.stepLogs.set(dayResult.value.stepLogs);
       this.gymDaysThisWeek.set(new Set(dayResult.value.gymDaysThisWeek));
       this.proteinDaysThisWeek.set(new Set(dayResult.value.proteinDaysThisWeek));
       this.proteinMilestonePosted.set(dayResult.value.proteinMilestonePosted);
+      this.stepsMilestonePosted.set(dayResult.value.stepsMilestonePosted);
 
       const selectedWeight = this.weightLogs().find(entry => entry.logged_on === day);
       this.weightInput = Number(selectedWeight?.weight_kg || this.weightInput);
       this.weightDateInput = day;
+      const selectedSteps = this.stepLogs().find(entry => entry.logged_on === day);
+      this.stepsInput = Number(selectedSteps?.steps || this.stepsGoal());
+      this.stepsDateInput = day;
       await this.loadBrooBoard();
     } catch (error: unknown) {
       this.errorMessage.set(formatAppError(error, 'Heute-Daten konnten nicht geladen werden'));
@@ -1682,6 +1746,18 @@ export class TodayComponent implements OnInit {
     return delta > 0 ? `+${delta} kg` : `${delta} kg`;
   }
 
+  stepsValueLabel(): string {
+    const selected = this.selectedDaySteps();
+    if (!selected) {
+      return '--';
+    }
+    return selected.steps.toLocaleString('de-CH');
+  }
+
+  stepsGoalLabel(): string {
+    return `${this.stepsGoal().toLocaleString('de-CH')} Ziel`;
+  }
+
   weeklyTrendLabel(): string {
     const logs = this.trendWeightEntries();
     if (logs.length < 2) {
@@ -1704,6 +1780,11 @@ export class TodayComponent implements OnInit {
     this.weightInput = Number(entry.weight_kg);
     this.showActionSheet.set(true);
     this.sheetMode.set('weight');
+  }
+
+  openStepsQuickLog(): void {
+    this.showActionSheet.set(true);
+    this.setSheetMode('steps');
   }
 
   openActions(): void {
@@ -1745,7 +1826,7 @@ export class TodayComponent implements OnInit {
     }
   }
 
-  setSheetMode(mode: 'menu' | 'food' | 'copy' | 'mealprep' | 'weight' | 'gym' | 'entry'): void {
+  setSheetMode(mode: 'menu' | 'food' | 'copy' | 'mealprep' | 'weight' | 'steps' | 'gym' | 'entry'): void {
     const currentMode = this.sheetMode();
     if (currentMode === 'food' && mode !== 'food') {
       this.cancelFoodJourney('mode_switch');
@@ -1781,6 +1862,11 @@ export class TodayComponent implements OnInit {
         this.weightInput = Number(selected.weight_kg);
       }
     }
+    if (mode === 'steps') {
+      this.stepsDateInput = this.today();
+      const selected = this.stepLogs().find(entry => entry.logged_on === this.today());
+      this.stepsInput = Number(selected?.steps || this.stepsGoal());
+    }
   }
 
   sheetTitle(): string {
@@ -1788,6 +1874,7 @@ export class TodayComponent implements OnInit {
     if (this.sheetMode() === 'copy') return 'Von anderem Tag übernehmen';
     if (this.sheetMode() === 'mealprep') return 'Meal Prep aufteilen';
     if (this.sheetMode() === 'weight') return 'Gewicht eintragen';
+    if (this.sheetMode() === 'steps') return 'Schritte eintragen';
     if (this.sheetMode() === 'gym') return 'Gym-Check-in teilen';
     if (this.sheetMode() === 'entry') return 'Eintrag verwalten';
     return 'Schnelllog wählen';
@@ -1942,6 +2029,26 @@ export class TodayComponent implements OnInit {
       await this.loadBrooBoard();
     } catch (error: unknown) {
       this.errorMessage.set(formatAppError(error, 'Protein-Ziel konnte nicht geteilt werden'));
+    }
+  }
+
+  async shareStepsMilestone(): Promise<void> {
+    const user = this.authService.user();
+    const steps = Number(this.selectedDaySteps()?.steps || 0);
+    if (!user || !this.trackStepsEnabled()) {
+      return;
+    }
+    if (steps < this.stepsGoal() || this.stepsMilestonePosted()) {
+      return;
+    }
+
+    try {
+      await this.communityFeed.createStepsMilestonePost(user.id, this.today(), steps, this.stepsGoal());
+      this.stepsMilestonePosted.set(true);
+      this.successMessage.set('Schrittziel im Board geteilt.');
+      await this.loadBrooBoard();
+    } catch (error: unknown) {
+      this.errorMessage.set(formatAppError(error, 'Schrittziel konnte nicht geteilt werden'));
     }
   }
 
@@ -2210,8 +2317,43 @@ export class TodayComponent implements OnInit {
     await this.loadData(true);
   }
 
+  async saveSteps(): Promise<void> {
+    const user = this.authService.user();
+    const steps = Number(this.stepsInput);
+    if (!user || !this.trackStepsEnabled() || !Number.isFinite(steps) || steps < 0) {
+      this.errorMessage.set('Bitte gib einen gültigen Schrittstand ein.');
+      return;
+    }
+
+    const { error } = await this.supabaseService.client
+      .from('step_logs')
+      .upsert(
+        {
+          user_id: user.id,
+          logged_on: this.stepsDateInput,
+          steps: Math.round(steps),
+          note: null
+        },
+        { onConflict: 'user_id,logged_on' }
+      );
+
+    if (error) {
+      this.errorMessage.set(formatAppError(error, 'Schritte konnten nicht gespeichert werden'));
+      return;
+    }
+
+    this.successMessage.set('Schritte gespeichert.');
+    this.closeActions();
+    this.invalidateDayCaches(user.id);
+    await this.loadData(true);
+  }
+
   setWeightDateToToday(): void {
     this.weightDateInput = this.realToday;
+  }
+
+  setStepsDateToToday(): void {
+    this.stepsDateInput = this.realToday;
   }
 
   private async upsertWeight(userId: string, day: string, weightKg: number): Promise<boolean> {
@@ -2292,12 +2434,20 @@ export class TodayComponent implements OnInit {
     if (post.post_type === 'protein_milestone') {
       return 'Protein-Ziel erreicht';
     }
+    if (post.post_type === 'steps_milestone') {
+      return 'Schrittziel erreicht';
+    }
     return 'Update aus der Gruppe';
   }
 
   brooPostSummary(post: CommunityPost): string {
     if (post.post_type === 'gym_checkin') {
       return post.note?.trim() || 'War im Gym und hat die Woche weitergeschoben.';
+    }
+
+    if (post.post_type === 'steps_milestone') {
+      const stepsSummary = post.summary as { steps?: number; target?: number } | null;
+      return `${Number(stepsSummary?.steps || 0).toLocaleString('de-CH')} / ${Number(stepsSummary?.target || 0).toLocaleString('de-CH')} Schritte geschafft.`;
     }
 
     const summary = post.summary as { protein?: number; foods?: string[] } | null;
@@ -2500,6 +2650,7 @@ export class TodayComponent implements OnInit {
   private invalidateDayCaches(userId: string): void {
     this.queryCache.invalidatePrefix(`today:${userId}:`);
     this.queryCache.invalidate(this.getProteinMilestoneCacheKey(userId, this.today()));
+    this.queryCache.invalidate(this.getStepsMilestoneCacheKey(userId, this.today()));
   }
 
   private getTodayCacheKey(userId: string, day: string, weekStart: string, weekEnd: string): string {
@@ -2510,14 +2661,21 @@ export class TodayComponent implements OnInit {
     return `protein-posted:${userId}:${day}`;
   }
 
+  private getStepsMilestoneCacheKey(userId: string, day: string): string {
+    return `steps-posted:${userId}:${day}`;
+  }
+
   private async fetchDaySnapshot(userId: string, day: string, weekStart: string, weekEnd: string): Promise<TodaySnapshot> {
     const [
       { data: entryData, error: entryError },
       { data: summaryData, error: summaryError },
       { data: weightData, error: weightError },
+      { data: stepData, error: stepError },
       { data: gymPostsData, error: gymPostsError },
       { data: proteinSummaryData, error: proteinSummaryError },
-      { data: proteinPostData, error: proteinPostError }
+      { data: proteinPostData, error: proteinPostError },
+      { data: stepsPostData, error: stepsPostError },
+      { data: profileData, error: profileError }
     ] = await Promise.all([
       this.supabaseService.client
         .from('log_entries')
@@ -2536,6 +2694,12 @@ export class TodayComponent implements OnInit {
       this.supabaseService.client
         .from('weight_logs')
         .select('id,user_id,logged_on,weight_kg,note,created_at')
+        .eq('user_id', userId)
+        .order('logged_on', { ascending: false })
+        .limit(30),
+      this.supabaseService.client
+        .from('step_logs')
+        .select('id,user_id,logged_on,steps,note,created_at')
         .eq('user_id', userId)
         .order('logged_on', { ascending: false })
         .limit(30),
@@ -2560,22 +2724,38 @@ export class TodayComponent implements OnInit {
         .eq('post_type', 'protein_milestone')
         .eq('day', day)
         .limit(1)
+        .maybeSingle(),
+      this.supabaseService.client
+        .from('community_posts')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('post_type', 'steps_milestone')
+        .eq('day', day)
+        .limit(1)
+        .maybeSingle(),
+      this.supabaseService.client
+        .from('profiles')
+        .select('*')
+        .eq('user_id', userId)
         .maybeSingle()
     ]);
 
-    if (entryError || summaryError || weightError || gymPostsError || proteinSummaryError || proteinPostError) {
-      throw entryError || summaryError || weightError || gymPostsError || proteinSummaryError || proteinPostError;
+    if (entryError || summaryError || weightError || stepError || gymPostsError || proteinSummaryError || proteinPostError || stepsPostError || profileError) {
+      throw entryError || summaryError || weightError || stepError || gymPostsError || proteinSummaryError || proteinPostError || stepsPostError || profileError;
     }
 
     return {
       entries: (entryData || []) as LogEntry[],
       summary: (summaryData as DailySummary | null) || null,
       weightLogs: (weightData || []) as WeightLog[],
+      stepLogs: (stepData || []) as StepLog[],
       gymDaysThisWeek: (gymPostsData || []).map(row => String(row.day)),
       proteinDaysThisWeek: (proteinSummaryData || [])
         .filter(row => Number(row.protein) >= this.proteinGoal)
         .map(row => String(row.day)),
-      proteinMilestonePosted: Boolean(proteinPostData?.id)
+      proteinMilestonePosted: Boolean(proteinPostData?.id),
+      stepsMilestonePosted: Boolean(stepsPostData?.id),
+      profile: (profileData as Profile | null) || null
     };
   }
 

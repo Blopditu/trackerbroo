@@ -8,7 +8,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { AuthService } from '../../core/auth.service';
 import { SupabaseService } from '../../core/supabase.service';
-import { Profile, WeightLog } from '../../core/types';
+import { Profile, StepLog, WeightLog } from '../../core/types';
 import { formatAppError } from '../../core/error-format';
 import { ThemeMode, ThemeService } from '../../core/theme.service';
 import { InteractionTelemetryService } from '../../core/interaction-telemetry.service';
@@ -39,7 +39,7 @@ import { InteractionTelemetryService } from '../../core/interaction-telemetry.se
           <div>
             <p class="title-font">Profil</p>
             <h1>{{ profileForm.value.display_name || 'Dein Profil' }}</h1>
-            <p class="sub">Pflege deine Basisdaten und logge dein Gewicht schnell.</p>
+            <p class="sub">Pflege deine Basisdaten und logge Gewicht oder Schritte ohne Umwege.</p>
           </div>
         </div>
 
@@ -55,6 +55,7 @@ import { InteractionTelemetryService } from '../../core/interaction-telemetry.se
           <button type="button" [class.active]="activeProfileSection() === 'account'" (click)="setProfileSection('account')">Account</button>
           <button type="button" [class.active]="activeProfileSection() === 'goals'" (click)="setProfileSection('goals')">Ziele</button>
           <button type="button" [class.active]="activeProfileSection() === 'weight'" (click)="setProfileSection('weight')">Gewicht</button>
+          <button type="button" [class.active]="activeProfileSection() === 'steps'" (click)="setProfileSection('steps')">Schritte</button>
           <button type="button" [class.active]="activeProfileSection() === 'appearance'" (click)="setProfileSection('appearance')">Darstellung</button>
         </div>
       </section>
@@ -65,7 +66,7 @@ import { InteractionTelemetryService } from '../../core/interaction-telemetry.se
           <div class="skeleton card"></div>
         </section>
       } @else {
-        @if (activeProfileSection() !== 'weight') {
+        @if (activeProfileSection() !== 'weight' && activeProfileSection() !== 'steps') {
         <section class="panel" aria-labelledby="profile-form-title">
           <div id="profile-form-title" class="scroll-header">{{ activeProfileSectionLabel() }}</div>
           <form class="stack-form" [formGroup]="profileForm" (ngSubmit)="saveProfile()">
@@ -124,6 +125,23 @@ import { InteractionTelemetryService } from '../../core/interaction-telemetry.se
                 <mat-option value="high">Hoch</mat-option>
               </mat-select>
             </mat-form-field>
+
+            <div class="grid-two">
+              <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+                <mat-label>Schritte tracken</mat-label>
+                <mat-select id="track-steps" formControlName="track_steps">
+                  <mat-option [value]="true">Ja</mat-option>
+                  <mat-option [value]="false">Nein</mat-option>
+                </mat-select>
+              </mat-form-field>
+
+              @if (profileForm.controls.track_steps.value) {
+                <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+                  <mat-label>Schrittziel pro Tag</mat-label>
+                  <input matInput id="daily-steps-target" type="number" min="1000" max="50000" formControlName="daily_steps_target">
+                </mat-form-field>
+              }
+            </div>
             }
 
             @if (activeProfileSection() === 'appearance') {
@@ -266,6 +284,52 @@ import { InteractionTelemetryService } from '../../core/interaction-telemetry.se
       </section>
       }
 
+      @if (activeProfileSection() === 'steps') {
+      <section class="panel" aria-labelledby="steps-log-title">
+        <div id="steps-log-title" class="m3-section-head">
+          <div class="scroll-header">Tägliche Schritte</div>
+          <span class="mono-badge">Zuletzt {{ latestStepsLabel() }}</span>
+        </div>
+
+        @if (profileForm.controls.track_steps.value) {
+          <p class="subtle compact">Dein Ziel: {{ stepsTargetLabel() }} Schritte pro Tag.</p>
+
+          <form class="stack-form" [formGroup]="stepForm" (ngSubmit)="saveStepLog()">
+            <div class="grid-two">
+              <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+                <mat-label>Datum</mat-label>
+                <input matInput id="steps-logged-on" type="date" formControlName="logged_on">
+              </mat-form-field>
+              <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+                <mat-label>Schritte</mat-label>
+                <input matInput id="steps-count" type="number" min="0" step="1" formControlName="steps">
+              </mat-form-field>
+            </div>
+
+            <button mat-flat-button type="submit" class="action-btn tonal" [disabled]="savingSteps() || stepForm.invalid">
+              {{ savingSteps() ? 'Wird gespeichert …' : 'Schritte speichern' }}
+            </button>
+          </form>
+
+          <div class="entries-list" aria-label="Letzte Schritteinträge">
+            @for (entry of stepLogs(); track entry.id) {
+              <article class="list-card">
+                <div>
+                  <strong>{{ entry.steps.toLocaleString('de-CH') }} Schritte</strong>
+                  <div class="entry-sub">{{ entry.logged_on }}</div>
+                </div>
+              </article>
+            }
+            @if (stepLogs().length === 0) {
+              <p class="empty-state">Noch keine Schritte eingetragen.</p>
+            }
+          </div>
+        } @else {
+          <p class="empty-state">Aktiviere Schrittetracking unter Ziele, damit du hier deinen Tagesstand speichern kannst.</p>
+        }
+      </section>
+      }
+
       @if (activeProfileSection() === 'account') {
       <section class="panel" aria-labelledby="install-app-title">
         <div id="install-app-title" class="scroll-header">Als Web-App installieren</div>
@@ -306,7 +370,7 @@ import { InteractionTelemetryService } from '../../core/interaction-telemetry.se
     }
 
     .profile-section-nav {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 
     .profile-head {
@@ -614,13 +678,15 @@ export class ProfileComponent implements OnInit {
 
   readonly savingProfile = signal(false);
   readonly savingWeight = signal(false);
+  readonly savingSteps = signal(false);
   readonly loading = signal(false);
   readonly successMessage = signal<string | null>(null);
   readonly errorMessage = signal<string | null>(null);
-  readonly activeProfileSection = signal<'account' | 'goals' | 'weight' | 'appearance'>('account');
+  readonly activeProfileSection = signal<'account' | 'goals' | 'weight' | 'steps' | 'appearance'>('account');
   readonly activeWeightJourneyId = signal<string | null>(null);
   readonly profile = signal<Profile | null>(null);
   readonly weightLogs = signal<WeightLog[]>([]);
+  readonly stepLogs = signal<StepLog[]>([]);
   readonly weightTrendDays = signal<7 | 30>(7);
   readonly avatarPreview = signal<string | null>(null);
   readonly avatarFileName = signal<string | null>(null);
@@ -667,6 +733,8 @@ export class ProfileComponent implements OnInit {
     target_weight_kg: [70, [Validators.min(20)]],
     weekly_gym_target: [3, [Validators.min(1), Validators.max(14)]],
     activity_level: ['moderate' as 'low' | 'moderate' | 'high'],
+    track_steps: [false],
+    daily_steps_target: [8000, [Validators.min(1000), Validators.max(50000)]],
     theme_mode: [this.themeService.getCurrentMode() as ThemeMode],
     theme_seed_color: [this.themeService.getCurrentSeed(), [Validators.pattern(/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/)]]
   });
@@ -677,15 +745,29 @@ export class ProfileComponent implements OnInit {
     note: ['']
   });
 
+  readonly stepForm = this.formBuilder.nonNullable.group({
+    logged_on: [this.formatDate(new Date()), [Validators.required]],
+    steps: [8000, [Validators.required, Validators.min(0), Validators.max(100000)]]
+  });
+
   readonly latestWeightLabel = computed(() => {
     const latest = this.weightLogs()[0];
     return latest ? `${latest.weight_kg} kg` : '--';
+  });
+
+  readonly latestStepsLabel = computed(() => {
+    const latest = this.stepLogs()[0];
+    return latest ? `${latest.steps.toLocaleString('de-CH')} Schritte` : '--';
   });
 
   readonly gymProgressLabel = computed(() => {
     const target = Number(this.profileForm.value.weekly_gym_target || 3);
     return `${this.gymWeekSessions()}/${target}`;
   });
+
+  readonly stepsTargetLabel = computed(() =>
+    Number(this.profileForm.controls.daily_steps_target.value || 8000).toLocaleString('de-CH')
+  );
 
   readonly trendWeightLogs = computed(() => this.weightLogs().slice(0, this.weightTrendDays()));
 
@@ -730,7 +812,7 @@ export class ProfileComponent implements OnInit {
     void this.loadAll();
   }
 
-  setProfileSection(section: 'account' | 'goals' | 'weight' | 'appearance'): void {
+  setProfileSection(section: 'account' | 'goals' | 'weight' | 'steps' | 'appearance'): void {
     if (this.activeProfileSection() === 'weight' && section !== 'weight') {
       this.cancelWeightJourney('section_switch');
     }
@@ -744,6 +826,7 @@ export class ProfileComponent implements OnInit {
     const section = this.activeProfileSection();
     if (section === 'account') return 'Account';
     if (section === 'goals') return 'Ziele';
+    if (section === 'steps') return 'Schritte';
     if (section === 'appearance') return 'Darstellung';
     return 'Details';
   }
@@ -756,6 +839,7 @@ export class ProfileComponent implements OnInit {
     this.loading.set(true);
     await this.loadProfile();
     await this.loadWeightLogs();
+    await this.loadStepLogs();
     await this.loadGymProgress();
     this.loading.set(false);
   }
@@ -794,6 +878,8 @@ export class ProfileComponent implements OnInit {
       onboarding_completed: false,
       track_nutrition: true,
       track_gym: true,
+      track_steps: false,
+      daily_steps_target: 8000,
       updated_at: new Date().toISOString()
     };
 
@@ -814,7 +900,9 @@ export class ProfileComponent implements OnInit {
           theme_seed_color: this.themeService.getCurrentSeed(),
           onboarding_completed: false,
           track_nutrition: true,
-          track_gym: true
+          track_gym: true,
+          track_steps: false,
+          daily_steps_target: 8000
         });
 
       if (insertError) {
@@ -842,6 +930,8 @@ export class ProfileComponent implements OnInit {
       target_weight_kg: Number(resolvedProfile.target_weight_kg || 70),
       weekly_gym_target: Number(resolvedProfile.weekly_gym_target || 3),
       activity_level: (resolvedProfile.activity_level || 'moderate') as 'low' | 'moderate' | 'high',
+      track_steps: Boolean(resolvedProfile.track_steps),
+      daily_steps_target: Number(resolvedProfile.daily_steps_target || 8000),
       theme_mode: resolvedThemeMode,
       theme_seed_color: resolvedThemeSeed
     });
@@ -867,6 +957,36 @@ export class ProfileComponent implements OnInit {
     }
 
     this.weightLogs.set((data || []) as WeightLog[]);
+  }
+
+  async loadStepLogs(): Promise<void> {
+    this.errorMessage.set(null);
+    const user = this.authService.user();
+    if (!user) {
+      return;
+    }
+
+    const { data, error } = await this.supabaseService.client
+      .from('step_logs')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('logged_on', { ascending: false })
+      .limit(14);
+
+    if (error) {
+      this.errorMessage.set(formatAppError(error, 'Schritteinträge konnten nicht geladen werden'));
+      return;
+    }
+
+    const logs = (data || []) as StepLog[];
+    this.stepLogs.set(logs);
+    const latest = logs[0];
+    if (latest) {
+      this.stepForm.patchValue({
+        logged_on: latest.logged_on,
+        steps: Number(latest.steps)
+      });
+    }
   }
 
   async loadGymProgress(): Promise<void> {
@@ -944,6 +1064,8 @@ export class ProfileComponent implements OnInit {
         target_weight_kg: formValue.target_weight_kg,
         weekly_gym_target: formValue.weekly_gym_target,
         activity_level: formValue.activity_level,
+        track_steps: formValue.track_steps,
+        daily_steps_target: formValue.track_steps ? formValue.daily_steps_target : 8000,
         theme_seed_color: normalizedThemeSeed,
         updated_at: new Date().toISOString()
       };
@@ -1028,13 +1150,61 @@ export class ProfileComponent implements OnInit {
     }
   }
 
+  async saveStepLog(): Promise<void> {
+    this.successMessage.set(null);
+    this.errorMessage.set(null);
+
+    if (this.stepForm.invalid) {
+      this.stepForm.markAllAsTouched();
+      return;
+    }
+
+    const user = this.authService.user();
+    if (!user) {
+      return;
+    }
+
+    if (!this.profileForm.controls.track_steps.value) {
+      this.errorMessage.set('Aktiviere Schrittetracking zuerst unter Ziele.');
+      return;
+    }
+
+    this.savingSteps.set(true);
+
+    try {
+      const formValue = this.stepForm.getRawValue();
+      const { error } = await this.supabaseService.client
+        .from('step_logs')
+        .upsert(
+          {
+            user_id: user.id,
+            logged_on: formValue.logged_on,
+            steps: formValue.steps,
+            note: null
+          },
+          { onConflict: 'user_id,logged_on' }
+        );
+
+      if (error) {
+        throw error;
+      }
+
+      this.successMessage.set('Schritte gespeichert.');
+      await this.loadStepLogs();
+    } catch (error: unknown) {
+      this.errorMessage.set(formatAppError(error, 'Schritteintrag konnte nicht gespeichert werden'));
+    } finally {
+      this.savingSteps.set(false);
+    }
+  }
+
   async resetOnboarding(): Promise<void> {
     this.successMessage.set(null);
     this.errorMessage.set(null);
 
     if (typeof window !== 'undefined') {
       const shouldReset = window.confirm(
-        'Onboarding neu starten? Profildaten und Gewichtsverlauf werden zurückgesetzt. Zutaten und Mahlzeiten bleiben erhalten.'
+        'Onboarding neu starten? Profildaten sowie Gewichts- und Schritthistorie werden zurückgesetzt. Zutaten und Mahlzeiten bleiben erhalten.'
       );
       if (!shouldReset) {
         return;
@@ -1067,6 +1237,8 @@ export class ProfileComponent implements OnInit {
             onboarding_completed: false,
             track_nutrition: true,
             track_gym: true,
+            track_steps: false,
+            daily_steps_target: 8000,
             updated_at: new Date().toISOString()
           },
           { onConflict: 'user_id' }
@@ -1085,6 +1257,15 @@ export class ProfileComponent implements OnInit {
 
       if (weightsError) {
         throw weightsError;
+      }
+
+      const { error: stepsError } = await this.supabaseService.client
+        .from('step_logs')
+        .delete()
+        .eq('user_id', user.id);
+
+      if (stepsError) {
+        throw stepsError;
       }
 
       await this.router.navigate(['/onboarding']);
