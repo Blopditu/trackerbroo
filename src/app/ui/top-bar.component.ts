@@ -47,15 +47,17 @@ import { RouterModule } from '@angular/router';
       border-radius: 999px;
       color: var(--m3-sys-color-on-surface-variant);
       border: 1px solid var(--m3-sys-color-outline-variant);
-      padding: 0 12px;
+      padding: 0 14px;
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      justify-content: center;
+      gap: 8px;
       text-decoration: none;
       font-size: 12px;
       font-weight: 700;
       letter-spacing: 0.2px;
       background: color-mix(in srgb, var(--m3-sys-color-surface-container-high) 86%, transparent);
+      white-space: nowrap;
     }
 
     .insight-link:hover {
@@ -64,10 +66,11 @@ import { RouterModule } from '@angular/router';
     }
 
     .insight-dot {
-      width: 8px;
-      height: 8px;
+      width: 9px;
+      height: 9px;
       border-radius: 50%;
       background: var(--m3-sys-color-primary);
+      flex: 0 0 auto;
     }
 
     :host-context(.layout-medium) .top-bar {

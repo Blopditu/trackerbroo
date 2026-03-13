@@ -267,6 +267,21 @@ import { InteractionTelemetryService } from '../../core/interaction-telemetry.se
       }
 
       @if (activeProfileSection() === 'account') {
+      <section class="panel" aria-labelledby="install-app-title">
+        <div id="install-app-title" class="scroll-header">Als Web-App installieren</div>
+        <p class="subtle">
+          Installiert wirkt Tracker Broo wie eine richtige App und läuft ohne die normale Browser-Leiste.
+        </p>
+        <div class="install-guide-list">
+          @for (guide of installGuides; track guide.platform) {
+            <article class="install-guide-card">
+              <strong>{{ guide.platform }}</strong>
+              <p>{{ guide.steps }}</p>
+            </article>
+          }
+        </div>
+      </section>
+
       <section class="panel danger-zone" aria-labelledby="reset-onboarding-title">
         <div id="reset-onboarding-title" class="scroll-header">Onboarding zurücksetzen</div>
         <p class="subtle">
@@ -479,6 +494,28 @@ import { InteractionTelemetryService } from '../../core/interaction-telemetry.se
       font-weight: 600;
     }
 
+    .install-guide-list {
+      display: grid;
+      gap: 0.65rem;
+    }
+
+    .install-guide-card {
+      border: 1px solid var(--border-strong);
+      border-radius: 18px;
+      background: var(--m3-sys-color-surface-container-high);
+      padding: 0.85rem;
+      display: grid;
+      gap: 0.35rem;
+    }
+
+    .install-guide-card p {
+      margin: 0;
+      color: var(--ink-600);
+      font-size: var(--text-sm);
+      font-weight: 600;
+      line-height: 1.4;
+    }
+
     .danger-btn {
       border-color: var(--m3-sys-color-error);
       color: var(--m3-sys-color-on-error-container);
@@ -603,6 +640,20 @@ export class ProfileComponent implements OnInit {
     '#c59a52',
     '#a5ba5d',
     '#6f9d4a'
+  ];
+  readonly installGuides = [
+    {
+      platform: 'macOS Safari',
+      steps: 'Seite öffnen, Teilen wählen und dann Zum Dock hinzufügen.'
+    },
+    {
+      platform: 'iPhone Safari',
+      steps: 'Seite öffnen, Teilen tippen und dann Zum Home-Bildschirm. Falls angeboten, Als Web-App öffnen aktivieren.'
+    },
+    {
+      platform: 'Android Chrome',
+      steps: 'Seite öffnen und im Browser-Menü Install app oder Zum Startbildschirm hinzufügen wählen.'
+    }
   ];
 
   private avatarFile: File | null = null;

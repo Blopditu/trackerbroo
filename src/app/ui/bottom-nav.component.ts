@@ -45,7 +45,7 @@ import {
             <span class="label">Profil</span>
           </a>
         </div>
-        <a class="quick-fab" routerLink="/today" [queryParams]="{ quick: 'food' }" aria-label="Essen schnell loggen">
+        <a class="quick-fab" routerLink="/today" [queryParams]="{ quick: 'menu' }" aria-label="Schnelllog öffnen">
           <lucide-icon [img]="icons.plus" aria-hidden="true"></lucide-icon>
         </a>
       } @else {
@@ -58,9 +58,9 @@ import {
             <span class="icon-wrap" aria-hidden="true"><lucide-icon [img]="icons.gym"></lucide-icon></span>
             <span class="label">Gym</span>
           </a>
-          <a class="nav-link quick-rail" routerLink="/today" [queryParams]="{ quick: 'food' }" aria-label="Essen schnell loggen">
+          <a class="nav-link quick-rail" routerLink="/today" [queryParams]="{ quick: 'menu' }" aria-label="Schnelllog öffnen">
             <span class="icon-wrap" aria-hidden="true"><lucide-icon [img]="icons.plus"></lucide-icon></span>
-            <span class="label">Essen</span>
+            <span class="label">Loggen</span>
           </a>
           <a class="nav-link" routerLink="/library" routerLinkActive="active">
             <span class="icon-wrap" aria-hidden="true"><lucide-icon [img]="icons.library"></lucide-icon></span>
@@ -97,7 +97,7 @@ import {
       transform: translateX(-50%);
       width: 100%;
       max-width: 560px;
-      padding: 0.3rem 0.4rem calc(0.7rem + env(safe-area-inset-bottom));
+      padding: 0.35rem 0.55rem calc(0.72rem + env(safe-area-inset-bottom));
       border-top: 1px solid var(--m3-sys-color-outline-variant);
       box-shadow: 0 -2px 12px color-mix(in srgb, #000 26%, transparent);
     }
@@ -111,9 +111,9 @@ import {
 
     .nav-strip {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr)) 78px repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(2, minmax(0, 1fr)) 88px repeat(3, minmax(0, 1fr));
       align-items: start;
-      gap: 0;
+      gap: 2px;
     }
 
     .rail-list {
@@ -125,6 +125,7 @@ import {
 
     .nav-link {
       min-height: 68px;
+      max-width: 82px;
       border: none;
       border-radius: 14px;
       display: flex;
@@ -132,7 +133,8 @@ import {
       align-items: center;
       justify-content: center;
       gap: 4px;
-      padding: 0.3rem 0.15rem 0;
+      padding: 0.2rem 0.2rem 0;
+      justify-self: center;
       text-decoration: none;
       color: var(--m3-sys-color-on-surface-variant);
       background: transparent;
@@ -150,13 +152,13 @@ import {
 
     .fab-gap {
       display: block;
-      width: 78px;
+      width: 88px;
       height: 1px;
     }
 
     .icon-wrap {
-      width: 34px;
-      height: 30px;
+      width: 36px;
+      height: 32px;
       border-radius: 999px;
       display: inline-flex;
       align-items: center;
@@ -170,23 +172,24 @@ import {
     }
 
     .icon-wrap lucide-icon {
-      width: 18px;
-      height: 18px;
+      width: 19px;
+      height: 19px;
     }
 
     .label {
       font-size: 10px;
-      line-height: 12px;
+      line-height: 11px;
       font-weight: 500;
       letter-spacing: 0.1px;
       text-align: center;
       text-wrap: balance;
+      max-width: 72px;
     }
 
     .quick-fab {
       position: absolute;
       left: 50%;
-      bottom: calc(30px + env(safe-area-inset-bottom));
+      bottom: calc(31px + env(safe-area-inset-bottom));
       transform: translateX(-50%);
       width: 60px;
       height: 60px;

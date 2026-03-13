@@ -47,6 +47,7 @@ interface TodaySnapshot {
   weightLogs: WeightLog[];
   gymDaysThisWeek: string[];
   proteinDaysThisWeek: string[];
+  proteinMilestonePosted: boolean;
 }
 
 type FoodFilter = 'all' | 'favorites' | 'recent';
@@ -58,7 +59,6 @@ interface FoodQueueItem {
   itemType: 'ingredient' | 'meal';
   name: string;
   mealSlot: MealSlot;
-  mealTime: string;
   amount: number;
   totals: MacroTotals;
 }
@@ -163,7 +163,6 @@ interface BrooBoardPost {
               type="date"
               class="day-input"
               [ngModel]="today()"
-              [attr.max]="realToday"
               (ngModelChange)="onDayPicked($event)"
             >
           </mat-form-field>
@@ -177,6 +176,12 @@ interface BrooBoardPost {
             Heute
           </button>
         </div>
+
+        @if (canShareProteinMilestone()) {
+          <button mat-flat-button type="button" class="action-btn tonal protein-share-btn" (click)="shareProteinMilestone()">
+            Protein-Ziel im Board teilen
+          </button>
+        }
 
         <app-hero-ring [value]="proteinToday()" [target]="proteinGoal" accentColor="var(--m3-sys-color-primary)" />
 
@@ -275,7 +280,6 @@ interface BrooBoardPost {
                   + ' · ' + entry.kcal.toFixed(0) + ' kcal'
                 }}
               </p>
-              <p class="entry-meta">{{ entryTimeLabel(entry.created_at) }}</p>
             </div>
             <div class="entry-actions">
               <button mat-flat-button type="button" class="entry-btn" (click)="openEntryActions(entry)">Verwalten</button>
@@ -292,7 +296,7 @@ interface BrooBoardPost {
     <app-bottom-sheet [open]="showActionSheet()" [title]="sheetTitle()" (closed)="closeActions()">
       @if (sheetMode() === 'menu') {
         <div class="action-list">
-          <button mat-flat-button type="button" class="menu-btn" (click)="setSheetMode('food')"><lucide-icon [img]="icons.utensils" class="icon" aria-hidden="true"></lucide-icon> Essen hinzufügen</button>
+          <button mat-flat-button type="button" class="menu-btn" (click)="setSheetMode('food')"><lucide-icon [img]="icons.utensils" class="icon" aria-hidden="true"></lucide-icon> Essen loggen</button>
           <button mat-flat-button type="button" class="menu-btn" (click)="setSheetMode('weight')"><lucide-icon [img]="icons.weight" class="icon" aria-hidden="true"></lucide-icon> Gewicht eintragen</button>
           <button mat-flat-button type="button" class="menu-btn" (click)="setSheetMode('gym')"><lucide-icon [img]="icons.dumbbell" class="icon" aria-hidden="true"></lucide-icon> Gym-Check-in teilen</button>
         </div>
@@ -300,6 +304,11 @@ interface BrooBoardPost {
 
       @if (sheetMode() === 'food') {
         <section class="food-sheet">
+          <div class="utility-row">
+            <button mat-flat-button type="button" class="day-chip" (click)="setSheetMode('copy')">Von anderem Tag übernehmen</button>
+            <button mat-flat-button type="button" class="day-chip" (click)="setSheetMode('mealprep')">Meal Prep aufteilen</button>
+          </div>
+
           <div class="slot-row" role="group" aria-label="Mahlzeiten-Slot">
             <button mat-flat-button type="button" class="slot-chip" [class.active]="selectedMealSlot() === 'breakfast'" (click)="setMealSlot('breakfast')">Frühstück</button>
             <button mat-flat-button type="button" class="slot-chip" [class.active]="selectedMealSlot() === 'lunch'" (click)="setMealSlot('lunch')">Mittag</button>
@@ -307,11 +316,6 @@ interface BrooBoardPost {
             <button mat-flat-button type="button" class="slot-chip" [class.active]="selectedMealSlot() === 'snack'" (click)="setMealSlot('snack')">Snack</button>
             <button mat-flat-button type="button" class="slot-chip" [class.active]="selectedMealSlot() === 'other'" (click)="setMealSlot('other')">Sonstiges</button>
           </div>
-
-          <mat-form-field class="m3-field time-field" appearance="outline" subscriptSizing="dynamic">
-            <mat-label>Zeit</mat-label>
-            <input matInput type="time" [ngModel]="selectedMealTime()" (ngModelChange)="onMealTimeChange($event)">
-          </mat-form-field>
 
           <mat-form-field class="m3-field food-search-field" appearance="outline" subscriptSizing="dynamic">
             <mat-label>Lebensmittel suchen</mat-label>
@@ -399,7 +403,7 @@ interface BrooBoardPost {
               <article class="queue-item">
                 <div class="queue-main">
                   <strong>{{ item.name }}</strong>
-                  <small>{{ mealSlotLabel(item.mealSlot) }} · {{ item.mealTime }}</small>
+                  <small>{{ mealSlotLabel(item.mealSlot) }}</small>
                   <small>P {{ item.totals.protein.toFixed(1) }} · KH {{ item.totals.carbs.toFixed(1) }} · F {{ item.totals.fat.toFixed(1) }} · {{ item.totals.kcal.toFixed(0) }} kcal</small>
                 </div>
                 <div class="queue-controls">
@@ -433,11 +437,89 @@ interface BrooBoardPost {
         </section>
       }
 
+      @if (sheetMode() === 'copy') {
+        <section class="copy-sheet">
+          <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Quelldatum</mat-label>
+            <input matInput type="date" [ngModel]="copySourceDay()" (ngModelChange)="onCopySourceDayChange($event)">
+          </mat-form-field>
+
+          @if (loadingCopySourceEntries()) {
+            <p class="muted">Einträge werden geladen …</p>
+          } @else if (copySourceEntries().length > 0) {
+            <div class="selection-list">
+              @for (entry of copySourceEntries(); track entry.id) {
+                <label class="selection-row">
+                  <input
+                    type="checkbox"
+                    [checked]="copySelectedEntryIds().includes(entry.id)"
+                    (change)="toggleCopyEntrySelection(entry.id)"
+                  >
+                  <span class="selection-copy">
+                    <strong>{{ entryName(entry) }}</strong>
+                    <small>{{ entry.quantity }}{{ entry.entry_type === 'ingredient' ? 'g' : ' Portionen' }} · {{ entryMacroSummary(entry) }}</small>
+                  </span>
+                </label>
+              }
+            </div>
+          } @else {
+            <p class="muted">An diesem Tag gibt es keine Einträge zum Übernehmen.</p>
+          }
+
+          <button mat-flat-button type="button" class="menu-btn apply-log-btn" [disabled]="copySelectedEntryIds().length === 0" (click)="applyCopiedEntries()">
+            In {{ today() }} übernehmen
+          </button>
+        </section>
+      }
+
+      @if (sheetMode() === 'mealprep') {
+        <section class="mealprep-sheet">
+          <div class="grid-two">
+            <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+              <mat-label>Von</mat-label>
+              <input matInput type="date" [ngModel]="mealPrepStartDay()" (ngModelChange)="mealPrepStartDay.set($event)">
+            </mat-form-field>
+
+            <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+              <mat-label>Bis</mat-label>
+              <input matInput type="date" [ngModel]="mealPrepEndDay()" (ngModelChange)="mealPrepEndDay.set($event)">
+            </mat-form-field>
+          </div>
+
+          <p class="range-copy">Aufteilen in {{ mealPrepRangeCount() }} Tage ({{ mealPrepStartDay() }} - {{ mealPrepEndDay() }})</p>
+          <p class="warning-copy">Aufgeteilte Einträge können nicht wieder zusammengeführt werden.</p>
+
+          @if (todayEntries().length > 0) {
+            <div class="selection-list">
+              @for (entry of todayEntries(); track entry.id) {
+                <label class="selection-row">
+                  <input
+                    type="checkbox"
+                    [checked]="mealPrepSelectedEntryIds().includes(entry.id)"
+                    (change)="toggleMealPrepEntrySelection(entry.id)"
+                  >
+                  <span class="selection-copy">
+                    <strong>{{ entryName(entry) }}</strong>
+                    <small>{{ entry.quantity }}{{ entry.entry_type === 'ingredient' ? 'g' : ' Portionen' }} · {{ entryMacroSummary(entry) }}</small>
+                  </span>
+                </label>
+              }
+            </div>
+          } @else {
+            <p class="muted">Am aktuell gewählten Tag gibt es keine Einträge zum Aufteilen.</p>
+          }
+
+          <button mat-flat-button type="button" class="menu-btn apply-log-btn" [disabled]="mealPrepSelectedEntryIds().length === 0 || mealPrepRangeCount() <= 0" (click)="applyMealPrepDistribution()">
+            Aufteilen
+          </button>
+        </section>
+      }
+
       @if (sheetMode() === 'weight') {
         <section class="weight-sheet">
           <div class="weight-actions">
             <button mat-flat-button type="button" class="day-chip" (click)="setWeightDateToToday()">Heute</button>
-            <button mat-flat-button type="button" class="day-chip" (click)="setSheetMode('food')">Zu Essen</button>
+            <button mat-flat-button type="button" class="day-chip" (click)="setSheetMode('menu')">Anderes loggen</button>
           </div>
 
           <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
@@ -560,6 +642,11 @@ interface BrooBoardPost {
       gap: 8px;
       align-items: center;
       justify-content: flex-end;
+    }
+
+    .protein-share-btn {
+      width: 100%;
+      justify-content: center;
     }
 
     .icon {
@@ -717,6 +804,20 @@ interface BrooBoardPost {
       padding-bottom: max(8px, env(safe-area-inset-bottom));
     }
 
+    .copy-sheet,
+    .mealprep-sheet {
+      display: grid;
+      gap: 12px;
+      padding-bottom: max(8px, env(safe-area-inset-bottom));
+    }
+
+    .utility-row,
+    .grid-two {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
     .day-chip {
       min-height: var(--touch-target-compact);
       border: 1px solid var(--m3-sys-color-outline-variant);
@@ -756,8 +857,7 @@ interface BrooBoardPost {
       border-color: transparent;
     }
 
-    .food-search-field .mat-mdc-form-field-subscript-wrapper,
-    .time-field .mat-mdc-form-field-subscript-wrapper {
+    .food-search-field .mat-mdc-form-field-subscript-wrapper {
       display: none;
     }
 
@@ -907,8 +1007,14 @@ interface BrooBoardPost {
       min-height: var(--touch-target-compact);
       display: flex;
       align-items: center;
-      gap: 8px;
-      padding: 0 12px;
+      gap: 10px;
+      padding: 0 14px;
+    }
+
+    .action-list .menu-btn .icon {
+      width: 18px;
+      height: 18px;
+      flex: 0 0 auto;
     }
 
     .file-label {
@@ -939,6 +1045,66 @@ interface BrooBoardPost {
     .weight-sheet {
       display: grid;
       gap: 10px;
+    }
+
+    .selection-list {
+      display: grid;
+      gap: 8px;
+      max-height: clamp(180px, 34dvh, 320px);
+      overflow: auto;
+      padding-right: 2px;
+    }
+
+    .selection-row {
+      border: 1px solid var(--m3-sys-color-outline-variant);
+      border-radius: 16px;
+      background: var(--m3-sys-color-surface-container-low);
+      padding: 10px 12px;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 10px;
+      align-items: start;
+    }
+
+    .selection-row input {
+      width: 18px;
+      height: 18px;
+      margin: 2px 0 0;
+      accent-color: var(--m3-sys-color-primary);
+    }
+
+    .selection-copy {
+      display: grid;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .selection-copy strong,
+    .selection-copy small {
+      display: block;
+    }
+
+    .selection-copy strong {
+      color: var(--m3-sys-color-on-surface);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .selection-copy small,
+    .range-copy,
+    .warning-copy {
+      color: var(--m3-sys-color-on-surface-variant);
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .range-copy,
+    .warning-copy {
+      margin: 0;
+    }
+
+    .warning-copy {
+      color: color-mix(in srgb, var(--warning-500) 88%, var(--m3-sys-color-on-surface));
     }
 
     .weight-actions {
@@ -1147,6 +1313,11 @@ interface BrooBoardPost {
         grid-template-columns: repeat(3, minmax(0, 1fr));
       }
 
+      .utility-row,
+      .grid-two {
+        grid-template-columns: 1fr;
+      }
+
       .food-footer {
         grid-template-columns: 1fr;
       }
@@ -1201,7 +1372,7 @@ export class TodayComponent implements OnInit {
   readonly successMessage = signal<string | null>(null);
 
   readonly showActionSheet = signal(false);
-  readonly sheetMode = signal<'menu' | 'food' | 'weight' | 'gym' | 'entry'>('menu');
+  readonly sheetMode = signal<'menu' | 'food' | 'copy' | 'mealprep' | 'weight' | 'gym' | 'entry'>('menu');
   readonly foodSearch = signal('');
   readonly savingGymPost = signal(false);
   readonly gymPhotoName = signal<string | null>(null);
@@ -1212,7 +1383,6 @@ export class TodayComponent implements OnInit {
   readonly today = signal(this.realToday);
   readonly foodFilter = signal<FoodFilter>('recent');
   readonly selectedMealSlot = signal<MealSlot>('snack');
-  readonly selectedMealTime = signal('12:00');
   readonly foodQueue = signal<FoodQueueItem[]>([]);
   readonly favoriteFoodIds = signal<string[]>([]);
   readonly amountPickerMode = signal<'queue' | 'edit'>('queue');
@@ -1244,6 +1414,7 @@ export class TodayComponent implements OnInit {
   readonly fatToday = computed(() => Math.round(Number(this.summary()?.fat || 0)));
   readonly carbsToday = computed(() => Math.round(Number(this.summary()?.carbs || 0)));
   readonly caloriesToday = computed(() => Math.round(Number(this.summary()?.kcal || 0)));
+  readonly proteinMilestonePosted = signal(false);
 
   readonly todayEntries = computed(() => this.entries());
   readonly recentWeightEntries = computed(() => this.weightLogs().slice(0, 7));
@@ -1368,15 +1539,42 @@ export class TodayComponent implements OnInit {
     }
     return states;
   });
-  readonly canGoNextDay = computed(() => this.compareIsoDays(this.today(), this.realToday) < 0);
+  readonly canGoNextDay = computed(() => true);
   readonly foodQueueCount = computed(() => this.foodQueue().length);
+  readonly canShareProteinMilestone = computed(() =>
+    this.proteinToday() >= this.proteinGoal && !this.proteinMilestonePosted()
+  );
+  readonly copySourceDay = signal(this.realToday);
+  readonly copySourceEntries = signal<LogEntry[]>([]);
+  readonly copySelectedEntryIds = signal<string[]>([]);
+  readonly loadingCopySourceEntries = signal(false);
+  readonly mealPrepStartDay = signal(this.realToday);
+  readonly mealPrepEndDay = signal(this.realToday);
+  readonly mealPrepSelectedEntryIds = signal<string[]>([]);
+  readonly selectedMealPrepEntries = computed(() =>
+    this.todayEntries().filter(entry => this.mealPrepSelectedEntryIds().includes(entry.id))
+  );
+  readonly mealPrepRangeCount = computed(() => {
+    const start = this.normalizeDateInput(this.mealPrepStartDay());
+    const end = this.normalizeDateInput(this.mealPrepEndDay());
+    if (!start || !end) {
+      return 0;
+    }
+    const diff = this.compareIsoDays(start, end);
+    if (diff > 0) {
+      return 0;
+    }
+    const startDate = this.parseIsoDate(start);
+    const endDate = this.parseIsoDate(end);
+    return Math.floor((endDate.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000)) + 1;
+  });
 
   ngOnInit(): void {
     this.favoriteFoodIds.set(this.readFavoriteFoodIds());
     this.route.queryParamMap
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(params => {
-        if (params.get('quick') !== 'food') {
+        if (!params.get('quick')) {
           return;
         }
         this.openActions();
@@ -1426,14 +1624,11 @@ export class TodayComponent implements OnInit {
       this.weightLogs.set(dayResult.value.weightLogs);
       this.gymDaysThisWeek.set(new Set(dayResult.value.gymDaysThisWeek));
       this.proteinDaysThisWeek.set(new Set(dayResult.value.proteinDaysThisWeek));
+      this.proteinMilestonePosted.set(dayResult.value.proteinMilestonePosted);
 
       const selectedWeight = this.weightLogs().find(entry => entry.logged_on === day);
       this.weightInput = Number(selectedWeight?.weight_kg || this.weightInput);
       this.weightDateInput = day;
-
-      if (day === this.realToday && Number(dayResult.value.summary?.protein || 0) >= this.proteinGoal) {
-        await this.communityFeed.ensureProteinMilestonePost(user.id, day, dayResult.value.summary);
-      }
       await this.loadBrooBoard();
     } catch (error: unknown) {
       this.errorMessage.set(formatAppError(error, 'Heute-Daten konnten nicht geladen werden'));
@@ -1452,11 +1647,7 @@ export class TodayComponent implements OnInit {
   goNextDay(): void {
     const current = this.parseIsoDate(this.today());
     current.setDate(current.getDate() + 1);
-    const nextDay = this.formatDate(current);
-    if (this.compareIsoDays(nextDay, this.realToday) > 0) {
-      return;
-    }
-    this.today.set(nextDay);
+    this.today.set(this.formatDate(current));
     void this.loadData();
   }
 
@@ -1465,7 +1656,7 @@ export class TodayComponent implements OnInit {
     if (!normalized) {
       return;
     }
-    this.today.set(this.compareIsoDays(normalized, this.realToday) > 0 ? this.realToday : normalized);
+    this.today.set(normalized);
     void this.loadData();
   }
 
@@ -1516,12 +1707,13 @@ export class TodayComponent implements OnInit {
   }
 
   openActions(): void {
-    this.setSheetMode('food');
     this.showActionSheet.set(true);
+    this.setSheetMode('menu');
   }
 
   openFoodQuickLog(): void {
-    this.openActions();
+    this.showActionSheet.set(true);
+    this.setSheetMode('food');
   }
 
   openGymCheckInComposer(): void {
@@ -1541,6 +1733,9 @@ export class TodayComponent implements OnInit {
     this.sheetMode.set('menu');
     this.foodSearch.set('');
     this.selectedEntryForActions.set(null);
+    this.copySelectedEntryIds.set([]);
+    this.copySourceEntries.set([]);
+    this.mealPrepSelectedEntryIds.set([]);
     this.gymNote = '';
     this.gymPhoto = null;
     this.gymPhotoName.set(null);
@@ -1550,7 +1745,7 @@ export class TodayComponent implements OnInit {
     }
   }
 
-  setSheetMode(mode: 'menu' | 'food' | 'weight' | 'gym' | 'entry'): void {
+  setSheetMode(mode: 'menu' | 'food' | 'copy' | 'mealprep' | 'weight' | 'gym' | 'entry'): void {
     const currentMode = this.sheetMode();
     if (currentMode === 'food' && mode !== 'food') {
       this.cancelFoodJourney('mode_switch');
@@ -1563,10 +1758,20 @@ export class TodayComponent implements OnInit {
     if (mode === 'food') {
       this.startFoodJourney('sheet_mode');
       if (this.foodQueueCount() === 0) {
-        this.selectedMealTime.set(this.currentTimeHHmm());
         this.selectedMealSlot.set('snack');
       }
       this.foodSearch.set('');
+    }
+    if (mode === 'copy') {
+      const defaultSourceDay = this.shiftIsoDay(this.today(), -1);
+      this.copySourceDay.set(defaultSourceDay);
+      this.copySelectedEntryIds.set([]);
+      void this.loadCopySourceEntries(defaultSourceDay);
+    }
+    if (mode === 'mealprep') {
+      this.mealPrepSelectedEntryIds.set(this.todayEntries().map(entry => entry.id));
+      this.mealPrepStartDay.set(this.today());
+      this.mealPrepEndDay.set(this.shiftIsoDay(this.today(), 2));
     }
     if (mode === 'weight') {
       this.startWeightJourney('sheet_mode');
@@ -1579,11 +1784,13 @@ export class TodayComponent implements OnInit {
   }
 
   sheetTitle(): string {
-    if (this.sheetMode() === 'food') return 'Protein und Mahlzeiten loggen';
+    if (this.sheetMode() === 'food') return 'Essen loggen';
+    if (this.sheetMode() === 'copy') return 'Von anderem Tag übernehmen';
+    if (this.sheetMode() === 'mealprep') return 'Meal Prep aufteilen';
     if (this.sheetMode() === 'weight') return 'Gewicht eintragen';
     if (this.sheetMode() === 'gym') return 'Gym-Check-in teilen';
     if (this.sheetMode() === 'entry') return 'Eintrag verwalten';
-    return 'Heute erledigen';
+    return 'Schnelllog wählen';
   }
 
   isIngredient(item: QuickItem): item is Ingredient {
@@ -1626,13 +1833,6 @@ export class TodayComponent implements OnInit {
     return 'Sonstiges';
   }
 
-  onMealTimeChange(value: string): void {
-    const normalized = this.normalizeTimeInput(value);
-    if (normalized) {
-      this.selectedMealTime.set(normalized);
-    }
-  }
-
   isFavoriteFood(itemId: string): boolean {
     return this.favoriteFoodIds().includes(itemId);
   }
@@ -1649,7 +1849,7 @@ export class TodayComponent implements OnInit {
 
   addDefaultToQueue(item: QuickItem): void {
     const amount = this.isIngredient(item) ? 100 : 1;
-    this.addToFoodQueue(item, amount, this.scaledMacros(item, amount), this.selectedMealSlot(), this.selectedMealTime());
+    this.addToFoodQueue(item, amount, this.scaledMacros(item, amount), this.selectedMealSlot());
   }
 
   removeFoodQueueItem(queueId: string): void {
@@ -1709,7 +1909,7 @@ export class TodayComponent implements OnInit {
       protein: Number(item.totals.protein.toFixed(2)),
       carbs: Number(item.totals.carbs.toFixed(2)),
       fat: Number(item.totals.fat.toFixed(2)),
-      created_at: this.combineDayTimeToIso(targetDay, item.mealTime, index * 5)
+      created_at: this.buildFoodLogTimestamp(targetDay, index * 5)
     }));
 
     const { error } = await this.supabaseService.client.from('log_entries').insert(payload);
@@ -1726,6 +1926,148 @@ export class TodayComponent implements OnInit {
     await this.loadData(true);
   }
 
+  async shareProteinMilestone(): Promise<void> {
+    const user = this.authService.user();
+    if (!user) {
+      return;
+    }
+    if (this.proteinToday() < this.proteinGoal || this.proteinMilestonePosted()) {
+      return;
+    }
+
+    try {
+      await this.communityFeed.ensureProteinMilestonePost(user.id, this.today(), this.summary());
+      this.proteinMilestonePosted.set(true);
+      this.successMessage.set('Protein-Ziel im Board geteilt.');
+      await this.loadBrooBoard();
+    } catch (error: unknown) {
+      this.errorMessage.set(formatAppError(error, 'Protein-Ziel konnte nicht geteilt werden'));
+    }
+  }
+
+  async onCopySourceDayChange(value: string): Promise<void> {
+    const normalized = this.normalizeDateInput(value);
+    if (!normalized) {
+      return;
+    }
+    this.copySourceDay.set(normalized);
+    this.copySelectedEntryIds.set([]);
+    await this.loadCopySourceEntries(normalized);
+  }
+
+  toggleCopyEntrySelection(entryId: string): void {
+    this.copySelectedEntryIds.update(current =>
+      current.includes(entryId) ? current.filter(id => id !== entryId) : [...current, entryId]
+    );
+  }
+
+  async applyCopiedEntries(): Promise<void> {
+    const user = this.authService.user();
+    const targetDay = this.today();
+    const sourceDay = this.copySourceDay();
+    const selectedEntries = this.copySourceEntries().filter(entry => this.copySelectedEntryIds().includes(entry.id));
+
+    if (!user || selectedEntries.length === 0) {
+      this.errorMessage.set('Wähle mindestens einen Eintrag zum Übernehmen.');
+      return;
+    }
+    if (sourceDay === targetDay) {
+      this.errorMessage.set('Quelle und Ziel müssen unterschiedlich sein.');
+      return;
+    }
+
+    const payload = selectedEntries.map((entry, index) =>
+      this.buildCopiedEntryPayload(entry, user.id, targetDay, index * 5)
+    );
+
+    const { error } = await this.supabaseService.client.from('log_entries').insert(payload);
+    if (error) {
+      this.errorMessage.set(this.formatWriteError(error));
+      return;
+    }
+
+    this.successMessage.set(`${selectedEntries.length} Einträge nach ${targetDay} übernommen.`);
+    this.closeActions();
+    this.invalidateDayCaches(user.id);
+    await this.loadData(true);
+  }
+
+  toggleMealPrepEntrySelection(entryId: string): void {
+    this.mealPrepSelectedEntryIds.update(current =>
+      current.includes(entryId) ? current.filter(id => id !== entryId) : [...current, entryId]
+    );
+  }
+
+  async applyMealPrepDistribution(): Promise<void> {
+    const user = this.authService.user();
+    const start = this.normalizeDateInput(this.mealPrepStartDay());
+    const end = this.normalizeDateInput(this.mealPrepEndDay());
+    const selectedEntries = this.selectedMealPrepEntries();
+    const dayCount = this.mealPrepRangeCount();
+
+    if (!user || selectedEntries.length === 0) {
+      this.errorMessage.set('Wähle mindestens einen Eintrag zum Aufteilen.');
+      return;
+    }
+    if (!start || !end || dayCount <= 0) {
+      this.errorMessage.set('Bitte gib einen gültigen Zeitraum an.');
+      return;
+    }
+
+    const rangeDays = this.getIsoDayRange(start, end);
+    const payload = selectedEntries.flatMap((entry, entryIndex) => {
+      const quantityParts = this.splitAmount(entry.quantity, dayCount);
+      const kcalParts = this.splitAmount(entry.kcal, dayCount);
+      const proteinParts = this.splitAmount(entry.protein, dayCount);
+      const carbsParts = this.splitAmount(entry.carbs, dayCount);
+      const fatParts = this.splitAmount(entry.fat, dayCount);
+
+      return rangeDays.map((day, dayIndex) =>
+        this.buildCopiedEntryPayload(
+          entry,
+          user.id,
+          day,
+          entryIndex * 60 + dayIndex * 5,
+          {
+            quantity: quantityParts[dayIndex],
+            kcal: kcalParts[dayIndex],
+            protein: proteinParts[dayIndex],
+            carbs: carbsParts[dayIndex],
+            fat: fatParts[dayIndex]
+          }
+        )
+      );
+    });
+
+    const { error: insertError } = await this.supabaseService.client.from('log_entries').insert(payload);
+    if (insertError) {
+      this.errorMessage.set(this.formatWriteError(insertError));
+      return;
+    }
+
+    const { error: deleteError } = await this.supabaseService.client
+      .from('log_entries')
+      .delete()
+      .in('id', selectedEntries.map(entry => entry.id))
+      .eq('owner_id', user.id);
+
+    if (deleteError) {
+      this.errorMessage.set('Meal Prep wurde angelegt, aber die Originaleinträge konnten nicht entfernt werden. Bitte kurz prüfen.');
+      this.invalidateDayCaches(user.id);
+      await this.loadData(true);
+      return;
+    }
+
+    this.successMessage.set(`${selectedEntries.length} Einträge auf ${dayCount} Tage aufgeteilt.`);
+    this.closeActions();
+    this.invalidateDayCaches(user.id);
+    await this.loadData(true);
+  }
+
+  entryMacroSummary(entry: LogEntry): string {
+    return `P ${entry.protein.toFixed(1)} · KH ${entry.carbs.toFixed(1)} · F ${entry.fat.toFixed(1)} · ${entry.kcal.toFixed(0)} kcal`;
+  }
+
   async confirmQuickAdd(result: AmountPickResult): Promise<void> {
     const item = this.selectedItem();
     const user = this.authService.user();
@@ -1737,7 +2079,7 @@ export class TodayComponent implements OnInit {
     const pickerMode = this.amountPickerMode();
 
     if (!editingId && pickerMode === 'queue') {
-      this.addToFoodQueue(item, result.amount, result.totals, this.selectedMealSlot(), this.selectedMealTime());
+      this.addToFoodQueue(item, result.amount, result.totals, this.selectedMealSlot());
       this.successMessage.set(`${item.name} zur Log-Liste hinzugefügt.`);
       this.closeAmountPicker();
       this.sheetMode.set('food');
@@ -1943,14 +2285,6 @@ export class TodayComponent implements OnInit {
     return entry.entry_type === 'ingredient' ? this.getIngredientName(entry.ref_id) : this.getMealName(entry.ref_id);
   }
 
-  entryTimeLabel(isoTimestamp: string): string {
-    const parsed = new Date(isoTimestamp);
-    if (Number.isNaN(parsed.getTime())) {
-      return '--:--';
-    }
-    return parsed.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', hour12: false });
-  }
-
   brooPostLabel(post: CommunityPost): string {
     if (post.post_type === 'gym_checkin') {
       return 'Gym-Check-in';
@@ -2002,12 +2336,100 @@ export class TodayComponent implements OnInit {
     }
   }
 
+  private async loadCopySourceEntries(day: string): Promise<void> {
+    const user = this.authService.user();
+    if (!user) {
+      return;
+    }
+
+    this.loadingCopySourceEntries.set(true);
+    try {
+      this.copySourceEntries.set(await this.fetchLogEntriesForDay(user.id, day));
+    } catch (error: unknown) {
+      this.errorMessage.set(formatAppError(error, 'Einträge vom gewählten Tag konnten nicht geladen werden'));
+      this.copySourceEntries.set([]);
+    } finally {
+      this.loadingCopySourceEntries.set(false);
+    }
+  }
+
+  private async fetchLogEntriesForDay(userId: string, day: string): Promise<LogEntry[]> {
+    const { data, error } = await this.supabaseService.client
+      .from('log_entries')
+      .select('id,owner_id,group_id,day,entry_type,ref_id,quantity,kcal,protein,carbs,fat,created_at')
+      .eq('owner_id', userId)
+      .is('group_id', null)
+      .eq('day', day)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      throw error;
+    }
+
+    return (data || []) as LogEntry[];
+  }
+
+  private buildCopiedEntryPayload(
+    entry: LogEntry,
+    userId: string,
+    targetDay: string,
+    offsetSeconds = 0,
+    overrides?: Partial<Pick<LogEntry, 'quantity' | 'kcal' | 'protein' | 'carbs' | 'fat'>>
+  ): Omit<LogEntry, 'id'> {
+    return {
+      owner_id: userId,
+      group_id: null,
+      day: targetDay,
+      entry_type: entry.entry_type,
+      ref_id: entry.ref_id,
+      quantity: Number((overrides?.quantity ?? entry.quantity).toFixed(2)),
+      kcal: Number((overrides?.kcal ?? entry.kcal).toFixed(2)),
+      protein: Number((overrides?.protein ?? entry.protein).toFixed(2)),
+      carbs: Number((overrides?.carbs ?? entry.carbs).toFixed(2)),
+      fat: Number((overrides?.fat ?? entry.fat).toFixed(2)),
+      created_at: this.copyEntryTimestamp(entry, targetDay, offsetSeconds)
+    };
+  }
+
+  private copyEntryTimestamp(entry: LogEntry, targetDay: string, offsetSeconds = 0): string {
+    const parsed = new Date(entry.created_at);
+    if (!Number.isNaN(parsed.getTime())) {
+      const time = `${String(parsed.getHours()).padStart(2, '0')}:${String(parsed.getMinutes()).padStart(2, '0')}`;
+      return this.combineDayTimeToIso(targetDay, time, offsetSeconds);
+    }
+    return this.buildFoodLogTimestamp(targetDay, offsetSeconds);
+  }
+
+  private getIsoDayRange(start: string, end: string): string[] {
+    const range: string[] = [];
+    const cursor = this.parseIsoDate(start);
+    const endDate = this.parseIsoDate(end);
+
+    while (cursor.getTime() <= endDate.getTime()) {
+      range.push(this.formatDate(cursor));
+      cursor.setDate(cursor.getDate() + 1);
+    }
+
+    return range;
+  }
+
+  private splitAmount(total: number, parts: number): number[] {
+    if (parts <= 1) {
+      return [Number(total.toFixed(2))];
+    }
+
+    const base = Number((total / parts).toFixed(2));
+    const values = Array.from({ length: parts }, () => base);
+    const consumed = Number((base * (parts - 1)).toFixed(2));
+    values[parts - 1] = Number((total - consumed).toFixed(2));
+    return values;
+  }
+
   private addToFoodQueue(
     item: QuickItem,
     amount: number,
     totals: MacroTotals,
-    mealSlot: MealSlot,
-    mealTime: string
+    mealSlot: MealSlot
   ): void {
     this.foodQueue.update(current => [
       ...current,
@@ -2017,7 +2439,6 @@ export class TodayComponent implements OnInit {
         itemType: this.isIngredient(item) ? 'ingredient' : 'meal',
         name: item.name,
         mealSlot,
-        mealTime,
         amount,
         totals
       }
@@ -2076,11 +2497,6 @@ export class TodayComponent implements OnInit {
     return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
   }
 
-  private currentTimeHHmm(): string {
-    const now = new Date();
-    return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-  }
-
   private invalidateDayCaches(userId: string): void {
     this.queryCache.invalidatePrefix(`today:${userId}:`);
     this.queryCache.invalidate(this.getProteinMilestoneCacheKey(userId, this.today()));
@@ -2100,7 +2516,8 @@ export class TodayComponent implements OnInit {
       { data: summaryData, error: summaryError },
       { data: weightData, error: weightError },
       { data: gymPostsData, error: gymPostsError },
-      { data: proteinSummaryData, error: proteinSummaryError }
+      { data: proteinSummaryData, error: proteinSummaryError },
+      { data: proteinPostData, error: proteinPostError }
     ] = await Promise.all([
       this.supabaseService.client
         .from('log_entries')
@@ -2135,11 +2552,19 @@ export class TodayComponent implements OnInit {
         .eq('owner_id', userId)
         .is('group_id', null)
         .gte('day', weekStart)
-        .lte('day', weekEnd)
+        .lte('day', weekEnd),
+      this.supabaseService.client
+        .from('community_posts')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('post_type', 'protein_milestone')
+        .eq('day', day)
+        .limit(1)
+        .maybeSingle()
     ]);
 
-    if (entryError || summaryError || weightError || gymPostsError || proteinSummaryError) {
-      throw entryError || summaryError || weightError || gymPostsError || proteinSummaryError;
+    if (entryError || summaryError || weightError || gymPostsError || proteinSummaryError || proteinPostError) {
+      throw entryError || summaryError || weightError || gymPostsError || proteinSummaryError || proteinPostError;
     }
 
     return {
@@ -2149,7 +2574,8 @@ export class TodayComponent implements OnInit {
       gymDaysThisWeek: (gymPostsData || []).map(row => String(row.day)),
       proteinDaysThisWeek: (proteinSummaryData || [])
         .filter(row => Number(row.protein) >= this.proteinGoal)
-        .map(row => String(row.day))
+        .map(row => String(row.day)),
+      proteinMilestonePosted: Boolean(proteinPostData?.id)
     };
   }
 
@@ -2277,6 +2703,16 @@ export class TodayComponent implements OnInit {
       stamp.setSeconds(stamp.getSeconds() + offsetSeconds);
     }
     return stamp.toISOString();
+  }
+
+  private buildFoodLogTimestamp(day: string, offsetSeconds = 0): string {
+    const baseTime = day === this.realToday ? this.currentLocalTimeOrFallback() : '12:00';
+    return this.combineDayTimeToIso(day, baseTime, offsetSeconds);
+  }
+
+  private currentLocalTimeOrFallback(): string {
+    const now = new Date();
+    return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
   }
 
   private compareIsoDays(a: string, b: string): number {

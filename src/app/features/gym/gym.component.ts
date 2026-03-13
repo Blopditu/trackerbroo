@@ -206,21 +206,10 @@ type DetailSource = 'widget' | 'progress-10rm' | 'progress-volume';
                   <button type="button" class="workout-day" [class.completed]="workout.completed" (click)="openWorkoutPreview(workout)">
                     <div class="left">
                       <strong>{{ workout.dayNumber }} {{ workout.name }}</strong>
-                      <div class="thumbs" aria-hidden="true">
-                        @for (thumb of workout.thumbnails.slice(0, 3); track thumb) {
-                          @if (isPlaceholderImage(thumb)) {
-                            <span class="thumb-fallback"></span>
-                          } @else {
-                            <img [src]="thumb" alt="" loading="lazy" decoding="async">
-                          }
-                        }
-                        @if (workout.exerciseCount > 3) {
-                          <span class="thumb-more">+{{ workout.exerciseCount - 3 }}</span>
-                        }
-                      </div>
+                      <p class="muted">{{ workout.exerciseCount }} Übungen</p>
                     </div>
                     <div class="right">
-                      <span>{{ workout.exerciseCount }} Übungen</span>
+                      <span>{{ workout.completed ? 'Erledigt' : 'Öffnen' }}</span>
                       @if (workout.completed) {
                         <lucide-icon [img]="icons.check" class="check-icon" aria-hidden="true"></lucide-icon>
                       }
@@ -254,13 +243,9 @@ type DetailSource = 'widget' | 'progress-10rm' | 'progress-volume';
               </div>
 
               <div class="exercise-list">
-                @for (exercise of selectedOverview()?.exercises || []; track exercise.dayExerciseId) {
+                @for (exercise of selectedOverview()?.exercises || []; track exercise.dayExerciseId; let exerciseIndex = $index) {
                   <article class="exercise-row">
-                    @if (isPlaceholderImage(exercise.images[0] || null)) {
-                      <span class="exercise-thumb-fallback"></span>
-                    } @else {
-                      <img [src]="exercise.images[0] || placeholderImage" alt="{{ exercise.name }}" loading="lazy" decoding="async">
-                    }
+                    <span class="exercise-status" aria-hidden="true">{{ exerciseIndex + 1 }}</span>
                     <div>
                       <strong>{{ exercise.name }}</strong>
                       <p class="muted">{{ equipmentLabel(exercise.equipment) }} • {{ exercise.sets }} x {{ exercise.targetReps ? exercise.targetReps : (exercise.targetSeconds + 's') }}</p>
@@ -302,17 +287,11 @@ type DetailSource = 'widget' | 'progress-10rm' | 'progress-volume';
                 <header>
                   <h3>{{ currentExercise()!.name }}</h3>
                   <p class="muted">{{ equipmentLabel(currentExercise()!.equipment) }} • Ziel {{ targetLabel(currentExercise()!) }}</p>
-                  <p class="muted">3 Warmup Sets (optional)</p>
+                  <div class="detail-meta">
+                    <span class="detail-pill">{{ currentExercise()!.sets.length }} Sätze</span>
+                    <span class="detail-pill">3 Warm-up optional</span>
+                  </div>
                 </header>
-
-                <div class="media-carousel" aria-label="Übungsbilder">
-                  @for (image of currentExercise()!.images; track image) {
-                    <img [src]="image" alt="{{ currentExercise()!.name }} Technikbild" loading="lazy" decoding="async">
-                  }
-                  @if (currentExercise()!.images.length === 0) {
-                    <img [src]="placeholderImage" alt="Platzhalter Übungsbild" loading="lazy" decoding="async">
-                  }
-                </div>
 
                 @if (recommendedSetLine()) {
                   <button type="button" class="recommended-row" (click)="acceptRecommendation()">
@@ -372,26 +351,35 @@ type DetailSource = 'widget' | 'progress-10rm' | 'progress-volume';
 
       @if (activeTab() === 'progress') {
         <section class="panel stats-card">
-          <h2>Personal Stats</h2>
+          <div class="section-copy">
+            <h2>Trainingsstand</h2>
+            <p class="muted">Deine Übersicht für Rhythmus, aktiven Plan und letztes Gewicht.</p>
+          </div>
           <div class="stats-grid">
             <article class="stat-box">
-              <p class="label">Workouts</p>
+              <p class="label">Einheiten</p>
               <strong>{{ personalStats()?.totalWorkouts || 0 }}</strong>
             </article>
             <article class="stat-box">
-              <p class="label">Streak</p>
+              <p class="label">Serie</p>
               <strong>{{ personalStats()?.currentStreakWeeks || 0 }} Wochen</strong>
             </article>
             <article class="stat-box">
-              <p class="label">Gym</p>
-              <strong>{{ personalStats()?.gymName || 'Nicht gesetzt' }}</strong>
+              <p class="label">Aktiver Plan</p>
+              <strong>{{ activePlanStatLabel() }}</strong>
             </article>
             <article class="stat-box">
-              <p class="label">Gewicht</p>
-              <strong>{{ personalStats()?.latestBodyweight ? personalStats()!.latestBodyweight + ' kg' : '--' }}</strong>
+              <p class="label">Letztes Gewicht</p>
+              <strong>{{ latestBodyweightStatLabel() }}</strong>
             </article>
           </div>
+        </section>
 
+        <section class="panel measurement-panel">
+          <div class="section-copy">
+            <h2>Messwert eintragen</h2>
+            <p class="muted">Gewicht oder Umfang kurz nachtragen, ohne die Trainingsübersicht zu überladen.</p>
+          </div>
           <form class="measurement-form" [formGroup]="measurementForm" (ngSubmit)="saveMeasurement()">
             <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
               <mat-label>Messung</mat-label>
@@ -460,52 +448,44 @@ type DetailSource = 'widget' | 'progress-10rm' | 'progress-volume';
             <p class="muted">{{ equipmentLabel(selectedProgressExercise()!.equipment) }} • {{ muscleLabel(selectedProgressExercise()!.primary_muscle) }}</p>
           }
 
-          <div class="stats-grid">
-            <article class="stat-box">
-              <p class="label">Aktuelles 10RM</p>
-              <strong>{{ latestTenRmLabel() }}</strong>
+          <div class="progress-summary">
+            <article class="summary-card">
+              <p class="label">Bestleistung</p>
+              <strong>{{ bestTenRmLabel() }}</strong>
             </article>
-            <article class="stat-box">
-              <p class="label">Volumen / Session</p>
+            <article class="summary-card">
+              <p class="label">Volumen zuletzt</p>
               <strong>{{ latestSessionVolumeLabel() }}</strong>
+            </article>
+            <article class="summary-card">
+              <p class="label">Einheiten</p>
+              <strong>{{ progressSessionCountLabel() }}</strong>
             </article>
           </div>
 
-          <button type="button" class="graph-card" (click)="openProgressDetail('10rm')" aria-label="10RM Verlauf im Detail öffnen">
+          <button type="button" class="graph-card main-graph-card" (click)="openProgressDetail('10rm')" aria-label="Krafttrend im Detail öffnen">
             <div class="graph-head">
-              <strong>10RM Verlauf</strong>
-              <span class="muted">Arbeitssets, pro Session • {{ progressRangeLabel() }}</span>
+              <strong>Krafttrend</strong>
+              <span class="muted">Bestes Arbeitsset pro Einheit • {{ progressRangeLabel() }}</span>
             </div>
             @if (tenRmSeries().length > 0) {
-              <svg class="graph" viewBox="0 0 100 34" preserveAspectRatio="none" aria-label="10RM Verlauf">
+              <svg class="graph" viewBox="0 0 100 34" preserveAspectRatio="none" aria-label="Krafttrend">
                 <polyline [attr.points]="toLinePoints(tenRmSeries())"></polyline>
               </svg>
             } @else {
-              <p class="muted">Noch keine 10RM-Daten für diese Übung.</p>
-            }
-          </button>
-
-          <button type="button" class="graph-card" (click)="openProgressDetail('volume')" aria-label="Volumen Verlauf im Detail öffnen">
-            <div class="graph-head">
-              <strong>Volumen pro Session</strong>
-              <span class="muted">Summe aus Gewicht × Wdh • {{ progressRangeLabel() }}</span>
-            </div>
-            @if (exerciseVolumeSeries().length > 0) {
-              <svg class="graph" viewBox="0 0 100 34" preserveAspectRatio="none" aria-label="Volumen pro Session">
-                <polyline [attr.points]="toLinePoints(exerciseVolumeSeries())"></polyline>
-              </svg>
-            } @else {
-              <p class="muted">Noch keine Volumen-Daten für diese Übung.</p>
+              <p class="muted">Logge dein erstes Arbeitssatz-Set für diese Übung, damit hier ein Verlauf entsteht.</p>
             }
           </button>
 
           @if (progressSessionRows().length > 0) {
             <div class="previous-block">
-              <p class="muted">Letzte Sessions ({{ progressRangeLabel() }})</p>
+              <p class="muted">Letzte Einheiten ({{ progressRangeLabel() }})</p>
               @for (row of progressSessionRows(); track row.date) {
-                <p class="previous-row">{{ row.date }} • 10RM {{ row.tenRm }} • Volumen {{ row.volume }}</p>
+                <p class="previous-row">{{ row.date }} • Bestleistung {{ row.tenRm }} • Volumen {{ row.volume }}</p>
               }
             </div>
+          } @else if (selectedProgressExercise()) {
+            <p class="muted">Sobald du diese Übung loggst, erscheinen hier die letzten Einheiten.</p>
           }
         </section>
       }
@@ -581,7 +561,13 @@ type DetailSource = 'widget' | 'progress-10rm' | 'progress-volume';
           <div class="sheet-scroll-list">
             @for (exercise of filteredExerciseLibrary(); track exercise.id) {
               <article class="list-card sheet-card">
-                <img [src]="exercise.images[0] || placeholderImage" alt="{{ exercise.name }}" loading="lazy" decoding="async">
+                @if (hasExerciseImage(exercise.images)) {
+                  <img [src]="exercise.images[0]" alt="{{ exercise.name }}" loading="lazy" decoding="async">
+                } @else {
+                  <div class="sheet-image-fallback" aria-hidden="true">
+                    <lucide-icon [img]="icons.dumbbell"></lucide-icon>
+                  </div>
+                }
                 <div>
                   <strong>{{ exercise.name }}</strong>
                   <p class="muted">{{ equipmentLabel(exercise.equipment) }} • {{ muscleLabel(exercise.primary_muscle) }}</p>
@@ -893,41 +879,6 @@ type DetailSource = 'widget' | 'progress-10rm' | 'progress-volume';
       gap: 6px;
     }
 
-    .thumbs {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .thumbs img,
-    .exercise-row img,
-    .sheet-card img,
-    .media-carousel img {
-      width: 40px;
-      height: 40px;
-      object-fit: cover;
-      border: 1px solid var(--m3-sys-color-outline-variant);
-      border-radius: 12px;
-      background: var(--m3-sys-color-surface-container);
-    }
-
-    .thumb-fallback,
-    .exercise-thumb-fallback {
-      width: 40px;
-      height: 40px;
-      border: 1px solid var(--m3-sys-color-outline-variant);
-      border-radius: 12px;
-      background: var(--m3-sys-color-surface-container-high);
-      display: inline-block;
-      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--m3-sys-color-primary) 24%, transparent);
-    }
-
-    .thumb-more {
-      font-size: 12px;
-      color: var(--m3-sys-color-on-surface-variant);
-      font-weight: 700;
-    }
-
     .check-icon {
       color: var(--success-500);
       width: 16px;
@@ -964,11 +915,17 @@ type DetailSource = 'widget' | 'progress-10rm' | 'progress-volume';
       padding: 12px;
     }
 
-    .exercise-row img,
-    .exercise-row .exercise-thumb-fallback {
+    .exercise-status {
       width: 48px;
       height: 48px;
       border-radius: 12px;
+      border: 1px solid color-mix(in srgb, var(--m3-sys-color-outline-variant) 76%, transparent);
+      background: var(--m3-sys-color-surface-container);
+      color: var(--m3-sys-color-on-surface-variant);
+      display: grid;
+      place-items: center;
+      font-size: 14px;
+      font-weight: 700;
     }
 
     .execution-head {
@@ -1023,17 +980,24 @@ type DetailSource = 'widget' | 'progress-10rm' | 'progress-volume';
       font-size: 18px;
     }
 
-    .media-carousel {
+    .detail-meta {
       display: flex;
+      flex-wrap: wrap;
       gap: 8px;
-      overflow-x: auto;
-      padding-bottom: 4px;
+      margin-top: 8px;
     }
 
-    .media-carousel img {
-      width: 148px;
-      height: 92px;
-      border-radius: 14px;
+    .detail-pill {
+      min-height: 32px;
+      padding: 0 12px;
+      border-radius: 999px;
+      border: 1px solid color-mix(in srgb, var(--m3-sys-color-outline-variant) 70%, transparent);
+      background: var(--m3-sys-color-surface-container);
+      color: var(--m3-sys-color-on-surface-variant);
+      display: inline-flex;
+      align-items: center;
+      font-size: 12px;
+      font-weight: 700;
     }
 
     .recommended-row {
@@ -1147,6 +1111,56 @@ type DetailSource = 'widget' | 'progress-10rm' | 'progress-volume';
       color: var(--m3-sys-color-on-secondary-container);
     }
 
+    .section-copy {
+      display: grid;
+      gap: 4px;
+      margin-bottom: 12px;
+    }
+
+    .section-copy h2 {
+      margin: 0;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .stat-box,
+    .summary-card {
+      border: 1px solid color-mix(in srgb, var(--m3-sys-color-outline-variant) 72%, transparent);
+      border-radius: 18px;
+      background: var(--m3-sys-color-surface-container-high);
+      padding: 12px;
+      display: grid;
+      gap: 6px;
+    }
+
+    .stat-box strong,
+    .summary-card strong {
+      font-size: 18px;
+      line-height: 1.15;
+    }
+
+    .label {
+      margin: 0;
+      color: var(--m3-sys-color-on-surface-variant);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .measurement-panel .measurement-form {
+      display: grid;
+      gap: 10px;
+    }
+
+    .progress-summary {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
     .graph-card {
       border: 1px solid var(--m3-sys-color-outline-variant);
       border-radius: 20px;
@@ -1158,6 +1172,10 @@ type DetailSource = 'widget' | 'progress-10rm' | 'progress-volume';
       width: 100%;
       text-align: left;
       color: var(--m3-sys-color-on-surface);
+    }
+
+    .main-graph-card {
+      margin-top: 4px;
     }
 
     .graph-head {
@@ -1243,9 +1261,31 @@ type DetailSource = 'widget' | 'progress-10rm' | 'progress-volume';
       color: var(--m3-sys-color-on-secondary-container);
     }
 
-    .sheet-card img {
+    .sheet-card img,
+    .sheet-image-fallback {
       width: 52px;
       height: 52px;
+      border-radius: 14px;
+      flex: 0 0 auto;
+    }
+
+    .sheet-card img {
+      object-fit: cover;
+      border: 1px solid var(--m3-sys-color-outline-variant);
+      background: var(--m3-sys-color-surface-container);
+    }
+
+    .sheet-image-fallback {
+      border: 1px solid color-mix(in srgb, var(--m3-sys-color-outline-variant) 75%, transparent);
+      background: var(--m3-sys-color-surface-container-high);
+      color: var(--m3-sys-color-on-surface-variant);
+      display: grid;
+      place-items: center;
+    }
+
+    .sheet-image-fallback lucide-icon {
+      width: 20px;
+      height: 20px;
     }
 
     .sheet-scroll-list {
@@ -1296,6 +1336,10 @@ type DetailSource = 'widget' | 'progress-10rm' | 'progress-volume';
         min-width: 0;
       }
 
+      .progress-summary {
+        grid-template-columns: 1fr;
+      }
+
       .hub-tabs {
         grid-template-columns: 1fr;
       }
@@ -1324,8 +1368,6 @@ export class GymComponent implements OnInit, OnDestroy {
 
   readonly frequencies = [1, 2, 3, 4, 5, 6, 7];
   readonly equipmentOptions: TrainingExercise['equipment'][] = ['barbell', 'dumbbell', 'machine', 'cable', 'bodyweight', 'bands', 'other'];
-  readonly placeholderImage = 'https://dummyimage.com/640x360/1b202b/a4a9b6&text=%C3%9Cbung';
-
   readonly activeTab = signal<'tracker' | 'progress'>('tracker');
   readonly selectedDate = signal(toIsoDate(new Date()));
   readonly dashboardWeek = signal<TrainingDashboardWeek | null>(null);
@@ -1448,6 +1490,17 @@ export class GymComponent implements OnInit, OnDestroy {
     }
     return `${Math.round(Number(latest.point_value))} kg`;
   });
+
+  readonly bestTenRmLabel = computed(() => {
+    if (this.tenRmSeries().length === 0) {
+      return '--';
+    }
+
+    const best = Math.max(...this.tenRmSeries().map(point => Number(point.point_value)));
+    return `${best.toFixed(1)} kg`;
+  });
+
+  readonly progressSessionCountLabel = computed(() => `${this.progressSessionRows().length}`);
 
   readonly progressRangeLabel = computed(() => `Letzte ${this.progressRangeDays()} Tage`);
 
@@ -1590,6 +1643,11 @@ export class GymComponent implements OnInit, OnDestroy {
     return !url || /dummyimage\.com/i.test(url);
   }
 
+  hasExerciseImage(images: string[] | null | undefined): boolean {
+    const firstImage = images?.[0] || null;
+    return !this.isPlaceholderImage(firstImage);
+  }
+
   ngOnDestroy(): void {
     for (const timer of this.pendingSetSaves.values()) {
       clearTimeout(timer);
@@ -1618,6 +1676,19 @@ export class GymComponent implements OnInit, OnDestroy {
       this.activeGraphJourneyId = null;
     }
     this.activeTab.set('tracker');
+  }
+
+  activePlanStatLabel(): string {
+    const activePlan = this.dashboardWeek()?.activePlan;
+    if (!activePlan) {
+      return 'Kein Plan aktiv';
+    }
+    return `${activePlan.name} · W${activePlan.weekNumber}`;
+  }
+
+  latestBodyweightStatLabel(): string {
+    const value = this.personalStats()?.latestBodyweight;
+    return value ? `${value} kg` : '--';
   }
 
   async loadTrackerData(forceRefresh = false): Promise<void> {

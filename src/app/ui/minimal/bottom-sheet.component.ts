@@ -118,7 +118,7 @@ let sheetTitleIdCounter = 0;
     .head {
       display: flex;
       justify-content: space-between;
-      align-items: center;
+      align-items: start;
       gap: 12px;
       margin-bottom: 12px;
     }
@@ -131,6 +131,7 @@ let sheetTitleIdCounter = 0;
     }
 
     .close {
+      flex: 0 0 auto;
       width: 48px;
       height: 48px;
       border: 1px solid var(--m3-sys-color-outline-variant);
@@ -141,6 +142,7 @@ let sheetTitleIdCounter = 0;
       border-radius: 10px;
       display: grid;
       place-items: center;
+      margin-top: -2px;
     }
 
     @media (prefers-reduced-motion: reduce) {

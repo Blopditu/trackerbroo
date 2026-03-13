@@ -106,6 +106,22 @@ import { formatAppError } from '../../core/error-format';
               </mat-form-field>
             }
 
+            @if (step() === 4) {
+              <h2>Als Web-App nutzen</h2>
+              <p class="body-text">
+                Installiert fühlt sich Tracker Broo mehr wie eine richtige App an und läuft ohne die normale Browser-Leiste.
+              </p>
+
+              <div class="install-guide-list">
+                @for (guide of installGuides; track guide.platform) {
+                  <article class="install-guide-card">
+                    <strong>{{ guide.platform }}</strong>
+                    <p>{{ guide.steps }}</p>
+                  </article>
+                }
+              </div>
+            }
+
             <div class="actions">
               @if (step() > 0) {
                 <button mat-flat-button type="button" class="action-btn ghost" (click)="prevStep()">Zurück</button>
@@ -162,6 +178,28 @@ import { formatAppError } from '../../core/error-format';
       line-height: 1.4;
     }
 
+    .install-guide-list {
+      display: grid;
+      gap: 0.65rem;
+    }
+
+    .install-guide-card {
+      border: 1px solid var(--border-strong);
+      border-radius: 18px;
+      background: var(--m3-sys-color-surface-container-high);
+      padding: 0.85rem;
+      display: grid;
+      gap: 0.35rem;
+    }
+
+    .install-guide-card p {
+      margin: 0;
+      color: var(--ink-600);
+      font-size: var(--text-sm);
+      font-weight: 600;
+      line-height: 1.4;
+    }
+
     .actions {
       display: flex;
       gap: 0.5rem;
@@ -180,10 +218,24 @@ export class OnboardingComponent implements OnInit {
   private readonly router = inject(Router);
 
   readonly step = signal(0);
-  readonly totalSteps = 4;
+  readonly totalSteps = 5;
   readonly loading = signal(true);
   readonly saving = signal(false);
   readonly errorMessage = signal<string | null>(null);
+  readonly installGuides = [
+    {
+      platform: 'macOS Safari',
+      steps: 'Seite öffnen, Teilen wählen und dann Zum Dock hinzufügen.'
+    },
+    {
+      platform: 'iPhone Safari',
+      steps: 'Seite öffnen, Teilen tippen und dann Zum Home-Bildschirm. Falls angeboten, Als Web-App öffnen aktivieren.'
+    },
+    {
+      platform: 'Android Chrome',
+      steps: 'Seite öffnen und im Browser-Menü Install app oder Zum Startbildschirm hinzufügen wählen.'
+    }
+  ];
 
   private existingProfile = signal<Profile | null>(null);
 

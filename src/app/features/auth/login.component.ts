@@ -1,17 +1,14 @@
 import { ChangeDetectionStrategy, Component, effect, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
 import { AuthService } from '../../core/auth.service';
 import { formatAppError } from '../../core/error-format';
 
 @Component({
   selector: 'app-login',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, MatButtonModule, MatFormFieldModule, MatInputModule],
+  imports: [CommonModule, MatButtonModule],
   template: `
     <main class="page login-page">
       @if (message) {
@@ -19,38 +16,22 @@ import { formatAppError } from '../../core/error-format';
       }
 
       <section class="panel halftone hero" aria-labelledby="login-title">
-        <p class="title-font crest">TRACKER BROO</p>
-        <h1 id="login-title">Gemeinsam trainieren. Besser essen.</h1>
-        <p class="manga-bubble">Dein Gruppen-Log für Protein, Gym-Check-ins und Streaks.</p>
+        <p class="title-font crest">Tracker Broo</p>
+        <h1 id="login-title">Konstanz isch key!</h1>
       </section>
 
       <section class="panel auth-panel" aria-label="Anmelden">
-        <button mat-flat-button type="button" class="action-btn ghost provider" (click)="signInWithGoogle()" [disabled]="loading">
-          Mit Google anmelden
+        <button mat-flat-button type="button" class="action-btn provider google-btn" (click)="signInWithGoogle()" [disabled]="loading">
+          <span class="google-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false">
+              <path fill="#EA4335" d="M12 10.2v3.9h5.5c-.2 1.3-1.7 3.8-5.5 3.8-3.3 0-6-2.8-6-6.2s2.7-6.2 6-6.2c1.9 0 3.2.8 3.9 1.5l2.7-2.6C16.9 2.8 14.7 2 12 2 6.9 2 2.8 6.5 2.8 12s4.1 10 9.2 10c5.3 0 8.8-3.8 8.8-9.1 0-.6-.1-1.1-.2-1.6H12Z"/>
+              <path fill="#34A853" d="M2.8 12c0 2 0.7 3.8 1.9 5.2l3.1-2.4c-.8-.8-1.2-1.8-1.2-2.9s.4-2.2 1.2-2.9L4.7 6.6C3.5 8.1 2.8 10 2.8 12Z"/>
+              <path fill="#FBBC05" d="M12 22c2.7 0 4.9-.9 6.6-2.5l-3.2-2.6c-.9.6-2 1-3.4 1-2.5 0-4.6-1.7-5.3-4l-3.2 2.4C5 19.8 8.2 22 12 22Z"/>
+              <path fill="#4285F4" d="M18.6 19.5c1.9-1.8 3-4.3 3-7.6 0-.7-.1-1.2-.2-1.7H12v3.9h5.5c-.2 1.1-.8 2-1.7 2.8l2.8 2.6Z"/>
+            </svg>
+          </span>
+          <span>{{ loading ? 'Google wird geöffnet …' : 'Mit Google anmelden' }}</span>
         </button>
-
-        <div class="divider" role="separator" aria-label="oder">oder</div>
-
-        <form (ngSubmit)="onSubmit()" #loginForm="ngForm" class="stack">
-          <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
-            <mat-label>E-Mail</mat-label>
-            <input
-              matInput
-              id="email"
-              type="email"
-              [(ngModel)]="email"
-              name="email"
-              placeholder="name@beispiel.de"
-              required
-              email
-              autocomplete="email"
-            >
-          </mat-form-field>
-
-          <button mat-flat-button type="submit" class="action-btn" [disabled]="!loginForm.valid || loading">
-            {{ loading ? 'Link wird gesendet...' : 'Anmeldelink senden' }}
-          </button>
-        </form>
       </section>
     </main>
   `,
@@ -62,44 +43,59 @@ import { formatAppError } from '../../core/error-format';
 
     .hero {
       display: grid;
-      gap: 0.65rem;
+      gap: 0.35rem;
       text-align: left;
     }
 
     .crest {
       color: var(--accent-500);
       font-size: 1rem;
+      text-transform: none;
     }
 
     h1 {
-      font-size: 1.8rem;
+      margin: 0;
+      font-size: 1.95rem;
       line-height: 1.1;
     }
 
     .auth-panel {
       display: grid;
-      gap: 0.8rem;
     }
 
     .provider {
       width: 100%;
-    }
-
-    .divider {
+      min-height: 56px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
       text-align: center;
-      color: var(--ink-500);
-      font-weight: 700;
-      font-size: var(--text-sm);
     }
 
-    .stack {
-      display: grid;
-      gap: 0.6rem;
+    .google-btn {
+      background: var(--m3-sys-color-surface-container-high);
+      color: var(--m3-sys-color-on-surface);
+      border: 1px solid var(--border-strong);
+    }
+
+    .google-mark {
+      width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      background: #fff;
+      display: inline-grid;
+      place-items: center;
+      flex: 0 0 auto;
+    }
+
+    .google-mark svg {
+      width: 16px;
+      height: 16px;
     }
   `]
 })
 export class LoginComponent implements OnInit {
-  email = '';
   loading = false;
   message = '';
   isError = false;
@@ -119,22 +115,8 @@ export class LoginComponent implements OnInit {
     void this.authService.restoreSession();
   }
 
-  async onSubmit() {
-    this.loading = true;
-    this.message = '';
-    this.isError = false;
-    try {
-      await this.authService.signIn(this.email);
-      this.message = 'Prüfe deine E-Mails für den Anmeldelink.';
-    } catch (error: unknown) {
-      this.isError = true;
-      this.message = formatAppError(error, 'Anmeldung fehlgeschlagen');
-    } finally {
-      this.loading = false;
-    }
-  }
-
   async signInWithGoogle() {
+    this.loading = true;
     this.isError = false;
     this.message = '';
     try {
@@ -142,6 +124,8 @@ export class LoginComponent implements OnInit {
     } catch (error: unknown) {
       this.isError = true;
       this.message = formatAppError(error, 'Google-Anmeldung fehlgeschlagen');
+    } finally {
+      this.loading = false;
     }
   }
 }

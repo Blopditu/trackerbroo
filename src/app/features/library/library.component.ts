@@ -103,11 +103,18 @@ interface ParsedMacroInput {
           <div class="toolbar">
             <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
               <mat-label>Zutat suchen</mat-label>
-              <input matInput type="search" [(ngModel)]="ingredientSearch" placeholder="Zutat suchen" aria-label="Zutaten suchen">
+              <input
+                matInput
+                type="search"
+                [ngModel]="ingredientSearch()"
+                (ngModelChange)="ingredientSearch.set($event)"
+                placeholder="Zutat suchen"
+                aria-label="Zutaten suchen"
+              >
             </mat-form-field>
             <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
               <mat-label>Markt</mat-label>
-              <mat-select [(ngModel)]="marketFilter" aria-label="Nach Markt filtern">
+              <mat-select [ngModel]="marketFilter()" (ngModelChange)="marketFilter.set($event)" aria-label="Nach Markt filtern">
                 <mat-option value="">Alle Märkte</mat-option>
                 @for (market of marketSuggestions(); track market) {
                   <mat-option [value]="market">{{ market }}</mat-option>
@@ -645,8 +652,8 @@ export class LibraryComponent implements OnInit, OnDestroy {
   readonly ingredientDialog = viewChild<ElementRef<HTMLElement>>('ingredientDialog');
   readonly mealDialog = viewChild<ElementRef<HTMLElement>>('mealDialog');
 
-  ingredientSearch = '';
-  marketFilter = '';
+  ingredientSearch = signal('');
+  marketFilter = signal('');
   macroPasteText = '';
   macroPasteMessage = signal<string | null>(null);
 
@@ -672,8 +679,8 @@ export class LibraryComponent implements OnInit, OnDestroy {
   });
 
   filteredIngredients = computed(() => {
-    const query = this.ingredientSearch.trim().toLowerCase();
-    const market = this.marketFilter.trim().toLowerCase();
+    const query = this.ingredientSearch().trim().toLowerCase();
+    const market = this.marketFilter().trim().toLowerCase();
 
     return this.ingredients().filter(item => {
       const matchesQuery = !query || item.name.toLowerCase().includes(query);
