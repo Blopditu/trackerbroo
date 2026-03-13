@@ -12,6 +12,7 @@ import { Profile, StepLog, WeightLog } from '../../core/types';
 import { formatAppError } from '../../core/error-format';
 import { ThemeMode, ThemeService } from '../../core/theme.service';
 import { InteractionTelemetryService } from '../../core/interaction-telemetry.service';
+import { QueryCacheService } from '../../core/query-cache.service';
 
 @Component({
   selector: 'app-profile',
@@ -675,6 +676,7 @@ export class ProfileComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly themeService = inject(ThemeService);
   private readonly telemetry = inject(InteractionTelemetryService);
+  private readonly queryCache = inject(QueryCacheService);
 
   readonly savingProfile = signal(false);
   readonly savingWeight = signal(false);
@@ -1083,6 +1085,7 @@ export class ProfileComponent implements OnInit {
       this.profileForm.controls.theme_mode.setValue(normalizedThemeMode);
       this.profileForm.controls.theme_seed_color.setValue(normalizedThemeSeed);
       this.themeService.applySeed(normalizedThemeSeed, { persistLocal: true });
+      this.queryCache.invalidatePrefix(`today:${user.id}:`);
       this.successMessage.set('Profil aktualisiert.');
       await this.loadAll();
     } catch (error) {
