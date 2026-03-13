@@ -97,7 +97,7 @@ import {
       transform: translateX(-50%);
       width: 100%;
       max-width: 560px;
-      padding: 0.2rem 0.5rem calc(0.65rem + env(safe-area-inset-bottom));
+      padding: 0.3rem 0.4rem calc(0.7rem + env(safe-area-inset-bottom));
       border-top: 1px solid var(--m3-sys-color-outline-variant);
       box-shadow: 0 -2px 12px color-mix(in srgb, #000 26%, transparent);
     }
@@ -111,8 +111,8 @@ import {
 
     .nav-strip {
       display: grid;
-      grid-template-columns: repeat(6, minmax(0, 1fr));
-      align-items: end;
+      grid-template-columns: repeat(2, minmax(0, 1fr)) 78px repeat(3, minmax(0, 1fr));
+      align-items: start;
       gap: 0;
     }
 
@@ -124,14 +124,15 @@ import {
     }
 
     .nav-link {
-      min-height: 62px;
+      min-height: 68px;
       border: none;
       border-radius: 14px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 2px;
+      gap: 4px;
+      padding: 0.3rem 0.15rem 0;
       text-decoration: none;
       color: var(--m3-sys-color-on-surface-variant);
       background: transparent;
@@ -149,6 +150,7 @@ import {
 
     .fab-gap {
       display: block;
+      width: 78px;
       height: 1px;
     }
 
@@ -173,19 +175,21 @@ import {
     }
 
     .label {
-      font-size: 11px;
-      line-height: 14px;
+      font-size: 10px;
+      line-height: 12px;
       font-weight: 500;
-      letter-spacing: 0.2px;
+      letter-spacing: 0.1px;
+      text-align: center;
+      text-wrap: balance;
     }
 
     .quick-fab {
       position: absolute;
       left: 50%;
-      bottom: calc(28px + env(safe-area-inset-bottom));
+      bottom: calc(30px + env(safe-area-inset-bottom));
       transform: translateX(-50%);
-      width: 58px;
-      height: 58px;
+      width: 60px;
+      height: 60px;
       border-radius: 999px;
       background: var(--m3-sys-color-primary);
       color: var(--m3-sys-color-on-primary);

@@ -15,6 +15,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
+import { LucideAngularModule, PencilLine } from 'lucide-angular';
 import { SupabaseService } from '../../core/supabase.service';
 import { AuthService } from '../../core/auth.service';
 import { Ingredient, Meal, MealItem } from '../../core/types';
@@ -42,6 +43,7 @@ interface ParsedMacroInput {
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
+    LucideAngularModule,
     BottomSheetComponent
   ],
   template: `
@@ -57,7 +59,7 @@ interface ParsedMacroInput {
       <header class="panel halftone">
         <p class="title-font">Bibliothek</p>
         <h1>Zutaten & Mahlzeiten</h1>
-        <p class="lead">Baue deine Komponenten einmal und logge täglich schneller.</p>
+        <p class="lead">Baue deine Komponenten einmal auf und halte die Bibliothek sauber.</p>
       </header>
 
       <section class="panel">
@@ -121,24 +123,30 @@ interface ParsedMacroInput {
             <div class="items-list">
               @for (item of filteredIngredients(); track item.id) {
                 <article class="list-card ingredient-card">
-                  <div>
+                  <div class="card-copy">
                     <strong>{{ item.name }}</strong>
-                    <div class="sub">Quelle: {{ getSourceTypeLabel(item.source_type) }}</div>
-                    @if (item.source_type === 'custom_product' && item.base_ingredient_id) {
-                      <div class="sub">BLV-Basis: {{ getIngredientName(item.base_ingredient_id) }}</div>
-                    }
-                    <div class="sub">{{ item.kcal_per_100 }} kcal / 100g</div>
-                    @if (item.cost_per_100 !== null && item.cost_per_100 !== undefined) {
-                      <div class="sub">Kosten: {{ item.cost_per_100 }} / 100g</div>
-                    }
-                    @if (item.market_name) {
-                      <div class="sub">Markt: {{ item.market_name }}</div>
-                    }
+                    <div class="meta-pills">
+                      <span class="meta-pill">{{ getSourceTypeLabel(item.source_type) }}</span>
+                      @if (item.market_name) {
+                        <span class="meta-pill">{{ item.market_name }}</span>
+                      }
+                    </div>
+                    <div class="macro-pills" aria-label="Makros je 100 Gramm">
+                      <span class="macro-pill macro-pill-kcal">{{ item.kcal_per_100 }} kcal</span>
+                      <span class="macro-pill">P {{ formatMacroValue(item.protein_per_100) }}g</span>
+                      <span class="macro-pill">KH {{ formatMacroValue(item.carbs_per_100) }}g</span>
+                      <span class="macro-pill">F {{ formatMacroValue(item.fat_per_100) }}g</span>
+                    </div>
                   </div>
-                  <div class="actions">
-                    <button mat-flat-button type="button" class="action-btn tonal compact" (click)="logIngredientToday(item)">Loggen</button>
-                    <button mat-flat-button type="button" class="action-btn ghost compact" (click)="openIngredientActions(item)">Verwalten</button>
-                  </div>
+                  <button
+                    mat-icon-button
+                    type="button"
+                    class="library-edit-btn"
+                    (click)="openIngredientActions(item)"
+                    [attr.aria-label]="item.name + ' bearbeiten'"
+                  >
+                    <lucide-icon [img]="icons.edit" aria-hidden="true"></lucide-icon>
+                  </button>
                 </article>
               }
               @if (filteredIngredients().length === 0) {
@@ -156,14 +164,30 @@ interface ParsedMacroInput {
             <div class="items-list">
               @for (item of meals(); track item.id) {
                 <article class="list-card meal-card">
-                  <div>
+                  <div class="card-copy">
                     <strong>{{ item.name }}</strong>
-                    <div class="sub">Geschätzte Kosten: {{ getMealCostLabel(item.id) }}</div>
+                    <div class="meta-pills">
+                      <span class="meta-pill">Mahlzeit</span>
+                      <span class="meta-pill">Kosten {{ getMealCostLabel(item.id) }}</span>
+                    </div>
+                    @if (mealMacros()[item.id]; as macros) {
+                      <div class="macro-pills" aria-label="Makros pro Portion">
+                        <span class="macro-pill macro-pill-kcal">{{ roundKcal(macros.kcal) }} kcal</span>
+                        <span class="macro-pill">P {{ formatMacroValue(macros.protein) }}g</span>
+                        <span class="macro-pill">KH {{ formatMacroValue(macros.carbs) }}g</span>
+                        <span class="macro-pill">F {{ formatMacroValue(macros.fat) }}g</span>
+                      </div>
+                    }
                   </div>
-                  <div class="actions">
-                    <button mat-flat-button type="button" class="action-btn tonal compact" (click)="logMealToday(item)">Loggen</button>
-                    <button mat-flat-button type="button" class="action-btn ghost compact" (click)="openMealActions(item)">Verwalten</button>
-                  </div>
+                  <button
+                    mat-icon-button
+                    type="button"
+                    class="library-edit-btn"
+                    (click)="openMealActions(item)"
+                    [attr.aria-label]="item.name + ' bearbeiten'"
+                  >
+                    <lucide-icon [img]="icons.edit" aria-hidden="true"></lucide-icon>
+                  </button>
                 </article>
               }
               @if (meals().length === 0) {
@@ -185,7 +209,7 @@ interface ParsedMacroInput {
       </button>
     </main>
 
-    <app-bottom-sheet [open]="actionSheetOpen()" title="Aktionen" (closed)="closeActionSheet()">
+    <app-bottom-sheet [open]="actionSheetOpen()" title="Eintrag verwalten" (closed)="closeActionSheet()">
       @if (actionSheetItemLabel()) {
         <article class="sheet-preview">
           <strong>{{ actionSheetItemLabel() }}</strong>
@@ -193,7 +217,6 @@ interface ParsedMacroInput {
         </article>
       }
       <div class="action-sheet-list">
-        <button mat-flat-button type="button" class="action-btn" (click)="logSelectedItemToday()">Heute loggen</button>
         <button mat-flat-button type="button" class="action-btn tonal" (click)="editSelectedItem()">Bearbeiten</button>
         <button mat-flat-button type="button" class="action-btn danger" (click)="deleteSelectedItem()">Löschen</button>
       </div>
@@ -437,14 +460,79 @@ interface ParsedMacroInput {
 
     .ingredient-card,
     .meal-card {
-      align-items: flex-start;
-      gap: 0.75rem;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: start;
+      gap: 0.9rem;
+      padding: 0.95rem 1rem;
+      border-radius: 24px;
     }
 
-    .actions {
+    .card-copy {
+      display: grid;
+      gap: 0.55rem;
+      min-width: 0;
+    }
+
+    .card-copy strong {
+      display: block;
+      font-size: 1.05rem;
+      line-height: 1.2;
+      color: var(--m3-sys-color-on-surface);
+    }
+
+    .meta-pills,
+    .macro-pills {
       display: flex;
-      gap: 0.35rem;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+    }
+
+    .meta-pill,
+    .macro-pill {
+      display: inline-flex;
       align-items: center;
+      min-height: 28px;
+      border-radius: 999px;
+      padding: 0 0.7rem;
+      font-size: 0.76rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .meta-pill {
+      background: color-mix(in srgb, var(--m3-sys-color-surface-container-highest) 76%, transparent);
+      color: var(--m3-sys-color-on-surface-variant);
+      border: 1px solid color-mix(in srgb, var(--m3-sys-color-outline-variant) 70%, transparent);
+    }
+
+    .macro-pill {
+      background: color-mix(in srgb, var(--m3-sys-color-secondary-container) 70%, var(--m3-sys-color-surface) 30%);
+      color: var(--m3-sys-color-on-secondary-container);
+      border: 1px solid color-mix(in srgb, var(--m3-sys-color-secondary-container) 92%, transparent);
+    }
+
+    .macro-pill-kcal {
+      background: color-mix(in srgb, var(--m3-sys-color-primary-container) 76%, var(--m3-sys-color-surface) 24%);
+      color: var(--m3-sys-color-on-primary-container);
+      border-color: color-mix(in srgb, var(--m3-sys-color-primary-container) 88%, transparent);
+    }
+
+    .library-edit-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      border: 1px solid var(--m3-sys-color-outline-variant);
+      background: var(--m3-sys-color-surface-container-high);
+      color: var(--m3-sys-color-on-surface-variant);
+      display: grid;
+      place-items: center;
+      margin-top: 0.1rem;
+    }
+
+    .library-edit-btn lucide-icon {
+      width: 18px;
+      height: 18px;
     }
 
     .stack-form {
@@ -528,13 +616,19 @@ interface ParsedMacroInput {
         grid-template-columns: 1fr;
       }
 
-      .actions {
-        width: 100%;
+      .ingredient-card,
+      .meal-card {
+        grid-template-columns: minmax(0, 1fr) 44px;
+        gap: 0.7rem;
       }
     }
   `]
 })
 export class LibraryComponent implements OnInit, OnDestroy {
+  readonly icons = {
+    edit: PencilLine
+  };
+
   activeTab = signal<'ingredients' | 'meals'>('ingredients');
   ingredients = signal<Ingredient[]>([]);
   meals = signal<Meal[]>([]);
@@ -1179,7 +1273,7 @@ export class LibraryComponent implements OnInit, OnDestroy {
     return Number(value.toFixed(1));
   }
 
-  private roundKcal(value: number): number {
+  roundKcal(value: number): number {
     return Math.max(0, Math.round(value));
   }
 
@@ -1213,7 +1307,7 @@ export class LibraryComponent implements OnInit, OnDestroy {
 
   actionSheetItemSubLabel(): string {
     if (this.selectedIngredientForActions()) {
-      return `${this.selectedIngredientForActions()!.kcal_per_100} kcal / 100g`;
+      return `${this.selectedIngredientForActions()!.kcal_per_100} kcal · ${this.getSourceTypeLabel(this.selectedIngredientForActions()!.source_type)}`;
     }
     if (this.selectedMealForActions()) {
       return `Geschätzte Kosten: ${this.getMealCostLabel(this.selectedMealForActions()!.id)}`;
@@ -1284,101 +1378,6 @@ export class LibraryComponent implements OnInit, OnDestroy {
     }
   }
 
-  async logSelectedItemToday(): Promise<void> {
-    const ingredient = this.selectedIngredientForActions();
-    if (ingredient) {
-      await this.logIngredientToday(ingredient);
-      this.closeActionSheet();
-      return;
-    }
-
-    const meal = this.selectedMealForActions();
-    if (meal) {
-      await this.logMealToday(meal);
-      this.closeActionSheet();
-    }
-  }
-
-  async logIngredientToday(item: Ingredient): Promise<void> {
-    const user = this.authService.user();
-    if (!user) {
-      return;
-    }
-
-    const amount = 100;
-    const factor = amount / 100;
-    const success = await this.logTodayEntry({
-      owner_id: user.id,
-      group_id: null,
-      day: this.todayIso(),
-      entry_type: 'ingredient',
-      ref_id: item.id,
-      quantity: amount,
-      kcal: Number((Number(item.kcal_per_100) * factor).toFixed(2)),
-      protein: Number((Number(item.protein_per_100) * factor).toFixed(2)),
-      carbs: Number((Number(item.carbs_per_100) * factor).toFixed(2)),
-      fat: Number((Number(item.fat_per_100) * factor).toFixed(2)),
-      created_at: new Date().toISOString()
-    });
-
-    if (success) {
-      this.successMessage.set(`${item.name} für heute geloggt.`);
-    }
-  }
-
-  async logMealToday(item: Meal): Promise<void> {
-    const user = this.authService.user();
-    if (!user) {
-      return;
-    }
-
-    const macros = this.mealMacros()[item.id];
-    if (!macros) {
-      this.errorMessage.set('Mahlzeitenmakros konnten nicht geladen werden.');
-      return;
-    }
-
-    const success = await this.logTodayEntry({
-      owner_id: user.id,
-      group_id: null,
-      day: this.todayIso(),
-      entry_type: 'meal',
-      ref_id: item.id,
-      quantity: 1,
-      kcal: Number(macros.kcal.toFixed(2)),
-      protein: Number(macros.protein.toFixed(2)),
-      carbs: Number(macros.carbs.toFixed(2)),
-      fat: Number(macros.fat.toFixed(2)),
-      created_at: new Date().toISOString()
-    });
-
-    if (success) {
-      this.successMessage.set(`${item.name} für heute geloggt.`);
-    }
-  }
-
-  private async logTodayEntry(payload: {
-    owner_id: string;
-    group_id: string | null;
-    day: string;
-    entry_type: 'ingredient' | 'meal';
-    ref_id: string;
-    quantity: number;
-    kcal: number;
-    protein: number;
-    carbs: number;
-    fat: number;
-    created_at: string;
-  }): Promise<boolean> {
-    const { error } = await this.supabaseService.client.from('log_entries').insert(payload);
-    if (error) {
-      this.errorMessage.set(formatAppError(error, 'Konnte nicht geloggt werden'));
-      return false;
-    }
-
-    return true;
-  }
-
   private buildMealCosts(meals: Meal[], mealItems: MealItem[], ingredients: Ingredient[]): Record<string, number> {
     const ingredientCostMap = new Map(
       ingredients.map(ingredient => [ingredient.id, Number(ingredient.cost_per_100 || 0)])
@@ -1401,7 +1400,7 @@ export class LibraryComponent implements OnInit, OnDestroy {
     return costs;
   }
 
-  private todayIso(): string {
-    return new Date().toISOString().slice(0, 10);
+  formatMacroValue(value: number): string {
+    return Number(value).toFixed(1);
   }
 }

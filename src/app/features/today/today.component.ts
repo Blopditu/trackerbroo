@@ -12,7 +12,6 @@ import {
   ChevronRight,
   ChartLine,
   Clock3,
-  Copy,
   Dumbbell,
   ListChecks,
   LucideAngularModule,
@@ -62,15 +61,6 @@ interface FoodQueueItem {
   mealTime: string;
   amount: number;
   totals: MacroTotals;
-}
-
-interface FoodDayPreview {
-  day: string;
-  entryCount: number;
-  kcal: number;
-  protein: number;
-  carbs: number;
-  fat: number;
 }
 
 interface BrooBoardPost {
@@ -185,10 +175,6 @@ interface BrooBoardPost {
         <div class="hero-actions">
           <button mat-flat-button type="button" class="action-btn ghost" [disabled]="today() === realToday" (click)="jumpToToday()">
             Heute
-          </button>
-          <button mat-flat-button type="button" class="action-btn ghost compact hero-copy-btn" (click)="copyFromPreviousDay()">
-            <lucide-icon [img]="icons.copy" class="icon" aria-hidden="true"></lucide-icon>
-            Tag kopieren
           </button>
         </div>
 
@@ -314,18 +300,6 @@ interface BrooBoardPost {
 
       @if (sheetMode() === 'food') {
         <section class="food-sheet">
-          <div class="food-day-grid">
-            <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
-              <mat-label>Zieltag</mat-label>
-              <input matInput type="date" [ngModel]="foodTargetDay()" (ngModelChange)="onFoodTargetDayChange($event)">
-            </mat-form-field>
-
-            <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
-              <mat-label>Kopieren von</mat-label>
-              <input matInput type="date" [ngModel]="copySourceDay()" (ngModelChange)="onCopySourceDayChange($event)">
-            </mat-form-field>
-          </div>
-
           <div class="slot-row" role="group" aria-label="Mahlzeiten-Slot">
             <button mat-flat-button type="button" class="slot-chip" [class.active]="selectedMealSlot() === 'breakfast'" (click)="setMealSlot('breakfast')">Frühstück</button>
             <button mat-flat-button type="button" class="slot-chip" [class.active]="selectedMealSlot() === 'lunch'" (click)="setMealSlot('lunch')">Mittag</button>
@@ -412,26 +386,6 @@ interface BrooBoardPost {
             @if (quickFoodItems().length === 0) {
               <p class="muted">Keine Treffer für deinen Filter.</p>
             }
-          </div>
-
-          @if (isFoodTargetFuture()) {
-            <p class="muted">Du loggst für einen zukünftigen Tag: {{ foodTargetDay() }}.</p>
-          }
-
-          @if (loadingFoodTargetPreview()) {
-            <p class="muted">Tagesstatus wird geladen...</p>
-          } @else if (foodTargetPreview()) {
-            <article class="food-day-preview">
-              <strong>{{ foodTargetPreview()!.day }}</strong>
-              <span>{{ foodTargetPreview()!.entryCount }} Einträge · {{ foodTargetPreview()!.kcal.toFixed(0) }} kcal</span>
-              <small>P {{ foodTargetPreview()!.protein.toFixed(0) }} · KH {{ foodTargetPreview()!.carbs.toFixed(0) }} · F {{ foodTargetPreview()!.fat.toFixed(0) }}</small>
-            </article>
-          }
-
-          <div class="day-quick-row">
-            <button mat-flat-button type="button" class="day-chip" (click)="setFoodTargetByOffset(-1)">-1 Tag</button>
-            <button mat-flat-button type="button" class="day-chip" (click)="setFoodTargetByOffset(1)">+1 Tag</button>
-            <button mat-flat-button type="button" class="day-chip" (click)="setFoodTargetByOffset(7)">+7 Tage</button>
           </div>
 
           <div class="queue-list">
@@ -608,12 +562,6 @@ interface BrooBoardPost {
       justify-content: flex-end;
     }
 
-    .hero-copy-btn {
-      min-height: var(--touch-target-compact);
-      padding-inline: 12px;
-      color: var(--m3-sys-color-on-surface-variant);
-    }
-
     .icon {
       width: 16px;
       height: 16px;
@@ -769,18 +717,6 @@ interface BrooBoardPost {
       padding-bottom: max(8px, env(safe-area-inset-bottom));
     }
 
-    .food-day-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 8px;
-    }
-
-    .day-quick-row {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 8px;
-    }
-
     .day-chip {
       min-height: var(--touch-target-compact);
       border: 1px solid var(--m3-sys-color-outline-variant);
@@ -823,28 +759,6 @@ interface BrooBoardPost {
     .food-search-field .mat-mdc-form-field-subscript-wrapper,
     .time-field .mat-mdc-form-field-subscript-wrapper {
       display: none;
-    }
-
-    .food-day-preview {
-      border: 1px solid var(--m3-sys-color-outline-variant);
-      border-radius: 16px;
-      background: var(--m3-sys-color-surface-container-low);
-      padding: 10px 12px;
-      display: grid;
-      gap: 2px;
-    }
-
-    .food-day-preview strong {
-      color: var(--m3-sys-color-on-surface);
-      font-size: 14px;
-      font-weight: 700;
-    }
-
-    .food-day-preview span,
-    .food-day-preview small {
-      color: var(--m3-sys-color-on-surface-variant);
-      font-size: 12px;
-      font-weight: 600;
     }
 
     .favorite-row {
@@ -1225,10 +1139,6 @@ interface BrooBoardPost {
     }
 
     @media (max-width: 440px) {
-      .food-day-grid {
-        grid-template-columns: 1fr;
-      }
-
       .filter-toggle {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
@@ -1264,7 +1174,6 @@ export class TodayComponent implements OnInit {
     plus: Plus,
     utensils: Utensils,
     dumbbell: Dumbbell,
-    copy: Copy,
     star: Star,
     trash: Trash2
   };
@@ -1301,16 +1210,12 @@ export class TodayComponent implements OnInit {
 
   readonly realToday = this.formatDate(new Date());
   readonly today = signal(this.realToday);
-  readonly foodTargetDay = signal(this.realToday);
-  readonly copySourceDay = signal(this.formatDate(new Date(Date.now() - 24 * 60 * 60 * 1000)));
   readonly foodFilter = signal<FoodFilter>('recent');
   readonly selectedMealSlot = signal<MealSlot>('snack');
   readonly selectedMealTime = signal('12:00');
   readonly foodQueue = signal<FoodQueueItem[]>([]);
   readonly favoriteFoodIds = signal<string[]>([]);
   readonly amountPickerMode = signal<'queue' | 'edit'>('queue');
-  readonly foodTargetPreview = signal<FoodDayPreview | null>(null);
-  readonly loadingFoodTargetPreview = signal(false);
   readonly weightTrendDays = signal<7 | 30>(7);
   readonly activeFoodJourneyId = signal<string | null>(null);
   readonly activeWeightJourneyId = signal<string | null>(null);
@@ -1464,13 +1369,10 @@ export class TodayComponent implements OnInit {
     return states;
   });
   readonly canGoNextDay = computed(() => this.compareIsoDays(this.today(), this.realToday) < 0);
-  readonly isFoodTargetFuture = computed(() => this.compareIsoDays(this.foodTargetDay(), this.realToday) > 0);
   readonly foodQueueCount = computed(() => this.foodQueue().length);
 
   ngOnInit(): void {
     this.favoriteFoodIds.set(this.readFavoriteFoodIds());
-    this.foodTargetDay.set(this.today());
-    this.copySourceDay.set(this.shiftIsoDay(this.today(), -1));
     this.route.queryParamMap
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(params => {
@@ -1661,13 +1563,10 @@ export class TodayComponent implements OnInit {
     if (mode === 'food') {
       this.startFoodJourney('sheet_mode');
       if (this.foodQueueCount() === 0) {
-        this.foodTargetDay.set(this.today());
-        this.copySourceDay.set(this.shiftIsoDay(this.today(), -1));
         this.selectedMealTime.set(this.currentTimeHHmm());
         this.selectedMealSlot.set('snack');
       }
       this.foodSearch.set('');
-      void this.loadFoodTargetPreview();
     }
     if (mode === 'weight') {
       this.startWeightJourney('sheet_mode');
@@ -1725,20 +1624,6 @@ export class TodayComponent implements OnInit {
     if (slot === 'dinner') return 'Abendessen';
     if (slot === 'snack') return 'Snack';
     return 'Sonstiges';
-  }
-
-  setFoodTargetByOffset(days: number): void {
-    const target = this.shiftIsoDay(this.foodTargetDay(), days);
-    this.foodTargetDay.set(target);
-    this.copySourceDay.set(this.shiftIsoDay(target, -1));
-    void this.loadFoodTargetPreview();
-  }
-
-  async copyFromPreviousDay(): Promise<void> {
-    const targetDay = this.today();
-    this.foodTargetDay.set(targetDay);
-    this.copySourceDay.set(this.shiftIsoDay(targetDay, -1));
-    await this.copyEntriesToTargetDay();
   }
 
   onMealTimeChange(value: string): void {
@@ -1805,24 +1690,6 @@ export class TodayComponent implements OnInit {
     return item.itemType === 'ingredient' ? 'g' : 'x';
   }
 
-  onFoodTargetDayChange(value: string): void {
-    const normalized = this.normalizeDateInput(value);
-    if (!normalized) {
-      return;
-    }
-    this.foodTargetDay.set(normalized);
-    this.copySourceDay.set(this.shiftIsoDay(normalized, -1));
-    void this.loadFoodTargetPreview();
-  }
-
-  onCopySourceDayChange(value: string): void {
-    const normalized = this.normalizeDateInput(value);
-    if (!normalized) {
-      return;
-    }
-    this.copySourceDay.set(normalized);
-  }
-
   async applyFoodQueue(): Promise<void> {
     const user = this.authService.user();
     const queue = this.foodQueue();
@@ -1830,7 +1697,7 @@ export class TodayComponent implements OnInit {
       return;
     }
 
-    const targetDay = this.foodTargetDay();
+    const targetDay = this.today();
     const payload = queue.map((item, index) => ({
       owner_id: user.id,
       group_id: null as string | null,
@@ -1856,69 +1723,7 @@ export class TodayComponent implements OnInit {
     this.completeFoodJourney('apply_queue', { queue_count: queue.length });
     this.foodQueue.set([]);
     this.invalidateDayCaches(user.id);
-    await this.loadFoodTargetPreview();
-    if (targetDay === this.today()) {
-      await this.loadData(true);
-    }
-  }
-
-  async copyEntriesToTargetDay(): Promise<void> {
-    const user = this.authService.user();
-    if (!user) {
-      return;
-    }
-
-    const sourceDay = this.copySourceDay();
-    const targetDay = this.foodTargetDay();
-
-    if (this.compareIsoDays(sourceDay, targetDay) === 0) {
-      this.errorMessage.set('Quelle und Zieltag müssen unterschiedlich sein.');
-      return;
-    }
-
-    const { data: sourceEntries, error: sourceError } = await this.supabaseService.client
-      .from('log_entries')
-      .select('entry_type,ref_id,quantity,kcal,protein,carbs,fat')
-      .eq('owner_id', user.id)
-      .is('group_id', null)
-      .eq('day', sourceDay);
-
-    if (sourceError) {
-      this.errorMessage.set(formatAppError(sourceError, 'Einträge konnten nicht kopiert werden'));
-      return;
-    }
-
-    if (!sourceEntries || sourceEntries.length === 0) {
-      this.errorMessage.set(`Am ${sourceDay} gibt es keine Einträge zum Kopieren.`);
-      return;
-    }
-
-    const payload = sourceEntries.map((entry, index) => ({
-      owner_id: user.id,
-      group_id: null as string | null,
-      day: targetDay,
-      entry_type: entry.entry_type,
-      ref_id: entry.ref_id,
-      quantity: Number(entry.quantity),
-      kcal: Number(entry.kcal),
-      protein: Number(entry.protein),
-      carbs: Number(entry.carbs),
-      fat: Number(entry.fat),
-      created_at: this.combineDayTimeToIso(targetDay, this.selectedMealTime(), index * 5)
-    }));
-
-    const { error: insertError } = await this.supabaseService.client.from('log_entries').insert(payload);
-    if (insertError) {
-      this.errorMessage.set(formatAppError(insertError, 'Kopieren fehlgeschlagen'));
-      return;
-    }
-
-    this.successMessage.set(`${payload.length} Einträge von ${sourceDay} nach ${targetDay} kopiert.`);
-    this.invalidateDayCaches(user.id);
-    await this.loadFoodTargetPreview();
-    if (targetDay === this.today()) {
-      await this.loadData(true);
-    }
+    await this.loadData(true);
   }
 
   async confirmQuickAdd(result: AmountPickResult): Promise<void> {
@@ -2181,54 +1986,6 @@ export class TodayComponent implements OnInit {
     }
 
     return this.parseIsoDate(day).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
-  }
-
-  private async loadFoodTargetPreview(): Promise<void> {
-    const user = this.authService.user();
-    if (!user) {
-      return;
-    }
-
-    const day = this.foodTargetDay();
-    this.loadingFoodTargetPreview.set(true);
-    try {
-      const [
-        { data: summaryData, error: summaryError },
-        { count, error: countError }
-      ] = await Promise.all([
-        this.supabaseService.client
-          .from('daily_summaries')
-          .select('kcal,protein,carbs,fat')
-          .eq('owner_id', user.id)
-          .is('group_id', null)
-          .eq('day', day)
-          .maybeSingle(),
-        this.supabaseService.client
-          .from('log_entries')
-          .select('id', { count: 'exact', head: true })
-          .eq('owner_id', user.id)
-          .is('group_id', null)
-          .eq('day', day)
-      ]);
-
-      if (summaryError || countError) {
-        throw summaryError || countError;
-      }
-
-      this.foodTargetPreview.set({
-        day,
-        entryCount: Number(count || 0),
-        kcal: Number(summaryData?.kcal || 0),
-        protein: Number(summaryData?.protein || 0),
-        carbs: Number(summaryData?.carbs || 0),
-        fat: Number(summaryData?.fat || 0)
-      });
-    } catch (error: unknown) {
-      this.errorMessage.set(formatAppError(error, 'Tagesvorschau konnte nicht geladen werden'));
-      this.foodTargetPreview.set(null);
-    } finally {
-      this.loadingFoodTargetPreview.set(false);
-    }
   }
 
   private async loadBrooBoard(): Promise<void> {
@@ -2546,7 +2303,7 @@ export class TodayComponent implements OnInit {
     this.activeFoodJourneyId.set(
       this.telemetry.startJourney('food_log', {
         source,
-        selected_day: this.foodTargetDay()
+        selected_day: this.today()
       })
     );
   }
