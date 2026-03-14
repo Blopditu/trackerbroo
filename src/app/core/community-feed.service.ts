@@ -79,6 +79,8 @@ export class CommunityFeedService {
       return;
     }
 
+    const wasExisting = await this.hasExistingPost(userId, day, 'protein_milestone');
+
     const { data: entriesData } = await this.supabaseService.client
       .from('log_entries')
       .select('*')
@@ -122,9 +124,14 @@ export class CommunityFeedService {
     );
 
     this.queryCache.set(markerKey, true, 1000 * 60 * 60 * 6);
+
+    if (!wasExisting) {
+      void this.notifyCommunityPost(userId, day, 'protein_milestone');
+    }
   }
 
   async createGymCheckinPost(userId: string, day: string, note: string, photo: File | null): Promise<void> {
+    const wasExisting = await this.hasExistingPost(userId, day, 'gym_checkin');
     let photoUrl: string | null = null;
     if (photo) {
       photoUrl = await this.uploadImage(photo, 'gym-checkins', userId);
@@ -147,9 +154,14 @@ export class CommunityFeedService {
     if (error) {
       throw error;
     }
+
+    if (!wasExisting) {
+      void this.notifyCommunityPost(userId, day, 'gym_checkin');
+    }
   }
 
   async createStepsMilestonePost(userId: string, day: string, steps: number, target: number): Promise<void> {
+    const wasExisting = await this.hasExistingPost(userId, day, 'steps_milestone');
     const { error } = await this.supabaseService.client
       .from('community_posts')
       .upsert(
@@ -172,6 +184,10 @@ export class CommunityFeedService {
     }
 
     this.queryCache.set(this.getStepsMilestoneCacheKey(userId, day), true, 1000 * 60 * 60 * 6);
+
+    if (!wasExisting) {
+      void this.notifyCommunityPost(userId, day, 'steps_milestone');
+    }
   }
 
   invalidateFeedCache(userId: string, day: string): void {
@@ -329,6 +345,34 @@ export class CommunityFeedService {
     }
 
     return null;
+  }
+
+  private async hasExistingPost(userId: string, day: string, postType: CommunityPost['post_type']): Promise<boolean> {
+    const { data } = await this.supabaseService.client
+      .from('community_posts')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('day', day)
+      .eq('post_type', postType)
+      .limit(1)
+      .maybeSingle();
+
+    return Boolean(data?.id);
+  }
+
+  private async notifyCommunityPost(userId: string, day: string, postType: CommunityPost['post_type']): Promise<void> {
+    try {
+      await this.supabaseService.client.functions.invoke('send-push-notification', {
+        body: {
+          kind: 'community_post',
+          actorUserId: userId,
+          day,
+          postType
+        }
+      });
+    } catch (error) {
+      console.warn('Push notification could not be sent', error);
+    }
   }
 
   private getProteinMilestoneCacheKey(userId: string, day: string): string {

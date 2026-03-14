@@ -120,6 +120,17 @@ export interface StepLog {
   created_at: string;
 }
 
+export interface PushSubscriptionRecord {
+  id: string;
+  user_id: string;
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+  user_agent: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface GymCheckin {
   id: string;
   group_id: string;

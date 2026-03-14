@@ -140,6 +140,19 @@ CREATE TABLE IF NOT EXISTS step_logs (
   UNIQUE (user_id, logged_on)
 );
 
+CREATE TABLE IF NOT EXISTS push_subscriptions (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  endpoint TEXT NOT NULL,
+  p256dh TEXT NOT NULL,
+  auth TEXT NOT NULL,
+  user_agent TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE (endpoint),
+  UNIQUE (user_id, endpoint)
+);
+
 -- Gym check-ins
 CREATE TABLE IF NOT EXISTS gym_checkins (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -213,5 +226,6 @@ ALTER TABLE daily_summaries ENABLE ROW LEVEL SECURITY;
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE weight_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE step_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE push_subscriptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE gym_checkins ENABLE ROW LEVEL SECURITY;
 ALTER TABLE group_activities ENABLE ROW LEVEL SECURITY;

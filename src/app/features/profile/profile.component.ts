@@ -13,6 +13,7 @@ import { formatAppError } from '../../core/error-format';
 import { ThemeMode, ThemeService } from '../../core/theme.service';
 import { InteractionTelemetryService } from '../../core/interaction-telemetry.service';
 import { QueryCacheService } from '../../core/query-cache.service';
+import { PushNotificationService } from '../../core/push-notification.service';
 
 @Component({
   selector: 'app-profile',
@@ -347,6 +348,49 @@ import { QueryCacheService } from '../../core/query-cache.service';
         </div>
       </section>
 
+      <section class="panel" aria-labelledby="push-notifications-title">
+        <div id="push-notifications-title" class="scroll-header">Push-Benachrichtigungen</div>
+        <p class="subtle">{{ pushNotifications.statusLabel() }}</p>
+        <p class="subtle compact">Auf dem iPhone funktionieren Pushs nur in der installierten Web-App, nicht im normalen Safari-Tab.</p>
+
+        <div class="action-list">
+          @if (!pushNotifications.subscribed()) {
+            <button
+              mat-flat-button
+              type="button"
+              class="action-btn"
+              (click)="pushNotifications.enable()"
+              [disabled]="pushNotifications.busy() || !pushNotifications.supported()"
+            >
+              {{ pushNotifications.busy() ? 'Wird aktiviert …' : 'Push aktivieren' }}
+            </button>
+          } @else {
+            <button
+              mat-flat-button
+              type="button"
+              class="action-btn tonal"
+              (click)="pushNotifications.sendTestNotification()"
+              [disabled]="pushNotifications.busy()"
+            >
+              Test-Push senden
+            </button>
+            <button
+              mat-flat-button
+              type="button"
+              class="action-btn ghost"
+              (click)="pushNotifications.disable()"
+              [disabled]="pushNotifications.busy()"
+            >
+              Push deaktivieren
+            </button>
+          }
+        </div>
+
+        @if (pushNotifications.lastError()) {
+          <p class="subtle error-copy">{{ pushNotifications.lastError() }}</p>
+        }
+      </section>
+
       <section class="panel danger-zone" aria-labelledby="reset-onboarding-title">
         <div id="reset-onboarding-title" class="scroll-header">Onboarding zurücksetzen</div>
         <p class="subtle">
@@ -667,6 +711,10 @@ import { QueryCacheService } from '../../core/query-cache.service';
     .subtle.compact {
       margin-bottom: 0;
     }
+
+    .error-copy {
+      color: var(--m3-sys-color-error);
+    }
   `]
 })
 export class ProfileComponent implements OnInit {
@@ -677,6 +725,7 @@ export class ProfileComponent implements OnInit {
   private readonly themeService = inject(ThemeService);
   private readonly telemetry = inject(InteractionTelemetryService);
   private readonly queryCache = inject(QueryCacheService);
+  readonly pushNotifications = inject(PushNotificationService);
 
   readonly savingProfile = signal(false);
   readonly savingWeight = signal(false);
@@ -811,6 +860,7 @@ export class ProfileComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    void this.pushNotifications.refreshStatus();
     void this.loadAll();
   }
 
