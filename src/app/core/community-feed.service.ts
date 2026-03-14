@@ -362,7 +362,7 @@ export class CommunityFeedService {
 
   private async notifyCommunityPost(userId: string, day: string, postType: CommunityPost['post_type']): Promise<void> {
     try {
-      await this.supabaseService.client.functions.invoke('send-push-notification', {
+      await this.supabaseService.client.functions.invoke('send-push-notifications', {
         body: {
           kind: 'community_post',
           actorUserId: userId,

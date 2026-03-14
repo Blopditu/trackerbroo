@@ -171,7 +171,7 @@ export class PushNotificationService {
     this.lastError.set(null);
 
     try {
-      const { error } = await this.supabaseService.client.functions.invoke('send-push-notification', {
+      const { error } = await this.supabaseService.client.functions.invoke('send-push-notifications', {
         body: { kind: 'test' }
       });
 
@@ -242,14 +242,26 @@ export class PushNotificationService {
 
     try {
       const response = error.context;
-      const payload = await response.json();
-      if (!payload || typeof payload !== 'object') {
-        return null;
+      if (typeof response.json === 'function') {
+        const payload = await response.json();
+        if (payload && typeof payload === 'object') {
+          const message = this.firstString(payload as Record<string, unknown>, ['error', 'message', 'details']);
+          if (message) {
+            return message;
+          }
+        }
       }
+    } catch {
+      // Fall through to text parsing below.
+    }
 
-      const message = this.firstString(payload, ['error', 'message', 'details']);
-      if (message) {
-        return message;
+    try {
+      const response = error.context;
+      if (typeof response.text === 'function') {
+        const text = (await response.text()).trim();
+        if (text) {
+          return text;
+        }
       }
     } catch {
       return null;
@@ -258,13 +270,23 @@ export class PushNotificationService {
     return null;
   }
 
-  private isFunctionsHttpError(error: unknown): error is { context: Response; name?: string } {
+  private isFunctionsHttpError(error: unknown): error is {
+    context: { json?: () => Promise<unknown>; text?: () => Promise<string> };
+    name?: string;
+  } {
     if (typeof error !== 'object' || error === null) {
       return false;
     }
 
-    const candidate = error as { context?: unknown; name?: unknown };
-    return candidate.context instanceof Response || candidate.name === 'FunctionsHttpError';
+    const candidate = error as {
+      context?: { json?: unknown; text?: unknown };
+      name?: unknown;
+    };
+
+    const hasReadableContext =
+      typeof candidate.context?.json === 'function' || typeof candidate.context?.text === 'function';
+
+    return hasReadableContext || candidate.name === 'FunctionsHttpError';
   }
 
   private firstString(payload: Record<string, unknown>, keys: string[]): string | null {
