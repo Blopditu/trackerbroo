@@ -49,19 +49,25 @@ Deno.serve(async req => {
   }
 
   const authHeader = req.headers.get('Authorization') ?? '';
+  const accessToken = authHeader.replace(/^Bearer\s+/i, '').trim();
   const userClient = createClient(supabaseUrl, supabaseAnonKey, {
-    global: { headers: { Authorization: authHeader } }
+    auth: { persistSession: false, autoRefreshToken: false }
   });
   const serviceClient = createClient(supabaseUrl, supabaseServiceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false }
   });
 
-  const {
-    data: { user }
-  } = await userClient.auth.getUser();
+  if (!accessToken) {
+    return json({ error: 'Missing bearer token' }, 401);
+  }
 
-  if (!user) {
-    return json({ error: 'Unauthorized' }, 401);
+  const {
+    data: { user },
+    error: userError
+  } = await userClient.auth.getUser(accessToken);
+
+  if (userError || !user) {
+    return json({ error: userError?.message || 'Unauthorized' }, 401);
   }
 
   let body: PushRequest;
