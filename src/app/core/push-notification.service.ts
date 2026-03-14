@@ -12,12 +12,15 @@ export class PushNotificationService {
   private readonly swPush = inject(SwPush);
   private readonly authService = inject(AuthService);
   private readonly supabaseService = inject(SupabaseService);
+  private readonly hasNotificationApi =
+    typeof window !== 'undefined' && typeof Notification !== 'undefined';
+  private readonly hasServiceWorkerApi =
+    typeof navigator !== 'undefined' && 'serviceWorker' in navigator;
+  private readonly hasPushManagerApi =
+    typeof window !== 'undefined' && 'PushManager' in window;
+  private readonly hasVapidKey = Boolean(environment.pushVapidPublicKey);
   private readonly browserSupported =
-    typeof window !== 'undefined'
-    && typeof Notification !== 'undefined'
-    && typeof navigator !== 'undefined'
-    && 'serviceWorker' in navigator
-    && 'PushManager' in window;
+    this.hasNotificationApi && this.hasServiceWorkerApi && this.hasPushManagerApi;
 
   readonly busy = signal(false);
   readonly subscribed = signal(false);
@@ -26,8 +29,51 @@ export class PushNotificationService {
   );
   readonly lastError = signal<string | null>(null);
   readonly supported = computed(() =>
-    this.browserSupported && this.swPush.isEnabled && Boolean(environment.pushVapidPublicKey)
+    this.browserSupported && this.swPush.isEnabled && this.hasVapidKey
   );
+  readonly diagnostics = computed(() => [
+    {
+      label: 'Notification API',
+      ok: this.hasNotificationApi
+    },
+    {
+      label: 'Service Worker API',
+      ok: this.hasServiceWorkerApi
+    },
+    {
+      label: 'PushManager API',
+      ok: this.hasPushManagerApi
+    },
+    {
+      label: 'Angular Service Worker aktiv',
+      ok: this.swPush.isEnabled
+    },
+    {
+      label: 'VAPID Public Key gesetzt',
+      ok: this.hasVapidKey
+    }
+  ]);
+  readonly unavailableReason = computed(() => {
+    const failingCheck = this.diagnostics().find(check => !check.ok);
+    if (!failingCheck) {
+      return null;
+    }
+
+    switch (failingCheck.label) {
+      case 'Notification API':
+        return 'Der Browser stellt die Benachrichtigungs-API hier nicht bereit.';
+      case 'Service Worker API':
+        return 'Service Worker sind in diesem Browser-Kontext nicht verfügbar.';
+      case 'PushManager API':
+        return 'PushManager fehlt. Dieser Browser unterstützt Web Push hier nicht sauber.';
+      case 'Angular Service Worker aktiv':
+        return 'Der Angular Service Worker ist auf dieser Live-Seite nicht aktiv.';
+      case 'VAPID Public Key gesetzt':
+        return 'Im Frontend fehlt der VAPID Public Key.';
+      default:
+        return 'Push ist im aktuellen Browser-Kontext nicht verfügbar.';
+    }
+  });
   readonly statusLabel = computed(() => {
     if (!this.supported()) {
       return 'Push ist auf diesem Gerät oder in dieser App-Version gerade nicht verfügbar.';

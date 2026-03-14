@@ -352,6 +352,20 @@ import { PushNotificationService } from '../../core/push-notification.service';
         <div id="push-notifications-title" class="scroll-header">Push-Benachrichtigungen</div>
         <p class="subtle">{{ pushNotifications.statusLabel() }}</p>
         <p class="subtle compact">Auf dem iPhone funktionieren Pushs nur in der installierten Web-App, nicht im normalen Safari-Tab.</p>
+        @if (!pushNotifications.supported()) {
+          <div class="push-debug" aria-live="polite">
+            @if (pushNotifications.unavailableReason(); as reason) {
+              <p class="subtle compact error-copy">{{ reason }}</p>
+            }
+            <div class="push-debug-list">
+              @for (diagnostic of pushNotifications.diagnostics(); track diagnostic.label) {
+                <p class="subtle compact">
+                  {{ diagnostic.ok ? 'OK' : 'Fehlt' }} · {{ diagnostic.label }}
+                </p>
+              }
+            </div>
+          </div>
+        }
 
         <div class="action-list">
           @if (!pushNotifications.subscribed()) {
