@@ -179,7 +179,7 @@ export class PushNotificationService {
         throw error;
       }
     } catch (error: unknown) {
-      this.lastError.set(formatAppError(error, 'Test-Push konnte nicht gesendet werden'));
+      this.lastError.set(await this.formatFunctionError(error, 'Test-Push konnte nicht gesendet werden'));
     } finally {
       this.busy.set(false);
     }
@@ -224,5 +224,57 @@ export class PushNotificationService {
     if (error) {
       throw error;
     }
+  }
+
+  private async formatFunctionError(error: unknown, context: string): Promise<string> {
+    const functionMessage = await this.readFunctionErrorMessage(error);
+    if (functionMessage) {
+      return `${context}\n${functionMessage}`;
+    }
+
+    return formatAppError(error, context);
+  }
+
+  private async readFunctionErrorMessage(error: unknown): Promise<string | null> {
+    if (!this.isFunctionsHttpError(error)) {
+      return null;
+    }
+
+    try {
+      const response = error.context;
+      const payload = await response.json();
+      if (!payload || typeof payload !== 'object') {
+        return null;
+      }
+
+      const message = this.firstString(payload, ['error', 'message', 'details']);
+      if (message) {
+        return message;
+      }
+    } catch {
+      return null;
+    }
+
+    return null;
+  }
+
+  private isFunctionsHttpError(error: unknown): error is { context: Response; name?: string } {
+    if (typeof error !== 'object' || error === null) {
+      return false;
+    }
+
+    const candidate = error as { context?: unknown; name?: unknown };
+    return candidate.context instanceof Response || candidate.name === 'FunctionsHttpError';
+  }
+
+  private firstString(payload: Record<string, unknown>, keys: string[]): string | null {
+    for (const key of keys) {
+      const value = payload[key];
+      if (typeof value === 'string' && value.trim()) {
+        return value.trim();
+      }
+    }
+
+    return null;
   }
 }
