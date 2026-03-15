@@ -932,6 +932,11 @@ type DetailSource = 'widget' | 'progress-10rm' | 'progress-volume';
       gap: 10px;
     }
 
+    .execution-actions .action-btn {
+      width: 100%;
+      min-width: 0;
+    }
+
     .exercise-tabs {
       display: flex;
       gap: 8px;
@@ -1016,6 +1021,8 @@ type DetailSource = 'widget' | 'progress-10rm' | 'progress-volume';
 
     .table-row input {
       min-height: var(--touch-target-compact);
+      min-width: 0;
+      width: 100%;
       border: 1px solid var(--m3-sys-color-outline-variant);
       border-radius: 14px;
       background: var(--m3-sys-color-surface-container-highest);
@@ -1286,6 +1293,49 @@ type DetailSource = 'widget' | 'progress-10rm' | 'progress-volume';
       gap: 10px;
     }
 
+    @media (max-width: 640px) {
+      .execution-head {
+        align-items: flex-start;
+      }
+
+      .execution-head .mono-badge {
+        flex-shrink: 0;
+      }
+
+      .exercise-detail {
+        gap: 10px;
+        padding: 12px;
+      }
+
+      .set-table {
+        padding: 10px;
+      }
+
+      .table-head,
+      .table-row {
+        grid-template-columns: 24px minmax(0, 1.15fr) minmax(0, 0.85fr) 44px;
+        gap: 6px;
+      }
+
+      .table-row input {
+        padding-inline: 8px;
+      }
+
+      .execution-actions {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        align-items: stretch;
+      }
+
+      .execution-actions .action-btn {
+        min-height: var(--touch-target-compact);
+        padding-inline: 14px;
+      }
+
+      .execution-actions .action-btn:last-child {
+        grid-column: 1 / -1;
+      }
+    }
+
     @media (max-width: 420px) {
       .hero-controls {
         grid-template-columns: 1fr;
@@ -1303,8 +1353,29 @@ type DetailSource = 'widget' | 'progress-10rm' | 'progress-volume';
         grid-template-columns: 1fr;
       }
 
+      .execution-head {
+        flex-direction: column;
+      }
+
+      .execution-head .mono-badge {
+        align-self: flex-start;
+      }
+
+      .exercise-detail h3 {
+        font-size: 17px;
+        line-height: 1.15;
+      }
+
+      .detail-meta {
+        gap: 6px;
+      }
+
+      .detail-pill {
+        padding-inline: 10px;
+      }
+
       .execution-actions {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr 1fr;
       }
 
       .progress-head {
@@ -1326,7 +1397,25 @@ type DetailSource = 'widget' | 'progress-10rm' | 'progress-volume';
 
       .table-head,
       .table-row {
-        grid-template-columns: 24px 1fr 1fr 1fr 44px;
+        grid-template-columns: 20px minmax(0, 1fr) minmax(0, 72px) 40px;
+        gap: 6px;
+      }
+
+      .table-head {
+        font-size: 11px;
+      }
+
+      .table-row input {
+        font-size: 16px;
+      }
+
+      .execution-actions .action-btn {
+        font-size: 13px;
+        padding-inline: 12px;
+      }
+
+      .execution-actions .action-btn:last-child {
+        grid-column: 1 / -1;
       }
     }
   `]
