@@ -1643,10 +1643,18 @@ export class TodayComponent implements OnInit {
           replaceUrl: true
         });
       });
-    void this.loadData();
+    void this.loadInitialData();
   }
 
-  async loadData(forceRefresh = false): Promise<void> {
+  async loadInitialData(forceRefresh = false): Promise<void> {
+    await this.ensureLibraryLoaded();
+    await Promise.all([
+      this.loadTodaySnapshot(forceRefresh),
+      this.loadBrooBoard()
+    ]);
+  }
+
+  async loadTodaySnapshot(forceRefresh = false): Promise<void> {
     const user = this.authService.user();
     if (!user) {
       return;
@@ -1656,15 +1664,6 @@ export class TodayComponent implements OnInit {
     this.errorMessage.set(null);
 
     try {
-      const library = await this.libraryDataService.loadLibrary(user.id, {
-        forceRefresh,
-        allowStaleOnError: true
-      });
-
-      this.ingredients.set(library.ingredients);
-      this.meals.set(library.meals);
-      this.mealMacros = library.mealMacros;
-
       const day = this.today();
       const weekRange = this.getCurrentWeekRange();
       const cacheKey = this.getTodayCacheKey(user.id, day, weekRange.start, weekRange.end);
@@ -1693,7 +1692,6 @@ export class TodayComponent implements OnInit {
       const selectedSteps = this.stepLogs().find(entry => entry.logged_on === day);
       this.stepsInput = Number(selectedSteps?.steps || this.stepsGoal());
       this.stepsDateInput = day;
-      await this.loadBrooBoard();
     } catch (error: unknown) {
       this.errorMessage.set(formatAppError(error, 'Heute-Daten konnten nicht geladen werden'));
     } finally {
@@ -1705,14 +1703,14 @@ export class TodayComponent implements OnInit {
     const date = this.parseIsoDate(this.today());
     date.setDate(date.getDate() - 1);
     this.today.set(this.formatDate(date));
-    void this.loadData();
+    void this.loadTodaySnapshot();
   }
 
   goNextDay(): void {
     const current = this.parseIsoDate(this.today());
     current.setDate(current.getDate() + 1);
     this.today.set(this.formatDate(current));
-    void this.loadData();
+    void this.loadTodaySnapshot();
   }
 
   onDayPicked(value: string): void {
@@ -1721,7 +1719,7 @@ export class TodayComponent implements OnInit {
       return;
     }
     this.today.set(normalized);
-    void this.loadData();
+    void this.loadTodaySnapshot();
   }
 
   jumpToToday(): void {
@@ -1729,7 +1727,7 @@ export class TodayComponent implements OnInit {
       return;
     }
     this.today.set(this.realToday);
-    void this.loadData();
+    void this.loadTodaySnapshot();
   }
 
   weightValueLabel(): string {
@@ -2009,8 +2007,8 @@ export class TodayComponent implements OnInit {
     this.successMessage.set(`${queue.length} Einträge für ${targetDay} geloggt.`);
     this.completeFoodJourney('apply_queue', { queue_count: queue.length });
     this.foodQueue.set([]);
-    this.invalidateDayCaches(user.id);
-    await this.loadData(true);
+    this.invalidateFoodCaches(user.id, [targetDay]);
+    await this.loadTodaySnapshot(true);
   }
 
   async shareProteinMilestone(): Promise<void> {
@@ -2095,8 +2093,8 @@ export class TodayComponent implements OnInit {
 
     this.successMessage.set(`${selectedEntries.length} Einträge nach ${targetDay} übernommen.`);
     this.closeActions();
-    this.invalidateDayCaches(user.id);
-    await this.loadData(true);
+    this.invalidateFoodCaches(user.id, [targetDay]);
+    await this.loadTodaySnapshot(true);
   }
 
   toggleMealPrepEntrySelection(entryId: string): void {
@@ -2160,15 +2158,15 @@ export class TodayComponent implements OnInit {
 
     if (deleteError) {
       this.errorMessage.set('Meal Prep wurde angelegt, aber die Originaleinträge konnten nicht entfernt werden. Bitte kurz prüfen.');
-      this.invalidateDayCaches(user.id);
-      await this.loadData(true);
+      this.invalidateFoodCaches(user.id, [this.today(), ...rangeDays]);
+      await this.loadTodaySnapshot(true);
       return;
     }
 
     this.successMessage.set(`${selectedEntries.length} Einträge auf ${dayCount} Tage aufgeteilt.`);
     this.closeActions();
-    this.invalidateDayCaches(user.id);
-    await this.loadData(true);
+    this.invalidateFoodCaches(user.id, [this.today(), ...rangeDays]);
+    await this.loadTodaySnapshot(true);
   }
 
   entryMacroSummary(entry: LogEntry): string {
@@ -2229,8 +2227,8 @@ export class TodayComponent implements OnInit {
     }
     this.closeActions();
     this.closeAmountPicker();
-    this.invalidateDayCaches(user.id);
-    await this.loadData(true);
+    this.invalidateFoodCaches(user.id, [this.today()]);
+    await this.loadTodaySnapshot(true);
   }
 
   editEntry(entry: LogEntry): void {
@@ -2295,8 +2293,8 @@ export class TodayComponent implements OnInit {
     }
 
     this.successMessage.set('Eintrag gelöscht.');
-    this.invalidateDayCaches(user.id);
-    await this.loadData(true);
+    this.invalidateFoodCaches(user.id, [this.today()]);
+    await this.loadTodaySnapshot(true);
   }
 
   async saveWeight(): Promise<void> {
@@ -2314,7 +2312,7 @@ export class TodayComponent implements OnInit {
     this.completeWeightJourney('sheet_save');
     this.closeActions();
     this.invalidateDayCaches(user.id);
-    await this.loadData(true);
+    await this.loadTodaySnapshot(true);
   }
 
   async saveSteps(): Promise<void> {
@@ -2345,7 +2343,7 @@ export class TodayComponent implements OnInit {
     this.successMessage.set('Schritte gespeichert.');
     this.closeActions();
     this.invalidateDayCaches(user.id);
-    await this.loadData(true);
+    await this.loadTodaySnapshot(true);
   }
 
   setWeightDateToToday(): void {
@@ -2406,8 +2404,11 @@ export class TodayComponent implements OnInit {
       this.gymPhotoName.set(null);
       this.successMessage.set('Dein Gym-Check-in ist im Board.');
       this.closeActions();
-      this.invalidateDayCaches(user.id);
-      await this.loadData(true);
+      this.invalidateGymCaches(user.id, this.today());
+      await Promise.all([
+        this.loadTodaySnapshot(true),
+        this.loadBrooBoard()
+      ]);
     } catch (error: unknown) {
       this.errorMessage.set(formatAppError(error, 'Gym-Check-in konnte nicht gepostet werden'));
     } finally {
@@ -2484,6 +2485,25 @@ export class TodayComponent implements OnInit {
     } finally {
       this.loadingBrooBoard.set(false);
     }
+  }
+
+  private async ensureLibraryLoaded(): Promise<void> {
+    const user = this.authService.user();
+    if (!user) {
+      return;
+    }
+
+    if (this.ingredients().length > 0 || this.meals().length > 0) {
+      return;
+    }
+
+    const library = await this.libraryDataService.loadLibrary(user.id, {
+      allowStaleOnError: true
+    });
+
+    this.ingredients.set(library.ingredients);
+    this.meals.set(library.meals);
+    this.mealMacros = library.mealMacros;
   }
 
   private async loadCopySourceEntries(day: string): Promise<void> {
@@ -2653,6 +2673,33 @@ export class TodayComponent implements OnInit {
     this.queryCache.invalidate(this.getStepsMilestoneCacheKey(userId, this.today()));
   }
 
+  private invalidateFoodCaches(userId: string, days: string[]): void {
+    this.invalidateSnapshotWeeksForDays(userId, days);
+
+    for (const day of new Set(days.map(value => this.normalizeDateInput(value)).filter((value): value is string => Boolean(value)))) {
+      this.queryCache.invalidate(this.getProteinMilestoneCacheKey(userId, day));
+    }
+  }
+
+  private invalidateGymCaches(userId: string, day: string): void {
+    this.invalidateSnapshotWeeksForDays(userId, [day]);
+  }
+
+  private invalidateSnapshotWeeksForDays(userId: string, days: string[]): void {
+    const normalizedDays = [...new Set(
+      days
+        .map(value => this.normalizeDateInput(value))
+        .filter((value): value is string => Boolean(value))
+    )];
+
+    for (const day of normalizedDays) {
+      const weekRange = this.getWeekRangeForDay(day);
+      for (const snapshotDay of this.getIsoDayRange(weekRange.start, weekRange.end)) {
+        this.queryCache.invalidate(this.getTodayCacheKey(userId, snapshotDay, weekRange.start, weekRange.end));
+      }
+    }
+  }
+
   private getTodayCacheKey(userId: string, day: string, weekStart: string, weekEnd: string): string {
     return `today:${userId}:${day}:${weekStart}:${weekEnd}`;
   }
@@ -2760,11 +2807,15 @@ export class TodayComponent implements OnInit {
   }
 
   private getCurrentWeekRange(): { start: string; end: string } {
-    const now = this.parseIsoDate(this.today());
-    const day = now.getDay();
-    const daysSinceMonday = (day + 6) % 7;
-    const startDate = new Date(now);
-    startDate.setDate(now.getDate() - daysSinceMonday);
+    return this.getWeekRangeForDay(this.today());
+  }
+
+  private getWeekRangeForDay(day: string): { start: string; end: string } {
+    const current = this.parseIsoDate(day);
+    const weekday = current.getDay();
+    const daysSinceMonday = (weekday + 6) % 7;
+    const startDate = new Date(current);
+    startDate.setDate(current.getDate() - daysSinceMonday);
     const endDate = new Date(startDate);
     endDate.setDate(startDate.getDate() + 6);
     return {

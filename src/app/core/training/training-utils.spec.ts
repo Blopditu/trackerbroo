@@ -2,8 +2,7 @@ import {
   calculateVolume,
   estimateTenRm,
   startOfIsoWeek,
-  suggestNextWeightKg,
-  toIsoDate
+  suggestNextWeightKg
 } from './training-utils';
 
 describe('training-utils', () => {
@@ -44,7 +43,10 @@ describe('training-utils', () => {
   });
 
   it('gets monday week start', () => {
-    const monday = toIsoDate(startOfIsoWeek(new Date('2026-03-12T10:00:00Z')));
-    expect(monday).toBe('2026-03-09');
+    const monday = startOfIsoWeek(new Date('2026-03-12T10:00:00Z'));
+    expect(monday.getFullYear()).toBe(2026);
+    expect(monday.getMonth()).toBe(2);
+    expect(monday.getDate()).toBe(9);
+    expect(monday.getDay()).toBe(1);
   });
 });

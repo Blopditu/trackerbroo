@@ -473,7 +473,11 @@ export class TrainingDataService {
     this.invalidateTrainingCaches(this.requireUser().id);
   }
 
-  async getPreviousPerformance(exerciseId: string, beforeDate: string): Promise<Array<{
+  async getPreviousPerformance(
+    exerciseId: string,
+    beforeDate: string,
+    forceRefresh = false
+  ): Promise<Array<{
     session_date: string;
     set_number: number;
     is_warmup: boolean;
@@ -481,23 +485,36 @@ export class TrainingDataService {
     reps: number | null;
     estimated_10rm: number | null;
   }>> {
-    const { data, error } = await this.supabaseService.client.rpc('training_previous_exercise_performance', {
-      p_exercise_id: exerciseId,
-      p_before: beforeDate
+    const user = this.requireUser();
+    const cacheKey = `training:previous-performance:${user.id}:${exerciseId}:${beforeDate}`;
+
+    const { value } = await this.queryCache.getOrLoad({
+      key: cacheKey,
+      ttlMs: this.dashboardTtlMs,
+      forceRefresh,
+      allowStaleOnError: true,
+      loader: async () => {
+        const { data, error } = await this.supabaseService.client.rpc('training_previous_exercise_performance', {
+          p_exercise_id: exerciseId,
+          p_before: beforeDate
+        });
+
+        if (error) {
+          throw error;
+        }
+
+        return (data || []) as Array<{
+          session_date: string;
+          set_number: number;
+          is_warmup: boolean;
+          weight_kg: number | null;
+          reps: number | null;
+          estimated_10rm: number | null;
+        }>;
+      }
     });
 
-    if (error) {
-      throw error;
-    }
-
-    return (data || []) as Array<{
-      session_date: string;
-      set_number: number;
-      is_warmup: boolean;
-      weight_kg: number | null;
-      reps: number | null;
-      estimated_10rm: number | null;
-    }>;
+    return value;
   }
 
   async getPlans(forceRefresh = false): Promise<TrainingPlan[]> {
@@ -1061,6 +1078,10 @@ export class TrainingDataService {
 
   async flushPendingSync(): Promise<void> {
     await this.syncQueue.flush();
+  }
+
+  hasPendingSync(): boolean {
+    return this.syncQueue.pendingCount() > 0;
   }
 
   private async fetchDashboardWeek(weekStart: string): Promise<TrainingDashboardWeek> {
