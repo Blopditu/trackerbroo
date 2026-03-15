@@ -362,12 +362,23 @@ export class CommunityFeedService {
 
   private async notifyCommunityPost(userId: string, day: string, postType: CommunityPost['post_type']): Promise<void> {
     try {
+      const {
+        data: { session }
+      } = await this.supabaseService.client.auth.getSession();
+      const accessToken = session?.access_token;
+      if (!accessToken) {
+        throw new Error('Missing access token for push notification.');
+      }
+
       const { error } = await this.supabaseService.client.functions.invoke('send-push-notifications', {
         body: {
           kind: 'community_post',
           actorUserId: userId,
           day,
           postType
+        },
+        headers: {
+          Authorization: `Bearer ${accessToken}`
         }
       });
 

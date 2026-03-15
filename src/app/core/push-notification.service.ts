@@ -171,8 +171,19 @@ export class PushNotificationService {
     this.lastError.set(null);
 
     try {
+      const {
+        data: { session }
+      } = await this.supabaseService.client.auth.getSession();
+      const accessToken = session?.access_token;
+      if (!accessToken) {
+        throw new Error('Deine Anmeldung ist abgelaufen. Bitte melde dich erneut an.');
+      }
+
       const { error } = await this.supabaseService.client.functions.invoke('send-push-notifications', {
-        body: { kind: 'test' }
+        body: { kind: 'test' },
+        headers: {
+          Authorization: `Bearer ${accessToken}`
+        }
       });
 
       if (error) {
