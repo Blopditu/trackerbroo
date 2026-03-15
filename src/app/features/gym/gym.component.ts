@@ -54,17 +54,16 @@ import {
 import {
   addDays,
   calculateVolume,
-  estimateTenRm,
   newClientRef,
   roundTo,
   startOfIsoWeek,
-  suggestNextWeightKg,
   toIsoDate
 } from '../../core/training/training-utils';
 import { formatAppError } from '../../core/error-format';
 import { AuthService } from '../../core/auth.service';
 import { SupabaseService } from '../../core/supabase.service';
 import { InteractionTelemetryService } from '../../core/interaction-telemetry.service';
+import { applyPreviousWorkoutPrefill, carryForwardCompletedSet } from './gym-execution-utils';
 
 interface BuilderDayDraft {
   name: string;
@@ -293,18 +292,11 @@ type DetailSource = 'widget' | 'progress-10rm' | 'progress-volume';
                   </div>
                 </header>
 
-                @if (recommendedSetLine()) {
-                  <button type="button" class="recommended-row" (click)="acceptRecommendation()">
-                    Empfehlung: {{ recommendedSetLine() }}
-                  </button>
-                }
-
                 <div class="set-table" role="table" aria-label="Sätze">
                   <div class="table-head" role="row">
                     <span>#</span>
                     <span>KG</span>
                     <span>WDH</span>
-                    <span>10RM</span>
                     <span>OK</span>
                   </div>
 
@@ -313,7 +305,6 @@ type DetailSource = 'widget' | 'progress-10rm' | 'progress-volume';
                       <span>{{ setRow.setNumber }}</span>
                       <input type="number" min="0" step="0.5" [value]="setRow.weightKg ?? ''" (input)="onSetInput($event, setRow, 'weight')">
                       <input type="number" min="0" step="1" [value]="setRow.reps ?? ''" (input)="onSetInput($event, setRow, 'reps')">
-                      <span>{{ setRow.estimated10Rm ? setRow.estimated10Rm.toFixed(1) : '--' }}</span>
                       <button mat-icon-button type="button" class="check-btn" [class.done]="setRow.isCompleted" (click)="toggleSetComplete(setRow)">
                         <lucide-icon [img]="icons.check" aria-hidden="true"></lucide-icon>
                       </button>
@@ -1000,17 +991,6 @@ type DetailSource = 'widget' | 'progress-10rm' | 'progress-volume';
       font-weight: 700;
     }
 
-    .recommended-row {
-      min-height: var(--touch-target-compact);
-      border: 1px solid var(--success-500);
-      border-radius: 16px;
-      background: color-mix(in srgb, var(--success-500) 20%, var(--m3-sys-color-surface-container-low));
-      color: var(--m3-sys-color-on-surface);
-      font-weight: 700;
-      text-align: left;
-      padding: 0 12px;
-    }
-
     .set-table {
       border: 1px solid var(--m3-sys-color-outline-variant);
       border-radius: 20px;
@@ -1023,7 +1003,7 @@ type DetailSource = 'widget' | 'progress-10rm' | 'progress-volume';
     .table-head,
     .table-row {
       display: grid;
-      grid-template-columns: 30px 1fr 1fr 1fr 52px;
+      grid-template-columns: 30px 1fr 1fr 52px;
       gap: 8px;
       align-items: center;
     }
@@ -1572,35 +1552,6 @@ export class GymComponent implements OnInit, OnDestroy {
     return null;
   });
 
-  readonly recommendedSetLine = computed(() => {
-    const exercise = this.currentExercise();
-    if (!exercise || this.previousPerformance().length === 0) {
-      return null;
-    }
-
-    const previousWorking = this.previousPerformance().filter(item => !item.is_warmup && Number(item.weight_kg || 0) > 0);
-    if (previousWorking.length === 0) {
-      return null;
-    }
-
-    const baseWeight = Number(previousWorking[0].weight_kg || 0);
-    if (baseWeight <= 0) {
-      return null;
-    }
-
-    const suggested = suggestNextWeightKg({
-      targetReps: exercise.targetReps,
-      currentWeightKg: baseWeight,
-      sets: previousWorking.map(item => ({ reps: item.reps, isWarmup: item.is_warmup }))
-    });
-
-    const weight = suggested || baseWeight;
-    const reps = exercise.targetReps || Number(previousWorking[0].reps || 0);
-    const tenRm = estimateTenRm(weight, reps);
-
-    return `${weight.toFixed(1)}kg • ${reps} reps • ${tenRm ? tenRm.toFixed(1) : '--'} 10RM`;
-  });
-
   readonly measurementForm = inject(FormBuilder).nonNullable.group({
     type: 'weight' as TrainingMeasurementType,
     value: 70,
@@ -1630,6 +1581,7 @@ export class GymComponent implements OnInit, OnDestroy {
   private readonly pendingSetSaves = new Map<string, ReturnType<typeof setTimeout>>();
   private readonly pendingSetStateResets = new Map<string, ReturnType<typeof setTimeout>>();
   private readonly inFlightSetSaves = new Map<string, Promise<void>>();
+  private readonly attemptedExercisePrefill = new Set<string>();
   private workoutSharePhoto: File | null = null;
   workoutShareNote = '';
   private activeGraphJourneyId: string | null = null;
@@ -1754,6 +1706,7 @@ export class GymComponent implements OnInit, OnDestroy {
       if (workout.currentSessionClientRef) {
         const activeSession = await this.trainingData.getSessionByClientRef(workout.currentSessionClientRef);
         if (activeSession && activeSession.status === 'in_progress') {
+          this.resetExecutionPrefillState();
           this.activeSession.set(activeSession);
           const nextOpenIndex = this.findNextIncompleteExerciseIndex(activeSession, 0);
           this.activeExerciseIndex.set(nextOpenIndex >= 0 ? nextOpenIndex : 0);
@@ -1776,6 +1729,7 @@ export class GymComponent implements OnInit, OnDestroy {
 
     try {
       const session = await this.trainingData.startSession(overview.dayId, this.selectedDate());
+      this.resetExecutionPrefillState();
       this.activeSession.set(session);
       this.activeExerciseIndex.set(0);
       await this.refreshPreviousPerformance();
@@ -1813,6 +1767,7 @@ export class GymComponent implements OnInit, OnDestroy {
 
   async refreshPreviousPerformance(): Promise<void> {
     const exercise = this.currentExercise();
+    const sessionClientRef = this.activeSession()?.sessionClientRef || null;
     if (!exercise) {
       this.previousPerformance.set([]);
       return;
@@ -1820,8 +1775,25 @@ export class GymComponent implements OnInit, OnDestroy {
 
     try {
       const previous = await this.trainingData.getPreviousPerformance(exercise.exerciseId, this.selectedDate());
+      const currentSession = this.activeSession();
+      const currentExercise = this.currentExercise();
+      if (!currentSession || currentSession.sessionClientRef !== sessionClientRef) {
+        return;
+      }
+      if (!currentExercise || currentExercise.sessionExerciseId !== exercise.sessionExerciseId) {
+        return;
+      }
       this.previousPerformance.set(previous);
+      this.applyCurrentExerciseHistoryPrefill();
     } catch {
+      const currentSession = this.activeSession();
+      const currentExercise = this.currentExercise();
+      if (!currentSession || currentSession.sessionClientRef !== sessionClientRef) {
+        return;
+      }
+      if (!currentExercise || currentExercise.sessionExerciseId !== exercise.sessionExerciseId) {
+        return;
+      }
       this.previousPerformance.set([]);
     }
   }
@@ -1839,7 +1811,6 @@ export class GymComponent implements OnInit, OnDestroy {
       }
 
       draft.volume = calculateVolume(draft.weightKg, draft.reps);
-      draft.estimated10Rm = estimateTenRm(draft.weightKg, draft.reps);
     });
 
     this.scheduleSetSave(setRow.clientRef);
@@ -1856,7 +1827,6 @@ export class GymComponent implements OnInit, OnDestroy {
     this.updateSet(setRow.clientRef, draft => {
       draft.isCompleted = nextCompleted;
       draft.volume = calculateVolume(draft.weightKg, draft.reps);
-      draft.estimated10Rm = estimateTenRm(draft.weightKg, draft.reps);
     });
 
     const currentSet = this.findSetByClientRef(setRow.clientRef);
@@ -1868,6 +1838,11 @@ export class GymComponent implements OnInit, OnDestroy {
 
     if (!nextCompleted) {
       return;
+    }
+
+    const carriedSetClientRef = this.carryForwardToNextBlankSet(currentSet.clientRef);
+    if (carriedSetClientRef) {
+      this.scheduleSetSave(carriedSetClientRef);
     }
 
     const updatedExercise = this.currentExercise();
@@ -1904,36 +1879,6 @@ export class GymComponent implements OnInit, OnDestroy {
     }
   }
 
-  acceptRecommendation(): void {
-    const recommendation = this.recommendedSetLine();
-    const exercise = this.currentExercise();
-    if (!recommendation || !exercise) {
-      return;
-    }
-
-    const [weightToken, repsToken] = recommendation.split('•').map(token => token.trim());
-    const weight = Number(weightToken.replace('kg', '').trim());
-    const reps = Number(repsToken.replace('reps', '').trim());
-
-    if (Number.isNaN(weight) || Number.isNaN(reps)) {
-      return;
-    }
-
-    const firstSet = exercise.sets[0];
-    if (!firstSet) {
-      return;
-    }
-
-    this.updateSet(firstSet.clientRef, draft => {
-      draft.weightKg = weight;
-      draft.reps = reps;
-      draft.volume = calculateVolume(weight, reps);
-      draft.estimated10Rm = estimateTenRm(weight, reps);
-    });
-
-    this.scheduleSetSave(firstSet.clientRef);
-  }
-
   async finishWorkout(): Promise<void> {
     const session = this.activeSession();
     if (!session) {
@@ -1955,6 +1900,7 @@ export class GymComponent implements OnInit, OnDestroy {
       this.successMessage.set('Workout abgeschlossen.');
       this.activeSession.set(null);
       this.previousPerformance.set([]);
+      this.resetExecutionPrefillState();
       await this.loadTrackerData(true);
       await this.loadProgressData(true);
       this.activeSheet.set('session-share');
@@ -2734,6 +2680,82 @@ export class GymComponent implements OnInit, OnDestroy {
     return session.exercises.every(exercise => this.isExerciseCompleted(exercise));
   }
 
+  private applyCurrentExerciseHistoryPrefill(): void {
+    const session = this.activeSession();
+    const exercise = this.currentExercise();
+    if (!session || !exercise) {
+      return;
+    }
+
+    const prefillKey = this.executionPrefillKey(session.sessionClientRef, exercise.sessionExerciseId);
+    if (this.attemptedExercisePrefill.has(prefillKey)) {
+      return;
+    }
+
+    const { nextSets, changed } = applyPreviousWorkoutPrefill(exercise.sets, this.previousPerformance());
+    this.attemptedExercisePrefill.add(prefillKey);
+
+    if (!changed) {
+      return;
+    }
+
+    this.activeSession.update(current => {
+      if (!current) {
+        return current;
+      }
+
+      return {
+        ...current,
+        exercises: current.exercises.map(currentExercise =>
+          currentExercise.sessionExerciseId === exercise.sessionExerciseId
+            ? {
+                ...currentExercise,
+                sets: nextSets.map(setRow => ({
+                  ...setRow,
+                  volume: calculateVolume(setRow.weightKg, setRow.reps)
+                }))
+              }
+            : currentExercise
+        )
+      };
+    });
+  }
+
+  private carryForwardToNextBlankSet(completedClientRef: string): string | null {
+    const exercise = this.currentExercise();
+    if (!exercise) {
+      return null;
+    }
+
+    const { nextSets, carriedSetClientRef } = carryForwardCompletedSet(exercise.sets, completedClientRef);
+    if (!carriedSetClientRef) {
+      return null;
+    }
+
+    this.activeSession.update(current => {
+      if (!current) {
+        return current;
+      }
+
+      return {
+        ...current,
+        exercises: current.exercises.map(currentExercise =>
+          currentExercise.sessionExerciseId === exercise.sessionExerciseId
+            ? {
+                ...currentExercise,
+                sets: nextSets.map(setRow => ({
+                  ...setRow,
+                  volume: calculateVolume(setRow.weightKg, setRow.reps)
+                }))
+              }
+            : currentExercise
+        )
+      };
+    });
+
+    return carriedSetClientRef;
+  }
+
   private scheduleSetSave(clientRef: string): void {
     const pending = this.pendingSetSaves.get(clientRef);
     if (pending) {
@@ -2822,6 +2844,14 @@ export class GymComponent implements OnInit, OnDestroy {
       }
       return { ...current, [clientRef]: state };
     });
+  }
+
+  private executionPrefillKey(sessionClientRef: string, sessionExerciseId: string): string {
+    return `${sessionClientRef}:${sessionExerciseId}`;
+  }
+
+  private resetExecutionPrefillState(): void {
+    this.attemptedExercisePrefill.clear();
   }
 
   private updateSet(clientRef: string, updater: (setRow: TrainingExecutionSet) => void): void {
