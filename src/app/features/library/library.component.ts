@@ -4,56 +4,51 @@ import {
   ElementRef,
   OnDestroy,
   OnInit,
+  ViewEncapsulation,
   computed,
   inject,
   signal,
   viewChild
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
-import { LucideAngularModule, PencilLine } from 'lucide-angular';
-import { SupabaseService } from '../../core/supabase.service';
-import { AuthService } from '../../core/auth.service';
-import { Ingredient, Meal, MealItem } from '../../core/types';
-import { formatAppError } from '../../core/error-format';
-import { LibraryDataService } from '../../core/library-data.service';
 import { BottomSheetComponent } from '../../ui/minimal/bottom-sheet.component';
-
-interface ParsedMacroInput {
-  kcal?: number;
-  protein?: number;
-  carbs?: number;
-  fat?: number;
-}
+import { LibraryFacadeService } from './library-facade.service';
+import { LibraryIngredientsTabComponent } from './library-ingredients-tab.component';
+import { LibraryMealsTabComponent } from './library-meals-tab.component';
+import { IngredientEditorComponent } from './ingredient-editor.component';
+import { MealEditorComponent } from './meal-editor.component';
+import { LibraryActionSheetComponent } from './library-action-sheet.component';
 
 @Component({
   selector: 'app-library',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  encapsulation: ViewEncapsulation.None,
+  providers: [LibraryFacadeService],
   host: {
     '(document:keydown)': 'onDocumentKeydown($event)'
   },
   imports: [
     CommonModule,
     FormsModule,
+    ReactiveFormsModule,
     MatButtonModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatSelectModule,
-    LucideAngularModule,
-    BottomSheetComponent
+    BottomSheetComponent,
+    LibraryIngredientsTabComponent,
+    LibraryMealsTabComponent,
+    IngredientEditorComponent,
+    MealEditorComponent,
+    LibraryActionSheetComponent
   ],
   template: `
     <main class="page library-page">
-      @if (errorMessage()) {
-        <p class="toast error" role="status" aria-live="polite" aria-atomic="true">{{ errorMessage() }}</p>
+      @if (facade.errorMessage()) {
+        <p class="toast error" role="status" aria-live="polite" aria-atomic="true">{{ facade.errorMessage() }}</p>
       }
 
-      @if (successMessage()) {
-        <p class="toast success" role="status" aria-live="polite" aria-atomic="true">{{ successMessage() }}</p>
+      @if (facade.successMessage()) {
+        <p class="toast success" role="status" aria-live="polite" aria-atomic="true">{{ facade.successMessage() }}</p>
       }
 
       <header class="panel halftone">
@@ -91,117 +86,33 @@ interface ParsedMacroInput {
         <div class="m3-section-head list-head">
           <span class="m3-section-meta">
             @if (activeTab() === 'ingredients') {
-              {{ filteredIngredients().length }} Zutaten
+              {{ facade.filteredIngredients().length }} Zutaten
             } @else {
-              {{ meals().length }} Mahlzeiten
+              {{ facade.mealListRows().length }} Mahlzeiten
             }
           </span>
           <button mat-flat-button type="button" class="action-btn tonal compact" (click)="openCreateModal()">Neu</button>
         </div>
 
         @if (activeTab() === 'ingredients') {
-          <div class="toolbar">
-            <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
-              <mat-label>Zutat suchen</mat-label>
-              <input
-                matInput
-                type="search"
-                [ngModel]="ingredientSearch()"
-                (ngModelChange)="ingredientSearch.set($event)"
-                placeholder="Zutat suchen"
-                aria-label="Zutaten suchen"
-              >
-            </mat-form-field>
-            <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
-              <mat-label>Markt</mat-label>
-              <mat-select [ngModel]="marketFilter()" (ngModelChange)="marketFilter.set($event)" aria-label="Nach Markt filtern">
-                <mat-option value="">Alle Märkte</mat-option>
-                @for (market of marketSuggestions(); track market) {
-                  <mat-option [value]="market">{{ market }}</mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
-          </div>
-
-          @if (loading()) {
-            <div class="skeleton card"></div>
-            <div class="skeleton card"></div>
-          } @else {
-            <div class="items-list">
-              @for (item of filteredIngredients(); track item.id) {
-                <article class="list-card ingredient-card">
-                  <div class="card-copy">
-                    <strong>{{ item.name }}</strong>
-                    <div class="meta-pills">
-                      <span class="meta-pill">{{ getSourceTypeLabel(item.source_type) }}</span>
-                      @if (item.market_name) {
-                        <span class="meta-pill">{{ item.market_name }}</span>
-                      }
-                    </div>
-                    <div class="macro-pills" aria-label="Makros je 100 Gramm">
-                      <span class="macro-pill macro-pill-kcal">{{ item.kcal_per_100 }} kcal</span>
-                      <span class="macro-pill">P {{ formatMacroValue(item.protein_per_100) }}g</span>
-                      <span class="macro-pill">KH {{ formatMacroValue(item.carbs_per_100) }}g</span>
-                      <span class="macro-pill">F {{ formatMacroValue(item.fat_per_100) }}g</span>
-                    </div>
-                  </div>
-                  <button
-                    mat-icon-button
-                    type="button"
-                    class="library-edit-btn"
-                    (click)="openIngredientActions(item)"
-                    [attr.aria-label]="item.name + ' bearbeiten'"
-                  >
-                    <lucide-icon [img]="icons.edit" aria-hidden="true"></lucide-icon>
-                  </button>
-                </article>
-              }
-              @if (filteredIngredients().length === 0) {
-                <p class="empty-state">Keine Zutaten passen zu deinen Filtern.</p>
-              }
-            </div>
-          }
+          <app-library-ingredients-tab
+            [loading]="facade.loadingIngredients()"
+            [ingredientSearch]="facade.ingredientSearch()"
+            [marketFilter]="facade.marketFilter()"
+            [marketSuggestions]="facade.marketSuggestions()"
+            [ingredients]="facade.filteredIngredients()"
+            (ingredientSearchChange)="facade.setIngredientSearch($event)"
+            (marketFilterChange)="facade.setMarketFilter($event)"
+            (openActions)="openIngredientActions($event)"
+          />
         }
 
         @if (activeTab() === 'meals') {
-          @if (loading()) {
-            <div class="skeleton card"></div>
-            <div class="skeleton card"></div>
-          } @else {
-            <div class="items-list">
-              @for (item of meals(); track item.id) {
-                <article class="list-card meal-card">
-                  <div class="card-copy">
-                    <strong>{{ item.name }}</strong>
-                    <div class="meta-pills">
-                      <span class="meta-pill">Mahlzeit</span>
-                      <span class="meta-pill">Kosten {{ getMealCostLabel(item.id) }}</span>
-                    </div>
-                    @if (mealMacros()[item.id]; as macros) {
-                      <div class="macro-pills" aria-label="Makros pro Portion">
-                        <span class="macro-pill macro-pill-kcal">{{ roundKcal(macros.kcal) }} kcal</span>
-                        <span class="macro-pill">P {{ formatMacroValue(macros.protein) }}g</span>
-                        <span class="macro-pill">KH {{ formatMacroValue(macros.carbs) }}g</span>
-                        <span class="macro-pill">F {{ formatMacroValue(macros.fat) }}g</span>
-                      </div>
-                    }
-                  </div>
-                  <button
-                    mat-icon-button
-                    type="button"
-                    class="library-edit-btn"
-                    (click)="openMealActions(item)"
-                    [attr.aria-label]="item.name + ' bearbeiten'"
-                  >
-                    <lucide-icon [img]="icons.edit" aria-hidden="true"></lucide-icon>
-                  </button>
-                </article>
-              }
-              @if (meals().length === 0) {
-                <p class="empty-state">Noch keine Mahlzeiten. Lege deine erste Mahlzeit an, damit du später schneller loggen kannst.</p>
-              }
-            </div>
-          }
+          <app-library-meals-tab
+            [loading]="facade.loadingMeals()"
+            [meals]="facade.mealListRows()"
+            (openActions)="openMealActions($event)"
+          />
         }
       </section>
 
@@ -217,134 +128,41 @@ interface ParsedMacroInput {
     </main>
 
     <app-bottom-sheet [open]="actionSheetOpen()" title="Eintrag verwalten" (closed)="closeActionSheet()">
-      @if (actionSheetItemLabel()) {
-        <article class="sheet-preview">
-          <strong>{{ actionSheetItemLabel() }}</strong>
-          <p class="sub">{{ actionSheetItemSubLabel() }}</p>
-        </article>
-      }
-      <div class="action-sheet-list">
-        <button mat-flat-button type="button" class="action-btn tonal" (click)="editSelectedItem()">Bearbeiten</button>
-        <button mat-flat-button type="button" class="action-btn danger" (click)="deleteSelectedItem()">Löschen</button>
-      </div>
+      <app-library-action-sheet
+        [label]="facade.actionSheetItemLabel()"
+        [subLabel]="facade.actionSheetItemSubLabel()"
+        (edit)="editSelectedItem()"
+        (remove)="deleteSelectedItem()"
+      />
     </app-bottom-sheet>
 
     @if (showIngredientModal()) {
       <div class="modal" role="presentation" (click)="onModalBackdropClick($event, 'ingredient')">
         <div
           #ingredientDialog
-          class="modal-card"
+          class="modal-card library-modal-card"
           role="dialog"
           aria-modal="true"
           aria-labelledby="ingredient-modal-title"
           tabindex="-1"
           (click)="$event.stopPropagation()"
         >
-          <h2 id="ingredient-modal-title" class="title-font">{{ editingIngredient() ? 'Zutat bearbeiten' : 'Zutat hinzufügen' }}</h2>
-          <form (ngSubmit)="saveIngredient()" #ingForm="ngForm" class="stack-form">
-            <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
-              <mat-label>Quelle</mat-label>
-              <mat-select
-                id="ing-source"
-                [(ngModel)]="ingredientForm.source_type"
-                name="source_type"
-                (ngModelChange)="onIngredientSourceTypeChange()"
-                required
-              >
-                <mat-option value="manual">Manuell</mat-option>
-                <mat-option value="custom_product">Konkretes Produkt</mat-option>
-                <mat-option value="blv_generic">BLV generisch</mat-option>
-              </mat-select>
-            </mat-form-field>
-
-            @if (ingredientForm.source_type === 'custom_product') {
-              <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
-                <mat-label>BLV-Basiszutat</mat-label>
-                <mat-select
-                  id="ing-base"
-                  [(ngModel)]="ingredientForm.base_ingredient_id"
-                  name="base_ingredient_id"
-                  [required]="ingredientForm.source_type === 'custom_product'"
-                >
-                  <mat-option [value]="null">Bitte wählen</mat-option>
-                  @for (item of baseIngredientOptions(); track item.id) {
-                    <mat-option [value]="item.id">{{ item.name }}</mat-option>
-                  }
-                </mat-select>
-              </mat-form-field>
-              <button mat-flat-button type="button" class="action-btn tonal compact" (click)="copyNutritionFromBaseIngredient()">
-                BLV-Werte übernehmen
-              </button>
-            }
-
-            <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
-              <mat-label>Name</mat-label>
-              <input matInput id="ing-name" type="text" [(ngModel)]="ingredientForm.name" name="name" required>
-            </mat-form-field>
-
-            <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
-              <mat-label>Makros aus Text (optional)</mat-label>
-              <textarea
-                matInput
-                id="ing-macro-paste"
-                [(ngModel)]="macroPasteText"
-                name="macro_paste"
-                rows="4"
-                placeholder="kcal: 230&#10;protein: 8.5&#10;carbs: 29&#10;fat: 6.2"
-              ></textarea>
-            </mat-form-field>
-            <button mat-flat-button type="button" class="action-btn tonal compact" [disabled]="!macroPasteText.trim()" (click)="applyMacroPaste()">
-              Makros übernehmen
-            </button>
-            @if (macroPasteMessage()) {
-              <p class="sub">{{ macroPasteMessage() }}</p>
-            }
-
-            <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
-              <mat-label>Kcal / 100g</mat-label>
-              <input matInput id="ing-kcal" type="number" [(ngModel)]="ingredientForm.kcal_per_100" name="kcal" required>
-            </mat-form-field>
-
-            <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
-              <mat-label>Kosten / 100g (optional)</mat-label>
-              <input matInput id="ing-cost" type="number" [(ngModel)]="ingredientForm.cost_per_100" name="cost" min="0" step="0.01">
-            </mat-form-field>
-
-            <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
-              <mat-label>Markt (optional)</mat-label>
-              <input matInput id="ing-market" type="text" [(ngModel)]="ingredientForm.market_name" name="market" list="market-suggestions">
-            </mat-form-field>
-            <datalist id="market-suggestions">
-              @for (market of marketSuggestions(); track market) {
-                <option [value]="market"></option>
-              }
-            </datalist>
-
-            <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
-              <mat-label>Protein / 100g</mat-label>
-              <input matInput id="ing-protein" type="number" [(ngModel)]="ingredientForm.protein_per_100" name="protein" required>
-            </mat-form-field>
-
-            <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
-              <mat-label>Kohlenhydrate / 100g</mat-label>
-              <input matInput id="ing-carbs" type="number" [(ngModel)]="ingredientForm.carbs_per_100" name="carbs" required>
-            </mat-form-field>
-
-            <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
-              <mat-label>Fett / 100g</mat-label>
-              <input matInput id="ing-fat" type="number" [(ngModel)]="ingredientForm.fat_per_100" name="fat" required>
-            </mat-form-field>
-
-            <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
-              <mat-label>Marke (optional)</mat-label>
-              <input matInput id="ing-brand" type="text" [(ngModel)]="ingredientForm.brand" name="brand">
-            </mat-form-field>
-
-            <div class="modal-actions">
-              <button mat-flat-button type="submit" class="action-btn" [disabled]="!ingForm.valid">Speichern</button>
-              <button mat-flat-button type="button" class="action-btn ghost" (click)="closeIngredientModal()">Abbrechen</button>
-            </div>
-          </form>
+          <app-ingredient-editor
+            [form]="facade.ingredientForm"
+            [editing]="!!facade.editingIngredient()"
+            [macroPasteText]="facade.macroPasteText()"
+            [macroPasteMessage]="facade.macroPasteMessage()"
+            [detailsExpanded]="facade.ingredientDetailsExpanded()"
+            [baseIngredientOptions]="facade.baseIngredientOptions()"
+            [marketSuggestions]="facade.marketSuggestions()"
+            (sourceTypeChange)="facade.onIngredientSourceTypeChange()"
+            (macroPasteTextChange)="facade.setMacroPasteText($event)"
+            (applyMacroPaste)="facade.applyMacroPaste()"
+            (toggleDetails)="facade.toggleIngredientDetails()"
+            (copyNutrition)="facade.copyNutritionFromBaseIngredient()"
+            (save)="saveIngredient()"
+            (cancel)="closeIngredientModal()"
+          />
         </div>
       </div>
     }
@@ -353,48 +171,24 @@ interface ParsedMacroInput {
       <div class="modal" role="presentation" (click)="onModalBackdropClick($event, 'meal')">
         <div
           #mealDialog
-          class="modal-card"
+          class="modal-card library-modal-card"
           role="dialog"
           aria-modal="true"
           aria-labelledby="meal-modal-title"
           tabindex="-1"
           (click)="$event.stopPropagation()"
         >
-          <h2 id="meal-modal-title" class="title-font">{{ editingMeal() ? 'Mahlzeit bearbeiten' : 'Mahlzeit hinzufügen' }}</h2>
-          <form (ngSubmit)="saveMeal()" #mealFormRef="ngForm" class="stack-form">
-            <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
-              <mat-label>Mahlzeitenname</mat-label>
-              <input matInput id="meal-name" type="text" [(ngModel)]="mealForm.name" name="name" required>
-            </mat-form-field>
-
-            <div class="meal-items">
-              @for (item of mealItems; track $index) {
-                <div class="meal-item">
-                  <mat-form-field class="m3-field meal-field" appearance="outline" subscriptSizing="dynamic">
-                    <mat-label>Zutat</mat-label>
-                    <mat-select [(ngModel)]="item.ingredient_id" [name]="'ing' + $index">
-                      @for (ing of ingredients(); track ing.id) {
-                        <mat-option [value]="ing.id">{{ ing.name }}</mat-option>
-                      }
-                    </mat-select>
-                  </mat-form-field>
-                  <mat-form-field class="m3-field meal-field grams" appearance="outline" subscriptSizing="dynamic">
-                    <mat-label>Gramm</mat-label>
-                    <input matInput type="number" [(ngModel)]="item.grams" [name]="'grams' + $index" placeholder="Gramm">
-                  </mat-form-field>
-                  <button mat-flat-button type="button" class="action-btn danger compact" (click)="removeMealItem($index)">Entfernen</button>
-                </div>
-              }
-            </div>
-
-            <p class="cost-preview">Geschätzte Mahlzeitenkosten: {{ draftMealCostLabel() }}</p>
-            <button mat-flat-button type="button" class="action-btn tonal" (click)="addMealItem()">+ Zutat hinzufügen</button>
-
-            <div class="modal-actions">
-              <button mat-flat-button type="submit" class="action-btn" [disabled]="!mealFormRef.valid">Speichern</button>
-              <button mat-flat-button type="button" class="action-btn ghost" (click)="closeMealModal()">Abbrechen</button>
-            </div>
-          </form>
+          <app-meal-editor
+            [form]="facade.mealForm"
+            [itemControls]="mealItemControls()"
+            [ingredients]="facade.ingredients()"
+            [draftMealCostLabel]="facade.draftMealCostLabel()"
+            [editing]="!!facade.editingMeal()"
+            (addItem)="facade.addMealItem()"
+            (removeItem)="facade.removeMealItem($event)"
+            (save)="saveMeal()"
+            (cancel)="closeMealModal()"
+          />
         </div>
       </div>
     }
@@ -456,6 +250,7 @@ interface ParsedMacroInput {
       margin-top: 0.7rem;
       display: grid;
       gap: 0.65rem;
+      contain: layout style;
     }
 
     .sub {
@@ -473,6 +268,8 @@ interface ParsedMacroInput {
       gap: 0.9rem;
       padding: 0.95rem 1rem;
       border-radius: 24px;
+      content-visibility: auto;
+      contain-intrinsic-size: 132px;
     }
 
     .card-copy {
@@ -553,6 +350,18 @@ interface ParsedMacroInput {
       resize: vertical;
     }
 
+    .ingredient-primary-macros {
+      gap: 0.7rem;
+    }
+
+    .ingredient-details {
+      margin-top: -0.1rem;
+    }
+
+    .details-toggle {
+      justify-self: start;
+    }
+
     .meal-items {
       display: grid;
       gap: 0.65rem;
@@ -614,12 +423,23 @@ interface ParsedMacroInput {
       justify-content: center;
     }
 
+    .library-modal-card {
+      max-width: 620px;
+    }
+
+    .grid-two {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.7rem;
+    }
+
     @media (max-width: 480px) {
       .toolbar {
         grid-template-columns: 1fr;
       }
 
-      .meal-item {
+      .meal-item,
+      .grid-two {
         grid-template-columns: 1fr;
       }
 
@@ -632,413 +452,141 @@ interface ParsedMacroInput {
   `]
 })
 export class LibraryComponent implements OnInit, OnDestroy {
-  readonly icons = {
-    edit: PencilLine
-  };
+  readonly facade = inject(LibraryFacadeService);
 
-  activeTab = signal<'ingredients' | 'meals'>('ingredients');
-  ingredients = signal<Ingredient[]>([]);
-  meals = signal<Meal[]>([]);
-  showIngredientModal = signal(false);
-  showMealModal = signal(false);
-  editingIngredient = signal<Ingredient | null>(null);
-  editingMeal = signal<Meal | null>(null);
-  loading = signal(false);
-  errorMessage = signal<string | null>(null);
-  successMessage = signal<string | null>(null);
-  selectedIngredientForActions = signal<Ingredient | null>(null);
-  selectedMealForActions = signal<Meal | null>(null);
-  actionSheetOpen = signal(false);
+  readonly activeTab = signal<'ingredients' | 'meals'>('ingredients');
+  readonly actionSheetOpen = signal(false);
+  readonly showIngredientModal = signal(false);
+  readonly showMealModal = signal(false);
   readonly ingredientDialog = viewChild<ElementRef<HTMLElement>>('ingredientDialog');
   readonly mealDialog = viewChild<ElementRef<HTMLElement>>('mealDialog');
-
-  ingredientSearch = signal('');
-  marketFilter = signal('');
-  macroPasteText = '';
-  macroPasteMessage = signal<string | null>(null);
-
-  ingredientForm = this.createEmptyIngredientForm();
-
-  mealForm = { name: '' };
-  mealItems: { ingredient_id: string; grams: number }[] = [];
-  mealCosts = signal<Record<string, number>>({});
-  mealMacros = signal<Record<string, { kcal: number; protein: number; carbs: number; fat: number }>>({});
-  private readonly allMealItems = signal<MealItem[]>([]);
-
-  private readonly supabaseService = inject(SupabaseService);
-  private readonly authService = inject(AuthService);
-  private readonly libraryDataService = inject(LibraryDataService);
-  private previousFocusedElement: HTMLElement | null = null;
-
-  marketSuggestions = computed(() => {
-    const markets = this.ingredients()
-      .map(ingredient => ingredient.market_name?.trim() || '')
-      .filter(market => market.length > 0);
-
-    return Array.from(new Set(markets)).sort((a, b) => a.localeCompare(b));
-  });
-
-  filteredIngredients = computed(() => {
-    const query = this.ingredientSearch().trim().toLowerCase();
-    const market = this.marketFilter().trim().toLowerCase();
-
-    return this.ingredients().filter(item => {
-      const matchesQuery = !query || item.name.toLowerCase().includes(query);
-      const matchesMarket = !market || (item.market_name || '').toLowerCase() === market;
-      return matchesQuery && matchesMarket;
-    });
-  });
-
-  baseIngredientOptions = computed(() =>
-    this.ingredients()
-      .filter(ingredient => ingredient.source_type === 'blv_generic')
-      .sort((a, b) => a.name.localeCompare(b.name))
+  readonly loading = computed(() =>
+    this.activeTab() === 'ingredients' ? this.facade.loadingIngredients() : this.facade.loadingMeals()
   );
 
-  ngOnInit() {
-    void this.loadData();
+  private previousFocusedElement: HTMLElement | null = null;
+
+  ngOnInit(): void {
+    this.facade.init();
   }
 
   ngOnDestroy(): void {
     this.restorePreviousFocus();
   }
 
-  onTabChanged(value: string): void {
-    if (value === 'ingredients' || value === 'meals') {
-      this.activeTab.set(value);
-    }
+  async onTabChanged(value: 'ingredients' | 'meals'): Promise<void> {
+    this.activeTab.set(value);
+    await this.facade.activateTab(value);
   }
 
-  async loadData(forceRefresh = false) {
-    const user = this.authService.user();
-    if (!user) return;
-
-    this.loading.set(true);
-    this.errorMessage.set(null);
-    this.successMessage.set(null);
-
-    try {
-      const snapshot = await this.libraryDataService.loadLibrary(user.id, {
-        forceRefresh,
-        allowStaleOnError: true
-      });
-
-      this.ingredients.set(snapshot.ingredients);
-      this.meals.set(snapshot.meals);
-      this.allMealItems.set(snapshot.mealItems);
-      this.mealCosts.set(this.buildMealCosts(snapshot.meals, snapshot.mealItems, snapshot.ingredients));
-      this.mealMacros.set(snapshot.mealMacros);
-    } catch (error: unknown) {
-      this.errorMessage.set(formatAppError(error, 'Bibliothek konnte nicht geladen werden'));
-    } finally {
-      this.loading.set(false);
-    }
-  }
-
-  openCreateModal() {
+  async openCreateModal(): Promise<void> {
     if (this.activeTab() === 'ingredients') {
-      this.editingIngredient.set(null);
-      this.ingredientForm = this.createEmptyIngredientForm();
-      this.macroPasteText = '';
-      this.macroPasteMessage.set(null);
+      this.facade.openCreateIngredient();
       this.openIngredientModal();
       return;
     }
 
-    this.editingMeal.set(null);
-    this.mealForm = { name: '' };
-    this.mealItems = [];
+    await this.facade.openCreateMeal();
     this.openMealModal();
   }
 
-  editIngredient(ingredient: Ingredient) {
-    this.editingIngredient.set(ingredient);
-    this.macroPasteText = '';
-    this.macroPasteMessage.set(null);
-    this.ingredientForm = {
-      source_type: ingredient.source_type || 'manual',
-      base_ingredient_id: ingredient.base_ingredient_id ?? null,
-      name: ingredient.name,
-      kcal_per_100: ingredient.kcal_per_100,
-      cost_per_100: ingredient.cost_per_100 ?? null,
-      market_name: ingredient.market_name || '',
-      protein_per_100: ingredient.protein_per_100,
-      carbs_per_100: ingredient.carbs_per_100,
-      fat_per_100: ingredient.fat_per_100,
-      brand: ingredient.brand || ''
-    };
-    this.openIngredientModal();
+  openIngredientActions(ingredient: import('../../core/types').Ingredient): void {
+    this.facade.openIngredientActions(ingredient);
+    this.actionSheetOpen.set(true);
   }
 
-  async saveIngredient() {
-    const user = this.authService.user();
-    if (!user) return;
+  openMealActions(mealId: string): void {
+    const meal = this.facade.meals().find(entry => entry.id === mealId);
+    if (!meal) {
+      return;
+    }
+    this.facade.openMealActions(meal);
+    this.actionSheetOpen.set(true);
+  }
 
-    const marketName = this.ingredientForm.market_name.trim();
-    const normalizedCost =
-      this.ingredientForm.cost_per_100 === null || this.ingredientForm.cost_per_100 === undefined
-        ? null
-        : Number(this.ingredientForm.cost_per_100);
-    const normalizedBaseIngredientId =
-      this.ingredientForm.source_type === 'custom_product' ? this.ingredientForm.base_ingredient_id : null;
+  closeActionSheet(): void {
+    this.actionSheetOpen.set(false);
+    this.facade.clearActionSelection();
+  }
 
-    const payload = {
-      ...this.ingredientForm,
-      cost_per_100: Number.isFinite(normalizedCost) ? normalizedCost : null,
-      market_name: marketName || null,
-      base_ingredient_id: normalizedBaseIngredientId
-    };
+  editSelectedItem(): void {
+    const kind = this.facade.editSelectedItem();
+    this.closeActionSheet();
+    if (kind === 'ingredient') {
+      this.openIngredientModal();
+      return;
+    }
+    if (kind === 'meal') {
+      this.openMealModal();
+    }
+  }
 
-    try {
-      if (this.editingIngredient()) {
-        const { error } = await this.supabaseService.client
-          .from('ingredients')
-          .update(payload)
-          .eq('id', this.editingIngredient()!.id);
-        if (error) {
-          throw error;
-        }
-      } else {
-        const { error } = await this.supabaseService.client
-          .from('ingredients')
-          .insert({ ...payload, owner_id: user.id });
-        if (error) {
-          throw error;
-        }
-      }
+  async deleteSelectedItem(): Promise<void> {
+    await this.facade.deleteSelectedItem();
+    this.closeActionSheet();
+  }
 
+  async saveIngredient(): Promise<void> {
+    const saved = await this.facade.saveIngredient();
+    if (saved) {
       this.closeIngredientModal();
-      this.ingredientForm = this.createEmptyIngredientForm();
-
-      this.libraryDataService.invalidate(user.id);
-      await this.loadData(true);
-    } catch (error: unknown) {
-      this.errorMessage.set(formatAppError(error, 'Zutat konnte nicht gespeichert werden'));
     }
   }
 
-  async deleteIngredient(ingredient: Ingredient) {
-    const user = this.authService.user();
-    if (!user) {
-      return;
+  async saveMeal(): Promise<void> {
+    const saved = await this.facade.saveMeal();
+    if (saved) {
+      this.closeMealModal();
     }
-
-    const { error } = await this.supabaseService.client
-      .from('ingredients')
-      .delete()
-      .eq('id', ingredient.id)
-      .eq('owner_id', user.id);
-
-    if (error) {
-      this.errorMessage.set(formatAppError(error, 'Zutat konnte nicht gelöscht werden'));
-      return;
-    }
-
-    this.libraryDataService.invalidate(user.id);
-    await this.loadData(true);
-  }
-
-  editMeal(meal: Meal) {
-    this.editingMeal.set(meal);
-    this.mealForm.name = meal.name;
-    void this.loadMealItems(meal.id);
-    this.openMealModal();
   }
 
   closeIngredientModal(): void {
     this.showIngredientModal.set(false);
-    this.editingIngredient.set(null);
-    this.macroPasteText = '';
-    this.macroPasteMessage.set(null);
+    this.facade.clearEditingIngredient();
     this.restorePreviousFocus();
   }
 
   closeMealModal(): void {
     this.showMealModal.set(false);
-    this.editingMeal.set(null);
+    this.facade.clearEditingMeal();
     this.restorePreviousFocus();
   }
 
-  async loadMealItems(mealId: string) {
-    this.mealItems = this.allMealItems()
-      .filter(item => item.meal_id === mealId)
-      .map(item => ({ ingredient_id: item.ingredient_id, grams: Number(item.grams) }));
+  mealItemControls(): import('@angular/forms').FormGroup[] {
+    return this.facade.mealItemsArray.controls;
   }
 
-  addMealItem() {
-    this.mealItems.push({ ingredient_id: '', grams: 0 });
+  onModalBackdropClick(event: MouseEvent, modal: 'ingredient' | 'meal'): void {
+    if (event.target !== event.currentTarget) {
+      return;
+    }
+
+    if (modal === 'ingredient') {
+      this.closeIngredientModal();
+      return;
+    }
+
+    this.closeMealModal();
   }
 
-  removeMealItem(index: number) {
-    this.mealItems.splice(index, 1);
-  }
+  onDocumentKeydown(event: KeyboardEvent): void {
+    if (!this.showIngredientModal() && !this.showMealModal()) {
+      return;
+    }
 
-  draftMealCostLabel() {
-    const cost = this.mealItems.reduce((total, item) => {
-      const ingredient = this.ingredients().find(entry => entry.id === item.ingredient_id);
-      const costPer100 = Number(ingredient?.cost_per_100 || 0);
-      return total + (Number(item.grams) / 100) * costPer100;
-    }, 0);
-
-    return this.formatCurrency(cost);
-  }
-
-  async saveMeal() {
-    const user = this.authService.user();
-    if (!user) return;
-
-    try {
-      let mealId: string;
-      if (this.editingMeal()) {
-        const { error } = await this.supabaseService.client
-          .from('meals')
-          .update({ name: this.mealForm.name.trim() })
-          .eq('id', this.editingMeal()!.id)
-          .eq('owner_id', user.id);
-
-        if (error) {
-          throw error;
-        }
-        mealId = this.editingMeal()!.id;
-      } else {
-        const { data, error } = await this.supabaseService.client
-          .from('meals')
-          .insert({ name: this.mealForm.name.trim(), owner_id: user.id })
-          .select('id')
-          .single();
-
-        if (error || !data) {
-          throw error || new Error('Mahlzeit konnte nicht erstellt werden');
-        }
-        mealId = data.id;
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      if (this.showIngredientModal()) {
+        this.closeIngredientModal();
+        return;
       }
-
-      const { error: deleteMealItemsError } = await this.supabaseService.client
-        .from('meal_items')
-        .delete()
-        .eq('meal_id', mealId);
-
-      if (deleteMealItemsError) {
-        throw deleteMealItemsError;
-      }
-
-      const itemsToInsert = this.mealItems
-        .filter(item => Boolean(item.ingredient_id) && Number(item.grams) > 0)
-        .map(item => ({
-          meal_id: mealId,
-          ingredient_id: item.ingredient_id,
-          grams: Number(item.grams)
-        }));
-
-      if (itemsToInsert.length > 0) {
-        const { error: insertMealItemsError } = await this.supabaseService.client
-          .from('meal_items')
-          .insert(itemsToInsert);
-
-        if (insertMealItemsError) {
-          throw insertMealItemsError;
-        }
-      }
-
       this.closeMealModal();
-      this.mealForm = { name: '' };
-      this.mealItems = [];
-
-      this.libraryDataService.invalidate(user.id);
-      await this.loadData(true);
-    } catch (error: unknown) {
-      this.errorMessage.set(formatAppError(error, 'Mahlzeit konnte nicht gespeichert werden'));
-    }
-  }
-
-  async deleteMeal(meal: Meal) {
-    const user = this.authService.user();
-    if (!user) {
       return;
     }
 
-    const { error } = await this.supabaseService.client
-      .from('meals')
-      .delete()
-      .eq('id', meal.id)
-      .eq('owner_id', user.id);
-
-    if (error) {
-      this.errorMessage.set(formatAppError(error, 'Mahlzeit konnte nicht gelöscht werden'));
-      return;
+    if (event.key === 'Tab') {
+      this.trapFocus(event);
     }
-
-    this.libraryDataService.invalidate(user.id);
-    await this.loadData(true);
-  }
-
-  getMealCostLabel(mealId: string) {
-    return this.formatCurrency(this.mealCosts()[mealId] || 0);
-  }
-
-  getIngredientName(ingredientId: string) {
-    const ingredient = this.ingredients().find(entry => entry.id === ingredientId);
-    return ingredient?.name || 'Unbekannt';
-  }
-
-  getSourceTypeLabel(sourceType?: Ingredient['source_type']) {
-    if (sourceType === 'blv_generic') return 'BLV generisch';
-    if (sourceType === 'custom_product') return 'Konkretes Produkt';
-    return 'Manuell';
-  }
-
-  onIngredientSourceTypeChange() {
-    if (this.ingredientForm.source_type !== 'custom_product') {
-      this.ingredientForm.base_ingredient_id = null;
-    }
-  }
-
-  copyNutritionFromBaseIngredient() {
-    if (!this.ingredientForm.base_ingredient_id) return;
-    const baseIngredient = this.ingredients().find(
-      ingredient => ingredient.id === this.ingredientForm.base_ingredient_id
-    );
-    if (!baseIngredient) return;
-
-    this.ingredientForm.kcal_per_100 = baseIngredient.kcal_per_100;
-    this.ingredientForm.protein_per_100 = baseIngredient.protein_per_100;
-    this.ingredientForm.carbs_per_100 = baseIngredient.carbs_per_100;
-    this.ingredientForm.fat_per_100 = baseIngredient.fat_per_100;
-  }
-
-  applyMacroPaste(): void {
-    const parsed = this.parseMacroInput(this.macroPasteText);
-    if (!parsed) {
-      this.macroPasteMessage.set('Keine Makros erkannt. Bitte Format wie "protein: 10.5" nutzen.');
-      return;
-    }
-
-    if (parsed.protein !== undefined) {
-      this.ingredientForm.protein_per_100 = this.roundOneDecimal(parsed.protein);
-    }
-    if (parsed.carbs !== undefined) {
-      this.ingredientForm.carbs_per_100 = this.roundOneDecimal(parsed.carbs);
-    }
-    if (parsed.fat !== undefined) {
-      this.ingredientForm.fat_per_100 = this.roundOneDecimal(parsed.fat);
-    }
-
-    if (parsed.kcal !== undefined) {
-      this.ingredientForm.kcal_per_100 = this.roundKcal(parsed.kcal);
-    } else {
-      const protein = Number(this.ingredientForm.protein_per_100 || 0);
-      const carbs = Number(this.ingredientForm.carbs_per_100 || 0);
-      const fat = Number(this.ingredientForm.fat_per_100 || 0);
-      this.ingredientForm.kcal_per_100 = this.roundKcal(protein * 4 + carbs * 4 + fat * 9);
-    }
-
-    this.macroPasteMessage.set(
-      `Übernommen: ${this.ingredientForm.kcal_per_100} kcal · P ${Number(this.ingredientForm.protein_per_100).toFixed(1)} · KH ${Number(this.ingredientForm.carbs_per_100).toFixed(1)} · F ${Number(this.ingredientForm.fat_per_100).toFixed(1)}`
-    );
-  }
-
-  private formatCurrency(value: number) {
-    return `${value.toFixed(2)} €`;
   }
 
   private openIngredientModal(): void {
@@ -1155,259 +703,5 @@ export class LibraryComponent implements OnInit, OnDestroy {
     const target = this.previousFocusedElement;
     this.previousFocusedElement = null;
     queueMicrotask(() => target.focus({ preventScroll: true }));
-  }
-
-  private createEmptyIngredientForm() {
-    return {
-      source_type: 'manual' as 'manual' | 'blv_generic' | 'custom_product',
-      base_ingredient_id: null as string | null,
-      name: '',
-      kcal_per_100: 0,
-      cost_per_100: null as number | null,
-      market_name: '',
-      protein_per_100: 0,
-      carbs_per_100: 0,
-      fat_per_100: 0,
-      brand: ''
-    };
-  }
-
-  private parseMacroInput(input: string): ParsedMacroInput | null {
-    const raw = input.trim();
-    if (!raw) {
-      return null;
-    }
-
-    const jsonParsed = this.parseMacroJson(raw);
-    if (jsonParsed) {
-      return jsonParsed;
-    }
-
-    const normalized = raw.replace(/\u00a0/g, ' ');
-    const parsed: ParsedMacroInput = {
-      kcal: this.extractMacroValue(normalized, [
-        /\b(?:kcal|kalorien|kalorie|calories?)\b\s*(?:[:=\-])?\s*(-?\d+(?:[.,]\d+)?)/i,
-        /(-?\d+(?:[.,]\d+)?)\s*(?:kcal)\b/i
-      ]),
-      protein: this.extractMacroValue(normalized, [
-        /\b(?:protein|eiweiss|eiweiß|p)\b\s*(?:[:=\-])?\s*(-?\d+(?:[.,]\d+)?)/i,
-        /(-?\d+(?:[.,]\d+)?)\s*g?\s*(?:protein|eiweiss|eiweiß)\b/i
-      ]),
-      carbs: this.extractMacroValue(normalized, [
-        /\b(?:carbs?|kohlenhydrate|kh|c)\b\s*(?:[:=\-])?\s*(-?\d+(?:[.,]\d+)?)/i,
-        /(-?\d+(?:[.,]\d+)?)\s*g?\s*(?:carbs?|kohlenhydrate|kh)\b/i
-      ]),
-      fat: this.extractMacroValue(normalized, [
-        /\b(?:fett|fat|f)\b\s*(?:[:=\-])?\s*(-?\d+(?:[.,]\d+)?)/i,
-        /(-?\d+(?:[.,]\d+)?)\s*g?\s*(?:fett|fat)\b/i
-      ])
-    };
-
-    return this.hasMacroValues(parsed) ? parsed : null;
-  }
-
-  private parseMacroJson(input: string): ParsedMacroInput | null {
-    try {
-      const payload: unknown = JSON.parse(input);
-      if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
-        return null;
-      }
-
-      const record = payload as Record<string, unknown>;
-      const getValue = (keys: string[]): number | undefined => {
-        for (const key of keys) {
-          const value = this.parseNumericValue(record[key]);
-          if (value !== undefined) {
-            return value;
-          }
-        }
-        return undefined;
-      };
-
-      const parsed: ParsedMacroInput = {
-        kcal: getValue(['kcal', 'calories', 'kalorien']),
-        protein: getValue(['protein', 'eiweiss', 'eiweiß', 'p']),
-        carbs: getValue(['carbs', 'carbohydrates', 'kohlenhydrate', 'kh', 'c']),
-        fat: getValue(['fat', 'fett', 'f'])
-      };
-
-      return this.hasMacroValues(parsed) ? parsed : null;
-    } catch {
-      return null;
-    }
-  }
-
-  private extractMacroValue(input: string, patterns: RegExp[]): number | undefined {
-    for (const pattern of patterns) {
-      const match = input.match(pattern);
-      if (!match?.[1]) {
-        continue;
-      }
-      const value = this.parseNumericValue(match[1]);
-      if (value !== undefined) {
-        return value;
-      }
-    }
-    return undefined;
-  }
-
-  private parseNumericValue(value: unknown): number | undefined {
-    if (typeof value === 'number') {
-      return Number.isFinite(value) ? value : undefined;
-    }
-
-    if (typeof value !== 'string') {
-      return undefined;
-    }
-
-    const token = value.trim().match(/-?\d+(?:[.,]\d+)?/);
-    if (!token?.[0]) {
-      return undefined;
-    }
-
-    const numeric = Number(token[0].replace(',', '.'));
-    return Number.isFinite(numeric) ? numeric : undefined;
-  }
-
-  private hasMacroValues(parsed: ParsedMacroInput): boolean {
-    return parsed.kcal !== undefined
-      || parsed.protein !== undefined
-      || parsed.carbs !== undefined
-      || parsed.fat !== undefined;
-  }
-
-  private roundOneDecimal(value: number): number {
-    return Number(value.toFixed(1));
-  }
-
-  roundKcal(value: number): number {
-    return Math.max(0, Math.round(value));
-  }
-
-  openIngredientActions(ingredient: Ingredient): void {
-    this.selectedIngredientForActions.set(ingredient);
-    this.selectedMealForActions.set(null);
-    this.actionSheetOpen.set(true);
-  }
-
-  openMealActions(meal: Meal): void {
-    this.selectedMealForActions.set(meal);
-    this.selectedIngredientForActions.set(null);
-    this.actionSheetOpen.set(true);
-  }
-
-  closeActionSheet(): void {
-    this.actionSheetOpen.set(false);
-    this.selectedIngredientForActions.set(null);
-    this.selectedMealForActions.set(null);
-  }
-
-  actionSheetItemLabel(): string {
-    if (this.selectedIngredientForActions()) {
-      return this.selectedIngredientForActions()!.name;
-    }
-    if (this.selectedMealForActions()) {
-      return this.selectedMealForActions()!.name;
-    }
-    return '';
-  }
-
-  actionSheetItemSubLabel(): string {
-    if (this.selectedIngredientForActions()) {
-      return `${this.selectedIngredientForActions()!.kcal_per_100} kcal · ${this.getSourceTypeLabel(this.selectedIngredientForActions()!.source_type)}`;
-    }
-    if (this.selectedMealForActions()) {
-      return `Geschätzte Kosten: ${this.getMealCostLabel(this.selectedMealForActions()!.id)}`;
-    }
-    return '';
-  }
-
-  editSelectedItem(): void {
-    const ingredient = this.selectedIngredientForActions();
-    if (ingredient) {
-      this.closeActionSheet();
-      queueMicrotask(() => this.editIngredient(ingredient));
-      return;
-    }
-
-    const meal = this.selectedMealForActions();
-    if (meal) {
-      this.closeActionSheet();
-      queueMicrotask(() => this.editMeal(meal));
-    }
-  }
-
-  onModalBackdropClick(event: MouseEvent, modal: 'ingredient' | 'meal'): void {
-    if (event.target !== event.currentTarget) {
-      return;
-    }
-
-    if (modal === 'ingredient') {
-      this.closeIngredientModal();
-      return;
-    }
-
-    this.closeMealModal();
-  }
-
-  onDocumentKeydown(event: KeyboardEvent): void {
-    if (!this.showIngredientModal() && !this.showMealModal()) {
-      return;
-    }
-
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      if (this.showIngredientModal()) {
-        this.closeIngredientModal();
-        return;
-      }
-      this.closeMealModal();
-      return;
-    }
-
-    if (event.key === 'Tab') {
-      this.trapFocus(event);
-    }
-  }
-
-  async deleteSelectedItem(): Promise<void> {
-    const ingredient = this.selectedIngredientForActions();
-    if (ingredient) {
-      await this.deleteIngredient(ingredient);
-      this.closeActionSheet();
-      return;
-    }
-
-    const meal = this.selectedMealForActions();
-    if (meal) {
-      await this.deleteMeal(meal);
-      this.closeActionSheet();
-    }
-  }
-
-  private buildMealCosts(meals: Meal[], mealItems: MealItem[], ingredients: Ingredient[]): Record<string, number> {
-    const ingredientCostMap = new Map(
-      ingredients.map(ingredient => [ingredient.id, Number(ingredient.cost_per_100 || 0)])
-    );
-    const costs: Record<string, number> = {};
-
-    for (const meal of meals) {
-      costs[meal.id] = 0;
-    }
-
-    for (const item of mealItems) {
-      const unitCost = ingredientCostMap.get(item.ingredient_id) || 0;
-      costs[item.meal_id] = (costs[item.meal_id] || 0) + (Number(item.grams) / 100) * unitCost;
-    }
-
-    for (const mealId of Object.keys(costs)) {
-      costs[mealId] = Number(costs[mealId].toFixed(2));
-    }
-
-    return costs;
-  }
-
-  formatMacroValue(value: number): string {
-    return Number(value).toFixed(1);
   }
 }
