@@ -97,7 +97,11 @@ import {
       transform: translateX(-50%);
       width: 100%;
       max-width: 560px;
-      padding: 0.35rem 0.55rem calc(0.72rem + env(safe-area-inset-bottom));
+      padding:
+        0.28rem
+        max(0.4rem, env(safe-area-inset-right))
+        calc(0.72rem + env(safe-area-inset-bottom))
+        max(0.4rem, env(safe-area-inset-left));
       border-top: 1px solid var(--m3-sys-color-outline-variant);
       box-shadow: 0 -2px 12px color-mix(in srgb, #000 26%, transparent);
     }
@@ -111,9 +115,9 @@ import {
 
     .nav-strip {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr)) 88px repeat(3, minmax(0, 1fr));
-      align-items: start;
-      gap: 2px;
+      grid-template-columns: repeat(2, minmax(0, 1fr)) minmax(4.9rem, 5.5rem) repeat(3, minmax(0, 1fr));
+      align-items: stretch;
+      gap: 0;
     }
 
     .rail-list {
@@ -125,16 +129,18 @@ import {
 
     .nav-link {
       min-height: 68px;
-      max-width: 82px;
+      width: 100%;
+      min-width: 0;
+      max-width: none;
       border: none;
-      border-radius: 14px;
+      border-radius: 18px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 4px;
-      padding: 0.2rem 0.2rem 0;
-      justify-self: center;
+      gap: 0.18rem;
+      padding: 0.28rem 0.15rem 0;
+      justify-self: stretch;
       text-decoration: none;
       color: var(--m3-sys-color-on-surface-variant);
       background: transparent;
@@ -144,21 +150,29 @@ import {
         transform var(--motion-duration-short) var(--motion-easing-standard);
     }
 
+    :host.bottom-mode .nav-link {
+      min-height: 72px;
+    }
+
     :host.rail-mode .nav-link {
       min-height: 60px;
+      width: auto;
+      max-width: 82px;
       border-radius: 12px;
       gap: 4px;
+      justify-self: center;
     }
 
     .fab-gap {
       display: block;
-      width: 88px;
-      height: 1px;
+      width: 100%;
+      min-width: 4.9rem;
+      height: 100%;
     }
 
     .icon-wrap {
-      width: 36px;
-      height: 32px;
+      width: 40px;
+      height: 40px;
       border-radius: 999px;
       display: inline-flex;
       align-items: center;
@@ -172,18 +186,19 @@ import {
     }
 
     .icon-wrap lucide-icon {
-      width: 19px;
-      height: 19px;
+      width: 20px;
+      height: 20px;
     }
 
     .label {
-      font-size: 10px;
-      line-height: 11px;
+      width: 100%;
+      font-size: 11px;
+      line-height: 1.08;
       font-weight: 500;
       letter-spacing: 0.1px;
       text-align: center;
       text-wrap: balance;
-      max-width: 72px;
+      max-width: none;
     }
 
     .quick-fab {
@@ -217,7 +232,7 @@ import {
     .nav-link.active .icon-wrap {
       background: var(--m3-sys-color-secondary-container);
       color: var(--m3-sys-color-on-secondary-container);
-      transform: scale(1.02);
+      transform: none;
     }
 
     .nav-link.active .label {
