@@ -1,4 +1,4 @@
-import { computed, inject, Injectable, signal } from '@angular/core';
+import { computed, effect, inject, Injectable, signal } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
 import { formatAppError } from '../../core/error-format';
 import { AuthService } from '../../core/auth.service';
@@ -71,10 +71,14 @@ import {
 type DetailSource = 'widget' | 'progress-10rm' | 'progress-volume';
 const initialWorkoutShare = buildWorkoutShareSuggestion(1);
 
-@Injectable()
+@Injectable({
+  providedIn: 'root'
+})
 export class GymFacadeService {
   readonly frequencies = [1, 2, 3, 4, 5, 6, 7];
 
+  readonly activeTab = signal<'tracker' | 'progress'>('tracker');
+  readonly scrollY = signal(0);
   readonly selectedDate = signal(toIsoDate(new Date()));
   readonly dashboardWeek = signal<TrainingDashboardWeek | null>(null);
   readonly selectedWorkoutDay = signal<TrainingDashboardDay | null>(null);
@@ -328,13 +332,50 @@ export class GymFacadeService {
   private progressHydrationId = 0;
   private activeGraphJourneyId: string | null = null;
   private workoutSharePhoto: File | null = null;
+  private lastUserId: string | null | undefined = undefined;
+
+  constructor() {
+    effect(() => {
+      const userId = this.authService.user()?.id ?? null;
+      if (this.lastUserId === undefined) {
+        this.lastUserId = userId;
+        return;
+      }
+
+      if (userId === this.lastUserId) {
+        return;
+      }
+
+      this.lastUserId = userId;
+      this.resetForUserChange();
+    });
+  }
 
   init(): void {
+    void this.activate();
+  }
+
+  async activate(): Promise<void> {
     this.syncBuilderDayCount();
-    void this.loadTrackerBootstrap();
+    if (!this.trackerBootstrapped) {
+      await this.loadTrackerBootstrap();
+      return;
+    }
+
+    if (this.activeTab() === 'progress') {
+      await this.activateProgressTab();
+    }
+  }
+
+  deactivate(scrollY: number): void {
+    this.scrollY.set(Math.max(0, Math.round(scrollY)));
   }
 
   destroy(): void {
+    this.resetAsyncState();
+  }
+
+  private resetAsyncState(): void {
     for (const timer of this.pendingSetSaves.values()) {
       clearTimeout(timer);
     }
@@ -347,6 +388,7 @@ export class GymFacadeService {
   }
 
   async activateProgressTab(): Promise<void> {
+    this.activeTab.set('progress');
     if (!shouldHydrateProgress(this.progressLoaded(), this.progressDirty())) {
       return;
     }
@@ -1333,5 +1375,67 @@ export class GymFacadeService {
         return next;
       });
     });
+  }
+
+  resetForUserChange(): void {
+    this.resetAsyncState();
+    this.activeTab.set('tracker');
+    this.scrollY.set(0);
+    this.selectedDate.set(toIsoDate(new Date()));
+    this.dashboardWeek.set(null);
+    this.selectedWorkoutDay.set(null);
+    this.selectedOverview.set(null);
+    this.activeSession.set(null);
+    this.activeExerciseIndex.set(0);
+    this.previousPerformance.set([]);
+    this.plans.set([]);
+    this.exercises.set([]);
+    this.widgets.set([]);
+    this.personalStats.set(null);
+    this.selectedDetailWidget.set(null);
+    this.detailSeries.set([]);
+    this.detailFrom.set(toIsoDate(addDays(new Date(), -365)));
+    this.detailTo.set(toIsoDate(new Date()));
+    this.detailSource.set('widget');
+    this.selectedDetailPointDate.set(null);
+    this.exerciseEquipmentFilter.set('');
+    this.exerciseMuscleFilter.set('');
+    this.selectedProgressExerciseId.set('');
+    this.progressRangeDays.set(30);
+    this.tenRmSeries.set([]);
+    this.exerciseVolumeSeries.set([]);
+    this.progressLoaded.set(false);
+    this.progressDirty.set(false);
+    this.resetWorkoutShareState();
+    this.sharingWorkoutPost.set(false);
+    this.lastCompletedSessionDay.set(null);
+    this.errorMessage.set(null);
+    this.successMessage.set(null);
+    this.setSaveState.set({});
+    this.measurementForm.reset({
+      type: 'weight',
+      value: 70,
+      measuredOn: toIsoDate(new Date())
+    });
+    this.planMetaForm.reset({
+      name: '',
+      daysPerWeek: 4,
+      durationWeeks: 12,
+      startDate: toIsoDate(new Date()),
+      isActive: true
+    });
+    this.graphForm.reset({
+      graphType: 'workout_count',
+      exerciseId: '',
+      muscleGroup: ''
+    });
+    this.builderDays.set([]);
+    this.trackerBootstrapped = false;
+    this.progressRequestId = 0;
+    this.progressHydrationId = 0;
+    this.activeGraphJourneyId = null;
+    this.workoutSharePhoto = null;
+    this.resetExecutionPrefillState();
+    this.resetPreviousPerformanceCache();
   }
 }

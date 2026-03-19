@@ -1,4 +1,5 @@
 import {
+  AfterViewInit,
   ChangeDetectionStrategy,
   Component,
   OnDestroy,
@@ -52,10 +53,10 @@ import { GymTrackerTabComponent } from './gym-tracker-tab.component';
   templateUrl: './gym.component.html',
   styleUrl: './gym.component.css'
 })
-export class GymComponent implements OnInit, OnDestroy {
+export class GymComponent implements OnInit, AfterViewInit, OnDestroy {
   readonly facade = inject(GymFacadeService);
 
-  readonly activeTab = signal<'tracker' | 'progress'>('tracker');
+  readonly activeTab = this.facade.activeTab;
   readonly activeSheet = signal<'none' | 'hub' | 'builder' | 'graphs' | 'graph-detail' | 'session-share'>('none');
   readonly sessionHubTab = signal<'plans' | 'exercises' | 'help'>('plans');
 
@@ -64,20 +65,23 @@ export class GymComponent implements OnInit, OnDestroy {
   readonly userIcon = User;
 
   ngOnInit(): void {
-    this.facade.init();
+    void this.facade.activate();
+  }
+
+  ngAfterViewInit(): void {
+    this.scheduleScrollRestore();
   }
 
   ngOnDestroy(): void {
-    this.facade.destroy();
+    this.facade.deactivate(this.readScrollY());
   }
 
   async onHeroTabChange(value: 'tracker' | 'progress'): Promise<void> {
     if (value === 'progress') {
-      this.activeTab.set('progress');
       await this.facade.activateProgressTab();
       return;
     }
-    this.activeTab.set('tracker');
+    this.facade.activeTab.set('tracker');
   }
 
   openSessionHub(tab: 'plans' | 'exercises' | 'help'): void {
@@ -152,5 +156,23 @@ export class GymComponent implements OnInit, OnDestroy {
   skipSessionShare(): void {
     this.facade.resetWorkoutShareState();
     this.activeSheet.set('none');
+  }
+
+  private scheduleScrollRestore(): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: this.facade.scrollY(), left: 0, behavior: 'auto' });
+    });
+  }
+
+  private readScrollY(): number {
+    if (typeof window === 'undefined') {
+      return 0;
+    }
+
+    return window.scrollY || window.pageYOffset || 0;
   }
 }

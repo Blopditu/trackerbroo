@@ -18,16 +18,10 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { AuthService } from '../../core/auth.service';
-import { SupabaseService } from '../../core/supabase.service';
-import { CommunityComment, CommunityPost, Profile } from '../../core/types';
+import { CommunityPost, Profile } from '../../core/types';
 import { formatAppError } from '../../core/error-format';
 import { BottomSheetComponent } from '../../ui/minimal/bottom-sheet.component';
-import { CommunityFeedPage, CommunityFeedService } from '../../core/community-feed.service';
-
-interface DayGroup {
-  day: string;
-  posts: CommunityPost[];
-}
+import { CommunityFacadeService } from './community-facade.service';
 
 type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_url'>;
 
@@ -399,48 +393,30 @@ export class CommunityComponent implements OnInit, AfterViewInit, OnDestroy {
     plus: Plus
   };
 
-  private readonly pageSize = 15;
-
-  readonly posts = signal<CommunityPost[]>([]);
-  readonly commentsByPost = signal<Record<string, CommunityComment[]>>({});
-  readonly profiles = signal<Record<string, ProfileDirectoryEntry>>({});
-  readonly photoSrcMap = signal<Record<string, string>>({});
-  readonly commentInputs = signal<Record<string, string>>({});
+  readonly facade = inject(CommunityFacadeService);
+  readonly posts = this.facade.posts;
+  readonly commentsByPost = this.facade.commentsByPost;
+  readonly profiles = this.facade.profiles;
+  readonly photoSrcMap = this.facade.photoSrcMap;
+  readonly commentInputs = this.facade.commentInputs;
+  readonly loadingInitial = this.facade.loadingInitial;
+  readonly loadingMore = this.facade.loadingMore;
+  readonly hasMore = this.facade.hasMore;
+  readonly groupedPosts = this.facade.groupedPosts;
   readonly selectedPostForActions = signal<CommunityPost | null>(null);
   readonly expandedCommentPostId = signal<string | null>(null);
   readonly gymPhotoName = signal<string | null>(null);
   readonly gymPhotoInput = viewChild<ElementRef<HTMLInputElement>>('gymPhotoInput');
-
-  readonly loadingInitial = signal(false);
-  readonly loadingMore = signal(false);
-  readonly hasMore = signal(true);
-  readonly nextOffset = signal(0);
 
   readonly savingPost = signal(false);
   readonly errorMessage = signal<string | null>(null);
   readonly successMessage = signal<string | null>(null);
   readonly showGymSheet = signal(false);
 
-  readonly groupedPosts = computed<DayGroup[]>(() => {
-    const groups = new Map<string, CommunityPost[]>();
-    for (const post of this.posts()) {
-      if (!groups.has(post.day)) {
-        groups.set(post.day, []);
-      }
-      groups.get(post.day)?.push(post);
-    }
-
-    return Array.from(groups.entries())
-      .sort((a, b) => new Date(b[0]).getTime() - new Date(a[0]).getTime())
-      .map(([day, dayPosts]) => ({ day, posts: dayPosts }));
-  });
-
   gymNote = '';
   private gymPhoto: File | null = null;
 
   private readonly authService = inject(AuthService);
-  private readonly supabaseService = inject(SupabaseService);
-  private readonly communityFeed = inject(CommunityFeedService);
 
   @ViewChild('loadMoreAnchor') loadMoreAnchor?: ElementRef<HTMLElement>;
   private loadObserver: IntersectionObserver | null = null;
@@ -448,57 +424,24 @@ export class CommunityComponent implements OnInit, AfterViewInit, OnDestroy {
   readonly today = computed(() => this.formatDate(new Date()));
 
   ngOnInit(): void {
-    void this.loadInitial();
+    void this.facade.activate(this.today());
   }
 
   ngAfterViewInit(): void {
     this.setupInfiniteObserver();
+    this.restoreScrollPosition();
   }
 
   ngOnDestroy(): void {
     this.loadObserver?.disconnect();
-  }
-
-  async loadInitial(): Promise<void> {
-    this.errorMessage.set(null);
-
-    const user = this.authService.user();
-    if (!user) {
-      return;
-    }
-
-    this.loadingInitial.set(true);
-    this.posts.set([]);
-    this.commentsByPost.set({});
-    this.profiles.set({});
-    this.photoSrcMap.set({});
-    this.selectedPostForActions.set(null);
-    this.expandedCommentPostId.set(null);
-    this.nextOffset.set(0);
-    this.hasMore.set(true);
-
-    try {
-      await this.communityFeed.ensureProteinMilestonePost(user.id, this.today());
-      await this.fetchNextPage();
-    } catch (error: unknown) {
-      this.errorMessage.set(formatAppError(error, 'Community-Daten konnten nicht geladen werden'));
-    } finally {
-      this.loadingInitial.set(false);
-    }
+    this.facade.deactivate(this.readScrollY());
   }
 
   async loadMore(): Promise<void> {
-    if (!this.hasMore() || this.loadingInitial() || this.loadingMore()) {
-      return;
-    }
-
-    this.loadingMore.set(true);
     try {
-      await this.fetchNextPage();
+      await this.facade.loadMore();
     } catch (error: unknown) {
       this.errorMessage.set(formatAppError(error, 'Weitere Einträge konnten nicht geladen werden'));
-    } finally {
-      this.loadingMore.set(false);
     }
   }
 
@@ -514,14 +457,13 @@ export class CommunityComponent implements OnInit, AfterViewInit, OnDestroy {
     this.savingPost.set(true);
 
     try {
-      await this.communityFeed.createGymCheckinPost(user.id, this.today(), this.gymNote, this.gymPhoto);
+      await this.facade.createGymPost(this.today(), this.gymNote, this.gymPhoto);
 
       this.gymNote = '';
       this.gymPhoto = null;
       this.gymPhotoName.set(null);
       this.showGymSheet.set(false);
       this.successMessage.set('Dein Check-in ist jetzt in der Community.');
-      await this.loadInitial();
     } catch (error: unknown) {
       this.errorMessage.set(formatAppError(error, 'Gym-Check-in konnte nicht geteilt werden'));
     } finally {
@@ -530,46 +472,12 @@ export class CommunityComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   async submitComment(postId: string): Promise<void> {
-    const user = this.authService.user();
-    if (!user) {
-      return;
-    }
-
-    const text = (this.commentInputs()[postId] || '').trim();
-    if (!text) {
-      this.errorMessage.set('Kommentar darf nicht leer sein.');
-      return;
-    }
-
-    const { data, error } = await this.supabaseService.client
-      .from('community_comments')
-      .insert({
-        post_id: postId,
-        user_id: user.id,
-        comment_text: text
-      })
-      .select('*')
-      .single();
-
-    if (error) {
+    try {
+      await this.facade.submitComment(postId);
+      this.expandedCommentPostId.set(null);
+    } catch (error: unknown) {
       this.errorMessage.set(formatAppError(error, 'Kommentar konnte nicht gespeichert werden'));
-      return;
     }
-
-    this.setCommentInput(postId, '');
-    this.expandedCommentPostId.set(null);
-
-    if (!data) {
-      return;
-    }
-
-    this.commentsByPost.update(current => {
-      const existing = current[postId] || [];
-      return {
-        ...current,
-        [postId]: [...existing, data as CommunityComment]
-      };
-    });
   }
 
   async deletePost(postId: string): Promise<void> {
@@ -581,19 +489,12 @@ export class CommunityComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    const { error } = await this.supabaseService.client
-      .from('community_posts')
-      .delete()
-      .eq('id', postId)
-      .eq('user_id', user.id);
-
-    if (error) {
+    try {
+      await this.facade.deletePost(postId);
+      this.successMessage.set('Beitrag gelöscht.');
+    } catch (error: unknown) {
       this.errorMessage.set(formatAppError(error, 'Beitrag konnte nicht gelöscht werden'));
-      return;
     }
-
-    this.successMessage.set('Beitrag gelöscht.');
-    await this.loadInitial();
   }
 
   openGymSheet(): void {
@@ -622,7 +523,7 @@ export class CommunityComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   setCommentInput(postId: string, value: string): void {
-    this.commentInputs.update(current => ({ ...current, [postId]: value }));
+    this.facade.setCommentInput(postId, value);
   }
 
   openPostActions(post: CommunityPost): void {
@@ -722,20 +623,6 @@ export class CommunityComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.photoSrcMap()[post.id] || null;
   }
 
-  private async fetchNextPage(): Promise<void> {
-    const page = await this.communityFeed.fetchFeedPage(this.nextOffset(), this.pageSize);
-    this.applyFeedPage(page);
-  }
-
-  private applyFeedPage(page: CommunityFeedPage): void {
-    this.posts.update(current => [...current, ...page.posts]);
-    this.commentsByPost.update(current => ({ ...current, ...page.commentsByPost }));
-    this.profiles.update(current => ({ ...current, ...page.profiles }));
-    this.photoSrcMap.update(current => ({ ...current, ...page.photoSrcMap }));
-    this.nextOffset.set(page.nextOffset);
-    this.hasMore.set(page.hasMore);
-  }
-
   private setupInfiniteObserver(): void {
     if (typeof window === 'undefined' || !('IntersectionObserver' in window) || !this.loadMoreAnchor) {
       return;
@@ -750,10 +637,28 @@ export class CommunityComponent implements OnInit, AfterViewInit, OnDestroy {
           }
         }
       },
-      { root: null, rootMargin: '600px 0px 600px 0px' }
+      { root: null, rootMargin: '300px 0px 300px 0px' }
     );
 
     this.loadObserver.observe(this.loadMoreAnchor.nativeElement);
+  }
+
+  private restoreScrollPosition(): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: this.facade.scrollY(), left: 0, behavior: 'auto' });
+    });
+  }
+
+  private readScrollY(): number {
+    if (typeof window === 'undefined') {
+      return 0;
+    }
+
+    return window.scrollY || window.pageYOffset || 0;
   }
 
   private formatDate(date: Date): string {

@@ -2476,7 +2476,7 @@ export class TodayComponent implements OnInit {
   private async loadBrooBoard(): Promise<void> {
     this.loadingBrooBoard.set(true);
     try {
-      const page = await this.communityFeed.fetchFeedPage(0, 5);
+      const page = await this.communityFeed.fetchFeedPage(null, 5, { allowCachedFirstPage: false });
       this.brooPosts.set(page.posts);
       this.brooProfiles.set(page.profiles);
       this.brooPhotoSrcMap.set(page.photoSrcMap);

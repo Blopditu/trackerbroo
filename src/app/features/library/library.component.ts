@@ -1,4 +1,5 @@
 import {
+  AfterViewInit,
   ChangeDetectionStrategy,
   Component,
   ElementRef,
@@ -24,7 +25,6 @@ import { LibraryActionSheetComponent } from './library-action-sheet.component';
   selector: 'app-library',
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
-  providers: [LibraryFacadeService],
   host: {
     '(document:keydown)': 'onDocumentKeydown($event)'
   },
@@ -43,10 +43,10 @@ import { LibraryActionSheetComponent } from './library-action-sheet.component';
   templateUrl: './library.component.html',
   styleUrl: './library.component.css'
 })
-export class LibraryComponent implements OnInit, OnDestroy {
+export class LibraryComponent implements OnInit, AfterViewInit, OnDestroy {
   readonly facade = inject(LibraryFacadeService);
 
-  readonly activeTab = signal<'ingredients' | 'meals'>('ingredients');
+  readonly activeTab = this.facade.activeTab;
   readonly actionSheetOpen = signal(false);
   readonly showIngredientModal = signal(false);
   readonly showMealModal = signal(false);
@@ -56,10 +56,15 @@ export class LibraryComponent implements OnInit, OnDestroy {
   private previousFocusedElement: HTMLElement | null = null;
 
   ngOnInit(): void {
-    this.facade.init();
+    void this.facade.activate();
+  }
+
+  ngAfterViewInit(): void {
+    this.scheduleScrollRestore();
   }
 
   ngOnDestroy(): void {
+    this.facade.deactivate(this.readScrollY());
     this.restorePreviousFocus();
   }
 
@@ -257,6 +262,24 @@ export class LibraryComponent implements OnInit, OnDestroy {
 
     return Array.from(root.querySelectorAll<HTMLElement>(selectors.join(',')))
       .filter(element => !element.hasAttribute('hidden') && element.getAttribute('aria-hidden') !== 'true');
+  }
+
+  private scheduleScrollRestore(): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: this.facade.scrollY(), left: 0, behavior: 'auto' });
+    });
+  }
+
+  private readScrollY(): number {
+    if (typeof window === 'undefined') {
+      return 0;
+    }
+
+    return window.scrollY || window.pageYOffset || 0;
   }
 
   private getActiveDialog(): HTMLElement | null {

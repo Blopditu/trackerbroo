@@ -1,3 +1,4 @@
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { vi } from 'vitest';
 import { AuthService } from '../../core/auth.service';
@@ -135,6 +136,7 @@ describe('LibraryFacadeService', () => {
   }];
 
   let facade: LibraryFacadeService;
+  let authUser: ReturnType<typeof signal<{ id: string } | null>>;
   let libraryData: {
     loadIngredients: ReturnType<typeof vi.fn>;
     loadMeals: ReturnType<typeof vi.fn>;
@@ -144,6 +146,8 @@ describe('LibraryFacadeService', () => {
   let supabase: ReturnType<typeof createSupabaseClientStub>;
 
   beforeEach(() => {
+    authUser = signal<{ id: string } | null>({ id: 'user-1' });
+
     libraryData = {
       loadIngredients: vi.fn(),
       loadMeals: vi.fn(),
@@ -182,7 +186,7 @@ describe('LibraryFacadeService', () => {
     TestBed.configureTestingModule({
       providers: [
         LibraryFacadeService,
-        { provide: AuthService, useValue: { user: () => ({ id: 'user-1' }) } },
+        { provide: AuthService, useValue: { user: authUser } },
         { provide: LibraryDataService, useValue: libraryData as unknown as LibraryDataService },
         { provide: SupabaseService, useValue: { client: supabase.client } }
       ]
@@ -207,6 +211,27 @@ describe('LibraryFacadeService', () => {
 
     expect(libraryData.loadMeals).toHaveBeenCalledTimes(1);
     expect(facade.mealsLoaded()).toBe(true);
+  });
+
+  it('preserves hydrated state across activate calls and resets when the user changes', async () => {
+    await facade.activateTab('meals');
+    libraryData.loadIngredients.mockClear();
+    libraryData.loadMeals.mockClear();
+
+    await facade.activate();
+
+    expect(libraryData.loadIngredients).not.toHaveBeenCalled();
+    expect(libraryData.loadMeals).not.toHaveBeenCalled();
+    expect(facade.activeTab()).toBe('meals');
+
+    authUser.set({ id: 'user-2' });
+    facade.resetForUserChange();
+
+    expect(facade.ingredientsLoaded()).toBe(false);
+    expect(facade.mealsLoaded()).toBe(false);
+    expect(facade.ingredients()).toEqual([]);
+    expect(facade.meals()).toEqual([]);
+    expect(facade.activeTab()).toBe('ingredients');
   });
 
   it('ignores stale meal requests when a newer reload finishes first', async () => {

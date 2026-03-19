@@ -6,13 +6,20 @@ import { QueryCacheService } from './query-cache.service';
 
 export type CommunityProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_url'>;
 
+export interface CommunityFeedCursor {
+  id: string;
+  createdAt: string;
+}
+
 export interface CommunityFeedPage {
   posts: CommunityPost[];
   commentsByPost: Record<string, CommunityComment[]>;
   profiles: Record<string, CommunityProfileDirectoryEntry>;
   photoSrcMap: Record<string, string>;
-  nextOffset: number;
+  nextCursor: CommunityFeedCursor | null;
   hasMore: boolean;
+  newestCursor: CommunityFeedCursor | null;
+  fetchedAt: string;
 }
 
 @Injectable({
@@ -22,34 +29,70 @@ export class CommunityFeedService {
   private readonly supabaseService = inject(SupabaseService);
   private readonly libraryDataService = inject(LibraryDataService);
   private readonly queryCache = inject(QueryCacheService);
+  private readonly firstPageTtlMs = 1000 * 60 * 5;
 
-  async fetchFeedPage(offset: number, pageSize: number): Promise<CommunityFeedPage> {
-    const from = offset;
-    const to = from + pageSize - 1;
+  async fetchFeedPage(
+    cursor: CommunityFeedCursor | null,
+    pageSize: number,
+    options: { userId?: string; forceRefresh?: boolean; allowCachedFirstPage?: boolean } = {}
+  ): Promise<CommunityFeedPage> {
+    if (!cursor && options.userId && options.allowCachedFirstPage !== false) {
+      const { value } = await this.queryCache.getOrLoad({
+        key: this.firstPageCacheKey(options.userId),
+        ttlMs: this.firstPageTtlMs,
+        forceRefresh: options.forceRefresh,
+        allowStaleOnError: true,
+        loader: () => this.fetchFeedPageNetwork(null, pageSize)
+      });
 
-    const { data: postsData, error: postsError } = await this.supabaseService.client
-      .from('community_posts')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .range(from, to);
-
-    if (postsError) {
-      throw postsError;
+      return value;
     }
 
-    const posts = (postsData || []) as CommunityPost[];
-    const commentsByPost = await this.loadComments(posts);
-    const profiles = await this.loadProfiles(posts, commentsByPost);
-    const photoSrcMap = await this.resolvePostPhotoUrls(posts);
+    return this.fetchFeedPageNetwork(cursor, pageSize);
+  }
 
-    return {
-      posts,
-      commentsByPost,
-      profiles,
-      photoSrcMap,
-      nextOffset: from + posts.length,
-      hasMore: posts.length === pageSize
+  getCachedFirstPage(userId: string): CommunityFeedPage | null {
+    return this.queryCache.getFresh<CommunityFeedPage>(this.firstPageCacheKey(userId))
+      || this.queryCache.getStale<CommunityFeedPage>(this.firstPageCacheKey(userId));
+  }
+
+  setCachedFirstPage(userId: string, page: CommunityFeedPage): void {
+    this.queryCache.set(this.firstPageCacheKey(userId), page, this.firstPageTtlMs);
+  }
+
+  async checkForNewPosts(
+    userId: string,
+    currentHead: CommunityFeedCursor | null,
+    pageSize: number
+  ): Promise<boolean> {
+    const { data, error } = await this.supabaseService.client
+      .from('community_posts')
+      .select('id,created_at')
+      .order('created_at', { ascending: false })
+      .order('id', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error || !data?.id || !data?.created_at) {
+      return false;
+    }
+
+    const newestCursor: CommunityFeedCursor = {
+      id: String(data.id),
+      createdAt: String(data.created_at)
     };
+
+    if (!this.isCursorNewer(newestCursor, currentHead)) {
+      return false;
+    }
+
+    const firstPage = await this.fetchFeedPageNetwork(null, pageSize);
+    this.setCachedFirstPage(userId, firstPage);
+    return true;
+  }
+
+  invalidateFirstPageCache(userId: string): void {
+    this.queryCache.invalidate(this.firstPageCacheKey(userId));
   }
 
   async ensureProteinMilestonePost(
@@ -193,6 +236,46 @@ export class CommunityFeedService {
   invalidateFeedCache(userId: string, day: string): void {
     this.queryCache.invalidate(this.getProteinMilestoneCacheKey(userId, day));
     this.queryCache.invalidate(this.getStepsMilestoneCacheKey(userId, day));
+    this.invalidateFirstPageCache(userId);
+  }
+
+  private async fetchFeedPageNetwork(cursor: CommunityFeedCursor | null, pageSize: number): Promise<CommunityFeedPage> {
+    let query = this.supabaseService.client
+      .from('community_posts')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .order('id', { ascending: false })
+      .limit(pageSize);
+
+    if (cursor) {
+      query = query.or(
+        `created_at.lt.${cursor.createdAt},and(created_at.eq.${cursor.createdAt},id.lt.${cursor.id})`
+      );
+    }
+
+    const { data: postsData, error: postsError } = await query;
+
+    if (postsError) {
+      throw postsError;
+    }
+
+    const posts = (postsData || []) as CommunityPost[];
+    const commentsByPost = await this.loadComments(posts);
+    const profiles = await this.loadProfiles(posts, commentsByPost);
+    const photoSrcMap = await this.resolvePostPhotoUrls(posts);
+    const newestCursor = this.toCursor(posts[0] || null);
+    const nextCursor = posts.length === pageSize ? this.toCursor(posts[posts.length - 1] || null) : null;
+
+    return {
+      posts,
+      commentsByPost,
+      profiles,
+      photoSrcMap,
+      nextCursor,
+      hasMore: posts.length === pageSize,
+      newestCursor,
+      fetchedAt: new Date().toISOString()
+    };
   }
 
   private async loadComments(posts: CommunityPost[]): Promise<Record<string, CommunityComment[]>> {
@@ -396,5 +479,36 @@ export class CommunityFeedService {
 
   private getStepsMilestoneCacheKey(userId: string, day: string): string {
     return `steps-posted:${userId}:${day}`;
+  }
+
+  private firstPageCacheKey(userId: string): string {
+    return `community:feed:first-page:${userId}`;
+  }
+
+  private toCursor(post: CommunityPost | null): CommunityFeedCursor | null {
+    if (!post) {
+      return null;
+    }
+
+    return {
+      id: post.id,
+      createdAt: post.created_at
+    };
+  }
+
+  private isCursorNewer(candidate: CommunityFeedCursor | null, current: CommunityFeedCursor | null): boolean {
+    if (!candidate) {
+      return false;
+    }
+
+    if (!current) {
+      return true;
+    }
+
+    if (candidate.createdAt !== current.createdAt) {
+      return candidate.createdAt > current.createdAt;
+    }
+
+    return candidate.id > current.id;
   }
 }

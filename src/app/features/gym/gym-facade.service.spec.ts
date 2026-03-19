@@ -1,3 +1,4 @@
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { GymFacadeService } from './gym-facade.service';
 import { TrainingDataService, TrainingExecutionSession } from '../../core/training/training-data.service';
@@ -16,6 +17,7 @@ function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void } {
 
 describe('GymFacadeService', () => {
   let facade: GymFacadeService;
+  let authUser: ReturnType<typeof signal<{ id: string } | null>>;
   let trainingData: {
     hasPendingSync: ReturnType<typeof vi.fn>;
     flushPendingSync: ReturnType<typeof vi.fn>;
@@ -183,6 +185,8 @@ describe('GymFacadeService', () => {
   });
 
   beforeEach(() => {
+    authUser = signal<{ id: string } | null>({ id: 'user-1' });
+
     trainingData = {
       hasPendingSync: vi.fn(),
       flushPendingSync: vi.fn(),
@@ -245,7 +249,7 @@ describe('GymFacadeService', () => {
       providers: [
         GymFacadeService,
         { provide: TrainingDataService, useValue: trainingData as unknown as TrainingDataService },
-        { provide: AuthService, useValue: { user: () => ({ id: 'user-1' }) } },
+        { provide: AuthService, useValue: { user: authUser } },
         { provide: SupabaseService, useValue: { client: { from: () => ({ upsert: async () => ({ error: null }) }) } } },
         {
           provide: InteractionTelemetryService,
@@ -284,6 +288,27 @@ describe('GymFacadeService', () => {
     expect(trainingData.getDashboardWeek).toHaveBeenCalledTimes(1);
     expect(trainingData.getExercises).not.toHaveBeenCalled();
     expect(trainingData.getPlans).not.toHaveBeenCalled();
+  });
+
+  it('reuses tracker state across activate calls and resets when the user changes', async () => {
+    await facade.activate();
+    trainingData.getDashboardWeek.mockClear();
+    trainingData.getExercises.mockClear();
+    trainingData.getPlans.mockClear();
+
+    await facade.activate();
+
+    expect(trainingData.getDashboardWeek).not.toHaveBeenCalled();
+    expect(trainingData.getExercises).not.toHaveBeenCalled();
+    expect(trainingData.getPlans).not.toHaveBeenCalled();
+
+    authUser.set({ id: 'user-2' });
+    facade.resetForUserChange();
+
+    expect(facade.dashboardWeek()).toBeNull();
+    expect(facade.activeSession()).toBeNull();
+    expect(facade.activeTab()).toBe('tracker');
+    expect(facade.progressLoaded()).toBe(false);
   });
 
   it('reuses previous performance per exercise within the active session', async () => {

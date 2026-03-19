@@ -1,4 +1,4 @@
-import { computed, inject, Injectable, signal } from '@angular/core';
+import { computed, effect, inject, Injectable, signal } from '@angular/core';
 import { FormArray, FormBuilder } from '@angular/forms';
 import { LibraryDataService } from '../../core/library-data.service';
 import { AuthService } from '../../core/auth.service';
@@ -35,8 +35,12 @@ import {
   remapMealItems
 } from './library-optimistic-updates';
 
-@Injectable()
+@Injectable({
+  providedIn: 'root'
+})
 export class LibraryFacadeService {
+  readonly activeTab = signal<'ingredients' | 'meals'>('ingredients');
+  readonly scrollY = signal(0);
   readonly ingredients = signal<Ingredient[]>([]);
   readonly meals = signal<Meal[]>([]);
   readonly mealCosts = signal<Record<string, number>>({});
@@ -113,14 +117,38 @@ export class LibraryFacadeService {
   private readonly allMealItems = signal<MealItem[]>([]);
   private ingredientsRequestId = 0;
   private mealsRequestId = 0;
+  private lastUserId: string | null | undefined = undefined;
 
   constructor() {
     this.ingredientForm = createIngredientForm(this.formBuilder);
     this.mealForm = createMealForm(this.formBuilder);
+
+    effect(() => {
+      const userId = this.authService.user()?.id ?? null;
+      if (this.lastUserId === undefined) {
+        this.lastUserId = userId;
+        return;
+      }
+
+      if (userId === this.lastUserId) {
+        return;
+      }
+
+      this.lastUserId = userId;
+      this.resetForUserChange();
+    });
   }
 
   init(): void {
-    void this.ensureIngredientsLoaded();
+    void this.activate();
+  }
+
+  async activate(): Promise<void> {
+    await this.activateTab(this.activeTab());
+  }
+
+  deactivate(scrollY: number): void {
+    this.scrollY.set(Math.max(0, Math.round(scrollY)));
   }
 
   get mealItemsArray(): FormArray<MealItemFormGroup> {
@@ -204,6 +232,7 @@ export class LibraryFacadeService {
   }
 
   async activateTab(tab: 'ingredients' | 'meals'): Promise<void> {
+    this.activeTab.set(tab);
     if (tab === 'meals') {
       await this.ensureMealsLoaded();
     } else {
@@ -664,5 +693,34 @@ export class LibraryFacadeService {
     this.allMealItems.set(mealItems);
     this.syncDerivedMealState();
     this.syncCaches();
+  }
+
+  resetForUserChange(): void {
+    this.activeTab.set('ingredients');
+    this.scrollY.set(0);
+    this.ingredients.set([]);
+    this.meals.set([]);
+    this.allMealItems.set([]);
+    this.mealCosts.set({});
+    this.mealMacros.set({});
+    this.loadingIngredients.set(false);
+    this.loadingMeals.set(false);
+    this.ingredientsLoaded.set(false);
+    this.mealsLoaded.set(false);
+    this.errorMessage.set(null);
+    this.successMessage.set(null);
+    this.ingredientSearch.set('');
+    this.marketFilter.set('');
+    this.macroPasteText.set('');
+    this.macroPasteMessage.set(null);
+    this.ingredientDetailsExpanded.set(false);
+    this.editingIngredient.set(null);
+    this.editingMeal.set(null);
+    this.selectedIngredientForActions.set(null);
+    this.selectedMealForActions.set(null);
+    this.ingredientsRequestId += 1;
+    this.mealsRequestId += 1;
+    resetIngredientFormForCreate(this.ingredientForm);
+    resetMealFormForCreate(this.formBuilder, this.mealForm);
   }
 }
