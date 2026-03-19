@@ -20,6 +20,7 @@ import { ExerciseProgressRow, equipmentLabel, muscleLabel, toLinePoints } from '
     MatInputModule,
     MatSelectModule
   ],
+  styleUrl: './gym-progress-tab.component.css',
   template: `
     <section class="panel progress-feature-card">
       <div class="section-copy">

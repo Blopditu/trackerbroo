@@ -9,6 +9,7 @@ import { equipmentLabel } from './gym-view-utils';
   selector: 'app-gym-tracker-tab',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, MatButtonModule, LucideAngularModule],
+  styleUrl: './gym-tracker-tab.component.css',
   template: `
     @if (selectedOverview()) {
       <section class="panel quick-start-strip session-launch-card" aria-label="Schnellstart">

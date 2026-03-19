@@ -26,6 +26,12 @@ export interface BuilderExerciseChange {
     MatInputModule,
     MatSelectModule
   ],
+  styles: [`
+    .builder-day h3 {
+      margin: 0;
+      font-size: 16px;
+    }
+  `],
   template: `
     <form class="sheet-stack" [formGroup]="planMetaForm()" (ngSubmit)="savePlan.emit()">
       <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">

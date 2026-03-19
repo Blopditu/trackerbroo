@@ -1,0 +1,163 @@
+.eyebrow {
+  margin: 0;
+  color: var(--m3-sys-color-primary);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.quick-start-strip {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.session-launch-card {
+  border-color: color-mix(in srgb, var(--m3-sys-color-primary) 22%, var(--m3-sys-color-outline-variant));
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--m3-sys-color-primary) 10%, transparent), transparent 48%),
+    linear-gradient(180deg, color-mix(in srgb, var(--m3-sys-color-surface-container-high) 88%, var(--m3-sys-color-surface-container-low)), var(--m3-sys-color-surface-container-high));
+}
+
+.quick-start-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.quick-start-copy strong {
+  font-size: 18px;
+  color: var(--m3-sys-color-on-surface);
+}
+
+.launch-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.launch-preview-pill {
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--m3-sys-color-surface-container) 82%, transparent);
+  border: 1px solid color-mix(in srgb, var(--m3-sys-color-outline-variant) 72%, transparent);
+  color: var(--m3-sys-color-on-surface-variant);
+  display: inline-flex;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.launch-btn {
+  min-height: 52px;
+  padding-inline: 22px;
+}
+
+.active-plan-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.active-plan-head h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.workout-days {
+  display: grid;
+  gap: 10px;
+}
+
+.workout-day {
+  border: 1px solid color-mix(in srgb, var(--m3-sys-color-outline-variant) 70%, transparent);
+  border-radius: 20px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--m3-sys-color-surface-container-high) 92%, var(--m3-sys-color-surface)), var(--m3-sys-color-surface-container-high));
+  color: var(--m3-sys-color-on-surface);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  text-align: left;
+  width: 100%;
+}
+
+.workout-day.completed {
+  border-color: color-mix(in srgb, var(--m3-sys-color-outline-variant) 70%, transparent);
+  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--success-500) 88%, transparent);
+}
+
+.left,
+.right {
+  display: grid;
+  gap: 6px;
+}
+
+.check-icon {
+  color: var(--success-500);
+  width: 16px;
+  height: 16px;
+  justify-self: end;
+}
+
+.quick-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.overview-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.exercise-list {
+  display: grid;
+  gap: 10px;
+}
+
+.exercise-row {
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  gap: 10px;
+  align-items: center;
+  border: 1px solid color-mix(in srgb, var(--m3-sys-color-outline-variant) 65%, transparent);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--m3-sys-color-surface-container-high) 88%, var(--m3-sys-color-surface-container));
+  padding: 12px;
+}
+
+.exercise-status {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--m3-sys-color-outline-variant) 76%, transparent);
+  background: var(--m3-sys-color-surface-container);
+  color: var(--m3-sys-color-on-surface-variant);
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+@media (max-width: 420px) {
+  .quick-start-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .launch-btn {
+    width: 100%;
+  }
+
+  .quick-actions {
+    grid-template-columns: 1fr;
+  }
+}

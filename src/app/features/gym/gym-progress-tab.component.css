@@ -1,0 +1,192 @@
+.eyebrow {
+  margin: 0;
+  color: var(--m3-sys-color-primary);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.label {
+  margin: 0;
+  color: var(--m3-sys-color-on-surface-variant);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.section-copy {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.section-copy h2 {
+  margin: 0;
+}
+
+.progress-feature-card {
+  gap: 14px;
+}
+
+.progress-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.progress-exercise-field {
+  flex: 1 1 280px;
+}
+
+.progress-range {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  min-width: 170px;
+}
+
+.progress-range-btn {
+  min-height: var(--touch-target-compact);
+  border: 1px solid var(--m3-sys-color-outline-variant);
+  border-radius: 999px;
+  background: var(--m3-sys-color-surface-container-high);
+  color: var(--m3-sys-color-on-surface-variant);
+  font-size: 12px;
+  font-weight: 700;
+  justify-content: center;
+  width: 100%;
+}
+
+.progress-range-btn.active {
+  border-color: transparent;
+  background: var(--m3-sys-color-secondary-container);
+  color: var(--m3-sys-color-on-secondary-container);
+}
+
+.progress-exercise-meta {
+  display: grid;
+  gap: 4px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.stat-box,
+.summary-card {
+  border: 1px solid color-mix(in srgb, var(--m3-sys-color-outline-variant) 72%, transparent);
+  border-radius: 18px;
+  background: var(--m3-sys-color-surface-container-high);
+  padding: 12px;
+  display: grid;
+  gap: 6px;
+}
+
+.stat-box strong,
+.summary-card strong {
+  font-size: 18px;
+  line-height: 1.15;
+}
+
+.measurement-panel .measurement-form {
+  display: grid;
+  gap: 10px;
+}
+
+.progress-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.graph-card {
+  border: 1px solid var(--m3-sys-color-outline-variant);
+  border-radius: 20px;
+  background: var(--m3-sys-color-surface-container-high);
+  padding: 12px;
+  display: grid;
+  gap: 8px;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  color: var(--m3-sys-color-on-surface);
+}
+
+.main-graph-card {
+  margin-top: 4px;
+}
+
+.graph-head {
+  display: grid;
+  gap: 4px;
+}
+
+.graph {
+  width: 100%;
+  height: 62px;
+  border: 1px solid var(--m3-sys-color-outline-variant);
+  border-radius: 16px;
+  background: var(--m3-sys-color-surface-container);
+}
+
+.graph polyline {
+  fill: none;
+  stroke: var(--m3-sys-color-primary);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.progress-graph-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.graph-card-volume .graph polyline {
+  stroke: color-mix(in srgb, var(--m3-sys-color-tertiary) 78%, var(--m3-sys-color-primary));
+}
+
+.previous-block {
+  border-top: 1px solid var(--m3-sys-color-outline-variant);
+  padding-top: 10px;
+  display: grid;
+  gap: 6px;
+}
+
+.previous-block-structured {
+  gap: 10px;
+}
+
+.session-history-row {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--m3-sys-color-surface-container);
+  border: 1px solid color-mix(in srgb, var(--m3-sys-color-outline-variant) 70%, transparent);
+}
+
+@media (max-width: 640px) {
+  .progress-graph-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 420px) {
+  .progress-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .progress-range {
+    min-width: 0;
+  }
+
+  .progress-summary {
+    grid-template-columns: 1fr;
+  }
+}

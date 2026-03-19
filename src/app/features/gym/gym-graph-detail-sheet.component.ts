@@ -10,6 +10,70 @@ import { TrainingGraphDataPoint } from '../../core/training/training-data.servic
   selector: 'app-gym-graph-detail-sheet',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, MatButtonModule, MatFormFieldModule, MatInputModule],
+  styles: [`
+    .grid-two {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .progress-range {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 6px;
+    }
+
+    .progress-range-btn {
+      min-height: var(--touch-target-compact);
+      border: 1px solid var(--m3-sys-color-outline-variant);
+      border-radius: 999px;
+      background: var(--m3-sys-color-surface-container-high);
+      color: var(--m3-sys-color-on-surface-variant);
+      font-size: 12px;
+      font-weight: 700;
+      justify-content: center;
+      width: 100%;
+    }
+
+    .graph {
+      width: 100%;
+      height: 62px;
+      border: 1px solid var(--m3-sys-color-outline-variant);
+      border-radius: 16px;
+      background: var(--m3-sys-color-surface-container);
+    }
+
+    .graph.detail {
+      height: 120px;
+    }
+
+    .graph polyline {
+      fill: none;
+      stroke: var(--m3-sys-color-primary);
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .detail-dot {
+      fill: var(--m3-sys-color-surface-container-highest);
+      stroke: var(--m3-sys-color-primary);
+      stroke-width: 0.8;
+      cursor: pointer;
+    }
+
+    .detail-dot.active {
+      fill: var(--m3-sys-color-primary);
+      transform: scale(1.2);
+      transform-origin: center;
+    }
+
+    @media (max-width: 420px) {
+      .grid-two {
+        grid-template-columns: 1fr;
+      }
+    }
+  `],
   template: `
     @if (hasDetailContext()) {
       <div class="sheet-stack">
