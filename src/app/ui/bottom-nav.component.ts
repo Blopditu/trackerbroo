@@ -115,7 +115,7 @@ import {
 
     .nav-strip {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr)) minmax(4.9rem, 5.5rem) repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(6, minmax(0, 1fr));
       align-items: stretch;
       gap: 0;
     }
@@ -128,18 +128,19 @@ import {
     }
 
     .nav-link {
+      position: relative;
       min-height: 68px;
       width: 100%;
       min-width: 0;
       max-width: none;
       border: none;
       border-radius: 18px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
+      display: grid;
+      grid-auto-rows: min-content;
+      justify-items: center;
+      align-content: center;
       gap: 0.18rem;
-      padding: 0.28rem 0.15rem 0;
+      padding: 0.35rem 0.2rem 0.12rem;
       justify-self: stretch;
       text-decoration: none;
       color: var(--m3-sys-color-on-surface-variant);
@@ -154,6 +155,23 @@ import {
       min-height: 72px;
     }
 
+    :host.bottom-mode .nav-link::before {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: 6px;
+      width: min(76px, calc(100% - 10px));
+      height: 54px;
+      border-radius: 20px;
+      background: var(--m3-sys-color-secondary-container);
+      opacity: 0;
+      transform: translateX(-50%) scale(0.94);
+      transition:
+        opacity var(--motion-duration-short) var(--motion-easing-standard),
+        transform var(--motion-duration-medium) var(--motion-easing-emphasized);
+      pointer-events: none;
+    }
+
     :host.rail-mode .nav-link {
       min-height: 60px;
       width: auto;
@@ -166,11 +184,13 @@ import {
     .fab-gap {
       display: block;
       width: 100%;
-      min-width: 4.9rem;
+      min-width: 0;
       height: 100%;
     }
 
     .icon-wrap {
+      position: relative;
+      z-index: 1;
       width: 40px;
       height: 40px;
       border-radius: 999px;
@@ -191,7 +211,10 @@ import {
     }
 
     .label {
+      position: relative;
+      z-index: 1;
       width: 100%;
+      min-height: 24px;
       font-size: 11px;
       line-height: 1.08;
       font-weight: 500;
@@ -199,6 +222,9 @@ import {
       text-align: center;
       text-wrap: balance;
       max-width: none;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
     }
 
     .quick-fab {
@@ -229,7 +255,16 @@ import {
       color: var(--m3-sys-color-on-primary-container);
     }
 
-    .nav-link.active .icon-wrap {
+    :host.bottom-mode .nav-link.active::before {
+      opacity: 1;
+      transform: translateX(-50%) scale(1);
+    }
+
+    :host.bottom-mode .nav-link.active {
+      color: var(--m3-sys-color-on-secondary-container);
+    }
+
+    :host.rail-mode .nav-link.active .icon-wrap {
       background: var(--m3-sys-color-secondary-container);
       color: var(--m3-sys-color-on-secondary-container);
       transform: none;

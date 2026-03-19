@@ -46,13 +46,24 @@ import { LibraryMealListRow, formatMacroValue, roundKcal } from './library-view-
           <p class="empty-state">Noch keine Mahlzeiten. Lege deine erste Mahlzeit an, damit du später schneller loggen kannst.</p>
         }
       </div>
+
+      @if (hasMore()) {
+        <div class="list-more">
+          <button mat-flat-button type="button" class="action-btn ghost" (click)="showMore.emit()">
+            Weitere {{ totalCount() - meals().length }} Mahlzeiten anzeigen
+          </button>
+        </div>
+      }
     }
   `
 })
 export class LibraryMealsTabComponent {
   readonly loading = input.required<boolean>();
   readonly meals = input.required<LibraryMealListRow[]>();
+  readonly totalCount = input.required<number>();
+  readonly hasMore = input.required<boolean>();
   readonly openActions = output<string>();
+  readonly showMore = output<void>();
 
   readonly editIcon = PencilLine;
   readonly roundKcal = roundKcal;

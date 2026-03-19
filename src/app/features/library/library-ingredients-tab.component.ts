@@ -82,6 +82,14 @@ import { formatMacroValue, sourceTypeLabel } from './library-view-utils';
           <p class="empty-state">Keine Zutaten passen zu deinen Filtern.</p>
         }
       </div>
+
+      @if (hasMore()) {
+        <div class="list-more">
+          <button mat-flat-button type="button" class="action-btn ghost" (click)="showMore.emit()">
+            Weitere {{ totalCount() - ingredients().length }} Zutaten anzeigen
+          </button>
+        </div>
+      }
     }
   `
 })
@@ -91,10 +99,13 @@ export class LibraryIngredientsTabComponent {
   readonly marketFilter = input.required<string>();
   readonly marketSuggestions = input.required<string[]>();
   readonly ingredients = input.required<Ingredient[]>();
+  readonly totalCount = input.required<number>();
+  readonly hasMore = input.required<boolean>();
 
   readonly ingredientSearchChange = output<string>();
   readonly marketFilterChange = output<string>();
   readonly openActions = output<Ingredient>();
+  readonly showMore = output<void>();
 
   readonly editIcon = PencilLine;
   readonly sourceTypeLabel = sourceTypeLabel;

@@ -328,6 +328,7 @@ export class GymFacadeService {
     estimated_10rm: number | null;
   }>>();
   private trackerBootstrapped = false;
+  private trackerLoadPromise: Promise<void> | null = null;
   private progressRequestId = 0;
   private progressHydrationId = 0;
   private activeGraphJourneyId: string | null = null;
@@ -357,7 +358,9 @@ export class GymFacadeService {
 
   async activate(): Promise<void> {
     this.syncBuilderDayCount();
-    if (!this.trackerBootstrapped) {
+    if (this.trackerLoadPromise) {
+      await this.trackerLoadPromise;
+    } else if (!this.trackerBootstrapped) {
       await this.loadTrackerBootstrap();
       return;
     }
@@ -397,23 +400,39 @@ export class GymFacadeService {
   }
 
   async loadTrackerBootstrap(forceRefresh = false): Promise<void> {
+    if (this.trackerLoadPromise && !forceRefresh) {
+      await this.trackerLoadPromise;
+      return;
+    }
+
     this.errorMessage.set(null);
+    this.trackerBootstrapped = false;
 
+    const request = (async () => {
+      try {
+        const { dashboard, exercises, plans } = await loadTrackerBootstrapData(
+          this.trainingData,
+          this.selectedDate(),
+          forceRefresh
+        );
+
+        this.dashboardWeek.set(dashboard);
+        this.exercises.set(exercises);
+        this.plans.set(plans);
+        await this.syncSelectedWorkoutPreview(dashboard, forceRefresh);
+        this.trackerBootstrapped = true;
+      } catch (error: unknown) {
+        this.errorMessage.set(formatAppError(error, 'Gym Tracker konnte nicht geladen werden'));
+      }
+    })();
+
+    this.trackerLoadPromise = request;
     try {
-      const { dashboard, exercises, plans } = await loadTrackerBootstrapData(
-        this.trainingData,
-        this.selectedDate(),
-        forceRefresh
-      );
-
-      this.dashboardWeek.set(dashboard);
-      this.exercises.set(exercises);
-      this.plans.set(plans);
-      this.trackerBootstrapped = true;
-
-      await this.syncSelectedWorkoutPreview(dashboard, forceRefresh);
-    } catch (error: unknown) {
-      this.errorMessage.set(formatAppError(error, 'Gym Tracker konnte nicht geladen werden'));
+      await request;
+    } finally {
+      if (this.trackerLoadPromise === request) {
+        this.trackerLoadPromise = null;
+      }
     }
   }
 
@@ -1431,6 +1450,7 @@ export class GymFacadeService {
     });
     this.builderDays.set([]);
     this.trackerBootstrapped = false;
+    this.trackerLoadPromise = null;
     this.progressRequestId = 0;
     this.progressHydrationId = 0;
     this.activeGraphJourneyId = null;

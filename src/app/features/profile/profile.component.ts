@@ -15,6 +15,14 @@ import { InteractionTelemetryService } from '../../core/interaction-telemetry.se
 import { QueryCacheService } from '../../core/query-cache.service';
 import { PushNotificationService } from '../../core/push-notification.service';
 
+interface ProfileViewCache {
+  profile: Profile | null;
+  weightLogs: WeightLog[];
+  stepLogs: StepLog[];
+  gymWeekSessions: number;
+  fetchedAt: string;
+}
+
 @Component({
   selector: 'app-profile',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -788,6 +796,7 @@ export class ProfileComponent implements OnInit {
   ];
 
   private avatarFile: File | null = null;
+  private readonly profileCacheTtlMs = 1000 * 60 * 15;
 
   readonly profileForm = this.formBuilder.nonNullable.group({
     display_name: [''],
@@ -902,12 +911,25 @@ export class ProfileComponent implements OnInit {
   }
 
   async loadAll(): Promise<void> {
-    this.loading.set(true);
-    await this.loadProfile();
-    await this.loadWeightLogs();
-    await this.loadStepLogs();
-    await this.loadGymProgress();
-    this.loading.set(false);
+    const user = this.authService.user();
+    if (!user) {
+      return;
+    }
+
+    const fresh = this.queryCache.getFresh<ProfileViewCache>(this.profileCacheKey(user.id));
+    if (fresh) {
+      this.applyCachedProfileView(fresh);
+      return;
+    }
+
+    const stale = this.queryCache.getStale<ProfileViewCache>(this.profileCacheKey(user.id));
+    if (stale) {
+      this.applyCachedProfileView(stale);
+      void this.refreshAllFromNetwork(false);
+      return;
+    }
+
+    await this.refreshAllFromNetwork(true);
   }
 
   async loadProfile(): Promise<void> {
@@ -1151,7 +1173,7 @@ export class ProfileComponent implements OnInit {
       this.themeService.applySeed(normalizedThemeSeed, { persistLocal: true });
       this.queryCache.invalidatePrefix(`today:${user.id}:`);
       this.successMessage.set('Profil aktualisiert.');
-      await this.loadAll();
+      await this.refreshAllFromNetwork(true);
     } catch (error) {
       this.errorMessage.set(formatAppError(error, 'Profil konnte nicht gespeichert werden'));
     } finally {
@@ -1208,7 +1230,7 @@ export class ProfileComponent implements OnInit {
 
       this.successMessage.set('Gewichtseintrag gespeichert.');
       this.completeWeightJourney('profile_save');
-      await this.loadAll();
+      await this.refreshAllFromNetwork(true);
     } catch (error) {
       this.failWeightJourney('profile_save_failed');
       this.errorMessage.set(formatAppError(error, 'Gewichtseintrag konnte nicht gespeichert werden'));
@@ -1258,6 +1280,7 @@ export class ProfileComponent implements OnInit {
 
       this.successMessage.set('Schritte gespeichert.');
       await this.loadStepLogs();
+      this.syncProfileCache(user.id);
     } catch (error: unknown) {
       this.errorMessage.set(formatAppError(error, 'Schritteintrag konnte nicht gespeichert werden'));
     } finally {
@@ -1450,5 +1473,85 @@ export class ProfileComponent implements OnInit {
   applyThemeMode(mode: ThemeMode): void {
     this.profileForm.controls.theme_mode.setValue(mode);
     this.themeService.applyMode(mode, { persistLocal: false });
+  }
+
+  private async refreshAllFromNetwork(showLoading: boolean): Promise<void> {
+    const user = this.authService.user();
+    if (!user) {
+      return;
+    }
+
+    if (showLoading) {
+      this.loading.set(true);
+    }
+
+    try {
+      await this.loadProfile();
+      await this.loadWeightLogs();
+      await this.loadStepLogs();
+      await this.loadGymProgress();
+      this.syncProfileCache(user.id);
+    } finally {
+      if (showLoading) {
+        this.loading.set(false);
+      }
+    }
+  }
+
+  private applyCachedProfileView(snapshot: ProfileViewCache): void {
+    if (snapshot.profile) {
+      this.profile.set(snapshot.profile);
+      this.avatarPreview.set(snapshot.profile.avatar_url || null);
+      this.avatarFileName.set(null);
+      this.authService.setOnboardingCompleted(Boolean(snapshot.profile.onboarding_completed));
+      this.profileForm.patchValue({
+        display_name: snapshot.profile.display_name || '',
+        bio: snapshot.profile.bio || '',
+        gym_name: snapshot.profile.gym_name || '',
+        height_cm: Number(snapshot.profile.height_cm || 170),
+        current_weight_kg: Number(snapshot.profile.current_weight_kg || 70),
+        target_weight_kg: Number(snapshot.profile.target_weight_kg || 70),
+        weekly_gym_target: Number(snapshot.profile.weekly_gym_target || 3),
+        activity_level: (snapshot.profile.activity_level || 'moderate') as 'low' | 'moderate' | 'high',
+        track_steps: Boolean(snapshot.profile.track_steps),
+        daily_steps_target: Number(snapshot.profile.daily_steps_target || 8000),
+        theme_mode: this.themeService.getCurrentMode(),
+        theme_seed_color: snapshot.profile.theme_seed_color || this.themeService.getCurrentSeed()
+      });
+    }
+
+    this.weightLogs.set(snapshot.weightLogs);
+    this.stepLogs.set(snapshot.stepLogs);
+    this.gymWeekSessions.set(snapshot.gymWeekSessions);
+
+    const latestWeight = snapshot.weightLogs[0];
+    if (latestWeight) {
+      this.weightForm.patchValue({
+        logged_on: latestWeight.logged_on,
+        weight_kg: Number(latestWeight.weight_kg)
+      });
+    }
+
+    const latestStep = snapshot.stepLogs[0];
+    if (latestStep) {
+      this.stepForm.patchValue({
+        logged_on: latestStep.logged_on,
+        steps: Number(latestStep.steps)
+      });
+    }
+  }
+
+  private syncProfileCache(userId: string): void {
+    this.queryCache.set(this.profileCacheKey(userId), {
+      profile: this.profile(),
+      weightLogs: this.weightLogs(),
+      stepLogs: this.stepLogs(),
+      gymWeekSessions: this.gymWeekSessions(),
+      fetchedAt: new Date().toISOString()
+    }, this.profileCacheTtlMs);
+  }
+
+  private profileCacheKey(userId: string): string {
+    return `profile:view:${userId}`;
   }
 }

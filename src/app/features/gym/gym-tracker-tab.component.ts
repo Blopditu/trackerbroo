@@ -11,15 +11,20 @@ import { equipmentLabel } from './gym-view-utils';
   imports: [CommonModule, MatButtonModule, LucideAngularModule],
   template: `
     @if (selectedOverview()) {
-      <section class="panel quick-start-strip" aria-label="Schnellstart">
+      <section class="panel quick-start-strip session-launch-card" aria-label="Schnellstart">
         <div class="quick-start-copy">
-          <p class="muted">Ausgewählt</p>
+          <p class="eyebrow">Bereit für heute</p>
           <strong>{{ selectedOverview()!.dayName }}</strong>
-          <p class="muted">{{ selectedOverview()!.totalExercises }} Übungen • {{ selectedOverview()!.totalSets }} Sätze</p>
+          <p class="muted">{{ selectedOverview()!.planName }} • {{ selectedOverview()!.totalExercises }} Übungen • {{ selectedOverview()!.totalSets }} Sätze</p>
+          <div class="launch-preview">
+            @for (exercise of previewExercises(); track exercise.dayExerciseId) {
+              <span class="launch-preview-pill">{{ exercise.name }}</span>
+            }
+          </div>
         </div>
-        <button mat-flat-button type="button" class="action-btn" (click)="startWorkout.emit()">
+        <button mat-flat-button type="button" class="action-btn launch-btn" (click)="startWorkout.emit()">
           <lucide-icon [img]="playIcon" class="icon" aria-hidden="true"></lucide-icon>
-          Schnellstart
+          Session starten
         </button>
       </section>
     }
@@ -56,9 +61,9 @@ import { equipmentLabel } from './gym-view-utils';
       @if (dashboardWeek()?.activePlan) {
         <div class="active-plan-head">
           <div>
-            <p class="muted">Aktiver Plan</p>
+            <p class="eyebrow">Aktiver Plan</p>
             <h2>{{ dashboardWeek()!.activePlan!.name }}</h2>
-            <p class="muted">Woche {{ dashboardWeek()!.activePlan!.weekNumber }}</p>
+            <p class="muted">Woche {{ dashboardWeek()!.activePlan!.weekNumber }} • Öffne den passenden Tag und starte direkt</p>
           </div>
           <span class="mono-badge">{{ dashboardWeek()!.activePlan!.durationWeeks }} Wochen</span>
         </div>
@@ -68,7 +73,7 @@ import { equipmentLabel } from './gym-view-utils';
             <button type="button" class="workout-day" [class.completed]="workout.completed" (click)="openWorkout.emit(workout)">
               <div class="left">
                 <strong>{{ workout.dayNumber }} {{ workout.name }}</strong>
-                <p class="muted">{{ workout.exerciseCount }} Übungen</p>
+                <p class="muted">{{ workout.exerciseCount }} Übungen • {{ workout.completed ? 'Bereits geloggt' : 'Sofort bereit' }}</p>
               </div>
               <div class="right">
                 <span>{{ workout.completed ? 'Erledigt' : 'Öffnen' }}</span>
@@ -94,6 +99,7 @@ import { equipmentLabel } from './gym-view-utils';
       <section class="panel">
         <div class="overview-head">
           <div>
+            <p class="eyebrow">Workout im Überblick</p>
             <h2>{{ selectedOverview()!.dayName }}</h2>
             <p class="muted">{{ selectedOverview()!.planName }} • Woche {{ selectedOverview()!.weekNumber }}</p>
             <p class="muted">{{ selectedOverview()!.totalExercises }} Übungen • {{ selectedOverview()!.totalSets }} Sätze</p>
@@ -136,4 +142,8 @@ export class GymTrackerTabComponent {
   readonly checkIcon = Check;
   readonly playIcon = Play;
   readonly equipmentLabel = equipmentLabel;
+
+  previewExercises(): TrainingPlanOverview['exercises'] {
+    return this.selectedOverview()?.exercises.slice(0, 4) ?? [];
+  }
 }

@@ -56,18 +56,24 @@
         [ingredientSearch]="facade.ingredientSearch()"
         [marketFilter]="facade.marketFilter()"
         [marketSuggestions]="facade.marketSuggestions()"
-        [ingredients]="facade.filteredIngredients()"
+        [ingredients]="facade.visibleFilteredIngredients()"
+        [totalCount]="facade.filteredIngredients().length"
+        [hasMore]="facade.hasMoreFilteredIngredients()"
         (ingredientSearchChange)="facade.setIngredientSearch($event)"
         (marketFilterChange)="facade.setMarketFilter($event)"
         (openActions)="openIngredientActions($event)"
+        (showMore)="facade.showMoreIngredients()"
       />
     }
 
     @if (activeTab() === 'meals') {
       <app-library-meals-tab
         [loading]="facade.loadingMeals()"
-        [meals]="facade.mealListRows()"
+        [meals]="facade.visibleMealListRows()"
+        [totalCount]="facade.mealListRows().length"
+        [hasMore]="facade.hasMoreMeals()"
         (openActions)="openMealActions($event)"
+        (showMore)="facade.showMoreMeals()"
       />
     }
   </section>

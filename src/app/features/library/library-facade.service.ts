@@ -39,8 +39,13 @@ import {
   providedIn: 'root'
 })
 export class LibraryFacadeService {
+  private readonly ingredientChunkSize = 40;
+  private readonly mealChunkSize = 24;
+
   readonly activeTab = signal<'ingredients' | 'meals'>('ingredients');
   readonly scrollY = signal(0);
+  readonly ingredientVisibleCount = signal(this.ingredientChunkSize);
+  readonly mealVisibleCount = signal(this.mealChunkSize);
   readonly ingredients = signal<Ingredient[]>([]);
   readonly meals = signal<Meal[]>([]);
   readonly mealCosts = signal<Record<string, number>>({});
@@ -83,6 +88,14 @@ export class LibraryFacadeService {
     });
   });
 
+  readonly visibleFilteredIngredients = computed(() =>
+    this.filteredIngredients().slice(0, this.ingredientVisibleCount())
+  );
+
+  readonly hasMoreFilteredIngredients = computed(() =>
+    this.filteredIngredients().length > this.ingredientVisibleCount()
+  );
+
   readonly baseIngredientOptions = computed(() =>
     this.ingredients()
       .filter(ingredient => ingredient.source_type === 'blv_generic')
@@ -96,6 +109,14 @@ export class LibraryFacadeService {
       costLabel: formatCurrency(this.mealCosts()[meal.id] || 0),
       macros: this.mealMacros()[meal.id] || null
     }))
+  );
+
+  readonly visibleMealListRows = computed(() =>
+    this.mealListRows().slice(0, this.mealVisibleCount())
+  );
+
+  readonly hasMoreMeals = computed(() =>
+    this.mealListRows().length > this.mealVisibleCount()
   );
 
   readonly draftMealCostLabel = computed(() => {
@@ -242,15 +263,26 @@ export class LibraryFacadeService {
 
   setIngredientSearch(value: string): void {
     this.ingredientSearch.set(value);
+    this.resetIngredientRenderWindow();
   }
 
   setMarketFilter(value: string): void {
     this.marketFilter.set(value);
+    this.resetIngredientRenderWindow();
   }
 
   resetFilters(): void {
     this.ingredientSearch.set('');
     this.marketFilter.set('');
+    this.resetIngredientRenderWindow();
+  }
+
+  showMoreIngredients(): void {
+    this.ingredientVisibleCount.update(count => count + this.ingredientChunkSize);
+  }
+
+  showMoreMeals(): void {
+    this.mealVisibleCount.update(count => count + this.mealChunkSize);
   }
 
   openCreateIngredient(): void {
@@ -698,6 +730,8 @@ export class LibraryFacadeService {
   resetForUserChange(): void {
     this.activeTab.set('ingredients');
     this.scrollY.set(0);
+    this.ingredientVisibleCount.set(this.ingredientChunkSize);
+    this.mealVisibleCount.set(this.mealChunkSize);
     this.ingredients.set([]);
     this.meals.set([]);
     this.allMealItems.set([]);
@@ -722,5 +756,9 @@ export class LibraryFacadeService {
     this.mealsRequestId += 1;
     resetIngredientFormForCreate(this.ingredientForm);
     resetMealFormForCreate(this.formBuilder, this.mealForm);
+  }
+
+  private resetIngredientRenderWindow(): void {
+    this.ingredientVisibleCount.set(this.ingredientChunkSize);
   }
 }

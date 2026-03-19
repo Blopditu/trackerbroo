@@ -19,6 +19,8 @@ describe('LibraryMealsTabComponent', () => {
       costLabel: '2.50 EUR',
       macros: { kcal: 430, protein: 35, carbs: 42, fat: 8 }
     }]);
+    fixture.componentRef.setInput('totalCount', 1);
+    fixture.componentRef.setInput('hasMore', false);
     fixture.detectChanges();
   });
 

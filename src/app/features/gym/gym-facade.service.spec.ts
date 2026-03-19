@@ -311,6 +311,26 @@ describe('GymFacadeService', () => {
     expect(facade.progressLoaded()).toBe(false);
   });
 
+  it('waits for an in-flight bootstrap to finish before treating the tracker as ready', async () => {
+    const dashboardRequest = deferred<typeof dashboardWeek>();
+    const overviewRequest = deferred<typeof planOverview>();
+
+    trainingData.getDashboardWeek.mockImplementationOnce(() => dashboardRequest.promise);
+    trainingData.getPlanOverview.mockImplementationOnce(() => overviewRequest.promise);
+
+    const firstActivate = facade.activate();
+    dashboardRequest.resolve(dashboardWeek);
+
+    const secondActivate = facade.activate();
+    overviewRequest.resolve(planOverview);
+
+    await Promise.all([firstActivate, secondActivate]);
+
+    expect(trainingData.getDashboardWeek).toHaveBeenCalledTimes(1);
+    expect(trainingData.getPlanOverview).toHaveBeenCalledTimes(1);
+    expect(facade.selectedOverview()).toEqual(planOverview);
+  });
+
   it('reuses previous performance per exercise within the active session', async () => {
     facade.activeSession.set(session());
     facade.activeExerciseIndex.set(0);

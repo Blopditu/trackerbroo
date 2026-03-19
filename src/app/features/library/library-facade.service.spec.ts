@@ -213,6 +213,49 @@ describe('LibraryFacadeService', () => {
     expect(facade.mealsLoaded()).toBe(true);
   });
 
+  it('renders ingredients in chunks and resets the ingredient window when filters change', async () => {
+    const manyIngredients = Array.from({ length: 55 }, (_, index) => ({
+      ...ingredient,
+      id: `ingredient-${index + 1}`,
+      name: `Ingredient ${index + 1}`
+    }));
+
+    facade.ingredients.set(manyIngredients);
+    facade.ingredientsLoaded.set(true);
+
+    expect(facade.visibleFilteredIngredients().length).toBe(40);
+    expect(facade.hasMoreFilteredIngredients()).toBe(true);
+
+    facade.showMoreIngredients();
+
+    expect(facade.visibleFilteredIngredients().length).toBe(55);
+    expect(facade.hasMoreFilteredIngredients()).toBe(false);
+
+    facade.setIngredientSearch('Ingredient 1');
+
+    expect(facade.visibleFilteredIngredients().length).toBeLessThanOrEqual(40);
+    expect(facade.ingredientVisibleCount()).toBe(40);
+  });
+
+  it('renders meals in chunks without using infinite scrolling', async () => {
+    const manyMeals = Array.from({ length: 30 }, (_, index) => ({
+      ...meal,
+      id: `meal-${index + 1}`,
+      name: `Meal ${index + 1}`
+    }));
+
+    facade.meals.set(manyMeals);
+    facade.mealsLoaded.set(true);
+
+    expect(facade.visibleMealListRows().length).toBe(24);
+    expect(facade.hasMoreMeals()).toBe(true);
+
+    facade.showMoreMeals();
+
+    expect(facade.visibleMealListRows().length).toBe(30);
+    expect(facade.hasMoreMeals()).toBe(false);
+  });
+
   it('preserves hydrated state across activate calls and resets when the user changes', async () => {
     await facade.activateTab('meals');
     libraryData.loadIngredients.mockClear();

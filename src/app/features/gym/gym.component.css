@@ -654,3 +654,328 @@
     grid-column: 1 / -1;
   }
 }
+
+.eyebrow {
+  margin: 0;
+  color: var(--m3-sys-color-primary);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.session-launch-card {
+  border-color: color-mix(in srgb, var(--m3-sys-color-primary) 22%, var(--m3-sys-color-outline-variant));
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--m3-sys-color-primary) 10%, transparent), transparent 48%),
+    linear-gradient(180deg, color-mix(in srgb, var(--m3-sys-color-surface-container-high) 88%, var(--m3-sys-color-surface-container-low)), var(--m3-sys-color-surface-container-high));
+}
+
+.launch-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.launch-preview-pill {
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--m3-sys-color-surface-container) 82%, transparent);
+  border: 1px solid color-mix(in srgb, var(--m3-sys-color-outline-variant) 72%, transparent);
+  color: var(--m3-sys-color-on-surface-variant);
+  display: inline-flex;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.launch-btn {
+  min-height: 52px;
+  padding-inline: 22px;
+}
+
+.execution-rail {
+  gap: 10px;
+  padding-bottom: 6px;
+}
+
+.execution-rail-btn {
+  min-height: 76px;
+  min-width: 170px;
+  padding: 10px;
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  text-align: left;
+}
+
+.execution-rail-btn img,
+.execution-rail-fallback {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+}
+
+.execution-rail-btn img {
+  object-fit: cover;
+  border: 1px solid color-mix(in srgb, var(--m3-sys-color-outline-variant) 74%, transparent);
+}
+
+.execution-rail-fallback {
+  display: grid;
+  place-items: center;
+  background: var(--m3-sys-color-surface-container);
+  border: 1px solid color-mix(in srgb, var(--m3-sys-color-outline-variant) 74%, transparent);
+  color: var(--m3-sys-color-on-surface-variant);
+  font-weight: 800;
+}
+
+.execution-rail-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.execution-rail-copy strong,
+.execution-rail-copy span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.execution-rail-copy strong {
+  font-size: 13px;
+}
+
+.execution-rail-copy span {
+  color: var(--m3-sys-color-on-surface-variant);
+  font-size: 11px;
+}
+
+.exercise-detail-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.exercise-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.focus-card {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 22px;
+  border: 1px solid color-mix(in srgb, var(--m3-sys-color-primary) 24%, var(--m3-sys-color-outline-variant));
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--m3-sys-color-primary) 9%, var(--m3-sys-color-surface-container-high)), var(--m3-sys-color-surface-container));
+}
+
+.set-stack {
+  display: grid;
+  gap: 10px;
+}
+
+.set-card {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 22px;
+  border: 1px solid color-mix(in srgb, var(--m3-sys-color-outline-variant) 70%, transparent);
+  background: var(--m3-sys-color-surface-container);
+}
+
+.set-card.active {
+  border-color: color-mix(in srgb, var(--m3-sys-color-primary) 36%, var(--m3-sys-color-outline-variant));
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--m3-sys-color-primary) 10%, var(--m3-sys-color-surface-container-high)), var(--m3-sys-color-surface-container));
+}
+
+.set-card.done {
+  border-color: color-mix(in srgb, var(--success-500) 45%, var(--m3-sys-color-outline-variant));
+}
+
+.set-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.set-kicker {
+  margin: 0 0 4px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--m3-sys-color-on-surface-variant);
+}
+
+.set-state {
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: var(--m3-sys-color-surface-container-high);
+  color: var(--m3-sys-color-on-surface-variant);
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.set-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 52px;
+  gap: 10px;
+  align-items: end;
+}
+
+.set-field {
+  display: grid;
+  gap: 6px;
+}
+
+.set-field span {
+  color: var(--m3-sys-color-on-surface-variant);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.set-field input {
+  min-height: 52px;
+  min-width: 0;
+  width: 100%;
+  border: 1px solid var(--m3-sys-color-outline-variant);
+  border-radius: 16px;
+  background: var(--m3-sys-color-surface-container-highest);
+  color: var(--m3-sys-color-on-surface);
+  padding: 0 14px;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.quick-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.quick-chip {
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--m3-sys-color-outline-variant) 72%, transparent);
+  background: var(--m3-sys-color-surface-container-high);
+  color: var(--m3-sys-color-on-surface);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.history-card {
+  border-top: 0;
+  padding-top: 0;
+  padding: 14px;
+  border-radius: 22px;
+  background: color-mix(in srgb, var(--m3-sys-color-surface-container) 86%, var(--m3-sys-color-surface-container-high));
+  border: 1px solid color-mix(in srgb, var(--m3-sys-color-outline-variant) 72%, transparent);
+}
+
+.history-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.history-lines {
+  display: grid;
+  gap: 6px;
+}
+
+.progress-feature-card {
+  gap: 14px;
+}
+
+.progress-exercise-field {
+  flex: 1 1 280px;
+}
+
+.progress-exercise-meta {
+  display: grid;
+  gap: 4px;
+}
+
+.progress-graph-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.graph-card-volume .graph polyline {
+  stroke: color-mix(in srgb, var(--m3-sys-color-tertiary) 78%, var(--m3-sys-color-primary));
+}
+
+.previous-block-structured {
+  gap: 10px;
+}
+
+.session-history-row {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--m3-sys-color-surface-container);
+  border: 1px solid color-mix(in srgb, var(--m3-sys-color-outline-variant) 70%, transparent);
+}
+
+@media (max-width: 640px) {
+  .exercise-detail-head,
+  .history-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .execution-rail-btn {
+    min-width: 148px;
+  }
+
+  .set-grid {
+    grid-template-columns: 1fr 1fr 46px;
+    gap: 8px;
+  }
+
+  .progress-graph-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 420px) {
+  .launch-btn {
+    width: 100%;
+  }
+
+  .execution-rail-btn {
+    min-width: 136px;
+    grid-template-columns: 42px minmax(0, 1fr);
+  }
+
+  .execution-rail-btn img,
+  .execution-rail-fallback {
+    width: 42px;
+    height: 42px;
+  }
+
+  .set-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .check-btn {
+    width: 100%;
+  }
+}
