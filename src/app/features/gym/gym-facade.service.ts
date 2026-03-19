@@ -27,24 +27,40 @@ import {
 import { addDays, calculateVolume, startOfIsoWeek, toIsoDate } from '../../core/training/training-utils';
 import { applyPreviousWorkoutPrefill, carryForwardCompletedSet } from './gym-execution-utils';
 import {
+  appendBuilderDay,
+  appendBuilderExercise,
+  BuilderDayDraft,
+  syncBuilderDays,
+  updateBuilderDayMuscles,
+  updateBuilderDayName,
+  updateBuilderExercise,
+  removeBuilderExerciseAt
+} from './gym-builder-helpers';
+import { buildWorkoutShareSuggestion } from './gym-community-share';
+import {
+  areAllSessionExercisesCompleted,
+  findNextIncompleteExerciseIndex,
+  findSetByClientRef,
+  findSetContext,
+  replaceExerciseSets,
+  updateSetByClientRef
+} from './gym-session-state';
+import {
+  buildProgressDateRange,
+  clearProgressSeries,
+  shouldHydrateProgress,
+  sortWidgetsByPosition
+} from './gym-progress-loaders';
+import { selectTrackedWorkoutDay, shouldRefreshWorkoutPreview } from './gym-tracker-loaders';
+import {
   buildExerciseProgressRows,
   detailChartPoints,
   ExerciseProgressRow,
   graphTitle
 } from './gym-view-utils';
 
-export interface BuilderDayDraft {
-  name: string;
-  targetMuscles: string;
-  exercises: Array<{
-    exerciseId: string;
-    sets: number;
-    targetReps: number | null;
-    targetSeconds: number | null;
-  }>;
-}
-
 type DetailSource = 'widget' | 'progress-10rm' | 'progress-volume';
+const initialWorkoutShare = buildWorkoutShareSuggestion(1);
 
 @Injectable()
 export class GymFacadeService {
@@ -86,9 +102,9 @@ export class GymFacadeService {
   readonly progressLoaded = signal(false);
   readonly progressDirty = signal(false);
 
-  readonly workoutShareSuggestion = signal('1/3 Workouts diese Woche');
+  readonly workoutShareSuggestion = signal(initialWorkoutShare.suggestion);
   readonly workoutSharePhotoName = signal<string | null>(null);
-  readonly workoutShareNote = signal('');
+  readonly workoutShareNote = signal(initialWorkoutShare.note);
   readonly sharingWorkoutPost = signal(false);
   readonly lastCompletedSessionDay = signal<string | null>(null);
 
@@ -322,7 +338,7 @@ export class GymFacadeService {
   }
 
   async activateProgressTab(): Promise<void> {
-    if (this.progressLoaded() && !this.progressDirty()) {
+    if (!shouldHydrateProgress(this.progressLoaded(), this.progressDirty())) {
       return;
     }
 
@@ -392,7 +408,7 @@ export class GymFacadeService {
       }
 
       this.personalStats.set(personalStats);
-      this.widgets.set([...widgets].sort((a, b) => a.position - b.position));
+      this.widgets.set(sortWidgetsByPosition(widgets));
       await this.loadSelectedExerciseProgress(forceRefresh);
 
       if (hydrationId !== this.progressHydrationId) {
@@ -563,7 +579,7 @@ export class GymFacadeService {
       draft.volume = calculateVolume(draft.weightKg, draft.reps);
     });
 
-    const currentSet = this.findSetByClientRef(setRow.clientRef);
+    const currentSet = findSetByClientRef(this.activeSession(), setRow.clientRef);
     if (!currentSet) {
       return;
     }
@@ -593,21 +609,21 @@ export class GymFacadeService {
       return;
     }
 
-    const nextOpenIndex = this.findNextIncompleteExerciseIndex(updatedSession, this.activeExerciseIndex() + 1);
+    const nextOpenIndex = findNextIncompleteExerciseIndex(updatedSession, this.activeExerciseIndex() + 1);
     if (nextOpenIndex >= 0) {
       this.setActiveExercise(nextOpenIndex);
       this.successMessage.set(`"${updatedExercise.name}" abgeschlossen. Weiter zur nächsten Übung.`);
       return;
     }
 
-    const fallbackOpenIndex = this.findNextIncompleteExerciseIndex(updatedSession, 0);
+    const fallbackOpenIndex = findNextIncompleteExerciseIndex(updatedSession, 0);
     if (fallbackOpenIndex >= 0 && fallbackOpenIndex !== this.activeExerciseIndex()) {
       this.setActiveExercise(fallbackOpenIndex);
       this.successMessage.set(`"${updatedExercise.name}" abgeschlossen. Weiter zur nächsten offenen Übung.`);
       return;
     }
 
-    if (this.areAllSessionExercisesCompleted(updatedSession)) {
+    if (areAllSessionExercisesCompleted(updatedSession)) {
       this.successMessage.set('Alle Übungen abgeschlossen. Workout jetzt beenden.');
     }
   }
@@ -627,8 +643,8 @@ export class GymFacadeService {
       try {
         await this.prepareWorkoutShareSuggestion(session.sessionDate);
       } catch {
-        this.workoutShareSuggestion.set('1/3 Workouts diese Woche');
-        this.workoutShareNote.set('Gym erledigt 1/3 diese Woche 💪');
+        this.workoutShareSuggestion.set(initialWorkoutShare.suggestion);
+        this.workoutShareNote.set(initialWorkoutShare.note);
       }
 
       this.successMessage.set('Workout abgeschlossen.');
@@ -941,47 +957,24 @@ export class GymFacadeService {
   resetWorkoutShareState(): void {
     this.workoutSharePhoto = null;
     this.workoutSharePhotoName.set(null);
-    this.workoutShareSuggestion.set('1/3 Workouts diese Woche');
-    this.workoutShareNote.set('');
+    const initialShare = buildWorkoutShareSuggestion(1);
+    this.workoutShareSuggestion.set(initialShare.suggestion);
+    this.workoutShareNote.set(initialShare.note);
     this.lastCompletedSessionDay.set(null);
   }
 
   syncBuilderDayCount(): void {
     const targetDays = Number(this.planMetaForm.controls.daysPerWeek.value || 1);
-    const existing = [...this.builderDays()];
-
-    if (existing.length < targetDays) {
-      const fallbackExerciseId = this.exercises()[0]?.id || '';
-      for (let i = existing.length; i < targetDays; i += 1) {
-        existing.push({
-          name: `Day ${i + 1}`,
-          targetMuscles: '',
-          exercises: fallbackExerciseId
-            ? [{ exerciseId: fallbackExerciseId, sets: 3, targetReps: 8, targetSeconds: null }]
-            : []
-        });
-      }
-    } else if (existing.length > targetDays) {
-      existing.length = targetDays;
-    }
-
-    this.builderDays.set(existing);
+    const fallbackExerciseId = this.exercises()[0]?.id || '';
+    this.builderDays.set(syncBuilderDays(this.builderDays(), targetDays, fallbackExerciseId));
   }
 
   setBuilderDayName(dayIndex: number, value: string): void {
-    this.builderDays.update(days => {
-      const next = [...days];
-      next[dayIndex] = { ...next[dayIndex], name: value };
-      return next;
-    });
+    this.builderDays.update(days => updateBuilderDayName(days, dayIndex, value));
   }
 
   setBuilderDayMuscles(dayIndex: number, value: string): void {
-    this.builderDays.update(days => {
-      const next = [...days];
-      next[dayIndex] = { ...next[dayIndex], targetMuscles: value };
-      return next;
-    });
+    this.builderDays.update(days => updateBuilderDayMuscles(days, dayIndex, value));
   }
 
   setBuilderExercise(
@@ -990,25 +983,7 @@ export class GymFacadeService {
     field: 'exerciseId' | 'sets' | 'targetReps',
     value: string
   ): void {
-    this.builderDays.update(days => {
-      const next = [...days];
-      const day = { ...next[dayIndex] };
-      const exercises = [...day.exercises];
-      const row = { ...exercises[exerciseIndex] };
-
-      if (field === 'exerciseId') {
-        row.exerciseId = value;
-      } else if (field === 'sets') {
-        row.sets = Math.max(1, Number(value || 1));
-      } else {
-        row.targetReps = value ? Math.max(1, Number(value)) : null;
-      }
-
-      exercises[exerciseIndex] = row;
-      day.exercises = exercises;
-      next[dayIndex] = day;
-      return next;
-    });
+    this.builderDays.update(days => updateBuilderExercise(days, dayIndex, exerciseIndex, field, value));
   }
 
   addBuilderExercise(dayIndex: number): void {
@@ -1018,29 +993,11 @@ export class GymFacadeService {
       return;
     }
 
-    this.builderDays.update(days => {
-      const next = [...days];
-      next[dayIndex] = {
-        ...next[dayIndex],
-        exercises: [
-          ...next[dayIndex].exercises,
-          { exerciseId: fallbackExerciseId, sets: 3, targetReps: 8, targetSeconds: null }
-        ]
-      };
-      return next;
-    });
+    this.builderDays.update(days => appendBuilderExercise(days, dayIndex, fallbackExerciseId));
   }
 
   removeBuilderExercise(dayIndex: number, exerciseIndex: number): void {
-    this.builderDays.update(days => {
-      const next = [...days];
-      const day = next[dayIndex];
-      next[dayIndex] = {
-        ...day,
-        exercises: day.exercises.filter((_, index) => index !== exerciseIndex)
-      };
-      return next;
-    });
+    this.builderDays.update(days => removeBuilderExerciseAt(days, dayIndex, exerciseIndex));
   }
 
   addBuilderDay(): void {
@@ -1049,16 +1006,7 @@ export class GymFacadeService {
     }
 
     const fallbackExerciseId = this.exercises()[0]?.id || '';
-    this.builderDays.update(days => [
-      ...days,
-      {
-        name: `Day ${days.length + 1}`,
-        targetMuscles: '',
-        exercises: fallbackExerciseId
-          ? [{ exerciseId: fallbackExerciseId, sets: 3, targetReps: 8, targetSeconds: null }]
-          : []
-      }
-    ]);
+    this.builderDays.update(days => appendBuilderDay(days, fallbackExerciseId));
   }
 
   detailPointLabel(pointDate: string, value: number): string {
@@ -1083,8 +1031,7 @@ export class GymFacadeService {
     forceSessionRefresh = false
   ): Promise<void> {
     const selectedDayId = this.selectedWorkoutDay()?.dayId || null;
-    const nextWorkout =
-      dashboard.workoutDays.find(workout => workout.dayId === selectedDayId) || dashboard.workoutDays[0] || null;
+    const nextWorkout = selectTrackedWorkoutDay(dashboard, selectedDayId);
 
     this.selectedWorkoutDay.set(nextWorkout);
 
@@ -1093,8 +1040,13 @@ export class GymFacadeService {
       return;
     }
 
-    const needsOverview = this.selectedOverview()?.dayId !== nextWorkout.dayId || forceSessionRefresh;
-    if (!needsOverview && !nextWorkout.currentSessionClientRef) {
+    const shouldRefresh = shouldRefreshWorkoutPreview({
+      currentOverviewDayId: this.selectedOverview()?.dayId || null,
+      nextWorkoutDayId: nextWorkout.dayId,
+      currentSessionClientRef: nextWorkout.currentSessionClientRef,
+      forceSessionRefresh
+    });
+    if (!shouldRefresh) {
       return;
     }
 
@@ -1105,7 +1057,7 @@ export class GymFacadeService {
     this.resetExecutionPrefillState();
     this.resetPreviousPerformanceCache();
     this.activeSession.set(session);
-    const nextOpenIndex = this.findNextIncompleteExerciseIndex(session, 0);
+    const nextOpenIndex = findNextIncompleteExerciseIndex(session, 0);
     this.activeExerciseIndex.set(nextOpenIndex >= 0 ? nextOpenIndex : 0);
     void this.refreshPreviousPerformance();
   }
@@ -1141,14 +1093,14 @@ export class GymFacadeService {
   private async loadSelectedExerciseProgress(forceRefresh = false): Promise<void> {
     const exerciseId = this.selectedProgressExerciseId();
     if (!exerciseId) {
-      this.tenRmSeries.set([]);
-      this.exerciseVolumeSeries.set([]);
+      const emptySeries = clearProgressSeries();
+      this.tenRmSeries.set(emptySeries.tenRmSeries);
+      this.exerciseVolumeSeries.set(emptySeries.exerciseVolumeSeries);
       return;
     }
 
     const requestId = ++this.progressRequestId;
-    const to = toIsoDate(new Date());
-    const from = toIsoDate(addDays(new Date(), -(this.progressRangeDays() - 1)));
+    const { from, to } = buildProgressDateRange(this.progressRangeDays());
 
     const [tenRm, volume] = await Promise.all([
       this.trainingData.getProgressSeries({
@@ -1174,11 +1126,9 @@ export class GymFacadeService {
     const weekStart = toIsoDate(weekStartDate);
     const weekEnd = toIsoDate(addDays(weekStartDate, 6));
     const completedThisWeek = await this.trainingData.getCompletedWorkoutCountForRange(weekStart, weekEnd);
-    const level = Math.min(Math.max(completedThisWeek, 1), 3);
-    const progressLabel = `${level}/3`;
-
-    this.workoutShareSuggestion.set(`${progressLabel} Workouts diese Woche`);
-    this.workoutShareNote.set(`Gym erledigt ${progressLabel} diese Woche 💪`);
+    const share = buildWorkoutShareSuggestion(completedThisWeek);
+    this.workoutShareSuggestion.set(share.suggestion);
+    this.workoutShareNote.set(share.note);
   }
 
   private async uploadGymImage(file: File, userId: string): Promise<string> {
@@ -1205,56 +1155,6 @@ export class GymFacadeService {
     };
   }
 
-  private findSetByClientRef(clientRef: string): TrainingExecutionSet | null {
-    const session = this.activeSession();
-    if (!session) {
-      return null;
-    }
-
-    for (const exercise of session.exercises) {
-      const hit = exercise.sets.find(setRow => setRow.clientRef === clientRef);
-      if (hit) {
-        return hit;
-      }
-    }
-
-    return null;
-  }
-
-  private findSetContext(clientRef: string): { exercise: TrainingExecutionExercise; setRow: TrainingExecutionSet } | null {
-    const session = this.activeSession();
-    if (!session) {
-      return null;
-    }
-
-    for (const exercise of session.exercises) {
-      const setRow = exercise.sets.find(setItem => setItem.clientRef === clientRef);
-      if (setRow) {
-        return { exercise, setRow };
-      }
-    }
-
-    return null;
-  }
-
-  private isExerciseCompleted(exercise: TrainingExecutionExercise): boolean {
-    return exercise.sets.length > 0 && exercise.sets.every(setRow => setRow.isCompleted);
-  }
-
-  private findNextIncompleteExerciseIndex(session: TrainingExecutionSession, startIndex: number): number {
-    for (let index = Math.max(0, startIndex); index < session.exercises.length; index += 1) {
-      if (!this.isExerciseCompleted(session.exercises[index])) {
-        return index;
-      }
-    }
-
-    return -1;
-  }
-
-  private areAllSessionExercisesCompleted(session: TrainingExecutionSession): boolean {
-    return session.exercises.every(exercise => this.isExerciseCompleted(exercise));
-  }
-
   private applyCurrentExerciseHistoryPrefill(): void {
     const session = this.activeSession();
     const exercise = this.currentExercise();
@@ -1279,20 +1179,14 @@ export class GymFacadeService {
         return current;
       }
 
-      return {
-        ...current,
-        exercises: current.exercises.map(currentExercise =>
-          currentExercise.sessionExerciseId === exercise.sessionExerciseId
-            ? {
-                ...currentExercise,
-                sets: nextSets.map(setRow => ({
-                  ...setRow,
-                  volume: calculateVolume(setRow.weightKg, setRow.reps)
-                }))
-              }
-            : currentExercise
-        )
-      };
+      return replaceExerciseSets(
+        current,
+        exercise.sessionExerciseId,
+        nextSets.map(setRow => ({
+          ...setRow,
+          volume: calculateVolume(setRow.weightKg, setRow.reps)
+        }))
+      );
     });
   }
 
@@ -1312,20 +1206,14 @@ export class GymFacadeService {
         return current;
       }
 
-      return {
-        ...current,
-        exercises: current.exercises.map(currentExercise =>
-          currentExercise.sessionExerciseId === exercise.sessionExerciseId
-            ? {
-                ...currentExercise,
-                sets: nextSets.map(setRow => ({
-                  ...setRow,
-                  volume: calculateVolume(setRow.weightKg, setRow.reps)
-                }))
-              }
-            : currentExercise
-        )
-      };
+      return replaceExerciseSets(
+        current,
+        exercise.sessionExerciseId,
+        nextSets.map(setRow => ({
+          ...setRow,
+          volume: calculateVolume(setRow.weightKg, setRow.reps)
+        }))
+      );
     });
 
     return carriedSetClientRef;
@@ -1349,7 +1237,7 @@ export class GymFacadeService {
 
   private async persistSetLog(clientRef: string): Promise<void> {
     const session = this.activeSession();
-    const context = this.findSetContext(clientRef);
+    const context = findSetContext(session, clientRef);
     if (!session || !context) {
       return;
     }
@@ -1440,22 +1328,11 @@ export class GymFacadeService {
         return current;
       }
 
-      const exercises = current.exercises.map(exercise => ({
-        ...exercise,
-        sets: exercise.sets.map(setRow => {
-          if (setRow.clientRef !== clientRef) {
-            return setRow;
-          }
-          const next = { ...setRow };
-          updater(next);
-          return next;
-        })
-      }));
-
-      return {
-        ...current,
-        exercises
-      };
+      return updateSetByClientRef(current, clientRef, setRow => {
+        const next = { ...setRow };
+        updater(next);
+        return next;
+      });
     });
   }
 }

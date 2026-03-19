@@ -1,0 +1,255 @@
+.library-page {
+  gap: var(--layout-gap);
+}
+
+.tab-toggle {
+  display: inline-flex;
+  border: 1px solid var(--m3-sys-color-outline-variant);
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--m3-sys-color-surface-container-high);
+}
+
+.tab-toggle-btn {
+  min-height: var(--touch-target);
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--m3-sys-color-on-surface-variant);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  padding: 0 16px;
+}
+
+.tab-toggle-btn.active {
+  background: var(--m3-sys-color-secondary-container);
+  color: var(--m3-sys-color-on-secondary-container);
+}
+
+h1 {
+  margin-top: 0.2rem;
+  font-size: clamp(1.85rem, 4vw, 2.25rem);
+  line-height: 1.06;
+}
+
+.lead {
+  margin: 0.35rem 0 0;
+  color: var(--m3-sys-color-on-surface-variant);
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.toolbar {
+  margin-top: 0.7rem;
+  display: grid;
+  gap: 0.55rem;
+  grid-template-columns: 1fr minmax(148px, 220px);
+}
+
+.list-head {
+  margin-top: 0.65rem;
+}
+
+.items-list {
+  margin-top: 0.7rem;
+  display: grid;
+  gap: 0.65rem;
+  contain: layout style;
+}
+
+.sub {
+  margin-top: 0.2rem;
+  color: var(--m3-sys-color-on-surface-variant);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.ingredient-card,
+.meal-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 0.9rem;
+  padding: 0.95rem 1rem;
+  border-radius: 24px;
+  content-visibility: auto;
+  contain-intrinsic-size: 132px;
+}
+
+.card-copy {
+  display: grid;
+  gap: 0.55rem;
+  min-width: 0;
+}
+
+.card-copy strong {
+  display: block;
+  font-size: 1.05rem;
+  line-height: 1.2;
+  color: var(--m3-sys-color-on-surface);
+}
+
+.meta-pills,
+.macro-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.meta-pill,
+.macro-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  border-radius: 999px;
+  padding: 0 0.7rem;
+  font-size: 0.76rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.meta-pill {
+  background: color-mix(in srgb, var(--m3-sys-color-surface-container-highest) 76%, transparent);
+  color: var(--m3-sys-color-on-surface-variant);
+  border: 1px solid color-mix(in srgb, var(--m3-sys-color-outline-variant) 70%, transparent);
+}
+
+.macro-pill {
+  background: color-mix(in srgb, var(--m3-sys-color-secondary-container) 70%, var(--m3-sys-color-surface) 30%);
+  color: var(--m3-sys-color-on-secondary-container);
+  border: 1px solid color-mix(in srgb, var(--m3-sys-color-secondary-container) 92%, transparent);
+}
+
+.macro-pill-kcal {
+  background: color-mix(in srgb, var(--m3-sys-color-primary-container) 76%, var(--m3-sys-color-surface) 24%);
+  color: var(--m3-sys-color-on-primary-container);
+  border-color: color-mix(in srgb, var(--m3-sys-color-primary-container) 88%, transparent);
+}
+
+.library-edit-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  border: 1px solid var(--m3-sys-color-outline-variant);
+  background: var(--m3-sys-color-surface-container-high);
+  color: var(--m3-sys-color-on-surface-variant);
+  display: grid;
+  place-items: center;
+  margin-top: 0.1rem;
+}
+
+.library-edit-btn lucide-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.stack-form {
+  display: grid;
+  gap: 0.7rem;
+  margin-top: 0.7rem;
+}
+
+.stack-form textarea {
+  min-height: 88px;
+  resize: vertical;
+}
+
+.ingredient-primary-macros {
+  gap: 0.7rem;
+}
+
+.ingredient-details {
+  margin-top: -0.1rem;
+}
+
+.details-toggle {
+  justify-self: start;
+}
+
+.meal-items {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.cost-preview {
+  margin: 0.1rem 0 0;
+  font-weight: 800;
+  color: var(--m3-sys-color-on-surface);
+}
+
+.meal-item {
+  display: grid;
+  grid-template-columns: 1fr 120px auto;
+  gap: 0.55rem;
+  align-items: start;
+}
+
+.meal-field .mat-mdc-form-field-subscript-wrapper {
+  display: none;
+}
+
+.meal-field.grams {
+  max-width: 120px;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.3rem;
+}
+
+.modal-actions button {
+  flex: 1;
+}
+
+.sheet-preview {
+  border: 1px solid var(--m3-sys-color-outline-variant);
+  border-radius: 16px;
+  background: var(--m3-sys-color-surface-container-high);
+  padding: 0.85rem 0.95rem;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.sheet-preview strong {
+  font-size: 1rem;
+  color: var(--m3-sys-color-on-surface);
+}
+
+.action-sheet-list {
+  margin-top: 0.6rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.action-sheet-list .action-btn {
+  width: 100%;
+  justify-content: center;
+}
+
+.library-modal-card {
+  max-width: 620px;
+}
+
+.grid-two {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+@media (max-width: 480px) {
+  .toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .meal-item,
+  .grid-two {
+    grid-template-columns: 1fr;
+  }
+
+  .ingredient-card,
+  .meal-card {
+    grid-template-columns: minmax(0, 1fr) 44px;
+    gap: 0.7rem;
+  }
+}

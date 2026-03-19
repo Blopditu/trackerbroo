@@ -1,0 +1,201 @@
+<main class="page gym-page">
+  @if (facade.errorMessage()) {
+    <p class="toast error" role="status" aria-live="polite" aria-atomic="true">{{ facade.errorMessage() }}</p>
+  }
+
+  @if (facade.successMessage()) {
+    <p class="toast success" role="status" aria-live="polite" aria-atomic="true">{{ facade.successMessage() }}</p>
+  }
+
+  <header class="panel hero">
+    <p class="title-font">Gym</p>
+    <h1>Krafttracker</h1>
+    <div class="hero-controls">
+      <div class="gym-tabs" role="tablist" aria-label="Gym Ansicht">
+        <button
+          type="button"
+          role="tab"
+          class="gym-tab-btn"
+          [class.active]="activeTab() === 'tracker'"
+          [attr.aria-selected]="activeTab() === 'tracker'"
+          [attr.tabindex]="activeTab() === 'tracker' ? 0 : -1"
+          (click)="onHeroTabChange('tracker')"
+        >
+          <lucide-icon [img]="dumbbellIcon" class="icon" aria-hidden="true"></lucide-icon>
+          Tracker
+        </button>
+        <button
+          type="button"
+          role="tab"
+          class="gym-tab-btn"
+          [class.active]="activeTab() === 'progress'"
+          [attr.aria-selected]="activeTab() === 'progress'"
+          [attr.tabindex]="activeTab() === 'progress' ? 0 : -1"
+          (click)="onHeroTabChange('progress')"
+        >
+          <lucide-icon [img]="barChartIcon" class="icon" aria-hidden="true"></lucide-icon>
+          Progress
+        </button>
+      </div>
+      <button mat-icon-button type="button" class="hero-profile-btn" routerLink="/profile" aria-label="Profil öffnen">
+        <lucide-icon [img]="userIcon" class="icon" aria-hidden="true"></lucide-icon>
+      </button>
+    </div>
+  </header>
+
+  @if (activeTab() === 'tracker' && !facade.activeSession()) {
+    <app-gym-tracker-tab
+      [dashboardWeek]="facade.dashboardWeek()"
+      [selectedDate]="facade.selectedDate()"
+      [selectedOverview]="facade.selectedOverview()"
+      (prevWeek)="facade.goPrevWeek()"
+      (nextWeek)="facade.goNextWeek()"
+      (selectDate)="facade.onSelectDate($event)"
+      (openWorkout)="facade.openWorkoutPreview($event)"
+      (openSessionHub)="openSessionHub($event)"
+      (startWorkout)="facade.startWorkout()"
+    />
+  }
+
+  @if (activeTab() === 'tracker' && facade.activeSession()) {
+    <app-gym-execution-panel
+      [session]="facade.activeSession()"
+      [activeExerciseIndex]="facade.activeExerciseIndex()"
+      [currentExercise]="facade.currentExercise()"
+      [previousPerformance]="facade.previousPerformance()"
+      [currentExerciseSaveHint]="facade.currentExerciseSaveHint()"
+      (selectExercise)="facade.setActiveExercise($event)"
+      (setInput)="onSetInput($event)"
+      (toggleSetComplete)="facade.toggleSetComplete($event)"
+      (previousExercise)="facade.goToPreviousExercise()"
+      (nextExercise)="facade.goToNextExercise()"
+      (finishWorkout)="onFinishWorkout()"
+    />
+  }
+
+  @if (activeTab() === 'progress') {
+    <app-gym-progress-tab
+      [personalStats]="facade.personalStats()"
+      [activePlanStatLabel]="facade.activePlanStatLabel()"
+      [latestBodyweightStatLabel]="facade.latestBodyweightStatLabel()"
+      [measurementForm]="facade.measurementForm"
+      [progressRangeDays]="facade.progressRangeDays()"
+      [exercises]="facade.exercises()"
+      [selectedProgressExerciseId]="facade.selectedProgressExerciseId()"
+      [selectedProgressExercise]="facade.selectedProgressExercise()"
+      [bestTenRmLabel]="facade.bestTenRmLabel()"
+      [latestSessionVolumeLabel]="facade.latestSessionVolumeLabel()"
+      [progressSessionCountLabel]="facade.progressSessionCountLabel()"
+      [progressRangeLabel]="facade.progressRangeLabel()"
+      [tenRmSeries]="facade.tenRmSeries()"
+      [progressSessionRows]="facade.progressSessionRows()"
+      (saveMeasurement)="facade.saveMeasurement(true)"
+      (setProgressRange)="facade.setProgressRangeDays($event)"
+      (selectExercise)="facade.onProgressExerciseChange($event)"
+      (openProgressDetail)="openProgressDetail($event)"
+    />
+  }
+</main>
+
+<app-bottom-sheet [open]="activeSheet() === 'hub'" [title]="sessionHubTitle()" (closed)="closeSheet()">
+  <app-gym-session-hub-sheet
+    [tab]="sessionHubTab()"
+    [plans]="facade.plans()"
+    [activeExerciseFilterCount]="facade.activeExerciseFilterCount()"
+    [exerciseEquipmentFilter]="facade.exerciseEquipmentFilter()"
+    [exerciseMuscleFilter]="facade.exerciseMuscleFilter()"
+    [exerciseEquipmentOptions]="facade.exerciseEquipmentOptions()"
+    [exerciseMuscleOptions]="facade.exerciseMuscleOptions()"
+    [filteredExerciseLibrary]="facade.filteredExerciseLibrary()"
+    [exercisesCount]="facade.exercises().length"
+    (tabChange)="sessionHubTab.set($event)"
+    (startPlanBuilder)="startPlanBuilder()"
+    (activatePlan)="facade.activatePlan($event)"
+    (equipmentFilterChange)="facade.onExerciseEquipmentFilterChange($event)"
+    (muscleFilterChange)="facade.onExerciseMuscleFilterChange($event)"
+    (resetFilters)="facade.resetExerciseFilters()"
+  />
+</app-bottom-sheet>
+
+<app-bottom-sheet [open]="activeSheet() === 'builder'" [closeOnBackdrop]="false" title="Plan Builder" (closed)="closeSheet()">
+  <app-gym-plan-builder-sheet
+    [planMetaForm]="facade.planMetaForm"
+    [frequencies]="facade.frequencies"
+    [builderDays]="facade.builderDays()"
+    [exercises]="facade.exercises()"
+    (syncDayCount)="facade.syncBuilderDayCount()"
+    (dayNameChange)="facade.setBuilderDayName($event.dayIndex, $event.value)"
+    (dayMusclesChange)="facade.setBuilderDayMuscles($event.dayIndex, $event.value)"
+    (exerciseChange)="facade.setBuilderExercise($event.dayIndex, $event.exerciseIndex, $event.field, $event.value)"
+    (addExercise)="facade.addBuilderExercise($event)"
+    (removeExercise)="facade.removeBuilderExercise($event.dayIndex, $event.exerciseIndex)"
+    (addDay)="facade.addBuilderDay()"
+    (savePlan)="onSavePlan()"
+  />
+</app-bottom-sheet>
+
+<app-bottom-sheet [open]="activeSheet() === 'session-share'" [closeOnBackdrop]="false" title="Workout teilen" (closed)="closeSheet()">
+  <app-gym-session-share-sheet
+    [suggestion]="facade.workoutShareSuggestion()"
+    [note]="facade.workoutShareNote()"
+    [photoName]="facade.workoutSharePhotoName()"
+    [sharing]="facade.sharingWorkoutPost()"
+    (noteChange)="facade.setWorkoutShareNote($event)"
+    (photoChange)="facade.setWorkoutSharePhoto($event)"
+    (submit)="submitSessionCommunityPost()"
+    (skip)="skipSessionShare()"
+  />
+</app-bottom-sheet>
+
+<app-bottom-sheet [open]="activeSheet() === 'graphs'" [closeOnBackdrop]="false" title="Graph hinzufuegen" (closed)="closeSheet()">
+  <form class="sheet-stack" [formGroup]="facade.graphForm" (ngSubmit)="onAddGraphWidget()">
+    <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Graph-Typ</mat-label>
+      <mat-select id="graph-type" formControlName="graphType">
+        <mat-option value="workout_count">Workouts pro Woche</mat-option>
+        <mat-option value="exercise_10rm">Übung: 10RM-Verlauf</mat-option>
+        <mat-option value="muscle_volume">Muskelgruppen-Volumen</mat-option>
+        <mat-option value="bodyweight">Koerpergewicht</mat-option>
+        <mat-option value="total_volume">Gesamtvolumen</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    @if (facade.graphForm.value.graphType === 'exercise_10rm') {
+      <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Übung</mat-label>
+        <mat-select id="graph-exercise" formControlName="exerciseId">
+          <mat-option value="">Bitte wählen</mat-option>
+          @for (exercise of facade.exercises(); track exercise.id) {
+            <mat-option [value]="exercise.id">{{ exercise.name }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    }
+
+    @if (facade.graphForm.value.graphType === 'muscle_volume') {
+      <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Muskelgruppe</mat-label>
+        <input matInput id="graph-muscle" type="text" formControlName="muscleGroup" placeholder="z.B. quads">
+      </mat-form-field>
+    }
+
+    <button mat-flat-button type="submit" class="action-btn" [disabled]="facade.graphForm.invalid">Graph hinzufügen</button>
+  </form>
+</app-bottom-sheet>
+
+<app-bottom-sheet [open]="activeSheet() === 'graph-detail'" [title]="facade.detailSheetTitle()" (closed)="closeSheet()">
+  <app-gym-graph-detail-sheet
+    [title]="facade.detailSheetTitle()"
+    [hasDetailContext]="facade.hasDetailContext()"
+    [detailFrom]="facade.detailFrom()"
+    [detailTo]="facade.detailTo()"
+    [detailSeries]="facade.detailSeries()"
+    [detailChartPoints]="facade.detailChartPoints()"
+    [selectedDetailPointDate]="facade.selectedDetailPointDate()"
+    [selectedDetailPointSummary]="facade.selectedDetailPointSummary()"
+    (dateChange)="facade.onDetailDateChange($event.value, $event.type)"
+    (setRangeDays)="facade.setDetailRangeDays($event)"
+    (reload)="facade.reloadDetailSeries()"
+    (selectPoint)="facade.selectDetailPointDate($event)"
+  />
+</app-bottom-sheet>

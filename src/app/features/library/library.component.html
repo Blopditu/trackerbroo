@@ -1,0 +1,150 @@
+<main class="page library-page">
+  @if (facade.errorMessage()) {
+    <p class="toast error" role="status" aria-live="polite" aria-atomic="true">{{ facade.errorMessage() }}</p>
+  }
+
+  @if (facade.successMessage()) {
+    <p class="toast success" role="status" aria-live="polite" aria-atomic="true">{{ facade.successMessage() }}</p>
+  }
+
+  <header class="panel halftone">
+    <p class="title-font">Bibliothek</p>
+    <h1>Zutaten & Mahlzeiten</h1>
+    <p class="lead">Baue deine Komponenten einmal auf und halte die Bibliothek sauber.</p>
+  </header>
+
+  <section class="panel">
+    <div class="tab-toggle" role="tablist" aria-label="Bibliothek-Tabs">
+      <button
+        type="button"
+        role="tab"
+        class="tab-toggle-btn"
+        [class.active]="activeTab() === 'ingredients'"
+        [attr.aria-selected]="activeTab() === 'ingredients'"
+        [attr.tabindex]="activeTab() === 'ingredients' ? 0 : -1"
+        (click)="onTabChanged('ingredients')"
+      >
+        Zutaten
+      </button>
+      <button
+        type="button"
+        role="tab"
+        class="tab-toggle-btn"
+        [class.active]="activeTab() === 'meals'"
+        [attr.aria-selected]="activeTab() === 'meals'"
+        [attr.tabindex]="activeTab() === 'meals' ? 0 : -1"
+        (click)="onTabChanged('meals')"
+      >
+        Mahlzeiten
+      </button>
+    </div>
+
+    <div class="m3-section-head list-head">
+      <span class="m3-section-meta">
+        @if (activeTab() === 'ingredients') {
+          {{ facade.filteredIngredients().length }} Zutaten
+        } @else {
+          {{ facade.mealListRows().length }} Mahlzeiten
+        }
+      </span>
+      <button mat-flat-button type="button" class="action-btn tonal compact" (click)="openCreateModal()">Neu</button>
+    </div>
+
+    @if (activeTab() === 'ingredients') {
+      <app-library-ingredients-tab
+        [loading]="facade.loadingIngredients()"
+        [ingredientSearch]="facade.ingredientSearch()"
+        [marketFilter]="facade.marketFilter()"
+        [marketSuggestions]="facade.marketSuggestions()"
+        [ingredients]="facade.filteredIngredients()"
+        (ingredientSearchChange)="facade.setIngredientSearch($event)"
+        (marketFilterChange)="facade.setMarketFilter($event)"
+        (openActions)="openIngredientActions($event)"
+      />
+    }
+
+    @if (activeTab() === 'meals') {
+      <app-library-meals-tab
+        [loading]="facade.loadingMeals()"
+        [meals]="facade.mealListRows()"
+        (openActions)="openMealActions($event)"
+      />
+    }
+  </section>
+
+  <button
+    mat-fab
+    class="app-fab"
+    type="button"
+    [attr.aria-label]="activeTab() === 'ingredients' ? 'Zutat hinzufügen' : 'Mahlzeit hinzufügen'"
+    (click)="openCreateModal()"
+  >
+    +
+  </button>
+</main>
+
+<app-bottom-sheet [open]="actionSheetOpen()" title="Eintrag verwalten" (closed)="closeActionSheet()">
+  <app-library-action-sheet
+    [label]="facade.actionSheetItemLabel()"
+    [subLabel]="facade.actionSheetItemSubLabel()"
+    (edit)="editSelectedItem()"
+    (remove)="deleteSelectedItem()"
+  />
+</app-bottom-sheet>
+
+@if (showIngredientModal()) {
+  <div class="modal" role="presentation" (click)="onModalBackdropClick($event, 'ingredient')">
+    <div
+      #ingredientDialog
+      class="modal-card library-modal-card"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="ingredient-modal-title"
+      tabindex="-1"
+      (click)="$event.stopPropagation()"
+    >
+      <app-ingredient-editor
+        [form]="facade.ingredientForm"
+        [editing]="!!facade.editingIngredient()"
+        [macroPasteText]="facade.macroPasteText()"
+        [macroPasteMessage]="facade.macroPasteMessage()"
+        [detailsExpanded]="facade.ingredientDetailsExpanded()"
+        [baseIngredientOptions]="facade.baseIngredientOptions()"
+        [marketSuggestions]="facade.marketSuggestions()"
+        (sourceTypeChange)="facade.onIngredientSourceTypeChange()"
+        (macroPasteTextChange)="facade.setMacroPasteText($event)"
+        (applyMacroPaste)="facade.applyMacroPaste()"
+        (toggleDetails)="facade.toggleIngredientDetails()"
+        (copyNutrition)="facade.copyNutritionFromBaseIngredient()"
+        (save)="saveIngredient()"
+        (cancel)="closeIngredientModal()"
+      />
+    </div>
+  </div>
+}
+
+@if (showMealModal()) {
+  <div class="modal" role="presentation" (click)="onModalBackdropClick($event, 'meal')">
+    <div
+      #mealDialog
+      class="modal-card library-modal-card"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="meal-modal-title"
+      tabindex="-1"
+      (click)="$event.stopPropagation()"
+    >
+      <app-meal-editor
+        [form]="facade.mealForm"
+        [itemControls]="mealItemControls()"
+        [ingredients]="facade.ingredients()"
+        [draftMealCostLabel]="facade.draftMealCostLabel()"
+        [editing]="!!facade.editingMeal()"
+        (addItem)="facade.addMealItem()"
+        (removeItem)="facade.removeMealItem($event)"
+        (save)="saveMeal()"
+        (cancel)="closeMealModal()"
+      />
+    </div>
+  </div>
+}

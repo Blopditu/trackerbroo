@@ -1,54 +1,39 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
-import { FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
-import {
-  IngredientsSnapshot,
-  LibraryDataService,
-  MealsSnapshot
-} from '../../core/library-data.service';
+import { FormArray, FormBuilder } from '@angular/forms';
+import { LibraryDataService } from '../../core/library-data.service';
 import { AuthService } from '../../core/auth.service';
 import { SupabaseService } from '../../core/supabase.service';
 import { formatAppError } from '../../core/error-format';
 import { Ingredient, Meal, MealItem } from '../../core/types';
 import {
-  buildMealCosts,
-  buildMealMacros,
   formatCurrency,
   LibraryMealListRow,
   roundKcal,
   sourceTypeLabel
 } from './library-view-utils';
-
-interface ParsedMacroInput {
-  kcal?: number;
-  protein?: number;
-  carbs?: number;
-  fat?: number;
-}
-
-type IngredientSourceType = 'manual' | 'blv_generic' | 'custom_product';
-
-type IngredientFormGroup = FormGroup<{
-  source_type: FormControl<IngredientSourceType>;
-  base_ingredient_id: FormControl<string | null>;
-  name: FormControl<string>;
-  kcal_per_100: FormControl<number>;
-  cost_per_100: FormControl<number | null>;
-  market_name: FormControl<string>;
-  protein_per_100: FormControl<number>;
-  carbs_per_100: FormControl<number>;
-  fat_per_100: FormControl<number>;
-  brand: FormControl<string>;
-}>;
-
-type MealItemFormGroup = FormGroup<{
-  ingredient_id: FormControl<string>;
-  grams: FormControl<number>;
-}>;
-
-type MealFormGroup = FormGroup<{
-  name: FormControl<string>;
-  items: FormArray<MealItemFormGroup>;
-}>;
+import { deriveLibraryMetrics, syncLibraryCaches as syncLibraryCachesToStore } from './library-cache-sync';
+import {
+  createIngredientForm,
+  createMealForm,
+  createMealItemGroup,
+  IngredientFormGroup,
+  MealFormGroup,
+  MealItemFormGroup,
+  replaceMealItems,
+  resetIngredientFormForCreate,
+  resetIngredientFormForEdit,
+  resetMealFormForCreate,
+  resetMealFormForEdit
+} from './library-editor-form-factory';
+import { parseMacroInput, roundOneDecimal } from './library-macro-parser';
+import {
+  buildIngredientMutationDraft,
+  buildMealMutationDraft,
+  createRollbackState,
+  finalizeMealItems,
+  LibraryRollbackState,
+  remapMealItems
+} from './library-optimistic-updates';
 
 @Injectable()
 export class LibraryFacadeService {
@@ -130,8 +115,8 @@ export class LibraryFacadeService {
   private mealsRequestId = 0;
 
   constructor() {
-    this.ingredientForm = this.createIngredientForm();
-    this.mealForm = this.createMealForm();
+    this.ingredientForm = createIngredientForm(this.formBuilder);
+    this.mealForm = createMealForm(this.formBuilder);
   }
 
   init(): void {
@@ -204,7 +189,7 @@ export class LibraryFacadeService {
         return;
       }
 
-      this.applyMealsSnapshot(snapshot);
+      this.applyMealsSnapshot(snapshot.meals, snapshot.mealItems);
       this.mealsLoaded.set(true);
     } catch (error: unknown) {
       if (requestId !== this.mealsRequestId) {
@@ -244,18 +229,7 @@ export class LibraryFacadeService {
     this.ingredientDetailsExpanded.set(false);
     this.macroPasteText.set('');
     this.macroPasteMessage.set(null);
-    this.ingredientForm.reset({
-      source_type: 'manual',
-      base_ingredient_id: null,
-      name: '',
-      kcal_per_100: 0,
-      cost_per_100: null,
-      market_name: '',
-      protein_per_100: 0,
-      carbs_per_100: 0,
-      fat_per_100: 0,
-      brand: ''
-    });
+    resetIngredientFormForCreate(this.ingredientForm);
   }
 
   openEditIngredient(ingredient: Ingredient): void {
@@ -263,41 +237,28 @@ export class LibraryFacadeService {
     this.ingredientDetailsExpanded.set(Boolean(ingredient.cost_per_100 || ingredient.market_name || ingredient.brand));
     this.macroPasteText.set('');
     this.macroPasteMessage.set(null);
-    this.ingredientForm.reset({
-      source_type: ingredient.source_type || 'manual',
-      base_ingredient_id: ingredient.base_ingredient_id ?? null,
-      name: ingredient.name,
-      kcal_per_100: Number(ingredient.kcal_per_100),
-      cost_per_100: ingredient.cost_per_100 ?? null,
-      market_name: ingredient.market_name || '',
-      protein_per_100: Number(ingredient.protein_per_100),
-      carbs_per_100: Number(ingredient.carbs_per_100),
-      fat_per_100: Number(ingredient.fat_per_100),
-      brand: ingredient.brand || ''
-    });
+    resetIngredientFormForEdit(this.ingredientForm, ingredient);
   }
 
   async openCreateMeal(): Promise<void> {
     await this.ensureIngredientsLoaded();
     await this.ensureMealsLoaded();
     this.editingMeal.set(null);
-    this.mealForm.reset({ name: '' });
-    this.replaceMealItems([{ ingredient_id: '', grams: 0 }]);
+    resetMealFormForCreate(this.formBuilder, this.mealForm);
   }
 
   async openEditMeal(meal: Meal): Promise<void> {
     await this.ensureIngredientsLoaded();
     await this.ensureMealsLoaded();
     this.editingMeal.set(meal);
-    this.mealForm.controls.name.setValue(meal.name);
     const existingItems = this.allMealItems()
       .filter(item => item.meal_id === meal.id)
-      .map(item => ({ ingredient_id: item.ingredient_id, grams: Number(item.grams) }));
-    this.replaceMealItems(existingItems.length > 0 ? existingItems : [{ ingredient_id: '', grams: 0 }]);
+      .map(item => ({ meal_id: item.meal_id, ingredient_id: item.ingredient_id, grams: Number(item.grams) }));
+    resetMealFormForEdit(this.formBuilder, this.mealForm, meal.name, existingItems);
   }
 
   addMealItem(): void {
-    this.mealItemsArray.push(this.createMealItemGroup({ ingredient_id: '', grams: 0 }));
+    this.mealItemsArray.push(createMealItemGroup(this.formBuilder, { ingredient_id: '', grams: 0 }));
   }
 
   removeMealItem(index: number): void {
@@ -341,20 +302,20 @@ export class LibraryFacadeService {
   }
 
   applyMacroPaste(): void {
-    const parsed = this.parseMacroInput(this.macroPasteText());
+    const parsed = parseMacroInput(this.macroPasteText());
     if (!parsed) {
       this.macroPasteMessage.set('Keine Makros erkannt. Bitte Format wie "protein: 10.5" nutzen.');
       return;
     }
 
     if (parsed.protein !== undefined) {
-      this.ingredientForm.controls.protein_per_100.setValue(this.roundOneDecimal(parsed.protein));
+      this.ingredientForm.controls.protein_per_100.setValue(roundOneDecimal(parsed.protein));
     }
     if (parsed.carbs !== undefined) {
-      this.ingredientForm.controls.carbs_per_100.setValue(this.roundOneDecimal(parsed.carbs));
+      this.ingredientForm.controls.carbs_per_100.setValue(roundOneDecimal(parsed.carbs));
     }
     if (parsed.fat !== undefined) {
-      this.ingredientForm.controls.fat_per_100.setValue(this.roundOneDecimal(parsed.fat));
+      this.ingredientForm.controls.fat_per_100.setValue(roundOneDecimal(parsed.fat));
     }
 
     if (parsed.kcal !== undefined) {
@@ -439,40 +400,12 @@ export class LibraryFacadeService {
 
     const previousState = this.createRollbackState();
     const editingIngredient = this.editingIngredient();
-    const formValue = this.ingredientForm.getRawValue();
-    const marketName = formValue.market_name.trim();
-    const normalizedCost =
-      formValue.cost_per_100 === null || formValue.cost_per_100 === undefined
-        ? null
-        : Number(formValue.cost_per_100);
-    const payload = {
-      source_type: formValue.source_type,
-      base_ingredient_id: formValue.source_type === 'custom_product' ? formValue.base_ingredient_id : null,
-      name: formValue.name.trim(),
-      kcal_per_100: Number(formValue.kcal_per_100),
-      cost_per_100: Number.isFinite(normalizedCost) ? normalizedCost : null,
-      market_name: marketName || null,
-      protein_per_100: Number(formValue.protein_per_100),
-      carbs_per_100: Number(formValue.carbs_per_100),
-      fat_per_100: Number(formValue.fat_per_100),
-      brand: formValue.brand.trim() || ''
-    };
-
-    const optimisticIngredient: Ingredient = {
-      id: editingIngredient?.id || `temp-ingredient-${Date.now()}`,
-      owner_id: user.id,
-      blv_food_id: editingIngredient?.blv_food_id ?? null,
-      swissfir_id: editingIngredient?.swissfir_id ?? null,
-      category: editingIngredient?.category ?? null,
-      reference_unit: editingIngredient?.reference_unit ?? null,
-      source_dataset: editingIngredient?.source_dataset ?? null,
-      created_at: editingIngredient?.created_at || new Date().toISOString(),
-      ...payload
-    };
-
-    const nextIngredients = editingIngredient
-      ? this.ingredients().map(item => (item.id === editingIngredient.id ? optimisticIngredient : item))
-      : [optimisticIngredient, ...this.ingredients()];
+    const { payload, optimisticIngredient, nextIngredients } = buildIngredientMutationDraft(
+      user.id,
+      editingIngredient,
+      this.ingredientForm,
+      this.ingredients()
+    );
 
     this.applyLocalLibraryState(nextIngredients, this.meals(), this.allMealItems());
 
@@ -558,27 +491,13 @@ export class LibraryFacadeService {
     await this.ensureMealsLoaded();
     const previousState = this.createRollbackState();
     const editingMeal = this.editingMeal();
-    const items = this.mealItemsArray.getRawValue()
-      .filter(item => Boolean(item.ingredient_id) && Number(item.grams) > 0)
-      .map(item => ({
-        ingredient_id: item.ingredient_id,
-        grams: Number(item.grams)
-      }));
-
-    const optimisticMealId = editingMeal?.id || `temp-meal-${Date.now()}`;
-    const optimisticMeal: Meal = {
-      id: optimisticMealId,
-      owner_id: user.id,
-      name: this.mealForm.controls.name.value.trim(),
-      created_at: editingMeal?.created_at || new Date().toISOString()
-    };
-    const optimisticMeals = editingMeal
-      ? this.meals().map(item => (item.id === editingMeal.id ? optimisticMeal : item))
-      : [optimisticMeal, ...this.meals()];
-    const optimisticMealItems = [
-      ...this.allMealItems().filter(item => item.meal_id !== optimisticMealId && item.meal_id !== editingMeal?.id),
-      ...items.map(item => ({ meal_id: optimisticMealId, ingredient_id: item.ingredient_id, grams: item.grams }))
-    ];
+    const { optimisticMealId, optimisticMeal, optimisticMeals, optimisticMealItems, filteredItems } = buildMealMutationDraft(
+      user.id,
+      editingMeal,
+      this.mealForm,
+      this.meals(),
+      this.allMealItems()
+    );
 
     this.applyLocalLibraryState(this.ingredients(), optimisticMeals, optimisticMealItems);
 
@@ -608,9 +527,7 @@ export class LibraryFacadeService {
 
         confirmedMealId = data.id;
         const confirmedMeals = this.meals().map(item => (item.id === optimisticMealId ? data as Meal : item));
-        const remappedItems = this.allMealItems().map(item =>
-          item.meal_id === optimisticMealId ? { ...item, meal_id: confirmedMealId } : item
-        );
+        const remappedItems = remapMealItems(this.allMealItems(), optimisticMealId, confirmedMealId);
         this.applyLocalLibraryState(this.ingredients(), confirmedMeals, remappedItems);
       }
 
@@ -623,20 +540,17 @@ export class LibraryFacadeService {
         throw deleteMealItemsError;
       }
 
-      if (items.length > 0) {
+      if (filteredItems.length > 0) {
         const { error: insertMealItemsError } = await this.supabaseService.client
           .from('meal_items')
-          .insert(items.map(item => ({ meal_id: confirmedMealId, ingredient_id: item.ingredient_id, grams: item.grams })));
+          .insert(filteredItems.map(item => ({ meal_id: confirmedMealId, ingredient_id: item.ingredient_id, grams: item.grams })));
 
         if (insertMealItemsError) {
           throw insertMealItemsError;
         }
       }
 
-      const finalItems = [
-        ...this.allMealItems().filter(item => item.meal_id !== confirmedMealId),
-        ...items.map(item => ({ meal_id: confirmedMealId, ingredient_id: item.ingredient_id, grams: item.grams }))
-      ];
+      const finalItems = finalizeMealItems(this.allMealItems(), confirmedMealId, filteredItems);
       this.applyLocalLibraryState(this.ingredients(), this.meals(), finalItems);
       this.successMessage.set('Mahlzeit gespeichert.');
       this.editingMeal.set(null);
@@ -703,57 +617,6 @@ export class LibraryFacadeService {
     this.editingMeal.set(null);
   }
 
-  private createIngredientForm(): IngredientFormGroup {
-    return this.formBuilder.nonNullable.group({
-      source_type: 'manual' as IngredientSourceType,
-      base_ingredient_id: new FormControl<string | null>(null),
-      name: ['', [Validators.required]],
-      kcal_per_100: [0, [Validators.required]],
-      cost_per_100: new FormControl<number | null>(null),
-      market_name: [''],
-      protein_per_100: [0, [Validators.required]],
-      carbs_per_100: [0, [Validators.required]],
-      fat_per_100: [0, [Validators.required]],
-      brand: ['']
-    });
-  }
-
-  private createMealForm(): MealFormGroup {
-    return this.formBuilder.nonNullable.group({
-      name: ['', [Validators.required]],
-      items: this.formBuilder.array<MealItemFormGroup>([this.createMealItemGroup({ ingredient_id: '', grams: 0 })])
-    });
-  }
-
-  private createMealItemGroup(value: { ingredient_id: string; grams: number }): MealItemFormGroup {
-    return this.formBuilder.nonNullable.group({
-      ingredient_id: value.ingredient_id,
-      grams: value.grams
-    });
-  }
-
-  private replaceMealItems(items: Array<{ ingredient_id: string; grams: number }>): void {
-    const nextItems = items.length > 0 ? items : [{ ingredient_id: '', grams: 0 }];
-    this.mealForm.setControl(
-      'items',
-      this.formBuilder.array(nextItems.map(item => this.createMealItemGroup(item)))
-    );
-  }
-
-  private applyMealsSnapshot(snapshot: MealsSnapshot): void {
-    this.meals.set(snapshot.meals);
-    this.allMealItems.set(snapshot.mealItems);
-    this.mealMacros.set(snapshot.mealMacros);
-    this.mealCosts.set(buildMealCosts(snapshot.meals, snapshot.mealItems, this.ingredients()));
-    const user = this.authService.user();
-    if (user) {
-      this.libraryDataService.setMealsSnapshot(user.id, {
-        ...snapshot,
-        mealMacros: buildMealMacros(snapshot.meals, snapshot.mealItems, this.ingredients())
-      });
-    }
-  }
-
   private applyLocalLibraryState(ingredients: Ingredient[], meals: Meal[], mealItems: MealItem[]): void {
     this.ingredients.set(ingredients);
     this.meals.set(meals);
@@ -763,170 +626,43 @@ export class LibraryFacadeService {
   }
 
   private syncDerivedMealState(): void {
-    const macros = buildMealMacros(this.meals(), this.allMealItems(), this.ingredients());
-    const costs = buildMealCosts(this.meals(), this.allMealItems(), this.ingredients());
-    this.mealMacros.set(macros);
-    this.mealCosts.set(costs);
+    const metrics = deriveLibraryMetrics(this.ingredients(), this.meals(), this.allMealItems());
+    this.mealMacros.set(metrics.mealMacros);
+    this.mealCosts.set(metrics.mealCosts);
   }
 
   private syncCaches(): void {
-    const user = this.authService.user();
-    if (!user) {
-      return;
-    }
-
-    if (this.ingredientsLoaded()) {
-      const ingredientsSnapshot: IngredientsSnapshot = {
-        ingredients: this.ingredients(),
-        fetchedAt: new Date().toISOString()
-      };
-      this.libraryDataService.setIngredientsSnapshot(user.id, ingredientsSnapshot);
-    }
-
-    if (this.mealsLoaded()) {
-      const mealsSnapshot: MealsSnapshot = {
-        meals: this.meals(),
-        mealItems: this.allMealItems(),
-        mealMacros: this.mealMacros(),
-        fetchedAt: new Date().toISOString()
-      };
-      this.libraryDataService.setMealsSnapshot(user.id, mealsSnapshot);
-    }
+    syncLibraryCachesToStore({
+      libraryDataService: this.libraryDataService,
+      userId: this.authService.user()?.id ?? null,
+      ingredientsLoaded: this.ingredientsLoaded(),
+      mealsLoaded: this.mealsLoaded(),
+      ingredients: this.ingredients(),
+      meals: this.meals(),
+      mealItems: this.allMealItems()
+    });
   }
 
-  private createRollbackState(): {
-    ingredients: Ingredient[];
-    meals: Meal[];
-    mealItems: MealItem[];
-    ingredientsLoaded: boolean;
-    mealsLoaded: boolean;
-  } {
-    return {
-      ingredients: [...this.ingredients()],
-      meals: [...this.meals()],
-      mealItems: [...this.allMealItems()],
+  private createRollbackState(): LibraryRollbackState {
+    return createRollbackState({
+      ingredients: this.ingredients(),
+      meals: this.meals(),
+      mealItems: this.allMealItems(),
       ingredientsLoaded: this.ingredientsLoaded(),
       mealsLoaded: this.mealsLoaded()
-    };
+    });
   }
 
-  private restoreRollbackState(state: {
-    ingredients: Ingredient[];
-    meals: Meal[];
-    mealItems: MealItem[];
-    ingredientsLoaded: boolean;
-    mealsLoaded: boolean;
-  }): void {
+  private restoreRollbackState(state: LibraryRollbackState): void {
     this.ingredientsLoaded.set(state.ingredientsLoaded);
     this.mealsLoaded.set(state.mealsLoaded);
     this.applyLocalLibraryState(state.ingredients, state.meals, state.mealItems);
   }
 
-  private parseMacroInput(input: string): ParsedMacroInput | null {
-    const raw = input.trim();
-    if (!raw) {
-      return null;
-    }
-
-    const jsonParsed = this.parseMacroJson(raw);
-    if (jsonParsed) {
-      return jsonParsed;
-    }
-
-    const normalized = raw.replace(/\u00a0/g, ' ');
-    const parsed: ParsedMacroInput = {
-      kcal: this.extractMacroValue(normalized, [
-        /\b(?:kcal|kalorien|kalorie|calories?)\b\s*(?:[:=\-])?\s*(-?\d+(?:[.,]\d+)?)/i,
-        /(-?\d+(?:[.,]\d+)?)\s*(?:kcal)\b/i
-      ]),
-      protein: this.extractMacroValue(normalized, [
-        /\b(?:protein|eiweiss|eiweiß|p)\b\s*(?:[:=\-])?\s*(-?\d+(?:[.,]\d+)?)/i,
-        /(-?\d+(?:[.,]\d+)?)\s*g?\s*(?:protein|eiweiss|eiweiß)\b/i
-      ]),
-      carbs: this.extractMacroValue(normalized, [
-        /\b(?:carbs?|kohlenhydrate|kh|c)\b\s*(?:[:=\-])?\s*(-?\d+(?:[.,]\d+)?)/i,
-        /(-?\d+(?:[.,]\d+)?)\s*g?\s*(?:carbs?|kohlenhydrate|kh)\b/i
-      ]),
-      fat: this.extractMacroValue(normalized, [
-        /\b(?:fett|fat|f)\b\s*(?:[:=\-])?\s*(-?\d+(?:[.,]\d+)?)/i,
-        /(-?\d+(?:[.,]\d+)?)\s*g?\s*(?:fett|fat)\b/i
-      ])
-    };
-
-    return this.hasMacroValues(parsed) ? parsed : null;
-  }
-
-  private parseMacroJson(input: string): ParsedMacroInput | null {
-    try {
-      const payload: unknown = JSON.parse(input);
-      if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
-        return null;
-      }
-
-      const record = payload as Record<string, unknown>;
-      const getValue = (keys: string[]): number | undefined => {
-        for (const key of keys) {
-          const value = this.parseNumericValue(record[key]);
-          if (value !== undefined) {
-            return value;
-          }
-        }
-        return undefined;
-      };
-
-      const parsed: ParsedMacroInput = {
-        kcal: getValue(['kcal', 'calories', 'kalorien']),
-        protein: getValue(['protein', 'eiweiss', 'eiweiß', 'p']),
-        carbs: getValue(['carbs', 'carbohydrates', 'kohlenhydrate', 'kh', 'c']),
-        fat: getValue(['fat', 'fett', 'f'])
-      };
-
-      return this.hasMacroValues(parsed) ? parsed : null;
-    } catch {
-      return null;
-    }
-  }
-
-  private extractMacroValue(input: string, patterns: RegExp[]): number | undefined {
-    for (const pattern of patterns) {
-      const match = input.match(pattern);
-      if (!match?.[1]) {
-        continue;
-      }
-      const value = this.parseNumericValue(match[1]);
-      if (value !== undefined) {
-        return value;
-      }
-    }
-    return undefined;
-  }
-
-  private parseNumericValue(value: unknown): number | undefined {
-    if (typeof value === 'number') {
-      return Number.isFinite(value) ? value : undefined;
-    }
-
-    if (typeof value !== 'string') {
-      return undefined;
-    }
-
-    const token = value.trim().match(/-?\d+(?:[.,]\d+)?/);
-    if (!token?.[0]) {
-      return undefined;
-    }
-
-    const numeric = Number(token[0].replace(',', '.'));
-    return Number.isFinite(numeric) ? numeric : undefined;
-  }
-
-  private hasMacroValues(parsed: ParsedMacroInput): boolean {
-    return parsed.kcal !== undefined
-      || parsed.protein !== undefined
-      || parsed.carbs !== undefined
-      || parsed.fat !== undefined;
-  }
-
-  private roundOneDecimal(value: number): number {
-    return Number(value.toFixed(1));
+  private applyMealsSnapshot(meals: Meal[], mealItems: MealItem[]): void {
+    this.meals.set(meals);
+    this.allMealItems.set(mealItems);
+    this.syncDerivedMealState();
+    this.syncCaches();
   }
 }

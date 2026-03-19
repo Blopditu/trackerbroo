@@ -81,7 +81,7 @@ import { Ingredient } from '../../core/types';
 
       @if (detailsExpanded()) {
         <div class="stack-form ingredient-details">
-          @if (form().controls.source_type.value === 'custom_product') {
+          @if (form().get('source_type')?.value === 'custom_product') {
             <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
               <mat-label>BLV-Basiszutat</mat-label>
               <mat-select id="ing-base" formControlName="base_ingredient_id">
