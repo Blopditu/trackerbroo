@@ -53,6 +53,15 @@ import {
 } from './gym-progress-loaders';
 import { selectTrackedWorkoutDay, shouldRefreshWorkoutPreview } from './gym-tracker-loaders';
 import {
+  loadExerciseProgressData,
+  loadProgressHydrationData
+} from './gym-progress-flow';
+import {
+  loadDashboardWeekData,
+  loadTrackerBootstrapData,
+  loadWorkoutPreviewData
+} from './gym-tracker-flow';
+import {
   buildExerciseProgressRows,
   detailChartPoints,
   ExerciseProgressRow,
@@ -349,15 +358,11 @@ export class GymFacadeService {
     this.errorMessage.set(null);
 
     try {
-      if (this.trainingData.hasPendingSync()) {
-        await this.trainingData.flushPendingSync();
-      }
-
-      const [dashboard, exercises, plans] = await Promise.all([
-        this.trainingData.getDashboardWeek(this.selectedDate(), forceRefresh),
-        this.trainingData.getExercises(forceRefresh),
-        this.trainingData.getPlans(forceRefresh)
-      ]);
+      const { dashboard, exercises, plans } = await loadTrackerBootstrapData(
+        this.trainingData,
+        this.selectedDate(),
+        forceRefresh
+      );
 
       this.dashboardWeek.set(dashboard);
       this.exercises.set(exercises);
@@ -374,7 +379,7 @@ export class GymFacadeService {
     this.errorMessage.set(null);
 
     try {
-      const dashboard = await this.trainingData.getDashboardWeek(this.selectedDate(), forceRefresh);
+      const dashboard = await loadDashboardWeekData(this.trainingData, this.selectedDate(), forceRefresh);
       this.dashboardWeek.set(dashboard);
       await this.syncSelectedWorkoutPreview(dashboard, forceRefresh);
     } catch (error: unknown) {
@@ -388,12 +393,13 @@ export class GymFacadeService {
     const hydrationId = ++this.progressHydrationId;
 
     try {
-      const needsExercises = this.exercises().length === 0 || forceRefresh;
-      const [widgets, personalStats, exercises] = await Promise.all([
-        this.trainingData.getProgressWidgets(forceRefresh),
-        this.trainingData.getPersonalStats(forceRefresh),
-        needsExercises ? this.trainingData.getExercises(forceRefresh) : Promise.resolve(this.exercises())
-      ]);
+      const { widgets, personalStats, exercises, needsExercises } = await loadProgressHydrationData(
+        this.trainingData,
+        {
+          forceRefresh,
+          currentExercises: this.exercises()
+        }
+      );
 
       if (hydrationId !== this.progressHydrationId) {
         return;
@@ -433,24 +439,20 @@ export class GymFacadeService {
     this.selectedWorkoutDay.set(workout);
 
     try {
-      const reuseOverview = this.selectedOverview()?.dayId === workout.dayId && !options?.forceSessionRefresh;
-      if (!reuseOverview) {
-        this.selectedOverview.set(await this.trainingData.getPlanOverview(workout.dayId));
+      const preview = await loadWorkoutPreviewData(this.trainingData, {
+        workout,
+        currentOverviewDayId: this.selectedOverview()?.dayId || null,
+        currentSessionClientRef: this.activeSession()?.sessionClientRef || null,
+        forceSessionRefresh: Boolean(options?.forceSessionRefresh)
+      });
+
+      if (preview.overview) {
+        this.selectedOverview.set(preview.overview);
       }
 
-      if (workout.currentSessionClientRef) {
-        const currentSession = this.activeSession();
-        if (currentSession?.sessionClientRef !== workout.currentSessionClientRef || options?.forceSessionRefresh) {
-          if (this.trainingData.hasPendingSync()) {
-            await this.trainingData.flushPendingSync();
-          }
-
-          const activeSession = await this.trainingData.getSessionByClientRef(workout.currentSessionClientRef);
-          if (activeSession && activeSession.status === 'in_progress') {
-            this.applyActiveSession(activeSession);
-          }
-        }
-      } else if (this.activeSession()) {
+      if (preview.activeSession) {
+        this.applyActiveSession(preview.activeSession);
+      } else if (preview.clearActiveSession) {
         this.activeSession.set(null);
         this.previousPerformance.set([]);
         this.resetExecutionPrefillState();
@@ -1102,22 +1104,19 @@ export class GymFacadeService {
     const requestId = ++this.progressRequestId;
     const { from, to } = buildProgressDateRange(this.progressRangeDays());
 
-    const [tenRm, volume] = await Promise.all([
-      this.trainingData.getProgressSeries({
-        graphType: 'exercise_10rm',
-        exerciseId,
-        from,
-        to
-      }),
-      this.trainingData.getExerciseVolumeSeries(exerciseId, from, to, forceRefresh).catch(() => [] as TrainingGraphDataPoint[])
-    ]);
+    const { tenRmSeries, exerciseVolumeSeries } = await loadExerciseProgressData(this.trainingData, {
+      exerciseId,
+      from,
+      to,
+      forceRefresh
+    });
 
     if (requestId !== this.progressRequestId) {
       return;
     }
 
-    this.tenRmSeries.set(tenRm);
-    this.exerciseVolumeSeries.set(volume);
+    this.tenRmSeries.set(tenRmSeries);
+    this.exerciseVolumeSeries.set(exerciseVolumeSeries);
   }
 
   private async prepareWorkoutShareSuggestion(sessionDay: string): Promise<void> {

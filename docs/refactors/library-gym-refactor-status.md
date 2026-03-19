@@ -13,21 +13,24 @@
 - Gym UI is already split into route shell plus focused child components.
 - Gym shell now uses external template/style files.
 - Gym facade now delegates builder-state, session-state, share-copy, tracker selection, and progress-boundary helpers to focused modules.
+- Gym loader orchestration now uses dedicated async helper modules for tracker bootstrap/preview and progress hydration.
 
 ## In progress
-- Further reduce gym facade size by extracting more async loader orchestration only if needed.
+- Further reduce gym facade size only if a concrete maintenance or render-boundary issue remains.
 
 ## Current slice
 - Feature: `gym`
 - Files in scope:
   - `src/app/features/gym/gym.component.*`
   - `src/app/features/gym/gym-facade.service.ts`
+  - `src/app/features/gym/gym-tracker-flow.*`
+  - `src/app/features/gym/gym-progress-flow.*`
   - `src/app/features/gym/gym-*.ts`
   - existing gym specs
 
 ## Next exact slice
-1. Keep gym loader orchestration in the facade unless a concrete render or maintenance issue remains.
-2. Add more gym-only helper specs if later extractions touch behavior.
+1. Only extract more from `gym-facade.service.ts` if a new hot spot is identified.
+2. Prefer targeted cleanup of one concern at a time: detail-graph flow, community share upload flow, or set-save persistence flow.
 3. Continue future refactor turns with a 2-4 file maximum plus this status doc.
 
 ## Verification
