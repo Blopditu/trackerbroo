@@ -14,7 +14,7 @@ import { equipmentLabel } from './gym-view-utils';
     @if (selectedOverview()) {
       <section class="panel quick-start-strip session-launch-card" aria-label="Schnellstart">
         <div class="quick-start-copy">
-          <p class="eyebrow">Bereit für heute</p>
+          <p class="eyebrow">Heute bereit</p>
           <strong>{{ selectedOverview()!.dayName }}</strong>
           <p class="muted">{{ selectedOverview()!.planName }} • {{ selectedOverview()!.totalExercises }} Übungen • {{ selectedOverview()!.totalSets }} Sätze</p>
           <div class="launch-preview">
@@ -90,9 +90,9 @@ import { equipmentLabel } from './gym-view-utils';
       }
 
       <div class="quick-actions">
-        <button mat-flat-button type="button" class="action-btn ghost" (click)="openSessionHub.emit('plans')">Alle Pläne</button>
-        <button mat-flat-button type="button" class="action-btn ghost" (click)="openSessionHub.emit('exercises')">Übungen</button>
-        <button mat-flat-button type="button" class="action-btn ghost" (click)="openSessionHub.emit('help')">Hilfe</button>
+        <button mat-flat-button type="button" class="action-btn ghost compact" (click)="openSessionHub.emit('plans')">Pläne</button>
+        <button mat-flat-button type="button" class="action-btn ghost compact" (click)="openSessionHub.emit('exercises')">Übungen</button>
+        <button mat-flat-button type="button" class="action-btn ghost compact" (click)="openSessionHub.emit('help')">Hilfe</button>
       </div>
     </section>
 

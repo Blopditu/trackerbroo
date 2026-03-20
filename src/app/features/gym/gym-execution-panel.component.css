@@ -18,7 +18,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .execution-actions {
@@ -58,14 +58,14 @@
 }
 
 .execution-rail {
-  gap: 10px;
+  gap: 8px;
   padding-bottom: 6px;
 }
 
 .execution-rail-btn {
-  min-height: 76px;
-  min-width: 170px;
-  padding: 10px;
+  min-height: 72px;
+  min-width: 164px;
+  padding: 9px;
   display: grid;
   grid-template-columns: 52px minmax(0, 1fr);
   gap: 10px;
@@ -120,9 +120,10 @@
   display: grid;
   gap: 12px;
   border: 1px solid var(--m3-sys-color-outline-variant);
-  border-radius: 24px;
-  background: var(--m3-sys-color-surface-container-high);
+  border-radius: 22px;
+  background: color-mix(in srgb, var(--m3-sys-color-surface-container-high) 94%, transparent);
   padding: 14px;
+  box-shadow: none;
 }
 
 .exercise-detail-head {
@@ -166,10 +167,10 @@
   display: grid;
   gap: 12px;
   padding: 14px;
-  border-radius: 22px;
+  border-radius: 20px;
   border: 1px solid color-mix(in srgb, var(--m3-sys-color-primary) 24%, var(--m3-sys-color-outline-variant));
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--m3-sys-color-primary) 9%, var(--m3-sys-color-surface-container-high)), var(--m3-sys-color-surface-container));
+    linear-gradient(180deg, color-mix(in srgb, var(--m3-sys-color-primary) 7%, var(--m3-sys-color-surface-container-high)), var(--m3-sys-color-surface-container));
 }
 
 .set-stack {
@@ -181,7 +182,7 @@
   display: grid;
   gap: 12px;
   padding: 14px;
-  border-radius: 22px;
+  border-radius: 20px;
   border: 1px solid color-mix(in srgb, var(--m3-sys-color-outline-variant) 70%, transparent);
   background: var(--m3-sys-color-surface-container);
 }

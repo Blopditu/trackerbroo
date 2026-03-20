@@ -16,23 +16,23 @@ import { formatAppError } from '../../core/error-format';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, ReactiveFormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatSelectModule],
   template: `
-    <main class="px-4 py-6 sm:px-6 lg:px-8">
+    <main class="px-4 py-5 sm:px-6 lg:px-8">
       @if (errorMessage()) {
         <p class="toast error" role="status" aria-live="polite" aria-atomic="true">{{ errorMessage() }}</p>
       }
 
-      <section class="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[minmax(18rem,22rem)_minmax(0,1fr)]">
-        <aside class="rounded-[2rem] border border-shell-border bg-shell-card p-6 shadow-[0_18px_60px_rgba(0,0,0,0.18)] sm:p-8">
+      <section class="mx-auto grid max-w-5xl gap-4 lg:grid-cols-[minmax(16rem,19rem)_minmax(0,1fr)]">
+        <aside class="rounded-[1.6rem] border border-shell-border bg-shell-card p-5 shadow-[0_12px_36px_rgba(0,0,0,0.14)] sm:p-6">
           <p class="text-[0.68rem] font-extrabold uppercase tracking-[0.28em] text-shell-accent">Tracker Broo</p>
-          <h1 class="mt-4 text-4xl font-extrabold tracking-[-0.06em] text-shell-ink">Dein Start in mehr Konsistenz</h1>
-          <p class="mt-3 text-sm leading-7 text-shell-ink-muted">
-            Kurzes Setup, klare Entscheidungen, dann direkt in den Tagesflow.
+          <h1 class="mt-3 text-3xl font-extrabold tracking-[-0.06em] text-shell-ink sm:text-[2.35rem]">Dein Start in mehr Konsistenz</h1>
+          <p class="mt-2 text-sm leading-6 text-shell-ink-muted">
+            Kurzes Setup, dann direkt in den Tagesflow.
           </p>
 
-          <div class="mt-8 grid gap-3">
+          <div class="mt-6 grid gap-2.5">
             @for (index of stepIndicators; track index) {
               <div
-                class="rounded-[1.4rem] border p-4 transition"
+                class="rounded-[1.15rem] border p-3 transition"
                 [class.border-shell-accent]="index === step()"
                 [class.bg-shell-accent-muted]="index === step()"
                 [class.border-shell-border]="index !== step()"
@@ -50,15 +50,15 @@ import { formatAppError } from '../../core/error-format';
         </aside>
 
         @if (loading()) {
-          <section class="rounded-[2rem] border border-shell-border bg-shell-card p-6 shadow-[0_18px_60px_rgba(0,0,0,0.18)] sm:p-8">
+          <section class="rounded-[1.6rem] border border-shell-border bg-shell-card p-5 shadow-[0_12px_36px_rgba(0,0,0,0.14)] sm:p-6">
             <div class="skeleton card"></div>
           </section>
         } @else {
-          <section class="rounded-[2rem] border border-shell-border bg-shell-card p-6 shadow-[0_18px_60px_rgba(0,0,0,0.18)] sm:p-8">
-            <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <section class="rounded-[1.6rem] border border-shell-border bg-shell-card p-5 shadow-[0_12px_36px_rgba(0,0,0,0.14)] sm:p-6">
+            <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p class="text-[0.68rem] font-extrabold uppercase tracking-[0.28em] text-shell-accent">Setup</p>
-                <h2 class="mt-2 text-3xl font-extrabold tracking-[-0.05em] text-shell-ink">{{ stepTitle(step()) }}</h2>
+                <h2 class="mt-1.5 text-[1.9rem] font-extrabold tracking-[-0.05em] text-shell-ink sm:text-[2.2rem]">{{ stepTitle(step()) }}</h2>
               </div>
               <div class="rounded-full border border-shell-border bg-shell-card-strong px-4 py-2 text-xs font-extrabold uppercase tracking-[0.22em] text-shell-ink-muted">
                 Schritt {{ step() + 1 }} / {{ totalSteps }}
@@ -69,19 +69,18 @@ import { formatAppError } from '../../core/error-format';
               @if (step() === 0) {
                 <section class="grid gap-5">
                   <p class="max-w-2xl text-base leading-7 text-shell-ink-muted">
-                    Hier geht es nicht um perfekte Tage, sondern um Wiederholbarkeit. Essen, Training und Fortschritt
-                    sollen in wenigen Sekunden erfassbar sein.
+                    Nicht Perfektion, sondern Wiederholbarkeit. Essen, Training und Fortschritt sollen in Sekunden erfasst sein.
                   </p>
                   <div class="grid gap-3 md:grid-cols-3">
-                    <article class="rounded-[1.4rem] border border-shell-border bg-shell-card-strong p-4">
+                    <article class="rounded-[1.1rem] border border-shell-border bg-shell-card-strong p-4">
                       <p class="text-[0.68rem] font-extrabold uppercase tracking-[0.24em] text-shell-accent">Heute</p>
                       <p class="mt-3 text-lg font-extrabold tracking-[-0.04em] text-shell-ink">Schnell loggen</p>
                     </article>
-                    <article class="rounded-[1.4rem] border border-shell-border bg-shell-card-strong p-4">
+                    <article class="rounded-[1.1rem] border border-shell-border bg-shell-card-strong p-4">
                       <p class="text-[0.68rem] font-extrabold uppercase tracking-[0.24em] text-shell-accent">Gym</p>
                       <p class="mt-3 text-lg font-extrabold tracking-[-0.04em] text-shell-ink">Aktive Session</p>
                     </article>
-                    <article class="rounded-[1.4rem] border border-shell-border bg-shell-card-strong p-4">
+                    <article class="rounded-[1.1rem] border border-shell-border bg-shell-card-strong p-4">
                       <p class="text-[0.68rem] font-extrabold uppercase tracking-[0.24em] text-shell-accent">Insights</p>
                       <p class="mt-3 text-lg font-extrabold tracking-[-0.04em] text-shell-ink">Klare Verläufe</p>
                     </article>
@@ -174,7 +173,7 @@ import { formatAppError } from '../../core/error-format';
 
                   <div class="grid gap-3 md:grid-cols-3">
                     @for (guide of installGuides; track guide.platform) {
-                      <article class="rounded-[1.4rem] border border-shell-border bg-shell-card-strong p-4">
+                      <article class="rounded-[1.1rem] border border-shell-border bg-shell-card-strong p-4">
                         <strong class="text-sm font-extrabold uppercase tracking-[0.18em] text-shell-accent">{{ guide.platform }}</strong>
                         <p class="mt-3 text-sm leading-6 text-shell-ink-muted">{{ guide.steps }}</p>
                       </article>
@@ -183,7 +182,7 @@ import { formatAppError } from '../../core/error-format';
                 </section>
               }
 
-              <div class="mt-2 flex flex-wrap justify-between gap-3 border-t border-shell-border pt-5">
+              <div class="mt-1 flex flex-wrap justify-between gap-3 border-t border-shell-border pt-4">
                 <div class="text-sm text-shell-ink-muted">
                   {{ helperCopy(step()) }}
                 </div>

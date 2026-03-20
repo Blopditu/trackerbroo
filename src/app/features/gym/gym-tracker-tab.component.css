@@ -11,14 +11,14 @@
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .session-launch-card {
-  border-color: color-mix(in srgb, var(--m3-sys-color-primary) 22%, var(--m3-sys-color-outline-variant));
+  border-color: color-mix(in srgb, var(--m3-sys-color-primary) 20%, var(--m3-sys-color-outline-variant));
   background:
-    radial-gradient(circle at top right, color-mix(in srgb, var(--m3-sys-color-primary) 10%, transparent), transparent 48%),
-    linear-gradient(180deg, color-mix(in srgb, var(--m3-sys-color-surface-container-high) 88%, var(--m3-sys-color-surface-container-low)), var(--m3-sys-color-surface-container-high));
+    linear-gradient(180deg, color-mix(in srgb, var(--m3-sys-color-primary) 8%, var(--m3-sys-color-surface-container-high)), var(--m3-sys-color-surface-container));
+  box-shadow: none;
 }
 
 .quick-start-copy {
@@ -42,7 +42,7 @@
   min-height: 32px;
   padding: 0 12px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--m3-sys-color-surface-container) 82%, transparent);
+  background: color-mix(in srgb, var(--m3-sys-color-surface-container) 68%, transparent);
   border: 1px solid color-mix(in srgb, var(--m3-sys-color-outline-variant) 72%, transparent);
   color: var(--m3-sys-color-on-surface-variant);
   display: inline-flex;
@@ -52,8 +52,8 @@
 }
 
 .launch-btn {
-  min-height: 52px;
-  padding-inline: 22px;
+  min-height: 48px;
+  padding-inline: 18px;
 }
 
 .active-plan-head {
@@ -75,9 +75,8 @@
 
 .workout-day {
   border: 1px solid color-mix(in srgb, var(--m3-sys-color-outline-variant) 70%, transparent);
-  border-radius: 20px;
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--m3-sys-color-surface-container-high) 92%, var(--m3-sys-color-surface)), var(--m3-sys-color-surface-container-high));
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--m3-sys-color-surface-container-high) 92%, var(--m3-sys-color-surface));
   color: var(--m3-sys-color-on-surface);
   display: flex;
   justify-content: space-between;
@@ -107,9 +106,9 @@
 }
 
 .quick-actions {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .overview-head {
@@ -131,7 +130,7 @@
   align-items: center;
   border: 1px solid color-mix(in srgb, var(--m3-sys-color-outline-variant) 65%, transparent);
   border-radius: 18px;
-  background: color-mix(in srgb, var(--m3-sys-color-surface-container-high) 88%, var(--m3-sys-color-surface-container));
+  background: color-mix(in srgb, var(--m3-sys-color-surface-container-high) 82%, var(--m3-sys-color-surface-container));
   padding: 12px;
 }
 
@@ -155,9 +154,5 @@
 
   .launch-btn {
     width: 100%;
-  }
-
-  .quick-actions {
-    grid-template-columns: 1fr;
   }
 }

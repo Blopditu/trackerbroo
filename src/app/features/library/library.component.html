@@ -7,28 +7,24 @@
     <p class="toast success" role="status" aria-live="polite" aria-atomic="true">{{ facade.successMessage() }}</p>
   }
 
-  <header class="panel halftone library-hero">
-    <div>
+  <header class="panel library-hero">
+    <div class="library-hero-copy">
       <p class="hero-label">Bibliothek</p>
       <h1>Zutaten & Mahlzeiten</h1>
-      <p class="lead">Baue deine Komponenten einmal auf und halte die Bibliothek sauber.</p>
+      <p class="lead">Suche, filtere und nutze deine Basis schnell. Verwalten bleibt sekundär.</p>
     </div>
 
-    <div class="library-summary-grid" aria-label="Bibliothek Überblick">
-      <article class="library-summary-card">
-        <span>Einträge</span>
-        <strong>
-          @if (activeTab() === 'ingredients') {
-            {{ facade.filteredIngredients().length }}
-          } @else {
-            {{ facade.mealListRows().length }}
-          }
-        </strong>
-      </article>
-      <article class="library-summary-card">
-        <span>Aktion</span>
-        <strong>{{ activeTab() === 'ingredients' ? 'Zutat anlegen' : 'Mahlzeit anlegen' }}</strong>
-      </article>
+    <div class="library-summary-strip" aria-label="Bibliothek Überblick">
+      <span class="library-summary-pill">
+        @if (activeTab() === 'ingredients') {
+          {{ facade.filteredIngredients().length }} Zutaten
+        } @else {
+          {{ facade.mealListRows().length }} Mahlzeiten
+        }
+      </span>
+      <button mat-flat-button type="button" class="action-btn ghost compact" (click)="openCreateModal()">
+        {{ activeTab() === 'ingredients' ? 'Zutat anlegen' : 'Mahlzeit anlegen' }}
+      </button>
     </div>
   </header>
 

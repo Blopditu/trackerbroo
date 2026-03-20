@@ -555,8 +555,8 @@ button[disabled] {
   display: grid;
   gap: var(--space-3);
   background:
-    radial-gradient(circle at 110% -10%, color-mix(in srgb, var(--m3-sys-color-primary) 18%, transparent), transparent 42%),
-    linear-gradient(160deg, color-mix(in srgb, var(--m3-sys-color-primary-container) 64%, var(--m3-sys-color-surface) 36%), var(--m3-sys-color-surface-container));
+    radial-gradient(circle at 110% -10%, color-mix(in srgb, var(--m3-sys-color-primary) 12%, transparent), transparent 42%),
+    linear-gradient(160deg, color-mix(in srgb, var(--m3-sys-color-primary-container) 42%, var(--m3-sys-color-surface) 58%), var(--m3-sys-color-surface-container));
 }
 
 .today-page .broo-board-head,
@@ -569,17 +569,17 @@ button[disabled] {
 
 .today-page .broo-board h1 {
   margin: 0;
-  font-size: clamp(2rem, 5vw, 2.7rem);
-  line-height: 0.98;
+  font-size: clamp(1.8rem, 4.4vw, 2.3rem);
+  line-height: 1;
   letter-spacing: -0.03em;
-  max-width: 11ch;
+  max-width: 12ch;
 }
 
 .today-page .broo-lead {
-  margin: 8px 0 0;
+  margin: 6px 0 0;
   max-width: 32ch;
   color: var(--m3-sys-color-on-surface-variant);
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1.45;
   font-weight: 600;
 }
@@ -598,15 +598,16 @@ button[disabled] {
 }
 
 .today-page .board-actions {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .today-page .board-primary-btn,
 .today-page .board-secondary-btn {
   justify-content: center;
-  min-height: 52px;
+  min-height: 46px;
+  padding-inline: 18px;
 }
 
 .today-page .board-stream {
@@ -618,9 +619,9 @@ button[disabled] {
   display: grid;
   gap: 10px;
   border: 1px solid color-mix(in srgb, var(--m3-sys-color-outline-variant) 76%, transparent);
-  border-radius: 22px;
+  border-radius: 20px;
   background: color-mix(in srgb, var(--m3-sys-color-surface) 74%, transparent);
-  padding: 14px;
+  padding: 13px;
   box-shadow: var(--shadow-soft);
 }
 
@@ -665,13 +666,13 @@ button[disabled] {
 }
 
 .today-page .my-day-panel {
-  gap: 14px;
+  gap: 12px;
 }
 
 .today-page .my-day-head h2 {
-  margin: 6px 0 0;
-  font-size: clamp(1.55rem, 4vw, 2rem);
-  line-height: 1.02;
+  margin: 4px 0 0;
+  font-size: clamp(1.45rem, 4vw, 1.85rem);
+  line-height: 1.04;
 }
 
 @media (max-width: 440px) {

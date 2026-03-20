@@ -2,18 +2,18 @@ import {
   AfterViewInit,
   ChangeDetectionStrategy,
   Component,
+  computed,
   ElementRef,
   OnDestroy,
   OnInit,
   ViewChild,
-  computed,
   inject,
   signal,
   viewChild
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { LucideAngularModule, Plus } from 'lucide-angular';
+import { Ellipsis, LucideAngularModule, Plus } from 'lucide-angular';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -47,20 +47,23 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
         <p class="toast success" role="status" aria-live="polite" aria-atomic="true">{{ successMessage() }}</p>
       }
 
-      <section class="panel hero community-hero">
+      <section class="panel community-hero">
         <p class="period">Community</p>
         <h1>Broo Feed</h1>
-        <p class="motto">Gym-Check-ins, Protein-Ziele und Schritte an einem Ort, wie im Gruppenchat.</p>
+        <p class="motto">Schnelle Check-ins und kurze Reaktionen, ohne dass Verwalten im Weg steht.</p>
 
-        <button mat-flat-button type="button" class="action-btn hero-cta" (click)="openGymSheet()">
-          Gym-Check-in teilen
-        </button>
+        <div class="hero-cta-row">
+          <button mat-flat-button type="button" class="action-btn hero-cta" (click)="openGymSheet()">
+            Gym-Check-in teilen
+          </button>
+          <span class="feed-pill">{{ posts().length }} Einträge</span>
+        </div>
       </section>
 
       <section class="panel section">
         <div class="m3-section-head">
           <h2>Letzte Aktivität</h2>
-          <span class="m3-section-meta">{{ posts().length }} Einträge</span>
+          <span class="m3-section-meta">Feed zuerst</span>
         </div>
 
         @if (loadingInitial()) {
@@ -76,7 +79,15 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
                   <div class="post-actions">
                     <span class="post-meta">{{ post.day }}</span>
                     @if (isOwnPost(post)) {
-                      <button mat-flat-button type="button" class="action-btn ghost compact" (click)="openPostActions(post)">Verwalten</button>
+                      <button
+                        mat-icon-button
+                        type="button"
+                        class="post-manage-btn"
+                        (click)="openPostActions(post)"
+                        aria-label="Beitrag verwalten"
+                      >
+                        <lucide-icon [img]="icons.more" aria-hidden="true"></lucide-icon>
+                      </button>
                     }
                   </div>
                 </div>
@@ -209,7 +220,7 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
     }
 
     .community-hero {
-      gap: 12px;
+      gap: 10px;
     }
 
     .hero,
@@ -220,16 +231,17 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
     }
 
     .post-card {
-      background: color-mix(in srgb, var(--m3-sys-color-surface-container-high) 92%, transparent);
+      background: color-mix(in srgb, var(--m3-sys-color-surface-container-high) 90%, transparent);
       border: 1px solid var(--m3-sys-color-outline-variant);
-      border-radius: 28px;
-      padding: 16px;
+      border-radius: 24px;
+      padding: 14px;
+      box-shadow: none;
     }
 
     .hero h1,
     .section h2 {
       margin: 0;
-      font-size: clamp(2rem, 4vw, 2.8rem);
+      font-size: clamp(1.9rem, 4vw, 2.5rem);
       font-weight: 800;
       letter-spacing: -0.06em;
     }
@@ -259,6 +271,29 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
       width: fit-content;
     }
 
+    .hero-cta-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .feed-pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 34px;
+      padding: 0 14px;
+      border-radius: 999px;
+      border: 1px solid var(--m3-sys-color-outline-variant);
+      background: color-mix(in srgb, var(--m3-sys-color-surface) 62%, transparent);
+      color: var(--m3-sys-color-on-surface-variant);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
     .day-divider {
       margin-top: 8px;
       width: fit-content;
@@ -284,6 +319,15 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
       display: flex;
       gap: 8px;
       align-items: center;
+    }
+
+    .post-manage-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 999px;
+      border: 1px solid color-mix(in srgb, var(--m3-sys-color-outline-variant) 70%, transparent);
+      background: color-mix(in srgb, var(--m3-sys-color-surface) 52%, transparent);
+      color: var(--m3-sys-color-on-surface-variant);
     }
 
     .post-note,
@@ -411,7 +455,8 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
 })
 export class CommunityComponent implements OnInit, AfterViewInit, OnDestroy {
   readonly icons = {
-    plus: Plus
+    plus: Plus,
+    more: Ellipsis
   };
 
   readonly facade = inject(CommunityFacadeService);

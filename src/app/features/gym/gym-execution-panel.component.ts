@@ -41,7 +41,7 @@ interface QuickWeightOption {
           <div>
             <p class="eyebrow">Session läuft</p>
             <h2>{{ currentExercise()?.name || 'Workout-Ausfuehrung' }}</h2>
-            <p class="muted">Übung {{ activeExerciseIndex() + 1 }} / {{ session()!.exercises.length }} • Werte prüfen, kurz anpassen, weiter</p>
+            <p class="muted">Übung {{ activeExerciseIndex() + 1 }} / {{ session()!.exercises.length }} • Satz für Satz durchziehen</p>
           </div>
           <span class="mono-badge">Einheit {{ session()!.sessionDate }}</span>
         </div>
@@ -177,13 +177,13 @@ interface QuickWeightOption {
         }
 
         <div class="execution-actions">
-          <button mat-flat-button type="button" class="action-btn ghost" [disabled]="activeExerciseIndex() === 0" (click)="previousExercise.emit()">
+          <button mat-flat-button type="button" class="action-btn ghost compact" [disabled]="activeExerciseIndex() === 0" (click)="previousExercise.emit()">
             Zurück
           </button>
           <button
             mat-flat-button
             type="button"
-            class="action-btn ghost"
+            class="action-btn ghost compact"
             [disabled]="activeExerciseIndex() >= session()!.exercises.length - 1"
             (click)="nextExercise.emit()"
           >

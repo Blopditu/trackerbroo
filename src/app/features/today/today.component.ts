@@ -103,8 +103,8 @@ interface BrooBoardPost {
         <div class="broo-board-head">
           <div>
             <p class="title-font">Broo Board</p>
-            <h1 id="broo-board-title">Was lief zuletzt bei den Broos?</h1>
-            <p class="broo-lead">Wie im WhatsApp-Chat: sehen, was läuft, und direkt mitziehen.</p>
+            <h1 id="broo-board-title">Heute bei den Broos</h1>
+            <p class="broo-lead">Kurz sehen, wer schon geliefert hat, und direkt nachziehen.</p>
           </div>
           <span class="board-badge">{{ brooBoardPosts().length }} Einträge</span>
         </div>
@@ -147,7 +147,7 @@ interface BrooBoardPost {
         }
       </section>
 
-      <section class="panel hero my-day-panel">
+      <section class="panel my-day-panel">
         <div class="my-day-head">
           <div>
             <p class="title-font">Mein Tag</p>
@@ -156,29 +156,35 @@ interface BrooBoardPost {
           <p class="date-label"><lucide-icon [img]="icons.calendar" class="icon" aria-hidden="true"></lucide-icon> {{ today() }}</p>
         </div>
 
-        <div class="day-nav">
-          <button mat-icon-button type="button" class="nav-btn" (click)="goPreviousDay()" aria-label="Vorheriger Tag">
-            <lucide-icon [img]="icons.chevronLeft" aria-hidden="true"></lucide-icon>
-          </button>
-          <mat-form-field class="m3-field day-field" appearance="outline" subscriptSizing="dynamic">
-            <mat-label>Tag</mat-label>
-            <input
-              matInput
-              type="date"
-              class="day-input"
-              [ngModel]="today()"
-              (ngModelChange)="onDayPicked($event)"
-            >
-          </mat-form-field>
-          <button mat-icon-button type="button" class="nav-btn" (click)="goNextDay()" [disabled]="!canGoNextDay()" aria-label="Nächster Tag">
-            <lucide-icon [img]="icons.chevronRight" aria-hidden="true"></lucide-icon>
-          </button>
-        </div>
+        <div class="today-toolbar">
+          <div class="day-nav">
+            <button mat-icon-button type="button" class="nav-btn" (click)="goPreviousDay()" aria-label="Vorheriger Tag">
+              <lucide-icon [img]="icons.chevronLeft" aria-hidden="true"></lucide-icon>
+            </button>
+            <mat-form-field class="m3-field day-field" appearance="outline" subscriptSizing="dynamic">
+              <mat-label>Tag</mat-label>
+              <input
+                matInput
+                type="date"
+                class="day-input"
+                [ngModel]="today()"
+                (ngModelChange)="onDayPicked($event)"
+              >
+            </mat-form-field>
+            <button mat-icon-button type="button" class="nav-btn" (click)="goNextDay()" [disabled]="!canGoNextDay()" aria-label="Nächster Tag">
+              <lucide-icon [img]="icons.chevronRight" aria-hidden="true"></lucide-icon>
+            </button>
+          </div>
 
-        <div class="hero-actions">
-          <button mat-flat-button type="button" class="action-btn ghost" [disabled]="today() === realToday" (click)="jumpToToday()">
-            Heute
-          </button>
+          <div class="hero-actions">
+            <button mat-flat-button type="button" class="action-btn compact today-quick-btn" (click)="openActions()">
+              <lucide-icon [img]="icons.plus" class="icon" aria-hidden="true"></lucide-icon>
+              Schnell loggen
+            </button>
+            <button mat-flat-button type="button" class="action-btn ghost compact" [disabled]="today() === realToday" (click)="jumpToToday()">
+              Heute
+            </button>
+          </div>
         </div>
 
         @if (canShareProteinMilestone()) {
@@ -313,21 +319,91 @@ interface BrooBoardPost {
 
     <app-bottom-sheet [open]="showActionSheet()" [title]="sheetTitle()" (closed)="closeActions()">
       @if (sheetMode() === 'menu') {
-        <div class="action-list">
-          <button mat-flat-button type="button" class="menu-btn" (click)="setSheetMode('food')"><lucide-icon [img]="icons.utensils" class="icon" aria-hidden="true"></lucide-icon> Essen loggen</button>
-          <button mat-flat-button type="button" class="menu-btn" (click)="setSheetMode('weight')"><lucide-icon [img]="icons.weight" class="icon" aria-hidden="true"></lucide-icon> Gewicht eintragen</button>
-          @if (trackStepsEnabled()) {
-            <button mat-flat-button type="button" class="menu-btn" (click)="setSheetMode('steps')"><lucide-icon [img]="icons.footsteps" class="icon" aria-hidden="true"></lucide-icon> Schritte eintragen</button>
-          }
-          <button mat-flat-button type="button" class="menu-btn" (click)="setSheetMode('gym')"><lucide-icon [img]="icons.dumbbell" class="icon" aria-hidden="true"></lucide-icon> Gym-Check-in teilen</button>
-        </div>
+        <section class="quick-add-menu">
+          <div class="quick-add-grid" role="group" aria-label="Schnelllog-Aktionen">
+            <button mat-flat-button type="button" class="quick-add-tile" (click)="setSheetMode('gym')">
+              <span class="quick-add-icon gym"><lucide-icon [img]="icons.dumbbell" aria-hidden="true"></lucide-icon></span>
+              <span class="quick-add-copy">
+                <span class="quick-add-kicker">Workout</span>
+                <strong>Gym-Session loggen</strong>
+              </span>
+            </button>
+
+            @if (trackStepsEnabled()) {
+              <button mat-flat-button type="button" class="quick-add-tile" (click)="setSheetMode('steps')">
+                <span class="quick-add-icon steps"><lucide-icon [img]="icons.footsteps" aria-hidden="true"></lucide-icon></span>
+                <span class="quick-add-copy">
+                  <span class="quick-add-kicker">Aktivität</span>
+                  <strong>Schritte hinzufügen</strong>
+                </span>
+              </button>
+            } @else {
+              <button mat-flat-button type="button" class="quick-add-tile" (click)="setSheetMode('copy')">
+                <span class="quick-add-icon copy"><lucide-icon [img]="icons.clock3" aria-hidden="true"></lucide-icon></span>
+                <span class="quick-add-copy">
+                  <span class="quick-add-kicker">Shortcut</span>
+                  <strong>Von gestern kopieren</strong>
+                </span>
+              </button>
+            }
+
+            <button mat-flat-button type="button" class="quick-add-tile" (click)="setSheetMode('weight')">
+              <span class="quick-add-icon weight"><lucide-icon [img]="icons.weight" aria-hidden="true"></lucide-icon></span>
+              <span class="quick-add-copy">
+                <span class="quick-add-kicker">Messwert</span>
+                <strong>Gewicht loggen</strong>
+              </span>
+            </button>
+
+            <button mat-flat-button type="button" class="quick-add-tile" (click)="openFoodQuickLog()">
+              <span class="quick-add-icon food"><lucide-icon [img]="icons.utensils" aria-hidden="true"></lucide-icon></span>
+              <span class="quick-add-copy">
+                <span class="quick-add-kicker">Nutrition</span>
+                <strong>Essen hinzufügen</strong>
+              </span>
+            </button>
+          </div>
+
+          <div class="quick-add-secondary">
+            <button mat-flat-button type="button" class="day-chip recent-activities-btn" (click)="openRecentActivities()">
+              <lucide-icon [img]="icons.clock3" class="icon" aria-hidden="true"></lucide-icon>
+              Letzte Aktivitäten
+            </button>
+          </div>
+        </section>
       }
 
       @if (sheetMode() === 'food') {
-        <section class="food-sheet">
-          <div class="utility-row">
-            <button mat-flat-button type="button" class="day-chip" (click)="setSheetMode('copy')">Von anderem Tag übernehmen</button>
-            <button mat-flat-button type="button" class="day-chip" (click)="setSheetMode('mealprep')">Meal Prep aufteilen</button>
+        <section class="food-sheet food-hub">
+          <mat-form-field class="m3-field food-search-field" appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Lebensmittel suchen</mat-label>
+            <input
+              #foodSearchInput
+              matInput
+              type="search"
+              [ngModel]="foodSearch()"
+              (ngModelChange)="onFoodSearchInput($event)"
+              placeholder="Lebensmittel suchen"
+              aria-label="Lebensmittel suchen"
+            >
+          </mat-form-field>
+
+          <div class="food-hub-actions">
+            <button mat-flat-button type="button" class="food-hub-card" (click)="setSheetMode('copy')">
+              <span class="food-hub-card-kicker">Shortcut</span>
+              <strong>Von gestern kopieren</strong>
+              <small>Übernimm bestehende Einträge direkt nach heute.</small>
+            </button>
+            <button mat-flat-button type="button" class="food-hub-card" (click)="setSheetMode('mealprep')">
+              <span class="food-hub-card-kicker">Batch</span>
+              <strong>Meal Prep aufteilen</strong>
+              <small>Teile heutige Einträge auf mehrere Tage auf.</small>
+            </button>
+            <button mat-flat-button type="button" class="food-hub-card food-hub-card-accent" (click)="openFoodBuilder()">
+              <span class="food-hub-card-kicker">Builder</span>
+              <strong>Schnelleingabe / Makros</strong>
+              <small>Durchsuche deine Bibliothek und baue den Log in Ruhe auf.</small>
+            </button>
           </div>
 
           <div class="slot-row" role="group" aria-label="Mahlzeiten-Slot">
@@ -338,18 +414,32 @@ interface BrooBoardPost {
             <button mat-flat-button type="button" class="slot-chip" [class.active]="selectedMealSlot() === 'other'" (click)="setMealSlot('other')">Sonstiges</button>
           </div>
 
-          <mat-form-field class="m3-field food-search-field" appearance="outline" subscriptSizing="dynamic">
-            <mat-label>Lebensmittel suchen</mat-label>
-            <input
-              #foodSearchInput
-              matInput
-              type="search"
-              [ngModel]="foodSearch()"
-              (ngModelChange)="foodSearch.set($event)"
-              placeholder="Lebensmittel suchen"
-              aria-label="Lebensmittel suchen"
-            >
-          </mat-form-field>
+          <div class="sheet-subhead">
+            <div>
+              <p class="sheet-kicker">Zuletzt geloggt</p>
+              <p class="sheet-caption">Direkt in die Log-Liste legen oder tiefer in den Builder gehen.</p>
+            </div>
+            <button mat-flat-button type="button" class="day-chip" (click)="openFoodBuilder('all')">Alle Lebensmittel</button>
+          </div>
+
+          <div class="food-list hub-food-list">
+            @for (item of foodHubItems(); track item.id) {
+              <article class="food-row">
+                <button mat-flat-button type="button" class="food-open-btn" (click)="openAmountPicker(item, 'queue')">
+                  <span class="food-name">{{ item.name }}</span>
+                  <small class="food-macros">{{ quickItemMacroLine(item) }}</small>
+                </button>
+                <div class="food-row-actions">
+                  <button mat-icon-button type="button" class="round-icon-btn primary" (click)="addDefaultToQueue(item)" aria-label="Zur Log-Liste hinzufügen">
+                    <lucide-icon [img]="icons.plus" aria-hidden="true"></lucide-icon>
+                  </button>
+                </div>
+              </article>
+            }
+            @if (foodHubItems().length === 0) {
+              <p class="muted">Keine Treffer für deinen Filter.</p>
+            }
+          </div>
 
           @if (favoriteQuickItems().length > 0) {
             <div class="favorite-row" role="group" aria-label="Favoriten">
@@ -360,6 +450,68 @@ interface BrooBoardPost {
               }
             </div>
           }
+
+          @if (foodQueueCount() > 0) {
+            <article class="queue-preview-card">
+              <div>
+                <p class="sheet-kicker">Log-Liste</p>
+                <strong>{{ foodQueueCount() }} Einträge bereit</strong>
+                <small>P {{ queueTotals().protein.toFixed(0) }} · KH {{ queueTotals().carbs.toFixed(0) }} · F {{ queueTotals().fat.toFixed(0) }} · {{ queueTotals().kcal.toFixed(0) }} kcal</small>
+              </div>
+              <div class="queue-preview-actions">
+                <button mat-flat-button type="button" class="day-chip" (click)="openFoodBuilder()">Bearbeiten</button>
+                <button mat-flat-button type="button" class="menu-btn apply-log-btn" (click)="applyFoodQueue()">Loggen</button>
+              </div>
+            </article>
+          }
+        </section>
+      }
+
+      @if (sheetMode() === 'builder') {
+        <section class="food-sheet meal-builder-sheet">
+          <div class="utility-row">
+            <button mat-flat-button type="button" class="day-chip" (click)="setSheetMode('food')">Zurück zum Hub</button>
+            <button mat-flat-button type="button" class="day-chip" (click)="setSheetMode('mealprep')">Meal Prep</button>
+          </div>
+
+          <mat-form-field class="m3-field food-search-field" appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Lebensmittel suchen</mat-label>
+            <input
+              matInput
+              type="search"
+              [ngModel]="foodSearch()"
+              (ngModelChange)="onFoodSearchInput($event)"
+              placeholder="Lebensmittel suchen"
+              aria-label="Lebensmittel suchen"
+            >
+          </mat-form-field>
+
+          <div class="builder-macro-grid" aria-label="Meal Builder Makros">
+            <article class="builder-macro-card">
+              <span>Protein</span>
+              <strong>{{ queueTotals().protein.toFixed(0) }}g</strong>
+            </article>
+            <article class="builder-macro-card">
+              <span>KH</span>
+              <strong>{{ queueTotals().carbs.toFixed(0) }}g</strong>
+            </article>
+            <article class="builder-macro-card">
+              <span>Fett</span>
+              <strong>{{ queueTotals().fat.toFixed(0) }}g</strong>
+            </article>
+            <article class="builder-macro-card builder-macro-card-accent">
+              <span>Kcal</span>
+              <strong>{{ queueTotals().kcal.toFixed(0) }}</strong>
+            </article>
+          </div>
+
+          <div class="slot-row" role="group" aria-label="Mahlzeiten-Slot">
+            <button mat-flat-button type="button" class="slot-chip" [class.active]="selectedMealSlot() === 'breakfast'" (click)="setMealSlot('breakfast')">Frühstück</button>
+            <button mat-flat-button type="button" class="slot-chip" [class.active]="selectedMealSlot() === 'lunch'" (click)="setMealSlot('lunch')">Mittag</button>
+            <button mat-flat-button type="button" class="slot-chip" [class.active]="selectedMealSlot() === 'dinner'" (click)="setMealSlot('dinner')">Abend</button>
+            <button mat-flat-button type="button" class="slot-chip" [class.active]="selectedMealSlot() === 'snack'" (click)="setMealSlot('snack')">Snack</button>
+            <button mat-flat-button type="button" class="slot-chip" [class.active]="selectedMealSlot() === 'other'" (click)="setMealSlot('other')">Sonstiges</button>
+          </div>
 
           <div class="filter-toggle compact-filter" role="group" aria-label="Food Filter">
             <button
@@ -644,6 +796,11 @@ interface BrooBoardPost {
       font-weight: 600;
     }
 
+    .today-toolbar {
+      display: grid;
+      gap: 10px;
+    }
+
     .day-nav {
       display: grid;
       grid-template-columns: var(--touch-target) 1fr var(--touch-target);
@@ -683,7 +840,13 @@ interface BrooBoardPost {
       flex-wrap: wrap;
       gap: 8px;
       align-items: center;
-      justify-content: flex-end;
+      justify-content: space-between;
+    }
+
+    .today-quick-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .protein-share-btn {
@@ -840,10 +1003,148 @@ interface BrooBoardPost {
       gap: 8px;
     }
 
+    .quick-add-menu {
+      display: grid;
+      gap: 14px;
+      padding-bottom: max(8px, env(safe-area-inset-bottom));
+    }
+
+    .quick-add-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .quick-add-tile {
+      min-height: 154px;
+      border: 1px solid color-mix(in srgb, var(--m3-sys-color-outline-variant) 70%, transparent);
+      border-radius: 24px;
+      background:
+        linear-gradient(180deg, color-mix(in srgb, var(--m3-sys-color-surface-container-high) 90%, transparent), var(--m3-sys-color-surface-container));
+      color: var(--m3-sys-color-on-surface);
+      display: grid;
+      align-content: start;
+      gap: 14px;
+      padding: 18px;
+      text-align: left;
+      box-shadow: none;
+    }
+
+    .quick-add-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 16px;
+      background: var(--m3-sys-color-surface-container-highest);
+      display: grid;
+      place-items: center;
+      color: var(--m3-sys-color-on-surface-variant);
+    }
+
+    .quick-add-icon.food,
+    .quick-add-icon.gym {
+      color: var(--m3-sys-color-primary);
+    }
+
+    .quick-add-copy {
+      display: grid;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .quick-add-kicker {
+      color: var(--m3-sys-color-on-surface-variant);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    .quick-add-copy strong {
+      font-size: 18px;
+      line-height: 1.15;
+      letter-spacing: -0.04em;
+    }
+
+    .quick-add-secondary {
+      display: flex;
+      justify-content: center;
+    }
+
+    .recent-activities-btn {
+      width: auto;
+      padding-inline: 18px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
     .food-sheet {
       display: grid;
       gap: 12px;
       padding-bottom: max(8px, env(safe-area-inset-bottom));
+    }
+
+    .food-hub {
+      gap: 14px;
+    }
+
+    .food-hub-actions {
+      display: grid;
+      gap: 10px;
+    }
+
+    .food-hub-card {
+      min-height: 108px;
+      border: 1px solid color-mix(in srgb, var(--m3-sys-color-outline-variant) 70%, transparent);
+      border-radius: 22px;
+      background: var(--m3-sys-color-surface-container-low);
+      color: var(--m3-sys-color-on-surface);
+      padding: 14px 16px;
+      text-align: left;
+      display: grid;
+      gap: 6px;
+      box-shadow: none;
+    }
+
+    .food-hub-card-accent {
+      border-color: color-mix(in srgb, var(--m3-sys-color-primary) 22%, var(--m3-sys-color-outline-variant));
+      background:
+        linear-gradient(180deg, color-mix(in srgb, var(--m3-sys-color-primary) 10%, var(--m3-sys-color-surface-container-high)), var(--m3-sys-color-surface-container-low));
+    }
+
+    .food-hub-card-kicker,
+    .sheet-kicker {
+      margin: 0;
+      color: var(--m3-sys-color-on-surface-variant);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    .food-hub-card strong {
+      font-size: 16px;
+      line-height: 1.2;
+    }
+
+    .food-hub-card small,
+    .sheet-caption {
+      margin: 0;
+      color: var(--m3-sys-color-on-surface-variant);
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 1.45;
+    }
+
+    .sheet-subhead {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 10px;
+    }
+
+    .hub-food-list {
+      max-height: none;
     }
 
     .copy-sheet,
@@ -901,6 +1202,42 @@ interface BrooBoardPost {
 
     .food-search-field .mat-mdc-form-field-subscript-wrapper {
       display: none;
+    }
+
+    .builder-macro-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .builder-macro-card {
+      display: grid;
+      gap: 4px;
+      min-height: 88px;
+      padding: 14px 16px;
+      border-radius: 20px;
+      border: 1px solid color-mix(in srgb, var(--m3-sys-color-outline-variant) 70%, transparent);
+      background: var(--m3-sys-color-surface-container-low);
+    }
+
+    .builder-macro-card span {
+      color: var(--m3-sys-color-on-surface-variant);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    .builder-macro-card strong {
+      color: var(--m3-sys-color-on-surface);
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.05em;
+    }
+
+    .builder-macro-card-accent {
+      border-color: transparent;
+      background: color-mix(in srgb, var(--m3-sys-color-primary-container) 72%, var(--m3-sys-color-surface-container-low));
     }
 
     .favorite-row {
@@ -1228,6 +1565,33 @@ interface BrooBoardPost {
       gap: 8px;
     }
 
+    .queue-preview-card {
+      border: 1px solid color-mix(in srgb, var(--m3-sys-color-outline-variant) 70%, transparent);
+      border-radius: 22px;
+      background: var(--m3-sys-color-surface-container-low);
+      padding: 14px 16px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .queue-preview-card strong {
+      color: var(--m3-sys-color-on-surface);
+      font-size: 16px;
+      line-height: 1.2;
+    }
+
+    .queue-preview-card small {
+      color: var(--m3-sys-color-on-surface-variant);
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .queue-preview-actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
     .queue-head {
       margin: 0;
       color: var(--m3-sys-color-on-surface);
@@ -1347,6 +1711,8 @@ interface BrooBoardPost {
     }
 
     @media (max-width: 440px) {
+      .quick-add-grid,
+      .builder-macro-grid,
       .filter-toggle {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
@@ -1356,8 +1722,14 @@ interface BrooBoardPost {
       }
 
       .utility-row,
-      .grid-two {
+      .grid-two,
+      .queue-preview-actions {
         grid-template-columns: 1fr;
+      }
+
+      .sheet-subhead {
+        flex-direction: column;
+        align-items: stretch;
       }
 
       .food-footer {
@@ -1417,7 +1789,7 @@ export class TodayComponent implements OnInit {
   readonly successMessage = signal<string | null>(null);
 
   readonly showActionSheet = signal(false);
-  readonly sheetMode = signal<'menu' | 'food' | 'copy' | 'mealprep' | 'weight' | 'steps' | 'gym' | 'entry'>('menu');
+  readonly sheetMode = signal<'menu' | 'food' | 'builder' | 'copy' | 'mealprep' | 'weight' | 'steps' | 'gym' | 'entry'>('menu');
   readonly foodSearch = signal('');
   readonly savingGymPost = signal(false);
   readonly gymPhotoName = signal<string | null>(null);
@@ -1431,6 +1803,7 @@ export class TodayComponent implements OnInit {
   readonly foodQueue = signal<FoodQueueItem[]>([]);
   readonly favoriteFoodIds = signal<string[]>([]);
   readonly amountPickerMode = signal<'queue' | 'edit'>('queue');
+  readonly returnSheetMode = signal<'food' | 'builder'>('food');
   readonly weightTrendDays = signal<7 | 30>(7);
   readonly activeFoodJourneyId = signal<string | null>(null);
   readonly activeWeightJourneyId = signal<string | null>(null);
@@ -1562,6 +1935,8 @@ export class TodayComponent implements OnInit {
     const favorites = new Set(this.favoriteFoodIds());
     return this.allFoodItems().filter(item => favorites.has(item.id)).slice(0, 8);
   });
+
+  readonly foodHubItems = computed(() => this.quickFoodItems().slice(0, 6));
 
   readonly queueTotals = computed<MacroTotals>(() => {
     return this.foodQueue().reduce<MacroTotals>(
@@ -1792,6 +2167,8 @@ export class TodayComponent implements OnInit {
 
   openFoodQuickLog(): void {
     this.showActionSheet.set(true);
+    this.foodSearch.set('');
+    this.foodFilter.set('recent');
     this.setSheetMode('food');
   }
 
@@ -1800,9 +2177,16 @@ export class TodayComponent implements OnInit {
     this.setSheetMode('gym');
   }
 
+  openRecentActivities(): void {
+    this.showActionSheet.set(true);
+    this.foodSearch.set('');
+    this.foodFilter.set('recent');
+    this.setSheetMode('food');
+  }
+
   closeActions(): void {
     const mode = this.sheetMode();
-    if (mode === 'food') {
+    if (mode === 'food' || mode === 'builder') {
       this.cancelFoodJourney('sheet_closed');
     } else if (mode === 'weight') {
       this.cancelWeightJourney('sheet_closed');
@@ -1824,9 +2208,11 @@ export class TodayComponent implements OnInit {
     }
   }
 
-  setSheetMode(mode: 'menu' | 'food' | 'copy' | 'mealprep' | 'weight' | 'steps' | 'gym' | 'entry'): void {
+  setSheetMode(mode: 'menu' | 'food' | 'builder' | 'copy' | 'mealprep' | 'weight' | 'steps' | 'gym' | 'entry'): void {
     const currentMode = this.sheetMode();
-    if (currentMode === 'food' && mode !== 'food') {
+    const leavingFood = currentMode === 'food' || currentMode === 'builder';
+    const enteringFood = mode === 'food' || mode === 'builder';
+    if (leavingFood && !enteringFood) {
       this.cancelFoodJourney('mode_switch');
     }
     if (currentMode === 'weight' && mode !== 'weight') {
@@ -1834,12 +2220,15 @@ export class TodayComponent implements OnInit {
     }
 
     this.sheetMode.set(mode);
-    if (mode === 'food') {
+    if (enteringFood) {
       this.startFoodJourney('sheet_mode');
       if (this.foodQueueCount() === 0) {
         this.selectedMealSlot.set('snack');
       }
-      this.foodSearch.set('');
+      if (mode === 'food') {
+        this.foodSearch.set('');
+        this.foodFilter.set('recent');
+      }
     }
     if (mode === 'copy') {
       const defaultSourceDay = this.shiftIsoDay(this.today(), -1);
@@ -1869,6 +2258,7 @@ export class TodayComponent implements OnInit {
 
   sheetTitle(): string {
     if (this.sheetMode() === 'food') return 'Essen loggen';
+    if (this.sheetMode() === 'builder') return 'Meal Builder';
     if (this.sheetMode() === 'copy') return 'Von anderem Tag übernehmen';
     if (this.sheetMode() === 'mealprep') return 'Meal Prep aufteilen';
     if (this.sheetMode() === 'weight') return 'Gewicht eintragen';
@@ -1886,6 +2276,7 @@ export class TodayComponent implements OnInit {
     this.amountPickerMode.set(mode);
     if (mode === 'queue') {
       this.editingEntryId.set(null);
+      this.returnSheetMode.set(this.sheetMode() === 'builder' ? 'builder' : 'food');
     }
     this.selectedItemInitialAmount.set(this.isIngredient(item) ? 100 : 1);
     this.selectedItem.set(item);
@@ -1900,6 +2291,16 @@ export class TodayComponent implements OnInit {
 
   setFoodFilter(filter: FoodFilter): void {
     this.foodFilter.set(filter);
+  }
+
+  onFoodSearchInput(value: string): void {
+    this.foodSearch.set(value);
+    this.foodFilter.set(value.trim().length > 0 ? 'all' : 'recent');
+  }
+
+  openFoodBuilder(filter: FoodFilter = this.foodFilter()): void {
+    this.foodFilter.set(filter);
+    this.setSheetMode('builder');
   }
 
   setWeightTrendDays(days: 7 | 30): void {
@@ -2187,7 +2588,7 @@ export class TodayComponent implements OnInit {
       this.addToFoodQueue(item, result.amount, result.totals, this.selectedMealSlot());
       this.successMessage.set(`${item.name} zur Log-Liste hinzugefügt.`);
       this.closeAmountPicker();
-      this.sheetMode.set('food');
+      this.sheetMode.set(this.returnSheetMode());
       this.showActionSheet.set(true);
       return;
     }
@@ -2959,6 +3360,7 @@ export class TodayComponent implements OnInit {
     this.selectedItem.set(null);
     this.editingEntryId.set(null);
     this.amountPickerMode.set('queue');
+    this.returnSheetMode.set('food');
     this.selectedItemInitialAmount.set(100);
   }
 

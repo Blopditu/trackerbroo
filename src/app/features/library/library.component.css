@@ -4,7 +4,12 @@
 
 .library-hero {
   display: grid;
-  gap: 1rem;
+  gap: 0.85rem;
+}
+
+.library-hero-copy {
+  display: grid;
+  gap: 0.35rem;
 }
 
 .hero-label {
@@ -16,35 +21,27 @@
   text-transform: uppercase;
 }
 
-.library-summary-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+.library-summary-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
 }
 
-.library-summary-card {
-  display: grid;
-  gap: 6px;
-  min-height: 92px;
-  padding: 16px 18px;
-  border-radius: 24px;
+.library-summary-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  border-radius: 999px;
   border: 1px solid var(--shell-border);
-  background: color-mix(in srgb, var(--m3-sys-color-surface) 76%, transparent);
-}
-
-.library-summary-card span {
-  color: var(--shell-ink-muted);
-  font-size: 0.68rem;
+  background: color-mix(in srgb, var(--m3-sys-color-surface) 60%, transparent);
+  color: var(--m3-sys-color-on-surface-variant);
+  padding: 0 14px;
+  font-size: 12px;
   font-weight: 800;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-}
-
-.library-summary-card strong {
-  color: var(--m3-sys-color-on-surface);
-  font-size: 1.02rem;
-  font-weight: 800;
-  letter-spacing: -0.03em;
 }
 
 .tab-toggle {
@@ -75,18 +72,18 @@
 }
 
 h1 {
-  margin-top: 0.3rem;
-  font-size: clamp(2rem, 4vw, 2.7rem);
-  line-height: 0.98;
+  margin-top: 0.2rem;
+  font-size: clamp(1.9rem, 4vw, 2.45rem);
+  line-height: 1;
   letter-spacing: -0.05em;
 }
 
 .lead {
-  margin: 0.45rem 0 0;
+  margin: 0.25rem 0 0;
   color: var(--shell-ink-muted);
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 600;
-  line-height: 1.6;
+  line-height: 1.5;
 }
 
 .toolbar {
@@ -97,7 +94,7 @@ h1 {
 }
 
 .list-head {
-  margin-top: 0.65rem;
+  margin-top: 0.3rem;
 }
 
 .items-list {
@@ -181,8 +178,8 @@ h1 {
   height: 44px;
   border-radius: 16px;
   border: 1px solid var(--shell-border);
-  background: color-mix(in srgb, var(--m3-sys-color-surface) 74%, transparent);
-  color: var(--m3-sys-color-primary);
+  background: color-mix(in srgb, var(--m3-sys-color-surface) 58%, transparent);
+  color: var(--m3-sys-color-on-surface-variant);
   display: grid;
   place-items: center;
   margin-top: 0.1rem;
