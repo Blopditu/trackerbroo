@@ -33,7 +33,6 @@ interface QuickWeightOption {
   selector: 'app-gym-execution-panel',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, MatButtonModule, LucideAngularModule],
-  styleUrl: './gym-execution-panel.component.css',
   template: `
     @if (session()) {
       <section class="panel execution">
