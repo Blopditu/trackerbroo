@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Tracker Broo - Active Workout</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-primary-container": "#21ee7d",
+              "outline-variant": "#484848",
+              "primary-fixed": "#62ff96",
+              "on-secondary-fixed-variant": "#006850",
+              "on-surface-variant": "#acabaa",
+              "surface-tint": "#00e475",
+              "surface-container-lowest": "#000000",
+              "on-secondary-container": "#00d8a8",
+              "on-tertiary-fixed": "#335040",
+              "surface": "#0e0e0e",
+              "secondary-fixed": "#45fec9",
+              "on-surface": "#e7e5e5",
+              "outline": "#767575",
+              "inverse-primary": "#006e35",
+              "secondary-fixed-dim": "#2cefbc",
+              "on-error": "#490106",
+              "tertiary-fixed": "#dafce6",
+              "on-primary-fixed": "#004a21",
+              "on-primary": "#004b22",
+              "on-error-container": "#ff9993",
+              "secondary": "#06e4b1",
+              "on-background": "#e7e5e5",
+              "secondary-dim": "#00d4a5",
+              "on-tertiary": "#486555",
+              "primary-dim": "#00d46c",
+              "on-tertiary-container": "#405d4d",
+              "surface-container": "#191a1a",
+              "on-secondary": "#004c39",
+              "surface-container-low": "#131313",
+              "surface-bright": "#2b2c2c",
+              "surface-variant": "#252626",
+              "on-tertiary-fixed-variant": "#4f6d5b",
+              "on-primary-fixed-variant": "#006a33",
+              "tertiary": "#e8ffef",
+              "surface-container-high": "#1f2020",
+              "error": "#ee7d77",
+              "tertiary-container": "#d2f3dd",
+              "on-secondary-fixed": "#004937",
+              "surface-container-highest": "#252626",
+              "inverse-surface": "#fcf9f8",
+              "error-container": "#7f2927",
+              "secondary-container": "#004433",
+              "primary-container": "#005226",
+              "error-dim": "#bb5551",
+              "surface-dim": "#0e0e0e",
+              "background": "#0e0e0e",
+              "tertiary-dim": "#cff0da",
+              "inverse-on-surface": "#565555",
+              "primary": "#00e475",
+              "primary-fixed-dim": "#2af381",
+              "tertiary-fixed-dim": "#ccedd8"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Manrope"],
+              "label": ["Manrope"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Manrope', sans-serif; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface antialiased">
+<!-- TopAppBar -->
+<nav class="fixed top-0 w-full z-50 flex items-center justify-between px-6 h-16 bg-neutral-950 transition-colors duration-200">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-emerald-400 cursor-pointer">arrow_back</span>
+<h1 class="font-manrope uppercase tracking-widest text-xs font-bold text-emerald-400">Leg Day - Squats</h1>
+</div>
+<div class="flex items-center">
+<span class="material-symbols-outlined text-neutral-500">more_vert</span>
+</div>
+</nav>
+<main class="pt-16 pb-32 min-h-screen flex flex-col">
+<!-- Horizontal Exercise Rail -->
+<section class="bg-surface-container-low sticky top-16 z-40 overflow-x-auto no-scrollbar flex items-center gap-6 px-6 py-4">
+<div class="flex flex-col items-center gap-1 group cursor-pointer">
+<span class="text-[10px] font-bold uppercase tracking-widest text-primary">Squats</span>
+<div class="h-1 w-6 bg-primary rounded-full"></div>
+</div>
+<div class="flex flex-col items-center gap-1 group cursor-pointer opacity-40">
+<span class="text-[10px] font-bold uppercase tracking-widest text-on-surface">Leg Press</span>
+<div class="h-1 w-6 bg-transparent rounded-full group-hover:bg-outline-variant transition-colors"></div>
+</div>
+<div class="flex flex-col items-center gap-1 group cursor-pointer opacity-40">
+<span class="text-[10px] font-bold uppercase tracking-widest text-on-surface">Leg Extension</span>
+<div class="h-1 w-6 bg-transparent rounded-full group-hover:bg-outline-variant transition-colors"></div>
+</div>
+<div class="flex flex-col items-center gap-1 group cursor-pointer opacity-40">
+<span class="text-[10px] font-bold uppercase tracking-widest text-on-surface">Calf Raise</span>
+<div class="h-1 w-6 bg-transparent rounded-full group-hover:bg-outline-variant transition-colors"></div>
+</div>
+</section>
+<!-- Current Exercise Context -->
+<section class="px-6 mt-8">
+<div class="mb-2">
+<span class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Active Exercise</span>
+<h2 class="text-3xl font-extrabold tracking-tight text-on-surface mt-1">Barbell Back Squats</h2>
+</div>
+<div class="grid grid-cols-2 gap-4 mt-6">
+<div class="bg-surface-container-high p-4 rounded-xl flex flex-col gap-1">
+<span class="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant">Target</span>
+<p class="text-lg font-bold text-on-surface">3 Sets <span class="text-primary-dim">×</span> 8-10</p>
+</div>
+<div class="bg-surface-container-high p-4 rounded-xl flex flex-col gap-1">
+<span class="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant">Equipment</span>
+<p class="text-lg font-bold text-on-surface">Barbell</p>
+</div>
+<div class="bg-surface-container-high p-4 rounded-xl flex flex-col gap-1 col-span-2 border-l-2 border-primary/30">
+<span class="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant">Previous Session Ref</span>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary-dim text-sm">history</span>
+<p class="text-base font-medium text-on-surface">100kg x 9 <span class="text-[10px] text-on-surface-variant ml-2">May 12</span></p>
+</div>
+</div>
+</div>
+</section>
+<!-- Logging Section -->
+<section class="px-6 mt-10 space-y-4">
+<!-- Row 1: Completed -->
+<div class="bg-primary/5 rounded-xl p-5 flex items-center justify-between transition-all">
+<div class="flex items-center gap-4">
+<div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<div>
+<span class="text-[9px] font-bold uppercase tracking-widest text-primary/60">Set 01</span>
+<p class="text-xl font-bold tracking-tight text-on-surface">100<span class="text-xs text-on-surface-variant ml-1">KG</span> <span class="mx-2 text-primary/30">/</span> 8 <span class="text-xs text-on-surface-variant ml-1">REPS</span></p>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline-variant">edit</span>
+</div>
+<!-- Row 2: Active -->
+<div class="bg-surface-container-highest rounded-xl p-5 border-l-4 border-primary shadow-2xl">
+<div class="flex items-center justify-between mb-6">
+<div>
+<span class="text-[9px] font-bold uppercase tracking-widest text-primary">Set 02</span>
+<p class="text-xs text-on-surface-variant">Active Set</p>
+</div>
+<div class="flex items-center gap-2 text-primary">
+<span class="material-symbols-outlined text-sm animate-pulse">timer</span>
+<span class="font-mono text-sm font-bold tracking-tighter">01:42</span>
+</div>
+</div>
+<div class="flex gap-4 items-end">
+<div class="flex-1 space-y-2">
+<label class="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant ml-1">Weight (KG)</label>
+<input class="w-full bg-surface-container-high border-none rounded-lg p-4 text-2xl font-black text-center focus:ring-1 focus:ring-primary transition-all" type="number" value="100"/>
+</div>
+<div class="flex-1 space-y-2">
+<label class="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant ml-1">Reps</label>
+<input class="w-full bg-surface-container-high border-none rounded-lg p-4 text-2xl font-black text-center focus:ring-1 focus:ring-primary transition-all" placeholder="--" type="number"/>
+</div>
+</div>
+<!-- Weight Adjustment Chips -->
+<div class="flex justify-between mt-6 gap-2">
+<button class="flex-1 py-2 bg-surface-container-low rounded-lg text-[10px] font-bold text-on-surface-variant hover:bg-surface-bright transition-colors">-5</button>
+<button class="flex-1 py-2 bg-surface-container-low rounded-lg text-[10px] font-bold text-on-surface-variant hover:bg-surface-bright transition-colors">-2.5</button>
+<button class="flex-1 py-2 bg-surface-container-low rounded-lg text-[10px] font-bold text-primary-dim hover:bg-primary/10 transition-colors">+2.5</button>
+<button class="flex-1 py-2 bg-surface-container-low rounded-lg text-[10px] font-bold text-primary-dim hover:bg-primary/10 transition-colors">+5</button>
+</div>
+</div>
+<!-- Row 3: Upcoming -->
+<div class="bg-surface-container-low/50 rounded-xl p-5 flex items-center justify-between opacity-30">
+<div class="flex items-center gap-4">
+<div class="w-8 h-8 rounded-full border border-dashed border-outline-variant flex items-center justify-center">
+<span class="text-[10px] font-bold text-on-surface-variant">03</span>
+</div>
+<div>
+<span class="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant">Upcoming</span>
+<p class="text-xl font-bold tracking-tight text-on-surface-variant">-- <span class="text-xs ml-1">KG</span> <span class="mx-2">/</span> -- <span class="text-xs ml-1">REPS</span></p>
+</div>
+</div>
+</div>
+</section>
+<!-- Main Actions -->
+<section class="mt-auto px-6 py-10 space-y-4">
+<button class="w-full py-4 bg-primary text-on-primary font-bold rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-primary/10 active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-lg">skip_next</span>
+<span>Next Exercise</span>
+</button>
+<button class="w-full py-4 bg-surface-container-high text-on-surface-variant font-bold rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-transform">
+<span>Finish Workout</span>
+</button>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-8 pb-8 pt-4 bg-neutral-900/70 backdrop-blur-xl rounded-t-2xl shadow-[0_-20px_40px_rgba(0,0,0,0.4)]">
+<div class="flex flex-col items-center justify-center bg-emerald-500/20 text-emerald-400 rounded-xl p-3 scale-95 active:scale-90 transition-transform cursor-pointer">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">timer</span>
+<span class="font-manrope text-[10px] font-bold uppercase tracking-tighter mt-1">Workout</span>
+</div>
+<div class="flex flex-col items-center justify-center text-neutral-400 p-3 hover:text-emerald-300 scale-95 active:scale-90 transition-transform cursor-pointer">
+<span class="material-symbols-outlined">check_circle</span>
+<span class="font-manrope text-[10px] font-bold uppercase tracking-tighter mt-1">History</span>
+</div>
+</nav>
+</body></html>

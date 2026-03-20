@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="de"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "inverse-surface": "#fcf9f8",
+              "on-surface": "#e7e5e5",
+              "on-tertiary-container": "#405d4d",
+              "surface-variant": "#252626",
+              "on-background": "#e7e5e5",
+              "surface-container-high": "#1f2020",
+              "tertiary": "#e8ffef",
+              "secondary-dim": "#00d4a5",
+              "surface-dim": "#0e0e0e",
+              "inverse-on-surface": "#565555",
+              "background": "#0e0e0e",
+              "surface": "#0e0e0e",
+              "tertiary-dim": "#cff0da",
+              "error-dim": "#bb5551",
+              "surface-container-low": "#131313",
+              "tertiary-fixed": "#dafce6",
+              "primary-container": "#005226",
+              "on-secondary-fixed-variant": "#006850",
+              "on-secondary-fixed": "#004937",
+              "primary-dim": "#00d46c",
+              "surface-tint": "#00e475",
+              "outline-variant": "#484848",
+              "primary-fixed": "#62ff96",
+              "secondary-container": "#004433",
+              "primary-fixed-dim": "#2af381",
+              "secondary": "#06e4b1",
+              "on-tertiary": "#486555",
+              "on-error": "#490106",
+              "on-surface-variant": "#acabaa",
+              "on-primary-fixed": "#004a21",
+              "on-tertiary-fixed-variant": "#4f6d5b",
+              "on-secondary": "#004c39",
+              "error-container": "#7f2927",
+              "on-primary": "#004b22",
+              "outline": "#767575",
+              "tertiary-container": "#d2f3dd",
+              "on-secondary-container": "#00d8a8",
+              "inverse-primary": "#006e35",
+              "on-primary-fixed-variant": "#006a33",
+              "on-tertiary-fixed": "#335040",
+              "on-primary-container": "#21ee7d",
+              "secondary-fixed-dim": "#2cefbc",
+              "surface-bright": "#2b2c2c",
+              "secondary-fixed": "#45fec9",
+              "on-error-container": "#ff9993",
+              "surface-container": "#191a1a",
+              "error": "#ee7d77",
+              "surface-container-highest": "#252626",
+              "surface-container-lowest": "#000000",
+              "tertiary-fixed-dim": "#ccedd8",
+              "primary": "#00e475"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Manrope"],
+              "label": ["Manrope"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Manrope', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface min-h-screen pb-32">
+<!-- TopAppBar -->
+<header class="w-full top-0 sticky bg-neutral-900/50 backdrop-blur-xl z-50">
+<div class="flex items-center justify-between px-6 h-16 w-full max-w-md mx-auto">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[#00e475] active:scale-95 duration-200 transition-opacity hover:opacity-80">calendar_today</span>
+<h1 class="font-['Manrope'] font-bold tracking-tight text-xl uppercase text-on-surface">Gym</h1>
+</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-[#00e475] active:scale-95 duration-200 transition-opacity hover:opacity-80">notifications</span>
+</div>
+</div>
+</header>
+<main class="max-w-md mx-auto px-6 pt-4">
+<!-- Sub-Tabs: Tracker & Progress -->
+<nav class="flex space-x-8 mb-8">
+<button class="relative py-2">
+<span class="font-label text-xs font-bold uppercase tracking-widest text-primary">Tracker</span>
+<div class="absolute bottom-0 left-0 w-full h-0.5 bg-primary rounded-full"></div>
+</button>
+<button class="relative py-2 opacity-50 hover:opacity-100 transition-opacity">
+<span class="font-label text-xs font-bold uppercase tracking-widest text-on-surface">Progress</span>
+</button>
+</nav>
+<!-- Current Training Week Horizontal Scroll -->
+<section class="mb-10">
+<div class="flex justify-between items-end mb-4">
+<h2 class="font-label text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Training Woche 12</h2>
+<span class="font-label text-[10px] font-bold uppercase tracking-widest text-primary">64% Abgeschlossen</span>
+</div>
+<div class="flex justify-between gap-2 overflow-x-auto no-scrollbar">
+<div class="flex flex-col items-center gap-2 min-w-[48px]">
+<span class="text-[10px] font-bold text-on-surface-variant uppercase">Mo</span>
+<div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+</div>
+<div class="flex flex-col items-center gap-2 min-w-[48px]">
+<span class="text-[10px] font-bold text-on-surface-variant uppercase">Di</span>
+<div class="w-10 h-10 rounded-full bg-surface-container-high border border-outline-variant/20 flex items-center justify-center">
+<span class="text-xs font-bold">R</span>
+</div>
+</div>
+<div class="flex flex-col items-center gap-2 min-w-[48px]">
+<span class="text-[10px] font-bold text-primary uppercase">Mi</span>
+<div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center shadow-[0_0_15px_rgba(0,228,117,0.4)]">
+<span class="text-xs font-black text-on-primary">12</span>
+</div>
+</div>
+<div class="flex flex-col items-center gap-2 min-w-[48px]">
+<span class="text-[10px] font-bold text-on-surface-variant uppercase">Do</span>
+<div class="w-10 h-10 rounded-full bg-surface-container-high border border-outline-variant/20 flex items-center justify-center"></div>
+</div>
+<div class="flex flex-col items-center gap-2 min-w-[48px]">
+<span class="text-[10px] font-bold text-on-surface-variant uppercase">Fr</span>
+<div class="w-10 h-10 rounded-full bg-surface-container-high border border-outline-variant/20 flex items-center justify-center"></div>
+</div>
+<div class="flex flex-col items-center gap-2 min-w-[48px]">
+<span class="text-[10px] font-bold text-on-surface-variant uppercase">Sa</span>
+<div class="w-10 h-10 rounded-full bg-surface-container-high border border-outline-variant/20 flex items-center justify-center"></div>
+</div>
+</div>
+</section>
+<!-- Active Plan Bento Card -->
+<section class="mb-10">
+<div class="bg-surface-container-low rounded-xl p-1 overflow-hidden">
+<div class="bg-surface-container-high rounded-lg p-6 relative overflow-hidden">
+<!-- Decor Background -->
+<div class="absolute -right-8 -top-8 w-32 h-32 bg-primary/10 rounded-full blur-3xl"></div>
+<div class="relative z-10">
+<span class="font-label text-[10px] font-bold uppercase tracking-widest text-primary mb-2 block">Aktiver Plan</span>
+<h3 class="text-2xl font-black tracking-tight mb-1">Hypertrophy L-P-P</h3>
+<p class="text-on-surface-variant text-sm font-medium mb-6">Phase 2: Kraft-Maximierung</p>
+<div class="grid grid-cols-2 gap-4 mb-8">
+<div class="bg-surface-container-low rounded-lg p-3">
+<span class="text-[10px] uppercase font-bold text-on-surface-variant block mb-1">Volumen</span>
+<span class="text-lg font-bold">14.2k <span class="text-[10px] text-on-surface-variant">kg</span></span>
+</div>
+<div class="bg-surface-container-low rounded-lg p-3">
+<span class="text-[10px] uppercase font-bold text-on-surface-variant block mb-1">Dauer</span>
+<span class="text-lg font-bold">65 <span class="text-[10px] text-on-surface-variant">min</span></span>
+</div>
+</div>
+<button class="w-full bg-primary hover:opacity-90 active:scale-[0.98] transition-all py-4 rounded-xl flex items-center justify-center gap-3 shadow-[0_10px_30px_rgba(0,228,117,0.25)] group">
+<span class="text-on-primary font-black uppercase tracking-widest text-sm">Start Session</span>
+<span class="material-symbols-outlined text-on-primary group-hover:translate-x-1 transition-transform">play_arrow</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- Today's Workout Preview -->
+<section>
+<div class="flex items-center justify-between mb-6">
+<h2 class="text-lg font-bold tracking-tight">Vorschau: Push A</h2>
+<button class="text-primary font-label text-[10px] font-bold uppercase tracking-widest">Bearbeiten</button>
+</div>
+<div class="space-y-4">
+<!-- Exercise Item -->
+<div class="bg-surface-container-high rounded-xl p-5 flex items-center justify-between group transition-colors hover:bg-surface-bright">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-lg bg-surface-container-low flex items-center justify-center">
+<img alt="Bench Press" class="w-full h-full object-cover rounded-lg opacity-80" data-alt="Black and white close up of barbell weight plates" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDJp2GlBadBPl-EG9gClG7GZBkMqp4Eafj1T-uJc4FRwFzMEtfKIMl41TovTaTaMt7QFzpVADSAbk3RrXSELsRAbyJV5Ouan60KzlcfhFDWtVepQIeJlx5EqkrkJhS1lIBh9j6rfd01kWNvFfEFIUTIPobppyZIc3zO4aJZx5BSvIcPdqmMyZDR9IHQAa7Lg8OYbnFvk7LN3ssOORlS_HsEx4dhb_j2A5iUJscPop8XVe1_iSVLlBp4aGinLw9DXwl6Cd1-0v7tdQw"/>
+</div>
+<div>
+<h4 class="font-bold text-sm">Bankdrücken, flach</h4>
+<p class="text-[10px] text-on-surface-variant font-bold uppercase tracking-wider">4 Sets • 6-8 Reps</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors">chevron_right</span>
+</div>
+<!-- Exercise Item -->
+<div class="bg-surface-container-high rounded-xl p-5 flex items-center justify-between group transition-colors hover:bg-surface-bright">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-lg bg-surface-container-low flex items-center justify-center">
+<img alt="Overhead Press" class="w-full h-full object-cover rounded-lg opacity-80" data-alt="Dumbbells on a rack in dark gym" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD9KR7VBl6pKhbV-_fzqiYGAzOPVmZ5ooJVbiLBo9Y1Ylf2f65lM1dEkrmEPCqdmgpoPJ7bKxdjmkgzbzDe-JyBaav9ANghxN0PCs_lTJNHFwLbFzKH-X9g4r_q_dbBfqUUxpnrmv7sC0wJSLBlIOzEhEDTRGuD-1g5Y-OQ4NntpbmtLVqLzRW-HXVjoU0ItsAp74fEft_5NGEx4KUj7U1q_hUYqwHA-i-FvuTuv9OdIR5Owrn7LQjzhgA6RWosCh8A65P5KjWy4fs"/>
+</div>
+<div>
+<h4 class="font-bold text-sm">Schulterdrücken DB</h4>
+<p class="text-[10px] text-on-surface-variant font-bold uppercase tracking-wider">3 Sets • 10-12 Reps</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors">chevron_right</span>
+</div>
+<!-- Exercise Item -->
+<div class="bg-surface-container-high rounded-xl p-5 flex items-center justify-between group transition-colors hover:bg-surface-bright">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-lg bg-surface-container-low flex items-center justify-center">
+<img alt="Lateral Raises" class="w-full h-full object-cover rounded-lg opacity-80" data-alt="Abstract dark weights background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA7gX0rqEXJ4B9Gkj0keeLTM4_udGNm67W56M4ZS8hw7USQHENJIqK8YHWBI4-bonMyDiDWzuWHIrWNJS0Fhe9xe1gMIVK-q2j96NkYWZoHNz2ccYiPN1jEErswU5MUxQ-Jh-yZYvxMUqws1is78-hWipK2zKDkXNMbQBv0UUpwrf9PhvKMIO47b1W0truqxSHfu1O9Leh5mSH6j0A3eBcrB74TVpAY5lfkpzetbgkKeTWb8k_u1o2gLlsepDdXWC3V0-J6HXxcODs"/>
+</div>
+<div>
+<h4 class="font-bold text-sm">Seitheben Kabelzug</h4>
+<p class="text-[10px] text-on-surface-variant font-bold uppercase tracking-wider">3 Sets • AMRAP</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors">chevron_right</span>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-end px-2 h-20 bg-neutral-900/80 rounded-t-2xl pb-safe border-t border-neutral-800/50 backdrop-blur-2xl shadow-[0_-10px_40px_rgba(0,0,0,0.4)]">
+<!-- Heute -->
+<a class="flex flex-col items-center justify-center text-neutral-500 hover:text-neutral-200 active:scale-90 duration-150" href="#">
+<span class="material-symbols-outlined mb-1">home</span>
+<span class="font-['Manrope'] text-[10px] font-bold uppercase tracking-widest">Heute</span>
+</a>
+<!-- Gym (Active) -->
+<a class="flex flex-col items-center justify-center text-[#00e475] scale-110 transition-transform active:scale-90 duration-150" href="#">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 1;">fitness_center</span>
+<span class="font-['Manrope'] text-[10px] font-bold uppercase tracking-widest">Gym</span>
+</a>
+<!-- Log (Middle Action) -->
+<a class="flex flex-col items-center justify-center text-neutral-500 hover:text-neutral-200 active:scale-90 duration-150 -translate-y-2" href="#">
+<div class="bg-neutral-800 p-3 rounded-full mb-1">
+<span class="material-symbols-outlined text-on-surface">add_circle</span>
+</div>
+<span class="font-['Manrope'] text-[10px] font-bold uppercase tracking-widest">Log</span>
+</a>
+<!-- Community -->
+<a class="flex flex-col items-center justify-center text-neutral-500 hover:text-neutral-200 active:scale-90 duration-150" href="#">
+<span class="material-symbols-outlined mb-1">group</span>
+<span class="font-['Manrope'] text-[10px] font-bold uppercase tracking-widest">Community</span>
+</a>
+<!-- Profil -->
+<a class="flex flex-col items-center justify-center text-neutral-500 hover:text-neutral-200 active:scale-90 duration-150" href="#">
+<span class="material-symbols-outlined mb-1">person</span>
+<span class="font-['Manrope'] text-[10px] font-bold uppercase tracking-widest">Profil</span>
+</a>
+</nav>
+</body></html>

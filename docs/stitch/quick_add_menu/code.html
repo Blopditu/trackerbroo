@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Quick Add Menu - TRACKER BROO</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "surface-container-high": "#1f2020",
+            "on-tertiary-fixed": "#335040",
+            "secondary-dim": "#00d4a5",
+            "on-tertiary-container": "#405d4d",
+            "primary-container": "#005226",
+            "background": "#0e0e0e",
+            "on-secondary": "#004c39",
+            "tertiary-fixed": "#dafce6",
+            "secondary-fixed": "#45fec9",
+            "on-secondary-fixed": "#004937",
+            "tertiary-dim": "#cff0da",
+            "surface-container": "#191a1a",
+            "on-primary": "#004b22",
+            "error-dim": "#bb5551",
+            "error-container": "#7f2927",
+            "tertiary-fixed-dim": "#ccedd8",
+            "on-surface": "#e7e5e5",
+            "on-tertiary-fixed-variant": "#4f6d5b",
+            "on-secondary-container": "#00d8a8",
+            "on-primary-container": "#21ee7d",
+            "surface-container-highest": "#252626",
+            "surface-container-lowest": "#000000",
+            "surface-bright": "#2b2c2c",
+            "inverse-on-surface": "#565555",
+            "tertiary": "#e8ffef",
+            "on-primary-fixed-variant": "#006a33",
+            "inverse-surface": "#fcf9f8",
+            "primary": "#00e475",
+            "outline": "#767575",
+            "on-error-container": "#ff9993",
+            "on-error": "#490106",
+            "surface": "#0e0e0e",
+            "surface-variant": "#252626",
+            "tertiary-container": "#d2f3dd",
+            "secondary": "#06e4b1",
+            "on-tertiary": "#486555",
+            "error": "#ee7d77",
+            "on-primary-fixed": "#004a21",
+            "secondary-container": "#004433",
+            "surface-container-low": "#131313",
+            "primary-fixed-dim": "#2af381",
+            "on-surface-variant": "#acabaa",
+            "on-secondary-fixed-variant": "#006850",
+            "primary-fixed": "#62ff96",
+            "secondary-fixed-dim": "#2cefbc",
+            "primary-dim": "#00d46c",
+            "outline-variant": "#484848",
+            "surface-tint": "#00e475",
+            "surface-dim": "#0e0e0e",
+            "on-background": "#e7e5e5",
+            "inverse-primary": "#006e35"
+          },
+          fontFamily: {
+            "headline": ["Manrope"],
+            "body": ["Manrope"],
+            "label": ["Manrope"]
+          },
+          borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    .action-tile-gradient {
+      background: linear-gradient(135deg, rgba(37, 38, 38, 1) 0%, rgba(31, 32, 32, 0.8) 100%);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body antialiased min-h-screen">
+<!-- TOP APP BAR -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-6 h-16 bg-[#131313]">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full overflow-hidden border border-primary/20">
+<img class="w-full h-full object-cover" data-alt="User profile portrait close up" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC9FxOt48GLsYQlZ4wp8mU3feLQpgdyge67zYlU2HWxPeh2Fcnc-AMmpj_QZjpBab4TIVfz6hVyd_y6AEpKINum1n5xGVn7B6em9sTl7aGMkZb0VAJBmxu7gLHJP7h8TI--y1JXIpx___FCJ2KMgGatSjpmnoBSO2LRrdZESh0Jdy39GG4CkT0R6PN-CrhVd-HBBPgUER4TESQ5791V1Sq4i8RxYJNDPj_AfwO5Fix_1CYQu3rw0y6x-PQO8Ai0MoNxTmkYI0SmI4Q"/>
+</div>
+</div>
+<div class="text-xl font-black text-[#00e475] tracking-tighter">TRACKER BROO</div>
+<div class="text-gray-400 hover:text-[#00e475] transition-colors cursor-pointer">
+<span class="material-symbols-outlined">settings</span>
+</div>
+</header>
+<!-- MAIN CANVAS (Mock Background for Context) -->
+<main class="pt-20 pb-32 px-6">
+<section class="space-y-8">
+<div class="space-y-2">
+<p class="text-[0.75rem] uppercase tracking-widest text-on-surface-variant font-bold">Today's Focus</p>
+<h1 class="text-4xl font-extrabold tracking-tight text-on-surface">The Stoic Coach</h1>
+</div>
+<!-- Bento Grid Background Layout -->
+<div class="grid grid-cols-2 gap-4 opacity-30 pointer-events-none">
+<div class="col-span-2 h-48 bg-surface-container-high rounded-xl p-6 flex flex-col justify-end">
+<div class="text-5xl font-black text-primary-fixed-dim tabular-nums tracking-tighter">2,450</div>
+<div class="text-[0.6875rem] uppercase tracking-widest font-bold">Active Calories</div>
+</div>
+<div class="h-32 bg-surface-container-high rounded-xl p-4"></div>
+<div class="h-32 bg-surface-container-high rounded-xl p-4"></div>
+</div>
+</section>
+</main>
+<!-- FULL SCREEN OVERLAY (Quick Add Menu) -->
+<div class="fixed inset-0 z-[60] bg-background/80 backdrop-blur-xl flex flex-col justify-end">
+<!-- Close Interaction Area (Top) -->
+<div class="flex-grow flex items-start justify-center pt-12">
+<button class="w-12 h-1 bg-surface-container-highest rounded-full"></button>
+</div>
+<!-- Bottom Sheet Content -->
+<div class="bg-surface-container-low p-6 rounded-t-[2rem] shadow-[0_-20px_40px_rgba(0,0,0,0.6)] animate-in slide-in-from-bottom duration-300">
+<div class="flex justify-between items-center mb-8">
+<h2 class="text-2xl font-bold tracking-tight text-on-surface">Quick Add</h2>
+<button class="p-2 bg-surface-container-highest rounded-full text-on-surface-variant active:scale-95 transition-transform">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<!-- Action Tiles Bento Grid -->
+<div class="grid grid-cols-2 gap-4 mb-12">
+<!-- Log Gym Session -->
+<button class="action-tile-gradient group p-6 rounded-2xl flex flex-col items-start gap-4 active:scale-95 transition-all border border-white/5 hover:border-primary/30">
+<div class="w-12 h-12 rounded-xl bg-primary-container flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">fitness_center</span>
+</div>
+<div class="text-left">
+<span class="block text-[0.6875rem] uppercase tracking-widest font-bold text-on-surface-variant mb-1">Workout</span>
+<span class="text-lg font-bold text-on-surface leading-none">Log Gym Session</span>
+</div>
+</button>
+<!-- Add Steps -->
+<button class="action-tile-gradient group p-6 rounded-2xl flex flex-col items-start gap-4 active:scale-95 transition-all border border-white/5 hover:border-primary/30">
+<div class="w-12 h-12 rounded-xl bg-surface-container-highest flex items-center justify-center text-secondary group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined">footprint</span>
+</div>
+<div class="text-left">
+<span class="block text-[0.6875rem] uppercase tracking-widest font-bold text-on-surface-variant mb-1">Activity</span>
+<span class="text-lg font-bold text-on-surface leading-none">Add Steps</span>
+</div>
+</button>
+<!-- Log Weight -->
+<button class="action-tile-gradient group p-6 rounded-2xl flex flex-col items-start gap-4 active:scale-95 transition-all border border-white/5 hover:border-primary/30">
+<div class="w-12 h-12 rounded-xl bg-surface-container-highest flex items-center justify-center text-on-surface-variant group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined">scale</span>
+</div>
+<div class="text-left">
+<span class="block text-[0.6875rem] uppercase tracking-widest font-bold text-on-surface-variant mb-1">Metric</span>
+<span class="text-lg font-bold text-on-surface leading-none">Log Weight</span>
+</div>
+</button>
+<!-- Add Food -->
+<button class="action-tile-gradient group p-6 rounded-2xl flex flex-col items-start gap-4 active:scale-95 transition-all border border-white/5 hover:border-primary/30">
+<div class="w-12 h-12 rounded-xl bg-surface-container-highest flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined">restaurant</span>
+</div>
+<div class="text-left">
+<span class="block text-[0.6875rem] uppercase tracking-widest font-bold text-on-surface-variant mb-1">Nutrition</span>
+<span class="text-lg font-bold text-on-surface leading-none">Add Food</span>
+</div>
+</button>
+</div>
+<!-- Action Secondary Actions -->
+<div class="flex justify-center pb-8">
+<button class="flex items-center gap-2 px-6 py-3 bg-surface-container-highest rounded-full text-[0.75rem] uppercase tracking-widest font-bold text-on-surface active:scale-95 transition-all">
+<span class="material-symbols-outlined text-sm">history</span>
+          Recent Activities
+        </button>
+</div>
+</div>
+</div>
+<!-- BOTTOM NAV BAR (Contextual Navigation Shell) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-6 pt-3 bg-[#131313]/90 backdrop-blur-xl rounded-t-2xl border-t border-white/5 shadow-[0_-10px_40px_rgba(0,0,0,0.4)]">
+<div class="flex flex-col items-center justify-center text-gray-500 p-2 hover:bg-white/5 rounded-xl transition-all cursor-pointer">
+<span class="material-symbols-outlined">home_app_logo</span>
+</div>
+<div class="flex flex-col items-center justify-center text-gray-500 p-2 hover:bg-white/5 rounded-xl transition-all cursor-pointer">
+<span class="material-symbols-outlined">fitness_center</span>
+</div>
+<!-- Active Trigger Center Button -->
+<div class="flex flex-col items-center justify-center text-[#00e475] bg-[#00e475]/10 rounded-xl p-2 scale-110 active:scale-90 transition-transform duration-200 cursor-pointer">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">add_circle</span>
+</div>
+<div class="flex flex-col items-center justify-center text-gray-500 p-2 hover:bg-white/5 rounded-xl transition-all cursor-pointer">
+<span class="material-symbols-outlined">restaurant</span>
+</div>
+<div class="flex flex-col items-center justify-center text-gray-500 p-2 hover:bg-white/5 rounded-xl transition-all cursor-pointer">
+<span class="material-symbols-outlined">scale</span>
+</div>
+</nav>
+</body></html>

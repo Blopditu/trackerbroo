@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Broo Feed - Tracker Broo</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary-fixed": "#62ff96",
+              "primary": "#00e475",
+              "inverse-surface": "#fcf9f8",
+              "on-background": "#e7e5e5",
+              "background": "#0e0e0e",
+              "on-surface-variant": "#acabaa",
+              "surface-bright": "#2b2c2c",
+              "secondary-container": "#004433",
+              "error-container": "#7f2927",
+              "on-tertiary": "#486555",
+              "secondary": "#06e4b1",
+              "on-primary-container": "#21ee7d",
+              "on-tertiary-container": "#405d4d",
+              "tertiary-container": "#d2f3dd",
+              "primary-fixed-dim": "#2af381",
+              "surface": "#0e0e0e",
+              "secondary-fixed-dim": "#2cefbc",
+              "on-secondary-fixed": "#004937",
+              "tertiary-fixed": "#dafce6",
+              "secondary-fixed": "#45fec9",
+              "on-secondary-container": "#00d8a8",
+              "surface-container-highest": "#252626",
+              "surface-container-high": "#1f2020",
+              "surface-container-lowest": "#000000",
+              "on-tertiary-fixed": "#335040",
+              "tertiary-fixed-dim": "#ccedd8",
+              "surface-tint": "#00e475",
+              "inverse-primary": "#006e35",
+              "on-secondary": "#004c39",
+              "on-primary-fixed": "#004a21",
+              "on-primary": "#004b22",
+              "surface-dim": "#0e0e0e",
+              "error": "#ee7d77",
+              "primary-dim": "#00d46c",
+              "surface-container-low": "#131313",
+              "secondary-dim": "#00d4a5",
+              "surface-container": "#191a1a",
+              "inverse-on-surface": "#565555",
+              "primary-container": "#005226",
+              "error-dim": "#bb5551",
+              "surface-variant": "#252626",
+              "on-secondary-fixed-variant": "#006850",
+              "on-error-container": "#ff9993",
+              "outline-variant": "#484848",
+              "tertiary": "#e8ffef",
+              "on-error": "#490106",
+              "outline": "#767575",
+              "on-tertiary-fixed-variant": "#4f6d5b",
+              "on-surface": "#e7e5e5",
+              "tertiary-dim": "#cff0da",
+              "on-primary-fixed-variant": "#006a33"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Manrope"],
+              "label": ["Manrope"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #0e0e0e;
+            font-family: 'Manrope', sans-serif;
+        }
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+        }
+        .bento-wide {
+            grid-column: span 2;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="text-on-surface selection:bg-primary selection:text-on-primary">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-[#131313] flex justify-between items-center px-6 h-16 w-full">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-gray-400">menu</span>
+<h1 class="font-manrope uppercase tracking-widest text-sm text-xl font-bold tracking-tighter text-[#00e475]">STOIC</h1>
+</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-[#00e475]">notifications</span>
+</div>
+</header>
+<main class="pt-24 pb-32 px-6 max-w-2xl mx-auto">
+<!-- Feed Headline -->
+<section class="mb-8">
+<h2 class="text-3xl font-extrabold tracking-tight font-headline text-on-surface">Broo Feed</h2>
+<p class="text-on-surface-variant text-sm mt-1">Shared discipline with your inner circle.</p>
+</section>
+<!-- Quick Action: Share Gym Check-in -->
+<section class="mb-10">
+<button class="w-full bg-primary hover:bg-primary-dim text-on-primary font-bold py-5 px-6 rounded-xl flex items-center justify-between transition-all active:scale-[0.98] shadow-lg shadow-primary/10 group">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-2xl" data-icon="fitness_center">fitness_center</span>
+<span class="font-headline tracking-tight text-lg">Share Gym Check-in</span>
+</div>
+<span class="material-symbols-outlined group-hover:translate-x-1 transition-transform" data-icon="chevron_right">chevron_right</span>
+</button>
+</section>
+<!-- Feed List -->
+<div class="space-y-6">
+<!-- Feed Item: Gym Check-in -->
+<article class="bg-surface-container-high rounded-xl p-6 transition-all border border-transparent hover:border-white/5">
+<div class="flex justify-between items-start mb-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center overflow-hidden">
+<img alt="Marcus profile" class="w-full h-full object-cover" data-alt="Close up portrait of a fit man" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDUmxTjomcQZMr4kTF1oWBWPjdXaLBDOwEeYfOO7dZ9vSmANtQzHLzBZ96FKydUdfb5Be5we9FFA0NIdEDk3GerEBU5xuexwmZ3JOUwFZUMnCvm8B0gyPQZ83QvGj6kPjUza1IK88j8o5XQhh3GuYae6tiZ1Ny5oT99H_nvrQIuaw8KL4IxgVYMm1ctj6qPdON0E8stm7n9N1fDLSTsxEMG8lWtlB6dVU9seEQeOo3xQmrneB8n3hZmVLyKCLv5awOIVBZT50NCCjw"/>
+</div>
+<div>
+<h3 class="font-bold text-on-surface">Marcus Aurelius</h3>
+<p class="text-[10px] uppercase tracking-wider text-on-surface-variant font-bold">24 MIN AGO</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-primary" data-icon="exercise">exercise</span>
+</div>
+<div class="mb-4">
+<p class="text-on-surface leading-relaxed">Completed <span class="text-primary font-bold">Morning Hypertrophy</span></p>
+<p class="text-on-surface-variant text-sm italic mt-1">"Focus was 100% today. Heavy on the compounds."</p>
+</div>
+<div class="flex items-center gap-6 mt-6 pt-4 border-t border-white/5">
+<button class="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors text-sm font-medium">
+<span class="material-symbols-outlined text-lg" data-icon="favorite">favorite</span>
+<span>Respect</span>
+</button>
+<button class="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors text-sm font-medium">
+<span class="material-symbols-outlined text-lg" data-icon="chat_bubble">chat_bubble</span>
+<span>Comment</span>
+</button>
+</div>
+</article>
+<!-- Feed Item: Protein Milestone -->
+<article class="bg-surface-container-high rounded-xl p-6 transition-all border border-transparent hover:border-white/5">
+<div class="flex justify-between items-start mb-6">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center overflow-hidden">
+<img alt="Sarah profile" class="w-full h-full object-cover" data-alt="Minimalist female portrait against dark background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBLtz2NZoddNU0abIaambr3TnYMqpskmt4NCHqrOjai8kJzOsT9Ci5SQiPQm_JUxh4YuiU1L1JcdMSEXFPFL0FPmFX6aCgWKuSuNIthPqhrnwMoeDf-NyoVGjadMESSPuD7ce0IR4xlrmpkWey3elJYh_lVe4T4kKnlF17JEZB8cGC7NY0ktmpaAiN2zF5Vzq6kwIUsPymJm3vzigkPGX-o6cSwcab_bQHMvTAD9cq74iE4lvZby8fUq2IVYOVdhnnFy6GBxtSQykY"/>
+</div>
+<div>
+<h3 class="font-bold text-on-surface">Sarah K.</h3>
+<p class="text-[10px] uppercase tracking-wider text-on-surface-variant font-bold">1 HOUR AGO</p>
+</div>
+</div>
+<div class="px-2 py-1 rounded bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-tighter">MILESTONE</div>
+</div>
+<div class="flex items-center gap-6">
+<!-- Progress Ring -->
+<div class="relative w-20 h-20 flex items-center justify-center shrink-0">
+<svg class="w-full h-full transform -rotate-90">
+<circle class="text-surface-container-highest" cx="40" cy="40" fill="transparent" r="36" stroke="currentColor" stroke-width="6"></circle>
+<circle class="text-primary" cx="40" cy="40" fill="transparent" r="36" stroke="currentColor" stroke-dasharray="226.19" stroke-dashoffset="22.62" stroke-width="6"></circle>
+</svg>
+<span class="absolute text-sm font-extrabold text-on-surface">90%</span>
+</div>
+<div>
+<p class="text-on-surface font-medium leading-snug">Hit her daily <span class="text-primary">protein target</span> early!</p>
+<p class="text-2xl font-black tracking-tighter text-on-surface mt-1">165g <span class="text-xs font-normal text-on-surface-variant uppercase tracking-widest">total</span></p>
+</div>
+</div>
+<div class="flex items-center gap-6 mt-6 pt-4 border-t border-white/5">
+<button class="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors text-sm font-medium">
+<span class="material-symbols-outlined text-lg" data-icon="favorite">favorite</span>
+<span>Respect</span>
+</button>
+<button class="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors text-sm font-medium">
+<span class="material-symbols-outlined text-lg" data-icon="chat_bubble">chat_bubble</span>
+<span>Comment</span>
+</button>
+</div>
+</article>
+<!-- Feed Item: Step Milestone -->
+<article class="bg-surface-container-high rounded-xl p-6 transition-all border border-transparent hover:border-white/5">
+<div class="flex justify-between items-start mb-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center overflow-hidden">
+<img alt="David profile" class="w-full h-full object-cover" data-alt="Portrait of a smiling athletic man" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCvGNxiPZSEAa12EZSClFYMXg_n7zeNIoi0DuB3gbVExYxry9Yjsg8eXFhrhg-kXrYwad6WRA5DUM9sIMwICgnJp7mL_GEs-fWJjryYEzwkByyEB72mK6OY4ORkWbqhiujJR9UfkzRUTY6_cFIZtUeVm3oCslmL6GH9oqOqLUxvHIopsVSZ_tSddRcLevnAnGE_wicbm7fJxVkOsTQTulbluZEpIP8dYZx9Er_pTe3Li_1igdJAAR64oqJ1XUrFtAsimfcQOG9Yvgk"/>
+</div>
+<div>
+<h3 class="font-bold text-on-surface">David Chen</h3>
+<p class="text-[10px] uppercase tracking-wider text-on-surface-variant font-bold">3 HOURS AGO</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-primary" data-icon="footprint">footprint</span>
+</div>
+<div class="mb-4">
+<p class="text-on-surface">Reached <span class="text-primary font-bold">10,000 steps</span> today!</p>
+</div>
+<!-- Small trend graph representation -->
+<div class="h-16 w-full flex items-end gap-1 mb-4 overflow-hidden">
+<div class="flex-1 bg-surface-container-highest rounded-t-sm" style="height: 30%"></div>
+<div class="flex-1 bg-surface-container-highest rounded-t-sm" style="height: 45%"></div>
+<div class="flex-1 bg-surface-container-highest rounded-t-sm" style="height: 40%"></div>
+<div class="flex-1 bg-surface-container-highest rounded-t-sm" style="height: 60%"></div>
+<div class="flex-1 bg-surface-container-highest rounded-t-sm" style="height: 85%"></div>
+<div class="flex-1 bg-surface-container-highest rounded-t-sm" style="height: 70%"></div>
+<div class="flex-1 bg-primary rounded-t-sm" style="height: 100%"></div>
+</div>
+<div class="flex items-center gap-6 mt-6 pt-4 border-t border-white/5">
+<button class="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors text-sm font-medium">
+<span class="material-symbols-outlined text-lg" data-icon="favorite">favorite</span>
+<span>Respect</span>
+</button>
+<button class="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors text-sm font-medium">
+<span class="material-symbols-outlined text-lg" data-icon="chat_bubble">chat_bubble</span>
+<span>Comment</span>
+</button>
+</div>
+</article>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 border-t border-white/5 bg-[#131313]/90 backdrop-blur-xl flex justify-around items-center h-20 pb-safe px-4 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
+<div class="flex flex-col items-center justify-center text-gray-500 gap-1 hover:text-white transition-all active:scale-90 duration-150">
+<span class="material-symbols-outlined" data-icon="calendar_today">calendar_today</span>
+<span class="font-manrope text-[10px] uppercase tracking-wider font-bold">Today</span>
+</div>
+<div class="flex flex-col items-center justify-center text-gray-500 gap-1 hover:text-white transition-all active:scale-90 duration-150">
+<span class="material-symbols-outlined" data-icon="fitness_center">fitness_center</span>
+<span class="font-manrope text-[10px] uppercase tracking-wider font-bold">Gym</span>
+</div>
+<div class="flex flex-col items-center justify-center text-[#00e475] gap-1 hover:text-white transition-all active:scale-90 duration-150">
+<span class="material-symbols-outlined" data-icon="group" style="font-variation-settings: 'FILL' 1;">group</span>
+<span class="font-manrope text-[10px] uppercase tracking-wider font-bold">Community</span>
+</div>
+<div class="flex flex-col items-center justify-center text-gray-500 gap-1 hover:text-white transition-all active:scale-90 duration-150">
+<span class="material-symbols-outlined" data-icon="import_contacts">import_contacts</span>
+<span class="font-manrope text-[10px] uppercase tracking-wider font-bold">Library</span>
+</div>
+<div class="flex flex-col items-center justify-center text-gray-500 gap-1 hover:text-white transition-all active:scale-90 duration-150">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-manrope text-[10px] uppercase tracking-wider font-bold">Profile</span>
+</div>
+</nav>
+</body></html>

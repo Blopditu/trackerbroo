@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="de"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Tracker Broo - Login</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "inverse-surface": "#fcf9f8",
+              "on-surface": "#e7e5e5",
+              "on-tertiary-container": "#405d4d",
+              "surface-variant": "#252626",
+              "on-background": "#e7e5e5",
+              "surface-container-high": "#1f2020",
+              "tertiary": "#e8ffef",
+              "secondary-dim": "#00d4a5",
+              "surface-dim": "#0e0e0e",
+              "inverse-on-surface": "#565555",
+              "background": "#0e0e0e",
+              "surface": "#0e0e0e",
+              "tertiary-dim": "#cff0da",
+              "error-dim": "#bb5551",
+              "surface-container-low": "#131313",
+              "tertiary-fixed": "#dafce6",
+              "primary-container": "#005226",
+              "on-secondary-fixed-variant": "#006850",
+              "on-secondary-fixed": "#004937",
+              "primary-dim": "#00d46c",
+              "surface-tint": "#00e475",
+              "outline-variant": "#484848",
+              "primary-fixed": "#62ff96",
+              "secondary-container": "#004433",
+              "primary-fixed-dim": "#2af381",
+              "secondary": "#06e4b1",
+              "on-tertiary": "#486555",
+              "on-error": "#490106",
+              "on-surface-variant": "#acabaa",
+              "on-primary-fixed": "#004a21",
+              "on-tertiary-fixed-variant": "#4f6d5b",
+              "on-secondary": "#004c39",
+              "error-container": "#7f2927",
+              "on-primary": "#004b22",
+              "outline": "#767575",
+              "tertiary-container": "#d2f3dd",
+              "on-secondary-container": "#00d8a8",
+              "inverse-primary": "#006e35",
+              "on-primary-fixed-variant": "#006a33",
+              "on-tertiary-fixed": "#335040",
+              "on-primary-container": "#21ee7d",
+              "secondary-fixed-dim": "#2cefbc",
+              "surface-bright": "#2b2c2c",
+              "secondary-fixed": "#45fec9",
+              "on-error-container": "#ff9993",
+              "surface-container": "#191a1a",
+              "error": "#ee7d77",
+              "surface-container-highest": "#252626",
+              "surface-container-lowest": "#000000",
+              "tertiary-fixed-dim": "#ccedd8",
+              "primary": "#00e475"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Manrope"],
+              "label": ["Manrope"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Manrope', sans-serif; background-color: #0e0e0e; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface flex flex-col min-h-screen selection:bg-primary selection:text-on-primary">
+<main class="flex-grow flex flex-col items-center justify-center px-6 py-12">
+<div class="w-full max-w-md space-y-12">
+<header class="text-center space-y-4">
+<div class="inline-flex items-center justify-center p-4 bg-surface-container-high rounded-2xl shadow-xl">
+<span class="text-[#00e475] font-black tracking-tighter text-4xl font-headline">TB</span>
+</div>
+<div class="space-y-1">
+<h1 class="text-3xl font-extrabold tracking-tight text-on-surface uppercase font-headline">Tracker Broo</h1>
+<p class="text-on-surface-variant font-medium tracking-wide label-sm">DISCIPLINE OVER DOPAMINE</p>
+</div>
+</header>
+<div class="bg-surface-container-low p-8 rounded-3xl space-y-8 relative overflow-hidden group">
+<div class="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none"></div>
+<form class="space-y-6 relative z-10">
+<div class="space-y-2">
+<label class="block text-[0.6875rem] font-bold uppercase tracking-[0.1em] text-on-surface-variant ml-1">Email Adresse</label>
+<div class="relative">
+<input class="w-full bg-surface-container-highest border-none rounded-xl px-4 py-4 text-on-surface placeholder:text-outline focus:ring-2 focus:ring-primary transition-all duration-200 outline-none" placeholder="name@beispiel.de" type="email"/>
+</div>
+</div>
+<div class="space-y-2">
+<label class="block text-[0.6875rem] font-bold uppercase tracking-[0.1em] text-on-surface-variant ml-1">Passwort</label>
+<div class="relative">
+<input class="w-full bg-surface-container-highest border-none rounded-xl px-4 py-4 text-on-surface placeholder:text-outline focus:ring-2 focus:ring-primary transition-all duration-200 outline-none" placeholder="••••••••" type="password"/>
+</div>
+<div class="flex justify-end">
+<button class="text-[0.6875rem] font-bold uppercase tracking-widest text-primary-dim hover:text-primary transition-colors" type="button">Passwort vergessen?</button>
+</div>
+</div>
+<button class="w-full bg-gradient-to-r from-primary to-primary-container text-on-primary font-extrabold py-4 rounded-xl shadow-lg shadow-primary/10 active:scale-[0.98] transition-all duration-150 uppercase tracking-widest text-sm" type="submit">
+                        Anmelden
+                    </button>
+</form>
+<div class="relative flex items-center justify-center py-2">
+<div class="absolute w-full border-t border-outline-variant/20"></div>
+<span class="relative bg-surface-container-low px-4 text-[0.6875rem] font-bold uppercase tracking-widest text-outline">Oder</span>
+</div>
+<div class="grid grid-cols-2 gap-4 relative z-10">
+<button class="flex items-center justify-center space-x-2 bg-surface-container-highest py-4 rounded-xl hover:bg-surface-bright transition-colors active:scale-95 duration-150">
+<span class="material-symbols-outlined text-xl" data-icon="google">google</span>
+<span class="text-xs font-bold uppercase tracking-widest">Google</span>
+</button>
+<button class="flex items-center justify-center space-x-2 bg-surface-container-highest py-4 rounded-xl hover:bg-surface-bright transition-colors active:scale-95 duration-150">
+<span class="material-symbols-outlined text-xl" data-icon="apple">ios</span>
+<span class="text-xs font-bold uppercase tracking-widest">Apple</span>
+</button>
+</div>
+</div>
+<footer class="text-center space-y-6">
+<p class="text-sm text-on-surface-variant">
+                    Noch kein Bro? 
+                    <a class="text-primary font-bold hover:underline ml-1" href="#">Konto erstellen</a>
+</p>
+<div class="flex items-center justify-center space-x-6 text-[10px] font-bold uppercase tracking-[0.2em] text-outline">
+<a class="hover:text-on-surface transition-colors" href="#">Datenschutz</a>
+<span class="w-1 h-1 bg-outline-variant rounded-full"></span>
+<a class="hover:text-on-surface transition-colors" href="#">Impressum</a>
+<span class="w-1 h-1 bg-outline-variant rounded-full"></span>
+<a class="hover:text-on-surface transition-colors" href="#">Support</a>
+</div>
+</footer>
+</div>
+</main>
+<div class="fixed inset-0 -z-10 overflow-hidden">
+<div class="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-primary/5 blur-[120px] rounded-full"></div>
+<div class="absolute top-[60%] -right-[10%] w-[30%] h-[40%] bg-primary-container/10 blur-[100px] rounded-full"></div>
+</div>
+</body></html>
