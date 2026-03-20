@@ -1,85 +1,63 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { ChartNoAxesCombined, LucideAngularModule, UserRound } from 'lucide-angular';
+import { AppNavKey, AppShellVariant } from '../app.routes';
 
 @Component({
   selector: 'app-top-bar',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, LucideAngularModule],
   template: `
-    <header class="top-bar" role="banner">
-      <p class="title">Tracker Broo</p>
-      <a class="insight-link" routerLink="/insights" aria-label="Insights öffnen">
-        <span class="insight-dot" aria-hidden="true"></span>
-        <span>Insights</span>
-      </a>
+    <header
+      class="fixed inset-x-0 top-0 z-30 border-b border-shell-border bg-shell/88 backdrop-blur-xl"
+      [class.border-transparent]="shellVariant() === 'onboarding'"
+    >
+      <div class="mx-auto flex h-18 w-full max-w-[1200px] items-center gap-4 px-4 sm:px-6 xl:px-8">
+        <div class="min-w-0 flex-1">
+          <p class="text-[0.65rem] font-extrabold uppercase tracking-[0.28em] text-shell-accent">{{ accentLabel() }}</p>
+          <div class="flex min-w-0 items-center gap-3">
+            <h1 class="truncate text-[1.35rem] font-extrabold tracking-[-0.04em] text-shell-ink sm:text-[1.6rem]">
+              {{ title() }}
+            </h1>
+            @if (activeNav() === 'insights') {
+              <span class="hidden rounded-full border border-shell-border bg-shell-card px-2.5 py-1 text-[0.68rem] font-bold uppercase tracking-[0.18em] text-shell-ink-muted sm:inline-flex">
+                Trends
+              </span>
+            }
+          </div>
+        </div>
+
+        @if (shellVariant() === 'app') {
+          <div class="flex shrink-0 items-center gap-2">
+            <a
+              routerLink="/insights"
+              class="hidden min-h-11 items-center gap-2 rounded-full border border-shell-border bg-shell-card px-4 text-xs font-bold uppercase tracking-[0.18em] text-shell-ink-muted transition hover:border-shell-accent hover:text-shell-ink md:inline-flex"
+            >
+              <lucide-icon [img]="icons.trends" class="h-4 w-4" aria-hidden="true"></lucide-icon>
+              Insights
+            </a>
+            <a
+              routerLink="/profile"
+              class="grid h-11 w-11 place-items-center rounded-full border border-shell-border bg-shell-card text-shell-accent transition hover:border-shell-accent hover:bg-shell-card-strong"
+              aria-label="Profil öffnen"
+            >
+              <lucide-icon [img]="icons.bell" class="h-4 w-4" aria-hidden="true"></lucide-icon>
+            </a>
+          </div>
+        }
+      </div>
     </header>
-  `,
-  styles: [`
-    .top-bar {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 64px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 clamp(16px, 4vw, 32px);
-      background: var(--m3-sys-color-surface);
-      border-bottom: 1px solid var(--m3-sys-color-outline-variant);
-      z-index: 28;
-      backdrop-filter: blur(6px);
-    }
-
-    .title {
-      margin: 0;
-      color: var(--m3-sys-color-on-surface);
-      font-family: var(--font-display);
-      font-size: 1.375rem;
-      line-height: 1.75rem;
-      font-weight: 600;
-      letter-spacing: 0;
-    }
-
-    .insight-link {
-      min-height: 44px;
-      border-radius: 999px;
-      color: var(--m3-sys-color-on-surface-variant);
-      border: 1px solid var(--m3-sys-color-outline-variant);
-      padding: 0 14px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      text-decoration: none;
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 0.2px;
-      background: color-mix(in srgb, var(--m3-sys-color-surface-container-high) 86%, transparent);
-      white-space: nowrap;
-    }
-
-    .insight-link:hover {
-      color: var(--m3-sys-color-on-surface);
-      border-color: var(--m3-sys-color-primary);
-    }
-
-    .insight-dot {
-      width: 9px;
-      height: 9px;
-      border-radius: 50%;
-      background: var(--m3-sys-color-primary);
-      flex: 0 0 auto;
-    }
-
-    :host-context(.layout-medium) .top-bar {
-      padding-left: 104px;
-    }
-
-    :host-context(.layout-expanded) .top-bar {
-      padding-left: 116px;
-    }
-  `]
+  `
 })
-export class TopBarComponent {}
+export class TopBarComponent {
+  readonly title = input.required<string>();
+  readonly accentLabel = input('Tracker Broo');
+  readonly shellVariant = input<AppShellVariant>('app');
+  readonly activeNav = input<AppNavKey>(null);
+
+  readonly icons = {
+    bell: UserRound,
+    trends: ChartNoAxesCombined
+  };
+}

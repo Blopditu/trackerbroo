@@ -1,7 +1,64 @@
+.gym-hero {
+  gap: 1rem;
+}
+
+.hero-copy {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.hero-label {
+  margin: 0;
+  color: var(--shell-accent);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+
 .hero h1 {
   margin: 0;
-  font-size: clamp(1.95rem, 4vw, 2.4rem);
-  line-height: 1.04;
+  font-size: clamp(2.2rem, 4vw, 3rem);
+  line-height: 0.96;
+  letter-spacing: -0.06em;
+}
+
+.hero-summary {
+  margin: 0;
+  color: var(--shell-ink-muted);
+  font-size: 0.96rem;
+  font-weight: 600;
+}
+
+.gym-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.gym-summary-card {
+  display: grid;
+  gap: 6px;
+  min-height: 92px;
+  padding: 16px 18px;
+  border-radius: 24px;
+  border: 1px solid var(--shell-border);
+  background: color-mix(in srgb, var(--m3-sys-color-surface) 72%, transparent);
+}
+
+.gym-summary-card span {
+  color: var(--shell-ink-muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.gym-summary-card strong {
+  color: var(--m3-sys-color-on-surface);
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
 }
 
 .hero-controls {
@@ -13,10 +70,13 @@
 
 .gym-tabs {
   width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
   border: 1px solid color-mix(in srgb, var(--m3-sys-color-outline-variant) 70%, transparent);
   border-radius: 999px;
-  background: var(--m3-sys-color-surface-container-high);
-  padding: 4px;
+  background: color-mix(in srgb, var(--m3-sys-color-surface) 72%, transparent);
+  padding: 5px;
 }
 
 .gym-tab-btn {
@@ -30,13 +90,15 @@
   gap: 6px;
   justify-content: center;
   padding: 0 16px;
-  font-size: 14px;
-  font-weight: 700;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
 }
 
 .gym-tab-btn.active {
-  background: var(--m3-sys-color-secondary-container);
-  color: var(--m3-sys-color-on-secondary-container);
+  background: var(--m3-sys-color-primary);
+  color: var(--m3-sys-color-on-primary);
 }
 
 .plan-active-toggle input {
@@ -50,9 +112,9 @@
   width: var(--touch-target);
   height: var(--touch-target);
   border-radius: 999px;
-  border: 1px solid var(--m3-sys-color-outline-variant);
-  background: var(--m3-sys-color-surface-container-high);
-  color: var(--m3-sys-color-on-surface-variant);
+  border: 1px solid var(--shell-border);
+  background: color-mix(in srgb, var(--m3-sys-color-surface) 72%, transparent);
+  color: var(--m3-sys-color-primary);
 }
 
 .detail-dot {
@@ -142,6 +204,7 @@
 }
 
 @media (max-width: 420px) {
+  .gym-summary-grid,
   .hero-controls {
     grid-template-columns: 1fr;
   }

@@ -47,15 +47,19 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
         <p class="toast success" role="status" aria-live="polite" aria-atomic="true">{{ successMessage() }}</p>
       }
 
-      <section class="panel hero">
+      <section class="panel hero community-hero">
         <p class="period">Community</p>
-        <h1>Euer gemeinsamer Rhythmus</h1>
+        <h1>Broo Feed</h1>
         <p class="motto">Gym-Check-ins, Protein-Ziele und Schritte an einem Ort, wie im Gruppenchat.</p>
+
+        <button mat-flat-button type="button" class="action-btn hero-cta" (click)="openGymSheet()">
+          Gym-Check-in teilen
+        </button>
       </section>
 
       <section class="panel section">
         <div class="m3-section-head">
-          <h2>Aktuelle Updates</h2>
+          <h2>Letzte Aktivität</h2>
           <span class="m3-section-meta">{{ posts().length }} Einträge</span>
         </div>
 
@@ -204,6 +208,10 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
       gap: var(--layout-gap);
     }
 
+    .community-hero {
+      gap: 12px;
+    }
+
     .hero,
     .section,
     .post-card {
@@ -212,17 +220,18 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
     }
 
     .post-card {
-      background: var(--m3-sys-color-surface-container-high);
+      background: color-mix(in srgb, var(--m3-sys-color-surface-container-high) 92%, transparent);
       border: 1px solid var(--m3-sys-color-outline-variant);
-      border-radius: 20px;
-      padding: 14px;
+      border-radius: 28px;
+      padding: 16px;
     }
 
     .hero h1,
     .section h2 {
       margin: 0;
-      font-size: 20px;
-      font-weight: 600;
+      font-size: clamp(2rem, 4vw, 2.8rem);
+      font-weight: 800;
+      letter-spacing: -0.06em;
     }
 
     .period,
@@ -235,7 +244,19 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
       margin: 0;
       color: var(--m3-sys-color-on-surface-variant);
       font-size: 13px;
-      font-weight: 600;
+      font-weight: 700;
+    }
+
+    .period {
+      color: var(--shell-accent);
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .hero-cta {
+      width: fit-content;
     }
 
     .day-divider {

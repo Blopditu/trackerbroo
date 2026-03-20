@@ -60,18 +60,18 @@ export interface AmountPickResult {
       z-index: 33;
       display: grid;
       align-items: end;
-      background: rgba(4, 8, 12, 0.58);
-      padding: 0.6rem;
+      background: rgba(4, 8, 12, 0.74);
+      padding: 0.8rem;
       animation: overlay-enter var(--motion-duration-medium) var(--motion-easing-standard) both;
     }
 
     .sheet-card {
-      background: var(--bg-surface-2);
+      background: linear-gradient(180deg, color-mix(in srgb, var(--m3-sys-color-surface-container-high) 92%, transparent), color-mix(in srgb, var(--m3-sys-color-surface-container) 98%, transparent));
       border: 1px solid var(--border-strong);
-      border-radius: 28px 28px 16px 16px;
-      padding: 0.95rem;
+      border-radius: 32px;
+      padding: 1.1rem;
       display: grid;
-      gap: 0.55rem;
+      gap: 0.7rem;
       animation: sheet-enter var(--motion-duration-long) var(--motion-easing-decelerate) both;
     }
 
@@ -106,9 +106,9 @@ export interface AmountPickResult {
 
     .preview {
       border: 1px solid var(--border-strong);
-      border-radius: 14px;
-      background: var(--m3-sys-color-surface-container-high);
-      padding: 0.55rem;
+      border-radius: 18px;
+      background: color-mix(in srgb, var(--m3-sys-color-surface) 76%, transparent);
+      padding: 0.8rem;
       display: flex;
       justify-content: space-between;
       font-weight: 700;

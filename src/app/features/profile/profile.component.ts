@@ -433,7 +433,7 @@ interface ProfileViewCache {
     }
 
     .profile-section-panel {
-      padding: 12px;
+      padding: 14px;
     }
 
     .profile-section-nav {
@@ -448,16 +448,18 @@ interface ProfileViewCache {
     }
 
     h1 {
-      margin-top: 0.2rem;
-      font-size: clamp(1.8rem, 4vw, 2.2rem);
-      line-height: 1.05;
+      margin-top: 0.35rem;
+      font-size: clamp(2rem, 4vw, 2.8rem);
+      line-height: 0.98;
+      letter-spacing: -0.06em;
     }
 
     .sub {
-      margin: 0.35rem 0 0;
-      color: var(--ink-500);
+      margin: 0.45rem 0 0;
+      color: var(--shell-ink-muted);
       font-size: var(--text-sm);
       font-weight: 600;
+      line-height: 1.6;
     }
 
     .avatar-image,
@@ -482,11 +484,11 @@ interface ProfileViewCache {
     }
 
     .gym-target {
-      margin-top: 0.7rem;
+      margin-top: 1rem;
       border: 1px solid var(--border-strong);
-      border-radius: 18px;
-      background: var(--m3-sys-color-surface-container-high);
-      padding: 0.75rem 0.85rem;
+      border-radius: 24px;
+      background: color-mix(in srgb, var(--m3-sys-color-surface) 74%, transparent);
+      padding: 0.95rem 1rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -543,9 +545,9 @@ interface ProfileViewCache {
 
     .sparkline-wrap {
       border: 1px solid var(--border-strong);
-      border-radius: 20px;
-      background: var(--m3-sys-color-surface-container-high);
-      padding: 0.75rem;
+      border-radius: 24px;
+      background: color-mix(in srgb, var(--m3-sys-color-surface) 74%, transparent);
+      padding: 0.95rem;
       margin-bottom: 0.65rem;
     }
 
@@ -560,18 +562,20 @@ interface ProfileViewCache {
       min-height: var(--touch-target-compact);
       border: 1px solid var(--border-strong);
       border-radius: 999px;
-      background: var(--m3-sys-color-surface-container-high);
+      background: color-mix(in srgb, var(--m3-sys-color-surface) 72%, transparent);
       color: var(--ink-700);
       font-size: var(--text-xs);
-      font-weight: 700;
+      font-weight: 800;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
       justify-content: center;
       width: 100%;
     }
 
     .trend-range-btn.active {
       border-color: transparent;
-      background: var(--m3-sys-color-secondary-container);
-      color: var(--m3-sys-color-on-secondary-container);
+      background: var(--m3-sys-color-primary);
+      color: var(--m3-sys-color-on-primary);
     }
 
     .sparkline {
@@ -683,16 +687,18 @@ interface ProfileViewCache {
       min-height: var(--touch-target-compact);
       border: 1px solid var(--border-strong);
       border-radius: 999px;
-      background: var(--m3-sys-color-surface-container-high);
+      background: color-mix(in srgb, var(--m3-sys-color-surface) 72%, transparent);
       color: var(--ink-700);
       font-size: var(--text-xs);
-      font-weight: 700;
+      font-weight: 800;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
     }
 
     .mode-segmented button.active {
       border-color: transparent;
-      background: var(--m3-sys-color-primary-container);
-      color: var(--m3-sys-color-on-primary-container);
+      background: var(--m3-sys-color-primary);
+      color: var(--m3-sys-color-on-primary);
     }
 
     .theme-preset-grid {

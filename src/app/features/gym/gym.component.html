@@ -7,9 +7,24 @@
     <p class="toast success" role="status" aria-live="polite" aria-atomic="true">{{ facade.successMessage() }}</p>
   }
 
-  <header class="panel hero">
-    <p class="title-font">Gym</p>
-    <h1>Krafttracker</h1>
+  <header class="panel hero gym-hero">
+    <div class="hero-copy">
+      <p class="hero-label">Workout</p>
+      <h1>Gym</h1>
+      <p class="hero-summary">Pläne, aktive Sessions und Progress ohne Umwege.</p>
+    </div>
+
+    <div class="gym-summary-grid" aria-label="Gym Überblick">
+      <article class="gym-summary-card">
+        <span>Aktiver Plan</span>
+        <strong>{{ facade.activePlanStatLabel() }}</strong>
+      </article>
+      <article class="gym-summary-card">
+        <span>Bodyweight</span>
+        <strong>{{ facade.latestBodyweightStatLabel() }}</strong>
+      </article>
+    </div>
+
     <div class="hero-controls">
       <div class="gym-tabs" role="tablist" aria-label="Gym Ansicht">
         <button
@@ -22,7 +37,7 @@
           (click)="onHeroTabChange('tracker')"
         >
           <lucide-icon [img]="dumbbellIcon" class="icon" aria-hidden="true"></lucide-icon>
-          Tracker
+          Workout
         </button>
         <button
           type="button"
@@ -34,7 +49,7 @@
           (click)="onHeroTabChange('progress')"
         >
           <lucide-icon [img]="barChartIcon" class="icon" aria-hidden="true"></lucide-icon>
-          Progress
+          Insights
         </button>
       </div>
       <button mat-icon-button type="button" class="hero-profile-btn" routerLink="/profile" aria-label="Profil öffnen">

@@ -16,213 +16,203 @@ import { formatAppError } from '../../core/error-format';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, ReactiveFormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatSelectModule],
   template: `
-    <main class="page onboarding-page">
+    <main class="px-4 py-6 sm:px-6 lg:px-8">
       @if (errorMessage()) {
         <p class="toast error" role="status" aria-live="polite" aria-atomic="true">{{ errorMessage() }}</p>
       }
 
-      <section class="panel halftone">
-        <p class="title-font">TRACKER BROO</p>
-        <h1>Dein Start in mehr Konsistenz</h1>
-        <p class="lead">Kurzes Setup und dann direkt los mit Gym- und Ernährungstracking.</p>
-      </section>
+      <section class="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[minmax(18rem,22rem)_minmax(0,1fr)]">
+        <aside class="rounded-[2rem] border border-shell-border bg-shell-card p-6 shadow-[0_18px_60px_rgba(0,0,0,0.18)] sm:p-8">
+          <p class="text-[0.68rem] font-extrabold uppercase tracking-[0.28em] text-shell-accent">Tracker Broo</p>
+          <h1 class="mt-4 text-4xl font-extrabold tracking-[-0.06em] text-shell-ink">Dein Start in mehr Konsistenz</h1>
+          <p class="mt-3 text-sm leading-7 text-shell-ink-muted">
+            Kurzes Setup, klare Entscheidungen, dann direkt in den Tagesflow.
+          </p>
 
-      @if (loading()) {
-        <section class="panel">
-          <div class="skeleton card"></div>
-        </section>
-      } @else {
-        <section class="panel">
-          <div class="progress">Schritt {{ step() + 1 }} von {{ totalSteps }}</div>
-
-          <form [formGroup]="onboardingForm" (ngSubmit)="finish()" class="stack-form">
-            @if (step() === 0) {
-              <h2>Willkommen</h2>
-              <p class="body-text">
-                Hier geht es nicht um perfekte Tage, sondern um Routine. Wir helfen dir, Essen und Training
-                verlässlich zu tracken.
-              </p>
-            }
-
-            @if (step() === 1) {
-              <h2>Basisdaten</h2>
-
-              <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
-                <mat-label>Name</mat-label>
-                <input matInput id="display_name" type="text" formControlName="display_name" placeholder="Dein Name">
-              </mat-form-field>
-
-              <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
-                <mat-label>Alter</mat-label>
-                <input matInput id="age" type="number" min="10" max="120" formControlName="age">
-              </mat-form-field>
-
-              <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
-                <mat-label>Größe (cm)</mat-label>
-                <input matInput id="height_cm" type="number" min="80" max="260" formControlName="height_cm">
-              </mat-form-field>
-
-              <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
-                <mat-label>Aktuelles Gewicht (kg)</mat-label>
-                <input matInput id="current_weight_kg" type="number" min="20" step="0.1" formControlName="current_weight_kg">
-              </mat-form-field>
-            }
-
-            @if (step() === 2) {
-              <h2>Dein Rhythmus</h2>
-
-              <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
-                <mat-label>Gym pro Woche</mat-label>
-                <input matInput id="weekly_gym_target" type="number" min="1" max="14" formControlName="weekly_gym_target">
-              </mat-form-field>
-
-              <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
-                <mat-label>Aktivitätslevel</mat-label>
-                <mat-select id="activity_level" formControlName="activity_level">
-                  <mat-option value="low">Niedrig</mat-option>
-                  <mat-option value="moderate">Mittel</mat-option>
-                  <mat-option value="high">Hoch</mat-option>
-                </mat-select>
-              </mat-form-field>
-            }
-
-            @if (step() === 3) {
-              <h2>Tracking Setup</h2>
-
-              <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
-                <mat-label>Ernährung tracken</mat-label>
-                <mat-select id="track_nutrition" formControlName="track_nutrition">
-                  <mat-option [value]="true">Ja</mat-option>
-                  <mat-option [value]="false">Nein</mat-option>
-                </mat-select>
-              </mat-form-field>
-
-              <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
-                <mat-label>Gym tracken</mat-label>
-                <mat-select id="track_gym" formControlName="track_gym">
-                  <mat-option [value]="true">Ja</mat-option>
-                  <mat-option [value]="false">Nein</mat-option>
-                </mat-select>
-              </mat-form-field>
-
-              <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
-                <mat-label>Schritte tracken</mat-label>
-                <mat-select id="track_steps" formControlName="track_steps">
-                  <mat-option [value]="true">Ja</mat-option>
-                  <mat-option [value]="false">Nein</mat-option>
-                </mat-select>
-              </mat-form-field>
-
-              @if (onboardingForm.controls.track_steps.value) {
-                <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
-                  <mat-label>Schrittziel pro Tag</mat-label>
-                  <input matInput id="daily_steps_target" type="number" min="1000" max="50000" formControlName="daily_steps_target">
-                </mat-form-field>
-              }
-            }
-
-            @if (step() === 4) {
-              <h2>Als Web-App nutzen</h2>
-              <p class="body-text">
-                Installiert fühlt sich Tracker Broo mehr wie eine richtige App an und läuft ohne die normale Browser-Leiste.
-              </p>
-
-              <div class="install-guide-list">
-                @for (guide of installGuides; track guide.platform) {
-                  <article class="install-guide-card">
-                    <strong>{{ guide.platform }}</strong>
-                    <p>{{ guide.steps }}</p>
-                  </article>
-                }
+          <div class="mt-8 grid gap-3">
+            @for (index of stepIndicators; track index) {
+              <div
+                class="rounded-[1.4rem] border p-4 transition"
+                [class.border-shell-accent]="index === step()"
+                [class.bg-shell-accent-muted]="index === step()"
+                [class.border-shell-border]="index !== step()"
+                [class.bg-shell-card-strong]="index !== step()"
+              >
+                <p class="text-[0.68rem] font-extrabold uppercase tracking-[0.24em]" [class.text-shell-accent]="index === step()" [class.text-shell-ink-muted]="index !== step()">
+                  Schritt {{ index + 1 }}
+                </p>
+                <p class="mt-2 text-base font-bold" [class.text-shell-ink]="index === step()" [class.text-shell-ink-muted]="index !== step()">
+                  {{ stepTitle(index) }}
+                </p>
               </div>
             }
+          </div>
+        </aside>
 
-            <div class="actions">
-              @if (step() > 0) {
-                <button mat-flat-button type="button" class="action-btn ghost" (click)="prevStep()">Zurück</button>
-              }
-
-              @if (step() < totalSteps - 1) {
-                <button mat-flat-button type="button" class="action-btn" (click)="nextStep()" [disabled]="!canGoNext()">
-                  Weiter
-                </button>
-              } @else {
-                <button mat-flat-button type="submit" class="action-btn" [disabled]="saving() || !canFinish()">
-                  {{ saving() ? 'Wird eingerichtet …' : 'Loslegen' }}
-                </button>
-              }
+        @if (loading()) {
+          <section class="rounded-[2rem] border border-shell-border bg-shell-card p-6 shadow-[0_18px_60px_rgba(0,0,0,0.18)] sm:p-8">
+            <div class="skeleton card"></div>
+          </section>
+        } @else {
+          <section class="rounded-[2rem] border border-shell-border bg-shell-card p-6 shadow-[0_18px_60px_rgba(0,0,0,0.18)] sm:p-8">
+            <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p class="text-[0.68rem] font-extrabold uppercase tracking-[0.28em] text-shell-accent">Setup</p>
+                <h2 class="mt-2 text-3xl font-extrabold tracking-[-0.05em] text-shell-ink">{{ stepTitle(step()) }}</h2>
+              </div>
+              <div class="rounded-full border border-shell-border bg-shell-card-strong px-4 py-2 text-xs font-extrabold uppercase tracking-[0.22em] text-shell-ink-muted">
+                Schritt {{ step() + 1 }} / {{ totalSteps }}
+              </div>
             </div>
-          </form>
-        </section>
-      }
+
+            <form [formGroup]="onboardingForm" (ngSubmit)="finish()" class="grid gap-5">
+              @if (step() === 0) {
+                <section class="grid gap-5">
+                  <p class="max-w-2xl text-base leading-7 text-shell-ink-muted">
+                    Hier geht es nicht um perfekte Tage, sondern um Wiederholbarkeit. Essen, Training und Fortschritt
+                    sollen in wenigen Sekunden erfassbar sein.
+                  </p>
+                  <div class="grid gap-3 md:grid-cols-3">
+                    <article class="rounded-[1.4rem] border border-shell-border bg-shell-card-strong p-4">
+                      <p class="text-[0.68rem] font-extrabold uppercase tracking-[0.24em] text-shell-accent">Heute</p>
+                      <p class="mt-3 text-lg font-extrabold tracking-[-0.04em] text-shell-ink">Schnell loggen</p>
+                    </article>
+                    <article class="rounded-[1.4rem] border border-shell-border bg-shell-card-strong p-4">
+                      <p class="text-[0.68rem] font-extrabold uppercase tracking-[0.24em] text-shell-accent">Gym</p>
+                      <p class="mt-3 text-lg font-extrabold tracking-[-0.04em] text-shell-ink">Aktive Session</p>
+                    </article>
+                    <article class="rounded-[1.4rem] border border-shell-border bg-shell-card-strong p-4">
+                      <p class="text-[0.68rem] font-extrabold uppercase tracking-[0.24em] text-shell-accent">Insights</p>
+                      <p class="mt-3 text-lg font-extrabold tracking-[-0.04em] text-shell-ink">Klare Verläufe</p>
+                    </article>
+                  </div>
+                </section>
+              }
+
+              @if (step() === 1) {
+                <section class="grid gap-4 md:grid-cols-2">
+                  <mat-form-field class="m3-field md:col-span-2" appearance="outline" subscriptSizing="dynamic">
+                    <mat-label>Name</mat-label>
+                    <input matInput id="display_name" type="text" formControlName="display_name" placeholder="Dein Name">
+                  </mat-form-field>
+
+                  <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+                    <mat-label>Alter</mat-label>
+                    <input matInput id="age" type="number" min="10" max="120" formControlName="age">
+                  </mat-form-field>
+
+                  <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+                    <mat-label>Größe (cm)</mat-label>
+                    <input matInput id="height_cm" type="number" min="80" max="260" formControlName="height_cm">
+                  </mat-form-field>
+
+                  <mat-form-field class="m3-field md:col-span-2" appearance="outline" subscriptSizing="dynamic">
+                    <mat-label>Aktuelles Gewicht (kg)</mat-label>
+                    <input matInput id="current_weight_kg" type="number" min="20" step="0.1" formControlName="current_weight_kg">
+                  </mat-form-field>
+                </section>
+              }
+
+              @if (step() === 2) {
+                <section class="grid gap-4 md:grid-cols-2">
+                  <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+                    <mat-label>Gym pro Woche</mat-label>
+                    <input matInput id="weekly_gym_target" type="number" min="1" max="14" formControlName="weekly_gym_target">
+                  </mat-form-field>
+
+                  <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+                    <mat-label>Aktivitätslevel</mat-label>
+                    <mat-select id="activity_level" formControlName="activity_level">
+                      <mat-option value="low">Niedrig</mat-option>
+                      <mat-option value="moderate">Mittel</mat-option>
+                      <mat-option value="high">Hoch</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                </section>
+              }
+
+              @if (step() === 3) {
+                <section class="grid gap-4 md:grid-cols-2">
+                  <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+                    <mat-label>Ernährung tracken</mat-label>
+                    <mat-select id="track_nutrition" formControlName="track_nutrition">
+                      <mat-option [value]="true">Ja</mat-option>
+                      <mat-option [value]="false">Nein</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+
+                  <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+                    <mat-label>Gym tracken</mat-label>
+                    <mat-select id="track_gym" formControlName="track_gym">
+                      <mat-option [value]="true">Ja</mat-option>
+                      <mat-option [value]="false">Nein</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+
+                  <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+                    <mat-label>Schritte tracken</mat-label>
+                    <mat-select id="track_steps" formControlName="track_steps">
+                      <mat-option [value]="true">Ja</mat-option>
+                      <mat-option [value]="false">Nein</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+
+                  @if (onboardingForm.controls.track_steps.value) {
+                    <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+                      <mat-label>Schrittziel pro Tag</mat-label>
+                      <input matInput id="daily_steps_target" type="number" min="1000" max="50000" formControlName="daily_steps_target">
+                    </mat-form-field>
+                  }
+                </section>
+              }
+
+              @if (step() === 4) {
+                <section class="grid gap-4">
+                  <p class="max-w-2xl text-base leading-7 text-shell-ink-muted">
+                    Installiert fühlt sich Tracker Broo wie eine richtige App an und bleibt schneller erreichbar.
+                  </p>
+
+                  <div class="grid gap-3 md:grid-cols-3">
+                    @for (guide of installGuides; track guide.platform) {
+                      <article class="rounded-[1.4rem] border border-shell-border bg-shell-card-strong p-4">
+                        <strong class="text-sm font-extrabold uppercase tracking-[0.18em] text-shell-accent">{{ guide.platform }}</strong>
+                        <p class="mt-3 text-sm leading-6 text-shell-ink-muted">{{ guide.steps }}</p>
+                      </article>
+                    }
+                  </div>
+                </section>
+              }
+
+              <div class="mt-2 flex flex-wrap justify-between gap-3 border-t border-shell-border pt-5">
+                <div class="text-sm text-shell-ink-muted">
+                  {{ helperCopy(step()) }}
+                </div>
+
+                <div class="flex flex-wrap gap-3">
+                  @if (step() > 0) {
+                    <button mat-flat-button type="button" class="action-btn ghost" (click)="prevStep()">Zurück</button>
+                  }
+
+                  @if (step() < totalSteps - 1) {
+                    <button mat-flat-button type="button" class="action-btn" (click)="nextStep()" [disabled]="!canGoNext()">
+                      Weiter
+                    </button>
+                  } @else {
+                    <button mat-flat-button type="submit" class="action-btn" [disabled]="saving() || !canFinish()">
+                      {{ saving() ? 'Wird eingerichtet …' : 'Loslegen' }}
+                    </button>
+                  }
+                </div>
+              </div>
+            </form>
+          </section>
+        }
+      </section>
     </main>
   `,
   styles: [`
-    .onboarding-page {
-      display: grid;
-      gap: 0.75rem;
-    }
-
-    h1 {
-      margin-top: 0.2rem;
-      font-size: 1.6rem;
-    }
-
-    .lead {
-      margin: 0.35rem 0 0;
-      color: var(--ink-500);
-      font-size: var(--text-sm);
-      font-weight: 600;
-    }
-
-    .progress {
-      margin-bottom: 0.65rem;
-      font-size: var(--text-sm);
-      color: var(--ink-500);
-      font-weight: 700;
-    }
-
-    .stack-form {
-      display: grid;
-      gap: 0.55rem;
-    }
-
-    .body-text {
-      color: var(--ink-600);
-      font-weight: 600;
-      line-height: 1.4;
-    }
-
-    .install-guide-list {
-      display: grid;
-      gap: 0.65rem;
-    }
-
-    .install-guide-card {
-      border: 1px solid var(--border-strong);
-      border-radius: 18px;
-      background: var(--m3-sys-color-surface-container-high);
-      padding: 0.85rem;
-      display: grid;
-      gap: 0.35rem;
-    }
-
-    .install-guide-card p {
-      margin: 0;
-      color: var(--ink-600);
-      font-size: var(--text-sm);
-      font-weight: 600;
-      line-height: 1.4;
-    }
-
-    .actions {
-      display: flex;
-      gap: 0.5rem;
-      margin-top: 0.35rem;
-    }
-
-    .actions .action-btn {
-      flex: 1;
+    :host {
+      display: block;
     }
   `]
 })
@@ -234,6 +224,7 @@ export class OnboardingComponent implements OnInit {
 
   readonly step = signal(0);
   readonly totalSteps = 5;
+  readonly stepIndicators = [0, 1, 2, 3, 4];
   readonly loading = signal(true);
   readonly saving = signal(false);
   readonly errorMessage = signal<string | null>(null);
@@ -269,6 +260,22 @@ export class OnboardingComponent implements OnInit {
     },
     { updateOn: 'change' }
   );
+
+  stepTitle(index: number): string {
+    if (index === 0) return 'Willkommen';
+    if (index === 1) return 'Basisdaten';
+    if (index === 2) return 'Dein Rhythmus';
+    if (index === 3) return 'Tracking Setup';
+    return 'Als Web-App nutzen';
+  }
+
+  helperCopy(index: number): string {
+    if (index === 0) return 'Ein kurzer Überblick, bevor du loslegst.';
+    if (index === 1) return 'Nur die Basiswerte, die du später wirklich brauchst.';
+    if (index === 2) return 'Damit Trainings- und Zielkarten sinnvoll starten.';
+    if (index === 3) return 'Tracking nur dort aktivieren, wo es dir wirklich hilft.';
+    return 'Optional, aber für den Alltag klar besser.';
+  }
 
   async ngOnInit(): Promise<void> {
     await this.loadProfile();

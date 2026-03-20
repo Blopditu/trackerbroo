@@ -7,10 +7,29 @@
     <p class="toast success" role="status" aria-live="polite" aria-atomic="true">{{ facade.successMessage() }}</p>
   }
 
-  <header class="panel halftone">
-    <p class="title-font">Bibliothek</p>
-    <h1>Zutaten & Mahlzeiten</h1>
-    <p class="lead">Baue deine Komponenten einmal auf und halte die Bibliothek sauber.</p>
+  <header class="panel halftone library-hero">
+    <div>
+      <p class="hero-label">Bibliothek</p>
+      <h1>Zutaten & Mahlzeiten</h1>
+      <p class="lead">Baue deine Komponenten einmal auf und halte die Bibliothek sauber.</p>
+    </div>
+
+    <div class="library-summary-grid" aria-label="Bibliothek Überblick">
+      <article class="library-summary-card">
+        <span>Einträge</span>
+        <strong>
+          @if (activeTab() === 'ingredients') {
+            {{ facade.filteredIngredients().length }}
+          } @else {
+            {{ facade.mealListRows().length }}
+          }
+        </strong>
+      </article>
+      <article class="library-summary-card">
+        <span>Aktion</span>
+        <strong>{{ activeTab() === 'ingredients' ? 'Zutat anlegen' : 'Mahlzeit anlegen' }}</strong>
+      </article>
+    </div>
   </header>
 
   <section class="panel">

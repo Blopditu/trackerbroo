@@ -2,23 +2,29 @@
   display: block;
 }
 
+.app-surface {
+  position: relative;
+}
+
 .layout-shell {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
+  min-height: calc(100vh - 72px);
 }
 
 .layout-shell.with-rail {
-  grid-template-columns: 92px minmax(0, 1fr);
-  gap: 0;
+  grid-template-columns: 116px minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0 20px;
 }
 
 .rail-slot {
   position: sticky;
-  top: 64px;
-  height: calc(100vh - 64px);
-  padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
-  border-right: 1px solid var(--m3-sys-color-outline-variant);
-  background: var(--m3-sys-color-surface);
+  top: 84px;
+  height: calc(100vh - 96px);
   z-index: 26;
 }
 
@@ -26,16 +32,16 @@
   animation: route-enter var(--motion-duration-medium) var(--motion-easing-emphasized);
   min-width: 0;
   width: 100%;
-  max-width: 1080px;
+  max-width: 1160px;
   margin: 0 auto;
 }
 
 .app-surface.layout-expanded .layout-shell.with-rail {
-  grid-template-columns: 104px minmax(0, 1fr);
+  grid-template-columns: 124px minmax(0, 1fr);
 }
 
 .app-surface.layout-compact .route-host {
-  max-width: 560px;
+  max-width: 640px;
 }
 
 .app-surface.layout-medium,
@@ -43,9 +49,26 @@
   padding-bottom: 24px;
 }
 
+.app-surface[data-shell='auth'] .layout-shell,
+.app-surface[data-shell='onboarding'] .layout-shell {
+  min-height: calc(100vh - 72px);
+}
+
+.app-surface[data-shell='auth'] .route-host,
+.app-surface[data-shell='onboarding'] .route-host {
+  max-width: 1200px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .route-host {
     animation: none;
+  }
+}
+
+@media (max-width: 1199px) {
+  .layout-shell.with-rail {
+    gap: 18px;
+    padding-inline: 18px;
   }
 }
 

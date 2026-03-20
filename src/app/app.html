@@ -1,18 +1,25 @@
 <div
   class="app-surface"
+  [attr.data-shell]="shellVariant()"
+  [attr.data-route]="route()"
   [class.keyboard-open]="keyboardOpen()"
   [class.layout-compact]="isCompact()"
   [class.layout-medium]="isMedium()"
   [class.layout-expanded]="isExpanded()"
 >
   @if (showTopBar()) {
-    <app-top-bar></app-top-bar>
+    <app-top-bar
+      [title]="currentTitle()"
+      [accentLabel]="currentAccentLabel()"
+      [shellVariant]="shellVariant()"
+      [activeNav]="currentNavKey()"
+    />
   }
 
   <section class="layout-shell" [class.with-rail]="showNav() && !isCompact()">
     @if (showNav() && !isCompact()) {
       <aside class="rail-slot" aria-label="Navigation">
-        <app-bottom-nav mode="rail"></app-bottom-nav>
+        <app-bottom-nav mode="rail" [activeNav]="currentNavKey()"></app-bottom-nav>
       </aside>
     }
     <section class="route-host">
@@ -21,6 +28,6 @@
   </section>
 
   @if (showNav() && isCompact()) {
-    <app-bottom-nav mode="bottom"></app-bottom-nav>
+    <app-bottom-nav mode="bottom" [activeNav]="currentNavKey()"></app-bottom-nav>
   }
 </div>

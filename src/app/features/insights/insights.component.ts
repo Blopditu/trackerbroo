@@ -26,8 +26,8 @@ type DetailKind = 'nutrition' | 'weight' | 'workouts' | 'volume';
         <p class="toast error" role="status" aria-live="polite" aria-atomic="true">{{ errorMessage() }}</p>
       }
 
-      <section class="panel hero">
-        <p class="title-font">Insights</p>
+      <section class="panel hero insights-hero">
+        <p class="title-font hero-kicker">Insights</p>
         <h1>Vier klare Verläufe</h1>
         <p class="subtle">Ernährung, Gewicht und Training auf einen Blick.</p>
 
@@ -144,10 +144,29 @@ type DetailKind = 'nutrition' | 'weight' | 'workouts' | 'volume';
       gap: var(--layout-gap);
     }
 
+    .insights-hero {
+      gap: 12px;
+    }
+
+    .hero-kicker {
+      color: var(--shell-accent);
+      letter-spacing: 0.28em;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
     .hero h1 {
       margin: 0;
-      font-size: clamp(1.95rem, 4vw, 2.35rem);
-      line-height: 1.04;
+      font-size: clamp(2rem, 4vw, 2.9rem);
+      line-height: 0.96;
+      letter-spacing: -0.06em;
+    }
+
+    .subtle {
+      margin: 0;
+      color: var(--shell-ink-muted);
+      font-size: 0.96rem;
+      font-weight: 600;
     }
 
     .range-toggle {
@@ -160,18 +179,20 @@ type DetailKind = 'nutrition' | 'weight' | 'workouts' | 'volume';
       min-height: var(--touch-target-compact);
       border: 1px solid var(--m3-sys-color-outline-variant);
       border-radius: 999px;
-      background: var(--m3-sys-color-surface-container-high);
+      background: color-mix(in srgb, var(--m3-sys-color-surface) 72%, transparent);
       color: var(--m3-sys-color-on-surface-variant);
       font-size: 12px;
-      font-weight: 700;
+      font-weight: 800;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
       justify-content: center;
       width: 100%;
     }
 
     .range-btn.active {
       border-color: transparent;
-      background: var(--m3-sys-color-secondary-container);
-      color: var(--m3-sys-color-on-secondary-container);
+      background: var(--m3-sys-color-primary);
+      color: var(--m3-sys-color-on-primary);
     }
 
     .insights-grid {
@@ -186,8 +207,8 @@ type DetailKind = 'nutrition' | 'weight' | 'workouts' | 'volume';
       text-align: left;
       width: 100%;
       border: 1px solid var(--m3-sys-color-outline-variant);
-      border-radius: 22px;
-      background: var(--m3-sys-color-surface-container-high);
+      border-radius: 28px;
+      background: color-mix(in srgb, var(--m3-sys-color-surface-container-high) 92%, transparent);
       color: var(--m3-sys-color-on-surface);
       padding: var(--panel-padding);
     }

@@ -2,12 +2,58 @@
   gap: var(--layout-gap);
 }
 
+.library-hero {
+  display: grid;
+  gap: 1rem;
+}
+
+.hero-label {
+  margin: 0;
+  color: var(--shell-accent);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+
+.library-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.library-summary-card {
+  display: grid;
+  gap: 6px;
+  min-height: 92px;
+  padding: 16px 18px;
+  border-radius: 24px;
+  border: 1px solid var(--shell-border);
+  background: color-mix(in srgb, var(--m3-sys-color-surface) 76%, transparent);
+}
+
+.library-summary-card span {
+  color: var(--shell-ink-muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.library-summary-card strong {
+  color: var(--m3-sys-color-on-surface);
+  font-size: 1.02rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
 .tab-toggle {
   display: inline-flex;
   border: 1px solid var(--m3-sys-color-outline-variant);
   border-radius: 999px;
   overflow: hidden;
-  background: var(--m3-sys-color-surface-container-high);
+  background: color-mix(in srgb, var(--m3-sys-color-surface) 74%, transparent);
+  padding: 5px;
 }
 
 .tab-toggle-btn {
@@ -16,27 +62,31 @@
   border-radius: 999px;
   background: transparent;
   color: var(--m3-sys-color-on-surface-variant);
-  font-size: var(--text-sm);
-  font-weight: 700;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
   padding: 0 16px;
 }
 
 .tab-toggle-btn.active {
-  background: var(--m3-sys-color-secondary-container);
-  color: var(--m3-sys-color-on-secondary-container);
+  background: var(--m3-sys-color-primary);
+  color: var(--m3-sys-color-on-primary);
 }
 
 h1 {
-  margin-top: 0.2rem;
-  font-size: clamp(1.85rem, 4vw, 2.25rem);
-  line-height: 1.06;
+  margin-top: 0.3rem;
+  font-size: clamp(2rem, 4vw, 2.7rem);
+  line-height: 0.98;
+  letter-spacing: -0.05em;
 }
 
 .lead {
-  margin: 0.35rem 0 0;
-  color: var(--m3-sys-color-on-surface-variant);
+  margin: 0.45rem 0 0;
+  color: var(--shell-ink-muted);
   font-size: 0.95rem;
   font-weight: 600;
+  line-height: 1.6;
 }
 
 .toolbar {
@@ -71,7 +121,7 @@ h1 {
   align-items: start;
   gap: 0.9rem;
   padding: 0.95rem 1rem;
-  border-radius: 24px;
+  border-radius: 28px;
   content-visibility: auto;
   contain-intrinsic-size: 132px;
 }
@@ -129,10 +179,10 @@ h1 {
 .library-edit-btn {
   width: 44px;
   height: 44px;
-  border-radius: 14px;
-  border: 1px solid var(--m3-sys-color-outline-variant);
-  background: var(--m3-sys-color-surface-container-high);
-  color: var(--m3-sys-color-on-surface-variant);
+  border-radius: 16px;
+  border: 1px solid var(--shell-border);
+  background: color-mix(in srgb, var(--m3-sys-color-surface) 74%, transparent);
+  color: var(--m3-sys-color-primary);
   display: grid;
   place-items: center;
   margin-top: 0.1rem;
@@ -238,6 +288,7 @@ h1 {
 }
 
 @media (max-width: 480px) {
+  .library-summary-grid,
   .toolbar {
     grid-template-columns: 1fr;
   }

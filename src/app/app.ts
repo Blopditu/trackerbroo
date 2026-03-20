@@ -1,5 +1,5 @@
 import { Component, signal, computed, inject, OnDestroy, effect } from '@angular/core';
-import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
+import { RouterOutlet, Router, NavigationEnd, ActivatedRouteSnapshot } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { filter } from 'rxjs/operators';
 import { Subscription } from 'rxjs';
@@ -8,6 +8,7 @@ import { TopBarComponent } from './ui/top-bar.component';
 import { AuthService } from './core/auth.service';
 import { SupabaseService } from './core/supabase.service';
 import { ThemeService } from './core/theme.service';
+import { AppNavKey, AppRouteData, AppShellVariant } from './app.routes';
 
 @Component({
   selector: 'app-root',
@@ -21,6 +22,12 @@ export class App implements OnDestroy {
   private readonly supabaseService = inject(SupabaseService);
   private readonly themeService = inject(ThemeService);
   private readonly currentRoute = signal('/');
+  private readonly currentRouteData = signal<AppRouteData>({
+    shell: 'app',
+    title: 'Heute',
+    nav: 'today',
+    accentLabel: 'Broo Board'
+  });
   private readonly isKeyboardOpen = signal(false);
   private readonly viewportWidth = signal(typeof window === 'undefined' ? 390 : window.innerWidth);
   private routeSubscription: Subscription | null = null;
@@ -29,8 +36,12 @@ export class App implements OnDestroy {
   private lastThemeUserId: string | null = null;
 
   // Use computed signal to determine if nav should be shown
-  showNav = computed(() => !this.currentRoute().includes('/login') && !this.currentRoute().includes('/onboarding'));
-  showTopBar = computed(() => !this.currentRoute().includes('/login') && !this.currentRoute().includes('/onboarding'));
+  readonly shellVariant = computed<AppShellVariant>(() => this.currentRouteData().shell);
+  readonly showNav = computed(() => this.shellVariant() === 'app');
+  readonly showTopBar = computed(() => this.shellVariant() !== 'auth');
+  readonly currentTitle = computed(() => this.currentRouteData().title);
+  readonly currentAccentLabel = computed(() => this.currentRouteData().accentLabel ?? 'Tracker Broo');
+  readonly currentNavKey = computed<AppNavKey>(() => this.currentRouteData().nav);
   readonly layoutMode = computed<'compact' | 'medium' | 'expanded'>(() => {
     const width = this.viewportWidth();
     if (width >= 1200) {
@@ -57,7 +68,10 @@ export class App implements OnDestroy {
       .pipe(filter(event => event instanceof NavigationEnd))
       .subscribe((event: NavigationEnd) => {
         this.currentRoute.set(event.url);
+        this.currentRouteData.set(this.readRouteData());
       });
+
+    this.currentRouteData.set(this.readRouteData());
 
     if (typeof window !== 'undefined') {
       window.addEventListener('resize', this.handleWindowResize, { passive: true });
@@ -82,6 +96,10 @@ export class App implements OnDestroy {
 
   protected keyboardOpen(): boolean {
     return this.isKeyboardOpen();
+  }
+
+  protected route(): string {
+    return this.currentRoute();
   }
 
   private setupMobileViewportHandlers(): void {
@@ -166,5 +184,21 @@ export class App implements OnDestroy {
       const fallbackSeed = this.themeService.readStoredSeed() || this.themeService.getDefaultSeed();
       this.themeService.applySeed(fallbackSeed, { persistLocal: true });
     }
+  }
+
+  private readRouteData(): AppRouteData {
+    let snapshot: ActivatedRouteSnapshot | null = this.router.routerState.snapshot.root;
+
+    while (snapshot?.firstChild) {
+      snapshot = snapshot.firstChild;
+    }
+
+    const data = snapshot?.data as Partial<AppRouteData> | undefined;
+    return {
+      shell: data?.shell ?? 'app',
+      title: data?.title ?? 'Tracker Broo',
+      nav: data?.nav ?? null,
+      accentLabel: data?.accentLabel ?? 'Tracker Broo'
+    };
   }
 }

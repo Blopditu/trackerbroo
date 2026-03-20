@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+@source "./app/**/*.{html,ts,css,scss}";
+@source "./index.html";
+
+@theme inline {
+  --font-sans: var(--font-body);
+  --font-display: var(--font-display);
+
+  --color-shell: var(--shell-bg);
+  --color-shell-elevated: var(--shell-elevated);
+  --color-shell-muted: var(--shell-muted);
+  --color-shell-card: var(--shell-card);
+  --color-shell-card-strong: var(--shell-card-strong);
+  --color-shell-border: var(--shell-border);
+  --color-shell-border-soft: var(--shell-border-soft);
+  --color-shell-ink: var(--shell-ink);
+  --color-shell-ink-muted: var(--shell-ink-muted);
+  --color-shell-accent: var(--shell-accent);
+  --color-shell-accent-strong: var(--shell-accent-strong);
+  --color-shell-accent-muted: var(--shell-accent-muted);
+  --color-shell-danger: var(--shell-danger);
+}

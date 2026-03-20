@@ -59,7 +59,7 @@ let sheetTitleIdCounter = 0;
       display: grid;
       align-items: end;
       padding-bottom: var(--sheet-keyboard-inset, 0px);
-      background: rgba(4, 8, 12, 0.58);
+      background: rgba(4, 8, 12, 0.74);
       touch-action: pan-y;
       opacity: 0;
       pointer-events: none;
@@ -67,18 +67,18 @@ let sheetTitleIdCounter = 0;
     }
 
     .sheet {
-      background: var(--m3-sys-color-surface-container);
+      background: linear-gradient(180deg, color-mix(in srgb, var(--m3-sys-color-surface-container-high) 92%, transparent), color-mix(in srgb, var(--m3-sys-color-surface-container) 98%, transparent));
       border-top: 1px solid var(--m3-sys-color-outline-variant);
       border-left: 1px solid var(--m3-sys-color-outline-variant);
       border-right: 1px solid var(--m3-sys-color-outline-variant);
-      border-radius: 28px 28px 0 0;
-      padding: 12px 16px calc(16px + env(safe-area-inset-bottom));
+      border-radius: 32px 32px 0 0;
+      padding: 12px 18px calc(18px + env(safe-area-inset-bottom));
       max-height: min(86vh, calc(100vh - 12px - var(--sheet-keyboard-inset, 0px)));
       overflow: auto;
       scroll-padding-bottom: calc(var(--sheet-keyboard-inset, 0px) + 96px);
       -webkit-overflow-scrolling: touch;
       overscroll-behavior: contain;
-      box-shadow: 0 -12px 28px rgba(0, 0, 0, 0.35);
+      box-shadow: 0 -18px 48px rgba(0, 0, 0, 0.44);
       transform: translateY(calc(28px + var(--sheet-drag-y, 0px))) scale(0.985);
       opacity: 0;
       transition:
@@ -101,11 +101,11 @@ let sheetTitleIdCounter = 0;
     }
 
     .drag-handle {
-      width: 52px;
-      height: 5px;
+      width: 56px;
+      height: 6px;
       border-radius: 99px;
-      background: var(--m3-sys-color-outline-variant);
-      margin: 0 auto 10px;
+      background: color-mix(in srgb, var(--m3-sys-color-outline-variant) 88%, transparent);
+      margin: 0 auto 12px;
       touch-action: none;
       cursor: grab;
       position: relative;
@@ -120,14 +120,15 @@ let sheetTitleIdCounter = 0;
       justify-content: space-between;
       align-items: start;
       gap: 12px;
-      margin-bottom: 12px;
+      margin-bottom: 14px;
     }
 
     h2 {
       margin: 0;
-      font-size: 20px;
+      font-size: 22px;
       color: var(--m3-sys-color-on-surface);
-      font-weight: 600;
+      font-weight: 800;
+      letter-spacing: -0.04em;
     }
 
     .close {
@@ -135,11 +136,11 @@ let sheetTitleIdCounter = 0;
       width: 48px;
       height: 48px;
       border: 1px solid var(--m3-sys-color-outline-variant);
-      background: var(--m3-sys-color-surface-container-high);
-      color: var(--m3-sys-color-on-surface-variant);
+      background: color-mix(in srgb, var(--m3-sys-color-surface) 78%, transparent);
+      color: var(--m3-sys-color-primary);
       font-size: 13px;
       line-height: 1;
-      border-radius: 10px;
+      border-radius: 999px;
       display: grid;
       place-items: center;
       margin-top: -2px;
