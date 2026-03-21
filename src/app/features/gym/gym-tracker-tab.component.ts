@@ -11,116 +11,109 @@ import { equipmentLabel } from './gym-view-utils';
   imports: [CommonModule, MatButtonModule, LucideAngularModule],
   styleUrl: './gym-tracker-tab.component.css',
   template: `
-    @if (selectedOverview()) {
-      <section class="panel quick-start-strip session-launch-card" aria-label="Schnellstart">
-        <div class="quick-start-copy">
-          <p class="eyebrow">Heute bereit</p>
-          <strong>{{ selectedOverview()!.dayName }}</strong>
-          <p class="muted">{{ selectedOverview()!.planName }} • {{ selectedOverview()!.totalExercises }} Übungen • {{ selectedOverview()!.totalSets }} Sätze</p>
-          <div class="launch-preview">
-            @for (exercise of previewExercises(); track exercise.dayExerciseId) {
-              <span class="launch-preview-pill">{{ exercise.name }}</span>
-            }
-          </div>
+    <section class="panel tracker-week-card">
+      <div class="tracker-week-head">
+        <div>
+          <p class="eyebrow">Training Woche {{ activeWeekNumber() }}</p>
+          <h2>Tracker</h2>
         </div>
-        <button mat-flat-button type="button" class="action-btn launch-btn" (click)="startWorkout.emit()">
-          <lucide-icon [img]="playIcon" class="icon" aria-hidden="true"></lucide-icon>
-          Session starten
-        </button>
-      </section>
-    }
+        <span class="tracker-week-progress">{{ completionLabel() }}</span>
+      </div>
 
-    <section class="panel">
-      <div class="week-nav">
+      <div class="tracker-week-nav">
         <button mat-icon-button type="button" class="week-btn" (click)="prevWeek.emit()" aria-label="Vorherige Woche">
           <lucide-icon [img]="chevronLeftIcon" aria-hidden="true"></lucide-icon>
         </button>
-        <div class="week-scroll" role="tablist" aria-label="Wochentage">
-          @for (day of dashboardWeek()?.days || []; track day.iso) {
+
+        <div class="tracker-week-row" role="tablist" aria-label="Wochentage">
+          @for (day of dashboardWeek()?.days || []; track day.iso; let index = $index) {
             <button
               mat-button
               type="button"
               role="tab"
-              [attr.aria-selected]="selectedDate() === day.iso"
-              [attr.tabindex]="selectedDate() === day.iso ? 0 : -1"
-              [class.day-pill]="true"
+              class="tracker-day"
               [class.active]="selectedDate() === day.iso"
               [class.today]="day.isToday"
+              [attr.aria-selected]="selectedDate() === day.iso"
+              [attr.tabindex]="selectedDate() === day.iso ? 0 : -1"
               (click)="selectDate.emit(day.iso)"
             >
-              {{ day.label }}
+              <span>{{ day.label }}</span>
+              <strong>{{ dayNumber(index) }}</strong>
             </button>
           }
         </div>
+
         <button mat-icon-button type="button" class="week-btn" (click)="nextWeek.emit()" aria-label="Nächste Woche">
           <lucide-icon [img]="chevronRightIcon" aria-hidden="true"></lucide-icon>
         </button>
       </div>
     </section>
 
-    <section class="panel">
-      @if (dashboardWeek()?.activePlan) {
-        <div class="active-plan-head">
-          <div>
-            <p class="eyebrow">Aktiver Plan</p>
-            <h2>{{ dashboardWeek()!.activePlan!.name }}</h2>
-            <p class="muted">Woche {{ dashboardWeek()!.activePlan!.weekNumber }} • Öffne den passenden Tag und starte direkt</p>
-          </div>
-          <span class="mono-badge">{{ dashboardWeek()!.activePlan!.durationWeeks }} Wochen</span>
+    @if (dashboardWeek()?.activePlan && selectedOverview()) {
+      <section class="panel tracker-plan-card">
+        <div class="tracker-plan-copy">
+          <p class="eyebrow">Aktiver Plan</p>
+          <h2>{{ dashboardWeek()!.activePlan!.name }}</h2>
+          <p class="muted">Woche {{ dashboardWeek()!.activePlan!.weekNumber }} • {{ selectedOverview()!.dayName }}</p>
         </div>
 
-        <div class="workout-days">
-          @for (workout of dashboardWeek()?.workoutDays || []; track workout.dayId) {
-            <button type="button" class="workout-day" [class.completed]="workout.completed" (click)="openWorkout.emit(workout)">
-              <div class="left">
-                <strong>{{ workout.dayNumber }} {{ workout.name }}</strong>
-                <p class="muted">{{ workout.exerciseCount }} Übungen • {{ workout.completed ? 'Bereits geloggt' : 'Sofort bereit' }}</p>
-              </div>
-              <div class="right">
-                <span>{{ workout.completed ? 'Erledigt' : 'Öffnen' }}</span>
-                @if (workout.completed) {
-                  <lucide-icon [img]="checkIcon" class="check-icon" aria-hidden="true"></lucide-icon>
-                }
-              </div>
-            </button>
-          }
+        <div class="tracker-plan-stats" aria-label="Workout Überblick">
+          <article class="tracker-stat-card">
+            <span>Übungen</span>
+            <strong>{{ selectedOverview()!.totalExercises }}</strong>
+          </article>
+          <article class="tracker-stat-card">
+            <span>Sätze</span>
+            <strong>{{ selectedOverview()!.totalSets }}</strong>
+          </article>
         </div>
-      } @else {
-        <p class="muted">Noch kein Trainingsplan aktiv. Erstelle deinen ersten Plan.</p>
-      }
 
-      <div class="quick-actions">
-        <button mat-flat-button type="button" class="action-btn ghost compact" (click)="openSessionHub.emit('plans')">Pläne</button>
-        <button mat-flat-button type="button" class="action-btn ghost compact" (click)="openSessionHub.emit('exercises')">Übungen</button>
-        <button mat-flat-button type="button" class="action-btn ghost compact" (click)="openSessionHub.emit('help')">Hilfe</button>
-      </div>
-    </section>
+        <button mat-flat-button type="button" class="action-btn tracker-start-btn" (click)="startWorkout.emit()">
+          <span>Start Session</span>
+          <lucide-icon [img]="playIcon" class="icon" aria-hidden="true"></lucide-icon>
+        </button>
+      </section>
+    } @else {
+      <section class="panel tracker-empty-card">
+        <p class="eyebrow">Kein aktiver Plan</p>
+        <h2>Gym zuerst strukturieren</h2>
+        <p class="muted">Lege einen Plan an oder aktiviere einen bestehenden Split, damit der Workout-Flow direkt startklar ist.</p>
+        <button mat-flat-button type="button" class="action-btn" (click)="openSessionHub.emit('plans')">Pläne öffnen</button>
+      </section>
+    }
 
     @if (selectedOverview()) {
-      <section class="panel">
-        <div class="overview-head">
+      <section class="tracker-preview-block">
+        <div class="tracker-preview-head">
           <div>
-            <p class="eyebrow">Workout im Überblick</p>
-            <h2>{{ selectedOverview()!.dayName }}</h2>
-            <p class="muted">{{ selectedOverview()!.planName }} • Woche {{ selectedOverview()!.weekNumber }}</p>
-            <p class="muted">{{ selectedOverview()!.totalExercises }} Übungen • {{ selectedOverview()!.totalSets }} Sätze</p>
+            <h2>Vorschau: {{ selectedOverview()!.dayName }}</h2>
+            <p class="muted">{{ selectedOverview()!.planName }} • {{ musclePreviewLabel() }}</p>
           </div>
-          <button mat-flat-button type="button" class="action-btn" (click)="startWorkout.emit()">
-            <lucide-icon [img]="playIcon" class="icon" aria-hidden="true"></lucide-icon>
-            Start
-          </button>
+          <button mat-flat-button type="button" class="action-btn ghost compact" (click)="openSessionHub.emit('plans')">Pläne</button>
         </div>
 
         <div class="exercise-list">
-          @for (exercise of selectedOverview()?.exercises || []; track exercise.dayExerciseId; let exerciseIndex = $index) {
+          @for (exercise of selectedOverview()?.exercises || []; track exercise.dayExerciseId) {
             <article class="exercise-row">
-              <span class="exercise-status" aria-hidden="true">{{ exerciseIndex + 1 }}</span>
-              <div>
+              <div class="exercise-thumb" aria-hidden="true">
+                @if (exercise.images.length > 0 && exercise.images[0]) {
+                  <img [src]="exercise.images[0]" alt="" loading="lazy">
+                } @else {
+                  <span>{{ exerciseInitial(exercise.name) }}</span>
+                }
+              </div>
+              <div class="exercise-copy">
                 <strong>{{ exercise.name }}</strong>
-                <p class="muted">{{ equipmentLabel(exercise.equipment) }} • {{ exercise.sets }} x {{ exercise.targetReps ? exercise.targetReps : (exercise.targetSeconds + 's') }}</p>
+                <p class="muted">{{ equipmentLabel(exercise.equipment) }} • {{ exercise.sets }} Sätze • {{ targetSummary(exercise) }}</p>
               </div>
             </article>
           }
+        </div>
+
+        <div class="quick-actions">
+          <button mat-flat-button type="button" class="action-btn ghost compact" (click)="openSessionHub.emit('exercises')">Übungen</button>
+          <button mat-flat-button type="button" class="action-btn ghost compact" (click)="openSessionHub.emit('help')">Hilfe</button>
         </div>
       </section>
     }
@@ -144,7 +137,38 @@ export class GymTrackerTabComponent {
   readonly playIcon = Play;
   readonly equipmentLabel = equipmentLabel;
 
-  previewExercises(): TrainingPlanOverview['exercises'] {
-    return this.selectedOverview()?.exercises.slice(0, 4) ?? [];
+  activeWeekNumber(): number {
+    return this.dashboardWeek()?.activePlan?.weekNumber ?? 0;
+  }
+
+  completionLabel(): string {
+    const workoutDays = this.dashboardWeek()?.workoutDays ?? [];
+    if (workoutDays.length === 0) {
+      return 'Kein Split aktiv';
+    }
+
+    const completed = workoutDays.filter(day => day.completed).length;
+    return `${Math.round((completed / workoutDays.length) * 100)}% abgeschlossen`;
+  }
+
+  dayNumber(index: number): number {
+    return index + 1;
+  }
+
+  musclePreviewLabel(): string {
+    const overview = this.selectedOverview();
+    if (!overview || overview.targetMuscles.length === 0) {
+      return `${overview?.totalExercises ?? 0} Übungen`;
+    }
+
+    return overview.targetMuscles.slice(0, 2).join(' • ');
+  }
+
+  targetSummary(exercise: TrainingPlanOverview['exercises'][number]): string {
+    return exercise.targetReps ? `${exercise.targetReps} reps` : `${exercise.targetSeconds ?? 0}s`;
+  }
+
+  exerciseInitial(name: string): string {
+    return name.trim().charAt(0).toUpperCase();
   }
 }

@@ -1,36 +1,17 @@
-.gym-hero {
-  gap: 0.85rem;
-}
-
-.hero-copy {
+.gym-shell-strip {
   display: grid;
-  gap: 0.3rem;
+  gap: 0.9rem;
+  padding-block: 0.9rem 1rem;
 }
 
-.hero-label {
-  margin: 0;
-  color: var(--shell-accent);
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.28em;
-  text-transform: uppercase;
+.gym-shell-head {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 0.75rem;
 }
 
-.hero h1 {
-  margin: 0;
-  font-size: clamp(2rem, 4vw, 2.7rem);
-  line-height: 0.98;
-  letter-spacing: -0.06em;
-}
-
-.hero-summary {
-  margin: 0;
-  color: var(--shell-ink-muted);
-  font-size: 0.9rem;
-  font-weight: 600;
-}
-
-.gym-summary-grid {
+.gym-shell-summary {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
@@ -63,13 +44,6 @@
   letter-spacing: -0.03em;
 }
 
-.hero-controls {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: center;
-  gap: 10px;
-}
-
 .gym-tabs {
   width: 100%;
   display: grid;
@@ -94,13 +68,13 @@
   padding: 0 16px;
   font-size: 12px;
   font-weight: 800;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 
 .gym-tab-btn.active {
-  background: var(--m3-sys-color-primary);
-  color: var(--m3-sys-color-on-primary);
+  background: color-mix(in srgb, var(--m3-sys-color-primary) 18%, var(--m3-sys-color-surface-container-high));
+  color: var(--m3-sys-color-primary);
 }
 
 .plan-active-toggle input {
@@ -115,7 +89,7 @@
   height: var(--touch-target);
   border-radius: 999px;
   border: 1px solid var(--shell-border);
-  background: color-mix(in srgb, var(--m3-sys-color-surface) 58%, transparent);
+  background: color-mix(in srgb, var(--m3-sys-color-surface) 74%, transparent);
   color: var(--m3-sys-color-primary);
 }
 
@@ -206,7 +180,7 @@
 }
 
 @media (max-width: 420px) {
-  .hero-controls {
+  .gym-shell-head {
     grid-template-columns: 1fr;
   }
 

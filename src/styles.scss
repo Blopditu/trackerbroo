@@ -553,10 +553,10 @@ button[disabled] {
   position: relative;
   overflow: hidden;
   display: grid;
-  gap: var(--space-3);
+  gap: 10px;
   background:
-    radial-gradient(circle at 110% -10%, color-mix(in srgb, var(--m3-sys-color-primary) 12%, transparent), transparent 42%),
-    linear-gradient(160deg, color-mix(in srgb, var(--m3-sys-color-primary-container) 42%, var(--m3-sys-color-surface) 58%), var(--m3-sys-color-surface-container));
+    radial-gradient(circle at 110% -10%, color-mix(in srgb, var(--m3-sys-color-primary) 8%, transparent), transparent 38%),
+    linear-gradient(160deg, color-mix(in srgb, var(--m3-sys-color-primary-container) 24%, var(--m3-sys-color-surface) 76%), var(--m3-sys-color-surface-container));
 }
 
 .today-page .broo-board-head,
@@ -569,18 +569,18 @@ button[disabled] {
 
 .today-page .broo-board h1 {
   margin: 0;
-  font-size: clamp(1.8rem, 4.4vw, 2.3rem);
-  line-height: 1;
+  font-size: clamp(1.5rem, 4vw, 1.9rem);
+  line-height: 1.02;
   letter-spacing: -0.03em;
-  max-width: 12ch;
+  max-width: 14ch;
 }
 
 .today-page .broo-lead {
-  margin: 6px 0 0;
-  max-width: 32ch;
+  margin: 4px 0 0;
+  max-width: 28ch;
   color: var(--m3-sys-color-on-surface-variant);
-  font-size: 13px;
-  line-height: 1.45;
+  font-size: 12px;
+  line-height: 1.4;
   font-weight: 600;
 }
 
@@ -612,16 +612,16 @@ button[disabled] {
 
 .today-page .board-stream {
   display: grid;
-  gap: 10px;
+  gap: 8px;
 }
 
 .today-page .board-post {
   display: grid;
-  gap: 10px;
+  gap: 8px;
   border: 1px solid color-mix(in srgb, var(--m3-sys-color-outline-variant) 76%, transparent);
   border-radius: 20px;
-  background: color-mix(in srgb, var(--m3-sys-color-surface) 74%, transparent);
-  padding: 13px;
+  background: color-mix(in srgb, var(--m3-sys-color-surface) 82%, transparent);
+  padding: 12px;
   box-shadow: var(--shadow-soft);
 }
 
@@ -650,8 +650,8 @@ button[disabled] {
 .today-page .board-post-copy {
   margin: 0;
   color: var(--m3-sys-color-on-surface);
-  font-size: 14px;
-  line-height: 1.45;
+  font-size: 13px;
+  line-height: 1.4;
   font-weight: 600;
 }
 
@@ -666,12 +666,15 @@ button[disabled] {
 }
 
 .today-page .my-day-panel {
-  gap: 12px;
+  gap: 10px;
+  background:
+    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--m3-sys-color-primary) 10%, transparent), transparent 32%),
+    linear-gradient(180deg, color-mix(in srgb, var(--m3-sys-color-primary-container) 16%, var(--m3-sys-color-surface-container-high) 84%), var(--m3-sys-color-surface-container));
 }
 
 .today-page .my-day-head h2 {
   margin: 4px 0 0;
-  font-size: clamp(1.45rem, 4vw, 1.85rem);
+  font-size: clamp(1.7rem, 4vw, 2.05rem);
   line-height: 1.04;
 }
 
@@ -697,7 +700,7 @@ app-today {
 
   .today-toolbar {
     display: grid;
-    gap: 10px;
+    gap: 8px;
   }
 
   .day-nav {
@@ -741,7 +744,7 @@ app-today {
     flex-wrap: wrap;
     gap: 8px;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-start;
   }
 
   .today-quick-btn {
@@ -933,7 +936,7 @@ app-today {
 
   .quick-add-menu {
     display: grid;
-    gap: 14px;
+    gap: 12px;
     padding-bottom: max(8px, env(safe-area-inset-bottom));
   }
 
@@ -949,16 +952,16 @@ app-today {
   }
 
   .quick-add-tile {
-    min-height: 154px;
+    min-height: 136px;
     border: 1px solid color-mix(in srgb, var(--m3-sys-color-outline-variant) 70%, transparent);
-    border-radius: 24px;
+    border-radius: 22px;
     background:
-      linear-gradient(180deg, color-mix(in srgb, var(--m3-sys-color-surface-container-high) 90%, transparent), var(--m3-sys-color-surface-container));
+      linear-gradient(180deg, color-mix(in srgb, var(--m3-sys-color-surface-container-high) 94%, transparent), var(--m3-sys-color-surface-container));
     color: var(--m3-sys-color-on-surface);
     display: grid;
     align-content: start;
-    gap: 14px;
-    padding: 18px;
+    gap: 12px;
+    padding: 16px;
     text-align: left;
     box-shadow: none;
   }
@@ -995,7 +998,7 @@ app-today {
   }
 
   .quick-add-copy strong {
-    font-size: 18px;
+    font-size: 17px;
     line-height: 1.15;
     letter-spacing: -0.04em;
   }
@@ -1021,18 +1024,18 @@ app-today {
 
   .food-hub-actions {
     display: grid;
-    gap: 10px;
+    gap: 8px;
   }
 
   .food-hub-card {
-    min-height: 108px;
+    min-height: 92px;
     border: 1px solid color-mix(in srgb, var(--m3-sys-color-outline-variant) 70%, transparent);
-    border-radius: 22px;
+    border-radius: 20px;
     background: var(--m3-sys-color-surface-container-low);
     color: var(--m3-sys-color-on-surface);
-    padding: 14px 16px;
+    padding: 12px 14px;
     text-align: left;
-    gap: 6px;
+    gap: 4px;
     box-shadow: none;
   }
 
@@ -1046,6 +1049,10 @@ app-today {
   .queue-preview-card strong {
     font-size: 16px;
     line-height: 1.2;
+  }
+
+  .food-hub-card small {
+    line-height: 1.35;
   }
 
   .sheet-subhead,
@@ -1482,6 +1489,17 @@ app-gym-execution-panel {
     align-items: center;
   }
 
+  .execution-stage {
+    gap: 14px;
+    box-shadow: none;
+  }
+
+  .execution-hero h2 {
+    font-size: clamp(1.75rem, 4.2vw, 2.2rem);
+    line-height: 1.02;
+    letter-spacing: -0.05em;
+  }
+
   .set-card-head {
     align-items: flex-start;
     gap: 12px;
@@ -1493,7 +1511,7 @@ app-gym-execution-panel {
 
   .execution-actions {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr) auto;
     gap: 10px;
   }
 
@@ -1533,19 +1551,27 @@ app-gym-execution-panel {
   }
 
   .execution-rail {
-    gap: 8px;
-    padding-bottom: 6px;
+    gap: 10px;
+    padding-bottom: 8px;
   }
 
   .execution-rail-btn {
-    min-height: 72px;
-    min-width: 164px;
-    padding: 9px;
+    min-height: 78px;
+    min-width: 176px;
+    padding: 10px;
     display: grid;
     grid-template-columns: 52px minmax(0, 1fr);
     gap: 10px;
     align-items: center;
     text-align: left;
+    border-radius: 22px;
+    border: 1px solid color-mix(in srgb, var(--m3-sys-color-outline-variant) 72%, transparent);
+    background: color-mix(in srgb, var(--m3-sys-color-surface-container-low) 92%, transparent);
+  }
+
+  .execution-rail-btn.active {
+    border-color: color-mix(in srgb, var(--m3-sys-color-primary) 36%, var(--m3-sys-color-outline-variant));
+    background: color-mix(in srgb, var(--m3-sys-color-primary) 10%, var(--m3-sys-color-surface-container-high));
   }
 
   .execution-rail-btn img,
@@ -1601,10 +1627,10 @@ app-gym-execution-panel {
   .exercise-detail {
     display: grid;
     gap: 12px;
-    border: 1px solid var(--m3-sys-color-outline-variant);
-    border-radius: 22px;
-    background: color-mix(in srgb, var(--m3-sys-color-surface-container-high) 94%, transparent);
-    padding: 14px;
+    border: 1px solid color-mix(in srgb, var(--m3-sys-color-outline-variant) 82%, transparent);
+    border-radius: 26px;
+    background: color-mix(in srgb, var(--m3-sys-color-surface-container-low) 96%, transparent);
+    padding: 16px;
     box-shadow: none;
   }
 
@@ -1624,7 +1650,31 @@ app-gym-execution-panel {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    margin-top: 8px;
+  }
+
+  .history-glance {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border-radius: 18px;
+    background: color-mix(in srgb, var(--m3-sys-color-surface-container-high) 86%, transparent);
+    border: 1px solid color-mix(in srgb, var(--m3-sys-color-outline-variant) 66%, transparent);
+  }
+
+  .history-glance-label {
+    color: var(--m3-sys-color-on-surface-variant);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .history-glance strong {
+    color: var(--m3-sys-color-on-surface);
+    font-size: 13px;
+    font-weight: 700;
   }
 
   .detail-pill,
@@ -1644,7 +1694,7 @@ app-gym-execution-panel {
     min-height: 32px;
     padding: 0 12px;
     border: 1px solid color-mix(in srgb, var(--m3-sys-color-outline-variant) 70%, transparent);
-    background: var(--m3-sys-color-surface-container);
+    background: var(--m3-sys-color-surface-container-low);
     font-size: 12px;
     font-weight: 700;
   }
@@ -1663,9 +1713,9 @@ app-gym-execution-panel {
     display: grid;
     gap: 12px;
     padding: 14px;
-    border-radius: 20px;
+    border-radius: 22px;
     border: 1px solid color-mix(in srgb, var(--m3-sys-color-outline-variant) 70%, transparent);
-    background: var(--m3-sys-color-surface-container);
+    background: color-mix(in srgb, var(--m3-sys-color-surface-container) 88%, transparent);
   }
 
   .set-card.active {
@@ -1786,17 +1836,13 @@ app-gym-execution-panel {
     }
 
     .execution-actions {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: 1fr;
       align-items: stretch;
     }
 
     .execution-actions .action-btn {
       min-height: var(--touch-target-compact);
       padding-inline: 14px;
-    }
-
-    .execution-actions .action-btn:last-child {
-      grid-column: 1 / -1;
     }
   }
 
@@ -1822,17 +1868,9 @@ app-gym-execution-panel {
       padding-inline: 10px;
     }
 
-    .execution-actions {
-      grid-template-columns: 1fr 1fr;
-    }
-
     .execution-actions .action-btn {
       font-size: 13px;
       padding-inline: 12px;
-    }
-
-    .execution-actions .action-btn:last-child {
-      grid-column: 1 / -1;
     }
 
     .execution-rail-btn {

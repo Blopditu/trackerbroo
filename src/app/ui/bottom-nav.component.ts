@@ -28,7 +28,7 @@ interface NavItem {
   template: `
     <nav [class]="containerClasses()" aria-label="Hauptnavigation">
       @if (mode() === 'bottom') {
-        <div class="grid grid-cols-6 gap-1 rounded-[2rem] border border-shell-border bg-shell-elevated/96 p-2 shadow-[0_-16px_48px_rgba(0,0,0,0.32)] backdrop-blur-xl">
+        <div class="grid grid-cols-6 gap-1 rounded-[2rem] border border-shell-border/80 bg-shell-elevated/96 p-2 shadow-[0_-12px_36px_rgba(0,0,0,0.28)] backdrop-blur-xl">
           @for (item of leadingItems(); track item.key) {
             <a [routerLink]="item.route" [class]="linkClasses(item.key)">
               <lucide-icon [img]="item.icon" class="h-4 w-4" aria-hidden="true"></lucide-icon>
@@ -39,7 +39,7 @@ interface NavItem {
           <a
             routerLink="/today"
             [queryParams]="{ quick: 'menu' }"
-            class="grid h-14 place-items-center rounded-full bg-shell-accent text-[#05200f] shadow-[0_0_30px_rgba(0,228,117,0.35)] transition active:translate-y-px"
+            class="grid h-14 place-items-center rounded-full bg-shell-accent text-[#05200f] shadow-[0_8px_24px_rgba(0,228,117,0.22)] transition active:translate-y-px"
             aria-label="Schnelllog öffnen"
           >
             <lucide-icon [img]="icons.plus" class="h-5 w-5" aria-hidden="true"></lucide-icon>
@@ -96,8 +96,8 @@ export class BottomNavComponent {
   private readonly items: NavItem[] = [
     { key: 'today', label: 'Heute', route: '/today', icon: House },
     { key: 'gym', label: 'Gym', route: '/gym', icon: Dumbbell },
-    { key: 'library', label: 'Bibliothek', route: '/library', icon: BookOpen },
-    { key: 'community', label: 'Community', route: '/community', icon: Users },
+    { key: 'library', label: 'Bib', route: '/library', icon: BookOpen },
+    { key: 'community', label: 'Feed', route: '/community', icon: Users },
     { key: 'profile', label: 'Profil', route: '/profile', icon: UserRound }
   ];
 
@@ -124,14 +124,14 @@ export class BottomNavComponent {
       'gap-1',
       'rounded-[1.25rem]',
       'px-1',
-      'text-[0.62rem]',
+      'text-[0.58rem]',
       'font-extrabold',
       'uppercase',
-      'tracking-[0.18em]',
+      'tracking-[0.12em]',
       'transition',
       active
-        ? 'bg-shell-accent-muted text-shell-accent'
-        : 'text-shell-ink-muted hover:bg-shell-card hover:text-shell-ink'
+        ? 'bg-shell-accent-muted/90 text-shell-accent'
+        : 'text-shell-ink-muted hover:bg-shell-card/80 hover:text-shell-ink'
     ].join(' ');
   }
 

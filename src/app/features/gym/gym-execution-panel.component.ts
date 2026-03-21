@@ -35,11 +35,11 @@ interface QuickWeightOption {
   imports: [CommonModule, MatButtonModule, LucideAngularModule],
   template: `
     @if (session()) {
-      <section class="panel execution">
-        <div class="execution-head">
+      <section class="panel execution execution-stage">
+        <div class="execution-head execution-hero">
           <div>
             <p class="eyebrow">Session läuft</p>
-            <h2>{{ currentExercise()?.name || 'Workout-Ausfuehrung' }}</h2>
+            <h2>{{ currentExercise()?.name || 'Workout-Ausführung' }}</h2>
             <p class="muted">Übung {{ activeExerciseIndex() + 1 }} / {{ session()!.exercises.length }} • Satz für Satz durchziehen</p>
           </div>
           <span class="mono-badge">Einheit {{ session()!.sessionDate }}</span>
@@ -82,6 +82,13 @@ interface QuickWeightOption {
                 <span class="detail-pill">{{ completedSetCount(currentExercise()!) }} erledigt</span>
               </div>
             </header>
+
+            @if (workingPreviousPerformance().length > 0) {
+              <div class="history-glance">
+                <span class="history-glance-label">Letzte Einheit</span>
+                <strong>{{ previousSessionSummary() }}</strong>
+              </div>
+            }
 
             @if (currentFocusSet()) {
               <div class="focus-card">
@@ -176,19 +183,23 @@ interface QuickWeightOption {
         }
 
         <div class="execution-actions">
-          <button mat-flat-button type="button" class="action-btn ghost compact" [disabled]="activeExerciseIndex() === 0" (click)="previousExercise.emit()">
-            Zurück
+          <button
+            mat-flat-button
+            type="button"
+            class="action-btn"
+            (click)="runPrimaryAction()"
+          >
+            {{ primaryActionLabel() }}
           </button>
           <button
             mat-flat-button
             type="button"
             class="action-btn ghost compact"
-            [disabled]="activeExerciseIndex() >= session()!.exercises.length - 1"
-            (click)="nextExercise.emit()"
+            [disabled]="activeExerciseIndex() === 0"
+            (click)="previousExercise.emit()"
           >
-            Nächste Übung
+            Vorherige Übung
           </button>
-          <button mat-flat-button type="button" class="action-btn" (click)="finishWorkout.emit()">Workout abschließen</button>
         </div>
       </section>
     }
@@ -245,6 +256,33 @@ export class GymExecutionPanelComponent {
 
   workingPreviousPerformance(): PreviousPerformanceRow[] {
     return this.previousPerformance().filter(row => !row.is_warmup);
+  }
+
+  previousSessionSummary(): string {
+    const firstRow = this.workingPreviousPerformance()[0];
+    if (!firstRow) {
+      return 'Noch keine Referenz';
+    }
+
+    return `${firstRow.session_date} • ${firstRow.weight_kg || 0} kg × ${firstRow.reps || 0}`;
+  }
+
+  hasNextExercise(): boolean {
+    const session = this.session();
+    return Boolean(session) && this.activeExerciseIndex() < session!.exercises.length - 1;
+  }
+
+  primaryActionLabel(): string {
+    return this.hasNextExercise() ? 'Next Exercise' : 'Finish Workout';
+  }
+
+  runPrimaryAction(): void {
+    if (this.hasNextExercise()) {
+      this.nextExercise.emit();
+      return;
+    }
+
+    this.finishWorkout.emit();
   }
 
   quickWeightOptions(setRow: TrainingExecutionSet): QuickWeightOption[] {

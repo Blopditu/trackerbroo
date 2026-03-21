@@ -48,10 +48,10 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
       }
 
       <section class="panel community-hero">
-        <p class="period">Community</p>
-        <h1>Broo Feed</h1>
-        <p class="motto">Schnelle Check-ins und kurze Reaktionen, ohne dass Verwalten im Weg steht.</p>
-
+        <div>
+          <p class="period">Feed zuerst</p>
+          <p class="motto">Kurze Check-ins, direkte Reaktionen.</p>
+        </div>
         <div class="hero-cta-row">
           <button mat-flat-button type="button" class="action-btn hero-cta" (click)="openGymSheet()">
             Gym-Check-in teilen
@@ -219,16 +219,19 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
       gap: var(--layout-gap);
     }
 
-    .community-hero {
-      gap: 10px;
-    }
+        .community-hero {
+          display: flex;
+          flex-wrap: wrap;
+          align-items: end;
+          justify-content: space-between;
+          gap: 12px;
+        }
 
-    .hero,
-    .section,
-    .post-card {
-      display: grid;
-      gap: var(--space-3);
-    }
+        .section,
+        .post-card {
+          display: grid;
+          gap: var(--space-3);
+        }
 
     .post-card {
       background: color-mix(in srgb, var(--m3-sys-color-surface-container-high) 90%, transparent);
@@ -238,16 +241,15 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
       box-shadow: none;
     }
 
-    .hero h1,
-    .section h2 {
-      margin: 0;
-      font-size: clamp(1.9rem, 4vw, 2.5rem);
-      font-weight: 800;
-      letter-spacing: -0.06em;
-    }
+        .section h2 {
+          margin: 0;
+          font-size: clamp(1.6rem, 4vw, 2.1rem);
+          font-weight: 800;
+          letter-spacing: -0.06em;
+        }
 
-    .period,
-    .motto,
+        .period,
+        .motto,
     .muted,
     .post-meta,
     .post-type,
@@ -267,32 +269,32 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
       font-weight: 800;
     }
 
-    .hero-cta {
-      width: fit-content;
-    }
+        .hero-cta {
+          width: fit-content;
+          min-height: 44px;
+        }
 
-    .hero-cta-row {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-    }
+        .hero-cta-row {
+          display: flex;
+          flex-wrap: wrap;
+          align-items: center;
+          gap: 8px;
+        }
 
-    .feed-pill {
-      display: inline-flex;
-      align-items: center;
-      min-height: 34px;
-      padding: 0 14px;
-      border-radius: 999px;
-      border: 1px solid var(--m3-sys-color-outline-variant);
-      background: color-mix(in srgb, var(--m3-sys-color-surface) 62%, transparent);
-      color: var(--m3-sys-color-on-surface-variant);
-      font-size: 12px;
-      font-weight: 800;
-      letter-spacing: 0.16em;
-      text-transform: uppercase;
-    }
+        .feed-pill {
+          display: inline-flex;
+          align-items: center;
+          min-height: 32px;
+          padding: 0 12px;
+          border-radius: 999px;
+          border: 1px solid var(--m3-sys-color-outline-variant);
+          background: color-mix(in srgb, var(--m3-sys-color-surface) 62%, transparent);
+          color: var(--m3-sys-color-on-surface-variant);
+          font-size: 11px;
+          font-weight: 800;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+        }
 
     .day-divider {
       margin-top: 8px;
@@ -321,14 +323,14 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
       align-items: center;
     }
 
-    .post-manage-btn {
-      width: 36px;
-      height: 36px;
-      border-radius: 999px;
-      border: 1px solid color-mix(in srgb, var(--m3-sys-color-outline-variant) 70%, transparent);
-      background: color-mix(in srgb, var(--m3-sys-color-surface) 52%, transparent);
-      color: var(--m3-sys-color-on-surface-variant);
-    }
+        .post-manage-btn {
+          width: 34px;
+          height: 34px;
+          border-radius: 999px;
+          border: 1px solid color-mix(in srgb, var(--m3-sys-color-outline-variant) 70%, transparent);
+          background: color-mix(in srgb, var(--m3-sys-color-surface) 52%, transparent);
+          color: var(--m3-sys-color-on-surface-variant);
+        }
 
     .post-note,
     .comment-item {

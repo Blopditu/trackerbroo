@@ -10,21 +10,16 @@ import { AppNavKey, AppShellVariant } from '../app.routes';
   imports: [CommonModule, RouterModule, LucideAngularModule],
   template: `
     <header
-      class="fixed inset-x-0 top-0 z-30 border-b border-shell-border bg-shell/88 backdrop-blur-xl"
+      class="fixed inset-x-0 top-0 z-30 border-b border-shell-border/70 bg-shell/92 backdrop-blur-xl"
       [class.border-transparent]="shellVariant() === 'onboarding'"
     >
       <div class="mx-auto flex h-18 w-full max-w-[1200px] items-center gap-4 px-4 sm:px-6 xl:px-8">
         <div class="min-w-0 flex-1">
-          <p class="text-[0.65rem] font-extrabold uppercase tracking-[0.28em] text-shell-accent">{{ accentLabel() }}</p>
-          <div class="flex min-w-0 items-center gap-3">
-            <h1 class="truncate text-[1.35rem] font-extrabold tracking-[-0.04em] text-shell-ink sm:text-[1.6rem]">
+          <p class="text-[0.62rem] font-extrabold uppercase tracking-[0.24em] text-shell-accent/90">{{ accentLabel() }}</p>
+          <div class="flex min-w-0 items-center gap-2.5">
+            <h1 class="truncate text-[1.28rem] font-extrabold tracking-[-0.04em] text-shell-ink sm:text-[1.5rem]">
               {{ title() }}
             </h1>
-            @if (activeNav() === 'insights') {
-              <span class="hidden rounded-full border border-shell-border bg-shell-card px-2.5 py-1 text-[0.68rem] font-bold uppercase tracking-[0.18em] text-shell-ink-muted sm:inline-flex">
-                Trends
-              </span>
-            }
           </div>
         </div>
 
@@ -32,14 +27,14 @@ import { AppNavKey, AppShellVariant } from '../app.routes';
           <div class="flex shrink-0 items-center gap-2">
             <a
               routerLink="/insights"
-              class="hidden min-h-11 items-center gap-2 rounded-full border border-shell-border bg-shell-card px-4 text-xs font-bold uppercase tracking-[0.18em] text-shell-ink-muted transition hover:border-shell-accent hover:text-shell-ink md:inline-flex"
+              class="hidden min-h-10 items-center gap-2 rounded-full border border-shell-border/80 bg-shell-card/80 px-3.5 text-[0.68rem] font-bold uppercase tracking-[0.14em] text-shell-ink-muted transition hover:border-shell-accent/70 hover:text-shell-ink md:inline-flex"
             >
               <lucide-icon [img]="icons.trends" class="h-4 w-4" aria-hidden="true"></lucide-icon>
               Insights
             </a>
             <a
               routerLink="/profile"
-              class="grid h-11 w-11 place-items-center rounded-full border border-shell-border bg-shell-card text-shell-accent transition hover:border-shell-accent hover:bg-shell-card-strong"
+              class="grid h-11 w-11 place-items-center rounded-full border border-shell-border/80 bg-shell-card/80 text-shell-accent transition hover:border-shell-accent/70 hover:bg-shell-card-strong"
               aria-label="Profil öffnen"
             >
               <lucide-icon [img]="icons.bell" class="h-4 w-4" aria-hidden="true"></lucide-icon>

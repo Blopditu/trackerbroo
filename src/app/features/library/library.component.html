@@ -11,7 +11,7 @@
     <div class="library-hero-copy">
       <p class="hero-label">Bibliothek</p>
       <h1>Zutaten & Mahlzeiten</h1>
-      <p class="lead">Suche, filtere und nutze deine Basis schnell. Verwalten bleibt sekundär.</p>
+      <p class="lead">Suchen, öffnen, loggen. Verwalten bleibt im Hintergrund.</p>
     </div>
 
     <div class="library-summary-strip" aria-label="Bibliothek Überblick">
@@ -22,9 +22,6 @@
           {{ facade.mealListRows().length }} Mahlzeiten
         }
       </span>
-      <button mat-flat-button type="button" class="action-btn ghost compact" (click)="openCreateModal()">
-        {{ activeTab() === 'ingredients' ? 'Zutat anlegen' : 'Mahlzeit anlegen' }}
-      </button>
     </div>
   </header>
 

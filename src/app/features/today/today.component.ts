@@ -99,58 +99,10 @@ interface BrooBoardPost {
         <p class="toast success" role="status" aria-live="polite" aria-atomic="true">{{ successMessage() }}</p>
       }
 
-      <section class="panel broo-board" aria-labelledby="broo-board-title">
-        <div class="broo-board-head">
-          <div>
-            <p class="title-font">Broo Board</p>
-            <h1 id="broo-board-title">Heute bei den Broos</h1>
-            <p class="broo-lead">Kurz sehen, wer schon geliefert hat, und direkt nachziehen.</p>
-          </div>
-          <span class="board-badge">{{ brooBoardPosts().length }} Einträge</span>
-        </div>
-
-        <div class="board-actions">
-          <button mat-flat-button type="button" class="action-btn board-primary-btn" (click)="openGymCheckInComposer()">
-            <lucide-icon [img]="icons.dumbbell" class="icon" aria-hidden="true"></lucide-icon>
-            Auch im Gym gewesen
-          </button>
-          <button mat-flat-button type="button" class="action-btn tonal board-secondary-btn" (click)="openFoodQuickLog()">
-            <lucide-icon [img]="icons.utensils" class="icon" aria-hidden="true"></lucide-icon>
-            Protein jetzt loggen
-          </button>
-        </div>
-
-        @if (loadingBrooBoard()) {
-          <p class="muted">Der Gruppenrhythmus wird geladen …</p>
-        } @else if (brooBoardPosts().length > 0) {
-          <div class="board-stream" aria-label="Letzte Gruppenaktivität">
-            @for (item of brooBoardPosts(); track item.post.id; let index = $index) {
-              <article class="board-post" [style.--stagger]="index">
-                <div class="board-post-top">
-                  <div>
-                    <strong>{{ item.displayName }}</strong>
-                    <p class="board-post-meta">{{ brooPostLabel(item.post) }}</p>
-                  </div>
-                  <span class="board-post-day">{{ brooPostDayLabel(item.post.day) }}</span>
-                </div>
-
-                <p class="board-post-copy">{{ brooPostSummary(item.post) }}</p>
-
-                @if (item.photoUrl) {
-                  <img [src]="item.photoUrl" alt="" class="board-post-photo" loading="lazy" decoding="async">
-                }
-              </article>
-            }
-          </div>
-        } @else {
-          <p class="muted">Heute hat noch niemand etwas geteilt. Starte den ersten Check-in für eure Woche.</p>
-        }
-      </section>
-
       <section class="panel my-day-panel">
         <div class="my-day-head">
           <div>
-            <p class="title-font">Mein Tag</p>
+            <p class="title-font">Tagesstand</p>
             <h2>{{ todayLabel() }}</h2>
           </div>
           <p class="date-label"><lucide-icon [img]="icons.calendar" class="icon" aria-hidden="true"></lucide-icon> {{ today() }}</p>
@@ -179,7 +131,7 @@ interface BrooBoardPost {
           <div class="hero-actions">
             <button mat-flat-button type="button" class="action-btn compact today-quick-btn" (click)="openActions()">
               <lucide-icon [img]="icons.plus" class="icon" aria-hidden="true"></lucide-icon>
-              Schnell loggen
+              Loggen
             </button>
             <button mat-flat-button type="button" class="action-btn ghost compact" [disabled]="today() === realToday" (click)="jumpToToday()">
               Heute
@@ -224,6 +176,54 @@ interface BrooBoardPost {
             <strong>{{ stepsValueLabel() }}</strong>
             <span class="delta">{{ stepsGoalLabel() }}</span>
           </div>
+        }
+      </section>
+
+      <section class="panel broo-board" aria-labelledby="broo-board-title">
+        <div class="broo-board-head">
+          <div>
+            <p class="title-font">Broo Board</p>
+            <h1 id="broo-board-title">Heute bei den Broos</h1>
+            <p class="broo-lead">Kurz sehen, wer geliefert hat, und direkt nachziehen.</p>
+          </div>
+          <span class="board-badge">{{ brooBoardPosts().length }} Einträge</span>
+        </div>
+
+        <div class="board-actions">
+          <button mat-flat-button type="button" class="action-btn board-primary-btn" (click)="openGymCheckInComposer()">
+            <lucide-icon [img]="icons.dumbbell" class="icon" aria-hidden="true"></lucide-icon>
+            Gym-Check-in
+          </button>
+          <button mat-flat-button type="button" class="action-btn tonal board-secondary-btn" (click)="openFoodQuickLog()">
+            <lucide-icon [img]="icons.utensils" class="icon" aria-hidden="true"></lucide-icon>
+            Protein loggen
+          </button>
+        </div>
+
+        @if (loadingBrooBoard()) {
+          <p class="muted">Der Gruppenrhythmus wird geladen …</p>
+        } @else if (brooBoardPosts().length > 0) {
+          <div class="board-stream" aria-label="Letzte Gruppenaktivität">
+            @for (item of brooBoardPosts(); track item.post.id; let index = $index) {
+              <article class="board-post" [style.--stagger]="index">
+                <div class="board-post-top">
+                  <div>
+                    <strong>{{ item.displayName }}</strong>
+                    <p class="board-post-meta">{{ brooPostLabel(item.post) }}</p>
+                  </div>
+                  <span class="board-post-day">{{ brooPostDayLabel(item.post.day) }}</span>
+                </div>
+
+                <p class="board-post-copy">{{ brooPostSummary(item.post) }}</p>
+
+                @if (item.photoUrl) {
+                  <img [src]="item.photoUrl" alt="" class="board-post-photo" loading="lazy" decoding="async">
+                }
+              </article>
+            }
+          </div>
+        } @else {
+          <p class="muted">Heute hat noch niemand etwas geteilt. Starte den ersten Check-in für eure Woche.</p>
         }
       </section>
 
@@ -392,17 +392,17 @@ interface BrooBoardPost {
             <button mat-flat-button type="button" class="food-hub-card" (click)="setSheetMode('copy')">
               <span class="food-hub-card-kicker">Shortcut</span>
               <strong>Von gestern kopieren</strong>
-              <small>Übernimm bestehende Einträge direkt nach heute.</small>
+              <small>Bestehende Einträge direkt übernehmen.</small>
             </button>
             <button mat-flat-button type="button" class="food-hub-card" (click)="setSheetMode('mealprep')">
               <span class="food-hub-card-kicker">Batch</span>
               <strong>Meal Prep aufteilen</strong>
-              <small>Teile heutige Einträge auf mehrere Tage auf.</small>
+              <small>Heutige Einträge auf mehrere Tage verteilen.</small>
             </button>
             <button mat-flat-button type="button" class="food-hub-card food-hub-card-accent" (click)="openFoodBuilder()">
               <span class="food-hub-card-kicker">Builder</span>
               <strong>Schnelleingabe / Makros</strong>
-              <small>Durchsuche deine Bibliothek und baue den Log in Ruhe auf.</small>
+              <small>Bibliothek öffnen und den Log gezielt bauen.</small>
             </button>
           </div>
 
@@ -417,7 +417,7 @@ interface BrooBoardPost {
           <div class="sheet-subhead">
             <div>
               <p class="sheet-kicker">Zuletzt geloggt</p>
-              <p class="sheet-caption">Direkt in die Log-Liste legen oder tiefer in den Builder gehen.</p>
+              <p class="sheet-caption">Direkt loggen oder bei Bedarf im Builder öffnen.</p>
             </div>
             <button mat-flat-button type="button" class="day-chip" (click)="openFoodBuilder('all')">Alle Lebensmittel</button>
           </div>
@@ -440,16 +440,6 @@ interface BrooBoardPost {
               <p class="muted">Keine Treffer für deinen Filter.</p>
             }
           </div>
-
-          @if (favoriteQuickItems().length > 0) {
-            <div class="favorite-row" role="group" aria-label="Favoriten">
-              @for (item of favoriteQuickItems(); track item.id) {
-                <button mat-flat-button type="button" class="favorite-chip" (click)="addDefaultToQueue(item)">
-                  {{ item.name }}
-                </button>
-              }
-            </div>
-          }
 
           @if (foodQueueCount() > 0) {
             <article class="queue-preview-card">

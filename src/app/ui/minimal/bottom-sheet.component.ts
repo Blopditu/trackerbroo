@@ -59,7 +59,7 @@ let sheetTitleIdCounter = 0;
       display: grid;
       align-items: end;
       padding-bottom: var(--sheet-keyboard-inset, 0px);
-      background: rgba(4, 8, 12, 0.74);
+      background: rgba(4, 8, 12, 0.66);
       touch-action: pan-y;
       opacity: 0;
       pointer-events: none;
@@ -67,18 +67,18 @@ let sheetTitleIdCounter = 0;
     }
 
     .sheet {
-      background: linear-gradient(180deg, color-mix(in srgb, var(--m3-sys-color-surface-container-high) 92%, transparent), color-mix(in srgb, var(--m3-sys-color-surface-container) 98%, transparent));
+      background: linear-gradient(180deg, color-mix(in srgb, var(--m3-sys-color-surface-container-high) 94%, transparent), color-mix(in srgb, var(--m3-sys-color-surface-container) 98%, transparent));
       border-top: 1px solid var(--m3-sys-color-outline-variant);
       border-left: 1px solid var(--m3-sys-color-outline-variant);
       border-right: 1px solid var(--m3-sys-color-outline-variant);
-      border-radius: 32px 32px 0 0;
-      padding: 12px 18px calc(18px + env(safe-area-inset-bottom));
+      border-radius: 30px 30px 0 0;
+      padding: 10px 18px calc(18px + env(safe-area-inset-bottom));
       max-height: min(86vh, calc(100vh - 12px - var(--sheet-keyboard-inset, 0px)));
       overflow: auto;
       scroll-padding-bottom: calc(var(--sheet-keyboard-inset, 0px) + 96px);
       -webkit-overflow-scrolling: touch;
       overscroll-behavior: contain;
-      box-shadow: 0 -18px 48px rgba(0, 0, 0, 0.44);
+      box-shadow: 0 -16px 40px rgba(0, 0, 0, 0.38);
       transform: translateY(calc(28px + var(--sheet-drag-y, 0px))) scale(0.985);
       opacity: 0;
       transition:
@@ -101,11 +101,11 @@ let sheetTitleIdCounter = 0;
     }
 
     .drag-handle {
-      width: 56px;
-      height: 6px;
+      width: 48px;
+      height: 5px;
       border-radius: 99px;
       background: color-mix(in srgb, var(--m3-sys-color-outline-variant) 88%, transparent);
-      margin: 0 auto 12px;
+      margin: 0 auto 10px;
       touch-action: none;
       cursor: grab;
       position: relative;
@@ -120,12 +120,12 @@ let sheetTitleIdCounter = 0;
       justify-content: space-between;
       align-items: start;
       gap: 12px;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
     }
 
     h2 {
       margin: 0;
-      font-size: 22px;
+      font-size: 20px;
       color: var(--m3-sys-color-on-surface);
       font-weight: 800;
       letter-spacing: -0.04em;
@@ -133,12 +133,12 @@ let sheetTitleIdCounter = 0;
 
     .close {
       flex: 0 0 auto;
-      width: 48px;
-      height: 48px;
+      width: 44px;
+      height: 44px;
       border: 1px solid var(--m3-sys-color-outline-variant);
-      background: color-mix(in srgb, var(--m3-sys-color-surface) 78%, transparent);
-      color: var(--m3-sys-color-primary);
-      font-size: 13px;
+      background: color-mix(in srgb, var(--m3-sys-color-surface) 86%, transparent);
+      color: var(--m3-sys-color-on-surface-variant);
+      font-size: 12px;
       line-height: 1;
       border-radius: 999px;
       display: grid;
