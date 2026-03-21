@@ -9,6 +9,7 @@ import { AuthService } from './core/auth.service';
 import { SupabaseService } from './core/supabase.service';
 import { ThemeService } from './core/theme.service';
 import { AppNavKey, AppRouteData, AppShellVariant } from './app.routes';
+import { AppChromeService } from './core/app-chrome.service';
 
 @Component({
   selector: 'app-root',
@@ -21,6 +22,7 @@ export class App implements OnDestroy {
   private readonly authService = inject(AuthService);
   private readonly supabaseService = inject(SupabaseService);
   private readonly themeService = inject(ThemeService);
+  private readonly chromeService = inject(AppChromeService);
   private readonly currentRoute = signal('/');
   private readonly currentRouteData = signal<AppRouteData>({
     shell: 'app',
@@ -37,8 +39,9 @@ export class App implements OnDestroy {
 
   // Use computed signal to determine if nav should be shown
   readonly shellVariant = computed<AppShellVariant>(() => this.currentRouteData().shell);
-  readonly showNav = computed(() => this.shellVariant() === 'app');
-  readonly showTopBar = computed(() => this.shellVariant() !== 'auth');
+  readonly showNav = computed(() => this.shellVariant() === 'app' && !this.chromeService.suppressAppChrome());
+  readonly showTopBar = computed(() => this.shellVariant() !== 'auth' && !this.chromeService.suppressAppChrome());
+  readonly chromeSuppressed = computed(() => this.chromeService.suppressAppChrome());
   readonly currentTitle = computed(() => this.currentRouteData().title);
   readonly currentAccentLabel = computed(() => this.currentRouteData().accentLabel ?? 'Tracker Broo');
   readonly currentNavKey = computed<AppNavKey>(() => this.currentRouteData().nav);

@@ -1,4 +1,21 @@
-<main class="page gym-page">
+@if (facade.activeSession()) {
+  <header class="gym-workout-topbar">
+    <button type="button" class="gym-workout-topbar-btn" (click)="openSessionExitSheet()" aria-label="Workout verlassen">
+      <lucide-icon [img]="backIcon" aria-hidden="true"></lucide-icon>
+    </button>
+
+    <div class="gym-workout-topbar-copy">
+      <p>{{ workoutHeaderTitle() }}</p>
+      <strong>{{ workoutHeaderMeta() }}</strong>
+    </div>
+
+    <button type="button" class="gym-workout-topbar-btn" (click)="openSessionHub('help')" aria-label="Workout Optionen">
+      <lucide-icon [img]="moreIcon" aria-hidden="true"></lucide-icon>
+    </button>
+  </header>
+}
+
+<main class="page gym-page" [class.session-active]="facade.activeSession()">
   @if (facade.errorMessage()) {
     <p class="toast error" role="status" aria-live="polite" aria-atomic="true">{{ facade.errorMessage() }}</p>
   }
@@ -7,56 +24,34 @@
     <p class="toast success" role="status" aria-live="polite" aria-atomic="true">{{ facade.successMessage() }}</p>
   }
 
-  <section class="panel gym-shell-strip">
-    <div class="gym-shell-head">
-      <div class="gym-shell-copy">
-        <p class="eyebrow">Stoic Coach</p>
-        <div class="gym-tabs" role="tablist" aria-label="Gym Ansicht">
-          <button
-            type="button"
-            role="tab"
-            class="gym-tab-btn"
-            [class.active]="activeTab() === 'tracker'"
-            [attr.aria-selected]="activeTab() === 'tracker'"
-            [attr.tabindex]="activeTab() === 'tracker' ? 0 : -1"
-            (click)="onHeroTabChange('tracker')"
-          >
-            <lucide-icon [img]="dumbbellIcon" class="icon" aria-hidden="true"></lucide-icon>
-            Tracker
-          </button>
-          <button
-            type="button"
-            role="tab"
-            class="gym-tab-btn"
-            [class.active]="activeTab() === 'progress'"
-            [attr.aria-selected]="activeTab() === 'progress'"
-            [attr.tabindex]="activeTab() === 'progress' ? 0 : -1"
-            (click)="onHeroTabChange('progress')"
-          >
-            <lucide-icon [img]="barChartIcon" class="icon" aria-hidden="true"></lucide-icon>
-            Progress
-          </button>
-        </div>
+  @if (!facade.activeSession()) {
+    <section class="gym-mode-strip" aria-label="Gym Navigation">
+      <div class="gym-tabs" role="tablist" aria-label="Gym Ansicht">
+        <button
+          type="button"
+          role="tab"
+          class="gym-tab-btn"
+          [class.active]="activeTab() === 'tracker'"
+          [attr.aria-selected]="activeTab() === 'tracker'"
+          [attr.tabindex]="activeTab() === 'tracker' ? 0 : -1"
+          (click)="onHeroTabChange('tracker')"
+        >
+          Tracker
+        </button>
+        <button
+          type="button"
+          role="tab"
+          class="gym-tab-btn"
+          [class.active]="activeTab() === 'progress'"
+          [attr.aria-selected]="activeTab() === 'progress'"
+          [attr.tabindex]="activeTab() === 'progress' ? 0 : -1"
+          (click)="onHeroTabChange('progress')"
+        >
+          Progress
+        </button>
       </div>
-
-      <button mat-icon-button type="button" class="hero-profile-btn" routerLink="/profile" aria-label="Profil öffnen">
-        <lucide-icon [img]="userIcon" class="icon" aria-hidden="true"></lucide-icon>
-      </button>
-    </div>
-
-    @if (activeTab() === 'tracker' && !facade.activeSession()) {
-      <div class="gym-shell-summary" aria-label="Gym Überblick">
-        <article class="gym-summary-card">
-          <span>Aktiver Plan</span>
-          <strong>{{ facade.activePlanStatLabel() }}</strong>
-        </article>
-        <article class="gym-summary-card">
-          <span>Bodyweight</span>
-          <strong>{{ facade.latestBodyweightStatLabel() }}</strong>
-        </article>
-      </div>
-    }
-  </section>
+    </section>
+  }
 
   @if (activeTab() === 'tracker' && !facade.activeSession()) {
     <app-gym-tracker-tab
@@ -79,6 +74,7 @@
       [currentExercise]="facade.currentExercise()"
       [previousPerformance]="facade.previousPerformance()"
       [currentExerciseSaveHint]="facade.currentExerciseSaveHint()"
+      [mode]="workoutSurfaceMode()"
       (selectExercise)="facade.setActiveExercise($event)"
       (setInput)="onSetInput($event)"
       (toggleSetComplete)="facade.toggleSetComplete($event)"
@@ -112,6 +108,19 @@
     />
   }
 </main>
+
+@if (facade.activeSession()) {
+  <nav class="gym-workout-nav" aria-label="Workout Modus">
+    <button type="button" class="gym-workout-nav-btn" [class.active]="workoutSurfaceMode() === 'workout'" (click)="setWorkoutSurfaceMode('workout')">
+      <lucide-icon [img]="workoutIcon" aria-hidden="true"></lucide-icon>
+      <span>Workout</span>
+    </button>
+    <button type="button" class="gym-workout-nav-btn" [class.active]="workoutSurfaceMode() === 'history'" (click)="setWorkoutSurfaceMode('history')">
+      <lucide-icon [img]="barChartIcon" aria-hidden="true"></lucide-icon>
+      <span>History</span>
+    </button>
+  </nav>
+}
 
 <app-bottom-sheet [open]="activeSheet() === 'hub'" [title]="sessionHubTitle()" (closed)="closeSheet()">
   <app-gym-session-hub-sheet
@@ -161,6 +170,17 @@
     (submit)="submitSessionCommunityPost()"
     (skip)="skipSessionShare()"
   />
+</app-bottom-sheet>
+
+<app-bottom-sheet [open]="activeSheet() === 'session-exit'" [closeOnBackdrop]="false" title="Workout verlassen" (closed)="closeSheet()">
+  <article class="action-card">
+    <p class="action-title">{{ workoutHeaderTitle() }}</p>
+    <p class="action-sub">Die Session läuft noch. Du kannst weitertrainieren oder das Workout jetzt abschließen.</p>
+  </article>
+  <div class="action-list">
+    <button mat-flat-button type="button" class="action-btn" (click)="onFinishWorkout()">Workout abschließen</button>
+    <button mat-flat-button type="button" class="action-btn ghost" (click)="closeSheet()">Weitertrainieren</button>
+  </div>
 </app-bottom-sheet>
 
 <app-bottom-sheet [open]="activeSheet() === 'graphs'" [closeOnBackdrop]="false" title="Graph hinzufuegen" (closed)="closeSheet()">

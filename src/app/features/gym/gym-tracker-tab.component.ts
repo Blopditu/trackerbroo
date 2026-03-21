@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
-import { LucideAngularModule, Check, ChevronLeft, ChevronRight, Play } from 'lucide-angular';
+import { LucideAngularModule, ChevronLeft, ChevronRight, Play, ChevronRight as ChevronRightSmall } from 'lucide-angular';
 import { TrainingDashboardDay, TrainingDashboardWeek, TrainingPlanOverview } from '../../core/training/training-data.service';
 import { equipmentLabel } from './gym-view-utils';
 
@@ -13,10 +13,7 @@ import { equipmentLabel } from './gym-view-utils';
   template: `
     <section class="panel tracker-week-card">
       <div class="tracker-week-head">
-        <div>
-          <p class="eyebrow">Training Woche {{ activeWeekNumber() }}</p>
-          <h2>Tracker</h2>
-        </div>
+        <p class="eyebrow">Training Woche {{ activeWeekNumber() }}</p>
         <span class="tracker-week-progress">{{ completionLabel() }}</span>
       </div>
 
@@ -55,7 +52,7 @@ import { equipmentLabel } from './gym-view-utils';
         <div class="tracker-plan-copy">
           <p class="eyebrow">Aktiver Plan</p>
           <h2>{{ dashboardWeek()!.activePlan!.name }}</h2>
-          <p class="muted">Woche {{ dashboardWeek()!.activePlan!.weekNumber }} • {{ selectedOverview()!.dayName }}</p>
+          <p class="muted">{{ selectedOverview()!.dayName }} • Woche {{ dashboardWeek()!.activePlan!.weekNumber }}</p>
         </div>
 
         <div class="tracker-plan-stats" aria-label="Workout Überblick">
@@ -90,7 +87,7 @@ import { equipmentLabel } from './gym-view-utils';
             <h2>Vorschau: {{ selectedOverview()!.dayName }}</h2>
             <p class="muted">{{ selectedOverview()!.planName }} • {{ musclePreviewLabel() }}</p>
           </div>
-          <button mat-flat-button type="button" class="action-btn ghost compact" (click)="openSessionHub.emit('plans')">Pläne</button>
+          <button mat-flat-button type="button" class="tracker-edit-btn" (click)="openSessionHub.emit('plans')">Bearbeiten</button>
         </div>
 
         <div class="exercise-list">
@@ -107,13 +104,9 @@ import { equipmentLabel } from './gym-view-utils';
                 <strong>{{ exercise.name }}</strong>
                 <p class="muted">{{ equipmentLabel(exercise.equipment) }} • {{ exercise.sets }} Sätze • {{ targetSummary(exercise) }}</p>
               </div>
+              <lucide-icon [img]="chevronRightSmallIcon" class="exercise-row-chevron" aria-hidden="true"></lucide-icon>
             </article>
           }
-        </div>
-
-        <div class="quick-actions">
-          <button mat-flat-button type="button" class="action-btn ghost compact" (click)="openSessionHub.emit('exercises')">Übungen</button>
-          <button mat-flat-button type="button" class="action-btn ghost compact" (click)="openSessionHub.emit('help')">Hilfe</button>
         </div>
       </section>
     }
@@ -133,8 +126,8 @@ export class GymTrackerTabComponent {
 
   readonly chevronLeftIcon = ChevronLeft;
   readonly chevronRightIcon = ChevronRight;
-  readonly checkIcon = Check;
   readonly playIcon = Play;
+  readonly chevronRightSmallIcon = ChevronRightSmall;
   readonly equipmentLabel = equipmentLabel;
 
   activeWeekNumber(): number {

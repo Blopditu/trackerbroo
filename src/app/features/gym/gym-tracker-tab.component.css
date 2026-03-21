@@ -12,23 +12,22 @@
 .tracker-empty-card,
 .tracker-preview-block {
   display: grid;
-  gap: 14px;
+  gap: 1rem;
 }
 
 .tracker-week-head,
 .tracker-preview-head {
   display: flex;
   justify-content: space-between;
-  align-items: flex-end;
+  align-items: center;
   gap: 12px;
 }
 
-.tracker-week-head h2,
 .tracker-plan-card h2,
 .tracker-empty-card h2,
 .tracker-preview-head h2 {
   margin: 0;
-  font-size: clamp(1.55rem, 4vw, 2rem);
+  font-size: clamp(1.25rem, 4vw, 2rem);
   line-height: 1.02;
   letter-spacing: -0.05em;
 }
@@ -37,7 +36,7 @@
   color: var(--m3-sys-color-primary);
   font-size: 11px;
   font-weight: 800;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   white-space: nowrap;
 }
@@ -46,7 +45,7 @@
   display: grid;
   grid-template-columns: 44px 1fr 44px;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .tracker-week-row {
@@ -62,15 +61,15 @@
 }
 
 .tracker-day {
-  min-width: 58px;
-  min-height: 72px;
+  min-width: 48px;
+  min-height: 64px;
   border-radius: 999px;
   background: rgba(24, 26, 25, 0.92);
   color: var(--m3-sys-color-on-surface-variant);
   display: grid;
   justify-items: center;
-  gap: 6px;
-  padding: 10px 8px;
+  gap: 5px;
+  padding: 8px 6px;
   text-transform: uppercase;
 }
 
@@ -81,7 +80,7 @@
 }
 
 .tracker-day strong {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 800;
 }
 
@@ -100,6 +99,7 @@
   background:
     radial-gradient(circle at 100% 0%, rgba(0, 228, 117, 0.09), transparent 36%),
     linear-gradient(180deg, rgba(29, 34, 31, 0.98), rgba(20, 22, 21, 0.98));
+  padding: 1.5rem;
 }
 
 .tracker-plan-copy,
@@ -139,6 +139,7 @@
 .tracker-start-btn {
   justify-content: center;
   gap: 8px;
+  min-height: 4.2rem;
 }
 
 .tracker-empty-card .action-btn {
@@ -152,12 +153,12 @@
 
 .exercise-row {
   display: grid;
-  grid-template-columns: 52px minmax(0, 1fr);
+  grid-template-columns: 52px minmax(0, 1fr) auto;
   gap: 12px;
   align-items: center;
-  border-radius: 20px;
+  border-radius: 1.35rem;
   background: rgba(22, 24, 23, 0.94);
-  padding: 10px;
+  padding: 0.95rem 1rem;
 }
 
 .exercise-thumb {
@@ -184,10 +185,23 @@
   line-height: 1.2;
 }
 
-.quick-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+.tracker-edit-btn {
+  min-height: auto;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--m3-sys-color-primary);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 0;
+}
+
+.exercise-row-chevron {
+  width: 1rem;
+  height: 1rem;
+  color: var(--m3-sys-color-on-surface-variant);
 }
 
 @media (max-width: 520px) {
@@ -207,5 +221,9 @@
 
   .tracker-plan-stats {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .tracker-preview-head {
+    align-items: flex-start;
   }
 }

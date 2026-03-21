@@ -5,17 +5,19 @@ import {
   OnDestroy,
   OnInit,
   ViewEncapsulation,
+  computed,
+  effect,
   inject,
   signal
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { BarChart3, Dumbbell, LucideAngularModule, User } from 'lucide-angular';
+import { ArrowLeft, BarChart3, Dumbbell, Ellipsis, LucideAngularModule, Timer, User } from 'lucide-angular';
+import { AppChromeService } from '../../core/app-chrome.service';
 import { BottomSheetComponent } from '../../ui/minimal/bottom-sheet.component';
 import { GymFacadeService } from './gym-facade.service';
 import { GymExecutionPanelComponent, GymSetInputChange } from './gym-execution-panel.component';
@@ -35,7 +37,6 @@ import { GymTrackerTabComponent } from './gym-tracker-tab.component';
     CommonModule,
     FormsModule,
     ReactiveFormsModule,
-    RouterLink,
     LucideAngularModule,
     MatButtonModule,
     MatFormFieldModule,
@@ -55,14 +56,31 @@ import { GymTrackerTabComponent } from './gym-tracker-tab.component';
 })
 export class GymComponent implements OnInit, AfterViewInit, OnDestroy {
   readonly facade = inject(GymFacadeService);
+  private readonly chromeService = inject(AppChromeService);
 
   readonly activeTab = this.facade.activeTab;
-  readonly activeSheet = signal<'none' | 'hub' | 'builder' | 'graphs' | 'graph-detail' | 'session-share'>('none');
+  readonly activeSheet = signal<'none' | 'hub' | 'builder' | 'graphs' | 'graph-detail' | 'session-share' | 'session-exit'>('none');
   readonly sessionHubTab = signal<'plans' | 'exercises' | 'help'>('plans');
+  readonly workoutSurfaceMode = signal<'workout' | 'history'>('workout');
+  readonly workoutHeaderTitle = computed(() => this.facade.selectedOverview()?.dayName || 'Workout Session');
+  readonly workoutHeaderMeta = computed(() => this.facade.currentExercise()?.name || 'Aktive Session');
 
   readonly dumbbellIcon = Dumbbell;
   readonly barChartIcon = BarChart3;
   readonly userIcon = User;
+  readonly workoutIcon = Timer;
+  readonly backIcon = ArrowLeft;
+  readonly moreIcon = Ellipsis;
+
+  constructor() {
+    effect(() => {
+      const sessionActive = Boolean(this.facade.activeSession());
+      this.chromeService.setSuppressed(sessionActive);
+      if (!sessionActive) {
+        this.workoutSurfaceMode.set('workout');
+      }
+    });
+  }
 
   ngOnInit(): void {
     void this.facade.activate();
@@ -73,6 +91,7 @@ export class GymComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.chromeService.setSuppressed(false);
     this.facade.deactivate(this.readScrollY());
   }
 
@@ -124,6 +143,14 @@ export class GymComponent implements OnInit, AfterViewInit, OnDestroy {
     if (completed) {
       this.activeSheet.set('session-share');
     }
+  }
+
+  openSessionExitSheet(): void {
+    this.activeSheet.set('session-exit');
+  }
+
+  setWorkoutSurfaceMode(mode: 'workout' | 'history'): void {
+    this.workoutSurfaceMode.set(mode);
   }
 
   async onSavePlan(): Promise<void> {
