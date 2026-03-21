@@ -4,27 +4,28 @@
 
 .app-surface {
   position: relative;
+  isolation: isolate;
 }
 
 .layout-shell {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  min-height: calc(100vh - 72px);
+  min-height: calc(100vh - 88px);
 }
 
 .layout-shell.with-rail {
-  grid-template-columns: 116px minmax(0, 1fr);
-  gap: 24px;
+  grid-template-columns: 128px minmax(0, 1fr);
+  gap: 28px;
   align-items: start;
   max-width: 1320px;
   margin: 0 auto;
-  padding: 0 20px;
+  padding: 0 22px;
 }
 
 .rail-slot {
   position: sticky;
-  top: 84px;
-  height: calc(100vh - 96px);
+  top: 92px;
+  height: calc(100vh - 108px);
   z-index: 26;
 }
 
@@ -32,7 +33,7 @@
   animation: route-enter var(--motion-duration-medium) var(--motion-easing-emphasized);
   min-width: 0;
   width: 100%;
-  max-width: 1160px;
+  max-width: 1180px;
   margin: 0 auto;
 }
 
@@ -41,7 +42,7 @@
 }
 
 .app-surface.layout-compact .route-host {
-  max-width: 640px;
+  max-width: 720px;
 }
 
 .app-surface.layout-medium,

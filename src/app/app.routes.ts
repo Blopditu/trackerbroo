@@ -56,7 +56,7 @@ export const routes: Routes = [
       shell: 'app',
       title: 'Heute',
       nav: 'today',
-      accentLabel: 'Broo Board'
+      accentLabel: ''
     } satisfies AppRouteData
   },
   {

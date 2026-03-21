@@ -116,6 +116,7 @@ CREATE TABLE IF NOT EXISTS profiles (
   track_gym BOOLEAN NOT NULL DEFAULT TRUE,
   track_steps BOOLEAN NOT NULL DEFAULT FALSE,
   daily_steps_target INTEGER NOT NULL DEFAULT 8000 CHECK (daily_steps_target BETWEEN 1000 AND 50000),
+  today_section_order TEXT[] NOT NULL DEFAULT ARRAY['meals','logs','habits','trends'],
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 

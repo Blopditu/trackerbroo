@@ -33,8 +33,7 @@
   align-items: center;
   min-height: 32px;
   border-radius: 999px;
-  border: 1px solid var(--shell-border);
-  background: color-mix(in srgb, var(--m3-sys-color-surface) 60%, transparent);
+  background: rgba(20, 22, 21, 0.94);
   color: var(--m3-sys-color-on-surface-variant);
   padding: 0 12px;
   font-size: 11px;
@@ -45,10 +44,9 @@
 
 .tab-toggle {
   display: inline-flex;
-  border: 1px solid var(--m3-sys-color-outline-variant);
   border-radius: 999px;
   overflow: hidden;
-  background: color-mix(in srgb, var(--m3-sys-color-surface) 74%, transparent);
+  background: rgba(18, 20, 19, 0.96);
   padding: 5px;
 }
 
@@ -66,8 +64,8 @@
 }
 
 .tab-toggle-btn.active {
-  background: var(--m3-sys-color-primary);
-  color: var(--m3-sys-color-on-primary);
+  background: linear-gradient(180deg, rgba(28, 40, 33, 0.98), rgba(20, 28, 24, 0.98));
+  color: var(--m3-sys-color-primary);
 }
 
 h1 {
@@ -155,29 +153,25 @@ h1 {
 }
 
 .meta-pill {
-  background: color-mix(in srgb, var(--m3-sys-color-surface-container-highest) 76%, transparent);
+  background: rgba(25, 27, 26, 0.94);
   color: var(--m3-sys-color-on-surface-variant);
-  border: 1px solid color-mix(in srgb, var(--m3-sys-color-outline-variant) 70%, transparent);
 }
 
 .macro-pill {
-  background: color-mix(in srgb, var(--m3-sys-color-secondary-container) 70%, var(--m3-sys-color-surface) 30%);
-  color: var(--m3-sys-color-on-secondary-container);
-  border: 1px solid color-mix(in srgb, var(--m3-sys-color-secondary-container) 92%, transparent);
+  background: rgba(20, 27, 24, 0.98);
+  color: var(--shell-ink);
 }
 
 .macro-pill-kcal {
-  background: color-mix(in srgb, var(--m3-sys-color-primary-container) 76%, var(--m3-sys-color-surface) 24%);
-  color: var(--m3-sys-color-on-primary-container);
-  border-color: color-mix(in srgb, var(--m3-sys-color-primary-container) 88%, transparent);
+  background: rgba(23, 33, 28, 0.98);
+  color: var(--shell-ink);
 }
 
 .library-edit-btn {
   width: 40px;
   height: 40px;
   border-radius: 14px;
-  border: 1px solid var(--shell-border);
-  background: color-mix(in srgb, var(--m3-sys-color-surface) 46%, transparent);
+  background: rgba(21, 23, 22, 0.96);
   color: var(--m3-sys-color-on-surface-variant);
   display: grid;
   place-items: center;

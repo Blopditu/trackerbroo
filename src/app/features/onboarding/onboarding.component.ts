@@ -22,7 +22,7 @@ import { formatAppError } from '../../core/error-format';
       }
 
       <section class="mx-auto grid max-w-5xl gap-3 lg:grid-cols-[minmax(15rem,18rem)_minmax(0,1fr)]">
-        <aside class="rounded-[1.45rem] border border-shell-border bg-shell-card p-5 shadow-[0_8px_24px_rgba(0,0,0,0.12)] sm:p-6">
+        <aside class="rounded-[1.45rem] bg-[radial-gradient(circle_at_top_right,rgba(0,228,117,0.08),transparent_34%),linear-gradient(180deg,rgba(31,34,32,0.98),rgba(18,20,19,0.98))] p-5 shadow-[0_14px_34px_rgba(0,0,0,0.28)] sm:p-6">
           <p class="text-[0.68rem] font-extrabold uppercase tracking-[0.28em] text-shell-accent">Tracker Broo</p>
           <h1 class="mt-3 text-[2rem] font-extrabold tracking-[-0.06em] text-shell-ink sm:text-[2.15rem]">Dein Start in mehr Konsistenz</h1>
           <p class="mt-2 text-sm leading-6 text-shell-ink-muted">
@@ -32,10 +32,8 @@ import { formatAppError } from '../../core/error-format';
           <div class="mt-6 grid gap-2">
             @for (index of stepIndicators; track index) {
               <div
-                class="rounded-[1rem] border px-3 py-2.5 transition"
-                [class.border-shell-accent]="index === step()"
+                class="rounded-[1rem] px-3 py-2.5 transition"
                 [class.bg-shell-accent-muted]="index === step()"
-                [class.border-shell-border]="index !== step()"
                 [class.bg-shell-card-strong]="index !== step()"
               >
                 <p class="text-[0.68rem] font-extrabold uppercase tracking-[0.24em]" [class.text-shell-accent]="index === step()" [class.text-shell-ink-muted]="index !== step()">
@@ -50,11 +48,11 @@ import { formatAppError } from '../../core/error-format';
         </aside>
 
         @if (loading()) {
-          <section class="rounded-[1.45rem] border border-shell-border bg-shell-card p-5 shadow-[0_8px_24px_rgba(0,0,0,0.12)] sm:p-6">
+          <section class="rounded-[1.45rem] bg-[linear-gradient(180deg,rgba(30,32,31,0.98),rgba(18,20,19,0.98))] p-5 shadow-[0_14px_34px_rgba(0,0,0,0.28)] sm:p-6">
             <div class="skeleton card"></div>
           </section>
         } @else {
-          <section class="rounded-[1.45rem] border border-shell-border bg-shell-card p-5 shadow-[0_8px_24px_rgba(0,0,0,0.12)] sm:p-6">
+          <section class="rounded-[1.45rem] bg-[linear-gradient(180deg,rgba(30,32,31,0.98),rgba(18,20,19,0.98))] p-5 shadow-[0_14px_34px_rgba(0,0,0,0.28)] sm:p-6">
             <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p class="text-[0.68rem] font-extrabold uppercase tracking-[0.28em] text-shell-accent">Setup</p>
@@ -72,15 +70,15 @@ import { formatAppError } from '../../core/error-format';
                     Nicht Perfektion, sondern Wiederholbarkeit. Tracking soll schnell, klar und alltagstauglich sein.
                   </p>
                   <div class="grid gap-3 md:grid-cols-3">
-                    <article class="rounded-[1rem] border border-shell-border bg-shell-card-strong p-4">
+                    <article class="rounded-[1rem] bg-shell-card-strong p-4">
                       <p class="text-[0.68rem] font-extrabold uppercase tracking-[0.24em] text-shell-accent">Heute</p>
                       <p class="mt-2 text-lg font-extrabold tracking-[-0.04em] text-shell-ink">Schnell loggen</p>
                     </article>
-                    <article class="rounded-[1rem] border border-shell-border bg-shell-card-strong p-4">
+                    <article class="rounded-[1rem] bg-shell-card-strong p-4">
                       <p class="text-[0.68rem] font-extrabold uppercase tracking-[0.24em] text-shell-accent">Gym</p>
                       <p class="mt-2 text-lg font-extrabold tracking-[-0.04em] text-shell-ink">Aktive Session</p>
                     </article>
-                    <article class="rounded-[1rem] border border-shell-border bg-shell-card-strong p-4">
+                    <article class="rounded-[1rem] bg-shell-card-strong p-4">
                       <p class="text-[0.68rem] font-extrabold uppercase tracking-[0.24em] text-shell-accent">Insights</p>
                       <p class="mt-2 text-lg font-extrabold tracking-[-0.04em] text-shell-ink">Klare Verläufe</p>
                     </article>
@@ -173,7 +171,7 @@ import { formatAppError } from '../../core/error-format';
 
                   <div class="grid gap-3 md:grid-cols-3">
                     @for (guide of installGuides; track guide.platform) {
-                      <article class="rounded-[1rem] border border-shell-border bg-shell-card-strong p-4">
+                      <article class="rounded-[1rem] bg-shell-card-strong p-4">
                         <strong class="text-sm font-extrabold uppercase tracking-[0.18em] text-shell-accent">{{ guide.platform }}</strong>
                         <p class="mt-3 text-sm leading-6 text-shell-ink-muted">{{ guide.steps }}</p>
                       </article>
@@ -182,7 +180,7 @@ import { formatAppError } from '../../core/error-format';
                 </section>
               }
 
-              <div class="mt-1 flex flex-wrap justify-between gap-3 border-t border-shell-border pt-4">
+              <div class="mt-1 flex flex-wrap justify-between gap-3 pt-4">
                 <div class="max-w-[34rem] text-sm text-shell-ink-muted">
                   {{ helperCopy(step()) }}
                 </div>

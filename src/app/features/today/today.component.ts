@@ -8,8 +8,10 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import {
   Calendar,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
   ChartLine,
   Clock3,
   Dumbbell,
@@ -37,6 +39,9 @@ import { InteractionTelemetryService } from '../../core/interaction-telemetry.se
 import { CommunityFeedService, CommunityProfileDirectoryEntry } from '../../core/community-feed.service';
 
 type QuickItem = Ingredient | Meal;
+type TodaySectionId = 'meals' | 'logs' | 'habits' | 'trends';
+
+const TODAY_SECTION_ORDER_DEFAULT: TodaySectionId[] = ['meals', 'logs', 'habits', 'trends'];
 
 interface MealMacroMap {
   [mealId: string]: MacroTotals;
@@ -70,6 +75,7 @@ interface FoodQueueItem {
 interface BrooBoardPost {
   post: CommunityPost;
   displayName: string;
+  avatarUrl: string | null;
   photoUrl: string | null;
 }
 
@@ -99,56 +105,73 @@ interface BrooBoardPost {
         <p class="toast success" role="status" aria-live="polite" aria-atomic="true">{{ successMessage() }}</p>
       }
 
+      <section class="broo-board-strip" aria-labelledby="broo-board-title">
+        <div class="broo-strip-head">
+          <p id="broo-board-title" class="title-font">Broo Board</p>
+        </div>
+
+        @if (loadingBrooBoard()) {
+          <p class="muted">Der Gruppenrhythmus wird geladen …</p>
+        } @else if (brooBoardPosts().length > 0) {
+          <div class="board-carousel" aria-label="Letzte Gruppenaktivität">
+            @for (item of brooBoardPosts(); track item.post.id) {
+              <article class="board-strip-card">
+                @if (item.avatarUrl) {
+                  <img [src]="item.avatarUrl" alt="" class="board-strip-avatar" loading="lazy" decoding="async">
+                } @else {
+                  <div class="board-strip-avatar board-strip-avatar-fallback" aria-hidden="true">
+                    {{ brooAvatarLabel(item.displayName) }}
+                  </div>
+                }
+
+                <div class="board-strip-copy">
+                  <div class="board-strip-topline">
+                    <strong>{{ item.displayName }}</strong>
+                    <span>{{ brooPostDayLabel(item.post.day) }}</span>
+                  </div>
+                  <p>{{ brooPostSummary(item.post) }}</p>
+                </div>
+              </article>
+            }
+          </div>
+        } @else {
+          <p class="muted">Heute ist das Board noch ruhig. Der erste Check-in setzt den Ton.</p>
+        }
+      </section>
+
       <section class="panel my-day-panel">
         <div class="my-day-head">
           <div>
-            <p class="title-font">Tagesstand</p>
+            <p class="title-font">Mein Tag</p>
             <h2>{{ todayLabel() }}</h2>
           </div>
-          <p class="date-label"><lucide-icon [img]="icons.calendar" class="icon" aria-hidden="true"></lucide-icon> {{ today() }}</p>
         </div>
 
-        <div class="today-toolbar">
-          <div class="day-nav">
-            <button mat-icon-button type="button" class="nav-btn" (click)="goPreviousDay()" aria-label="Vorheriger Tag">
-              <lucide-icon [img]="icons.chevronLeft" aria-hidden="true"></lucide-icon>
-            </button>
-            <mat-form-field class="m3-field day-field" appearance="outline" subscriptSizing="dynamic">
-              <mat-label>Tag</mat-label>
-              <input
-                matInput
-                type="date"
-                class="day-input"
-                [ngModel]="today()"
-                (ngModelChange)="onDayPicked($event)"
-              >
-            </mat-form-field>
-            <button mat-icon-button type="button" class="nav-btn" (click)="goNextDay()" [disabled]="!canGoNextDay()" aria-label="Nächster Tag">
-              <lucide-icon [img]="icons.chevronRight" aria-hidden="true"></lucide-icon>
-            </button>
-          </div>
+        <div class="day-nav day-nav-compact">
+          <button mat-icon-button type="button" class="nav-btn" (click)="goPreviousDay()" aria-label="Vorheriger Tag">
+            <lucide-icon [img]="icons.chevronLeft" aria-hidden="true"></lucide-icon>
+          </button>
 
-          <div class="hero-actions">
-            <button mat-flat-button type="button" class="action-btn compact today-quick-btn" (click)="openActions()">
-              <lucide-icon [img]="icons.plus" class="icon" aria-hidden="true"></lucide-icon>
-              Loggen
-            </button>
-            <button mat-flat-button type="button" class="action-btn ghost compact" [disabled]="today() === realToday" (click)="jumpToToday()">
-              Heute
-            </button>
-          </div>
+          <mat-form-field class="m3-field day-field compact" appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Tag</mat-label>
+            <input
+              matInput
+              type="date"
+              class="day-input"
+              [ngModel]="today()"
+              (ngModelChange)="onDayPicked($event)"
+            >
+          </mat-form-field>
+
+          <button mat-icon-button type="button" class="nav-btn" (click)="goNextDay()" [disabled]="!canGoNextDay()" aria-label="Nächster Tag">
+            <lucide-icon [img]="icons.chevronRight" aria-hidden="true"></lucide-icon>
+          </button>
         </div>
 
-        @if (canShareProteinMilestone()) {
-          <button mat-flat-button type="button" class="action-btn tonal protein-share-btn" (click)="shareProteinMilestone()">
-            Protein-Ziel im Board teilen
-          </button>
-        }
-
-        @if (canShareStepsMilestone()) {
-          <button mat-flat-button type="button" class="action-btn tonal protein-share-btn" (click)="shareStepsMilestone()">
-            Schrittziel im Board teilen
-          </button>
+        @if (today() !== realToday) {
+          <div class="today-reset-row">
+            <button mat-flat-button type="button" class="day-chip today-reset-btn" (click)="jumpToToday()">Heute</button>
+          </div>
         }
 
         <app-hero-ring [value]="proteinToday()" [target]="proteinGoal" accentColor="var(--m3-sys-color-primary)" />
@@ -179,141 +202,110 @@ interface BrooBoardPost {
         }
       </section>
 
-      <section class="panel broo-board" aria-labelledby="broo-board-title">
-        <div class="broo-board-head">
-          <div>
-            <p class="title-font">Broo Board</p>
-            <h1 id="broo-board-title">Heute bei den Broos</h1>
-            <p class="broo-lead">Kurz sehen, wer geliefert hat, und direkt nachziehen.</p>
-          </div>
-          <span class="board-badge">{{ brooBoardPosts().length }} Einträge</span>
-        </div>
+      <div class="today-layout-row">
+        <button type="button" class="today-layout-btn" (click)="openLayoutSheet()">Heute anpassen</button>
+      </div>
 
-        <div class="board-actions">
-          <button mat-flat-button type="button" class="action-btn board-primary-btn" (click)="openGymCheckInComposer()">
-            <lucide-icon [img]="icons.dumbbell" class="icon" aria-hidden="true"></lucide-icon>
-            Gym-Check-in
-          </button>
-          <button mat-flat-button type="button" class="action-btn tonal board-secondary-btn" (click)="openFoodQuickLog()">
-            <lucide-icon [img]="icons.utensils" class="icon" aria-hidden="true"></lucide-icon>
-            Protein loggen
-          </button>
-        </div>
-
-        @if (loadingBrooBoard()) {
-          <p class="muted">Der Gruppenrhythmus wird geladen …</p>
-        } @else if (brooBoardPosts().length > 0) {
-          <div class="board-stream" aria-label="Letzte Gruppenaktivität">
-            @for (item of brooBoardPosts(); track item.post.id; let index = $index) {
-              <article class="board-post" [style.--stagger]="index">
-                <div class="board-post-top">
-                  <div>
-                    <strong>{{ item.displayName }}</strong>
-                    <p class="board-post-meta">{{ brooPostLabel(item.post) }}</p>
-                  </div>
-                  <span class="board-post-day">{{ brooPostDayLabel(item.post.day) }}</span>
+      <div class="today-lower-sections">
+        @for (sectionId of orderedTodaySections(); track sectionId) {
+          @switch (sectionId) {
+            @case ('meals') {
+              <section class="panel section">
+                <div class="m3-section-head">
+                  <h2><lucide-icon [img]="icons.utensils" class="icon" aria-hidden="true"></lucide-icon> Mahlzeiten</h2>
+                  <span class="m3-section-meta">Direkt loggen</span>
                 </div>
 
-                <p class="board-post-copy">{{ brooPostSummary(item.post) }}</p>
-
-                @if (item.photoUrl) {
-                  <img [src]="item.photoUrl" alt="" class="board-post-photo" loading="lazy" decoding="async">
-                }
-              </article>
+                <div class="meal-slot-list" role="list" aria-label="Mahlzeiten">
+                  @for (slot of mealLaunchCards(); track slot.id) {
+                    <button type="button" class="meal-slot-card" (click)="openFoodQuickLog(slot.id)">
+                      <div class="meal-slot-copy">
+                        <strong>{{ slot.label }}</strong>
+                      </div>
+                      <span class="meal-slot-action">Loggen</span>
+                    </button>
+                  }
+                </div>
+              </section>
             }
-          </div>
-        } @else {
-          <p class="muted">Heute hat noch niemand etwas geteilt. Starte den ersten Check-in für eure Woche.</p>
-        }
-      </section>
 
-      <section class="panel section">
-        <div class="m3-section-head">
-          <h2><lucide-icon [img]="icons.chartLine" class="icon" aria-hidden="true"></lucide-icon> Gewichtstrend</h2>
-          <span class="m3-section-meta">{{ trendWeightEntries().length }} Einträge</span>
-        </div>
-        <div
-          class="filter-toggle"
-          role="group"
-          aria-label="Zeitraum für Gewichtstrend"
-          style="grid-template-columns: repeat(2, minmax(0, 1fr));"
-        >
-          <button
-            mat-flat-button
-            type="button"
-            class="filter-btn"
-            [class.active]="weightTrendDays() === 7"
-            (click)="setWeightTrendDays(7)"
-          >
-            7 Tage
-          </button>
-          <button
-            mat-flat-button
-            type="button"
-            class="filter-btn"
-            [class.active]="weightTrendDays() === 30"
-            (click)="setWeightTrendDays(30)"
-          >
-            30 Tage
-          </button>
-        </div>
-        <div class="sparkline-wrap" aria-label="Gewichtstrend">
-          <svg viewBox="0 0 100 28" preserveAspectRatio="none" class="sparkline">
-            <polyline [attr.points]="weightSparklinePoints()" />
-          </svg>
-          <div class="trend-note">{{ weightTrendDays() }}-Tage-Veränderung: {{ weeklyTrendLabel() }}</div>
-        </div>
+            @case ('logs') {
+              <section class="panel section">
+                <div class="m3-section-head">
+                  <h2><lucide-icon [img]="icons.clock3" class="icon" aria-hidden="true"></lucide-icon> Log</h2>
+                  <span class="m3-section-meta">{{ todayEntries().length }} Einträge</span>
+                </div>
 
-        <div class="weight-list">
-          @for (entry of recentWeightEntries(); track entry.id) {
-            <article class="weight-entry">
-              <div>
-                <strong>{{ entry.weight_kg }} kg</strong>
-                <p class="entry-meta">{{ entry.logged_on }}</p>
-              </div>
-              <button mat-flat-button type="button" class="entry-btn" (click)="editWeight(entry)">Bearbeiten</button>
-            </article>
+                @for (entry of todayEntries(); track entry.id) {
+                  <article class="entry-card">
+                    <div class="entry-main">
+                      <strong class="entry-title">{{ entry.entry_type === 'ingredient' ? getIngredientName(entry.ref_id) : getMealName(entry.ref_id) }}</strong>
+                      <p class="entry-sub">
+                        {{
+                          entry.quantity + (entry.entry_type === 'ingredient' ? 'g' : ' Portionen')
+                          + ' · P ' + entry.protein.toFixed(1) + 'g'
+                          + ' · KH ' + entry.carbs.toFixed(1) + 'g'
+                          + ' · F ' + entry.fat.toFixed(1) + 'g'
+                          + ' · ' + entry.kcal.toFixed(0) + ' kcal'
+                        }}
+                      </p>
+                    </div>
+                    <div class="entry-actions">
+                      <button mat-flat-button type="button" class="entry-btn" (click)="openEntryActions(entry)">Verwalten</button>
+                    </div>
+                  </article>
+                }
+
+                @if (todayEntries().length === 0) {
+                  <p class="muted">Für heute ist noch nichts geloggt. Nutze das Plus oder starte direkt über eine Mahlzeit.</p>
+                }
+              </section>
+            }
+
+            @case ('habits') {
+              <section class="panel section">
+                <div class="m3-section-head">
+                  <h2><lucide-icon [img]="icons.listChecks" class="icon" aria-hidden="true"></lucide-icon> Gewohnheiten</h2>
+                  <span class="m3-section-meta">Diese Woche</span>
+                </div>
+                <app-habit-grid label="Gym" [states]="gymHabitStates()" [targetPerWeek]="3" />
+                <app-habit-grid label="Protein" [states]="proteinHabitStates()" [targetPerWeek]="7" />
+              </section>
+            }
+
+            @case ('trends') {
+              <section class="panel section trend-compact-section">
+                <div class="m3-section-head">
+                  <h2><lucide-icon [img]="icons.chartLine" class="icon" aria-hidden="true"></lucide-icon> Fortschritt</h2>
+                  <span class="m3-section-meta">7 Tage</span>
+                </div>
+
+                <div class="sparkline-wrap compact" aria-label="Gewichtstrend">
+                  <svg viewBox="0 0 100 28" preserveAspectRatio="none" class="sparkline">
+                    <polyline [attr.points]="weightSparklinePoints()" />
+                  </svg>
+                  <div class="trend-note">Gewicht {{ weeklyTrendLabel() }} in den letzten 7 Tagen.</div>
+                </div>
+
+                <div class="trend-inline-list">
+                  <div class="trend-inline-row">
+                    <span>Gewicht</span>
+                    <strong>{{ weightValueLabel() }}</strong>
+                    <small>{{ weightDeltaLabel() }}</small>
+                  </div>
+                  @if (trackStepsEnabled()) {
+                    <div class="trend-inline-row">
+                      <span>Schritte</span>
+                      <strong>{{ stepsValueLabel() }}</strong>
+                      <small>{{ stepsGoalLabel() }}</small>
+                    </div>
+                  }
+                </div>
+              </section>
+            }
           }
-        </div>
-      </section>
-
-      <section class="panel section">
-        <div class="m3-section-head">
-          <h2><lucide-icon [img]="icons.listChecks" class="icon" aria-hidden="true"></lucide-icon> Gewohnheiten</h2>
-          <span class="m3-section-meta">Diese Woche</span>
-        </div>
-        <app-habit-grid label="Gym" [states]="gymHabitStates()" [targetPerWeek]="3" />
-        <app-habit-grid label="Protein" [states]="proteinHabitStates()" [targetPerWeek]="7" />
-      </section>
-
-      <section class="panel section">
-        <div class="m3-section-head">
-          <h2><lucide-icon [img]="icons.clock3" class="icon" aria-hidden="true"></lucide-icon> Geloggt am {{ today() }}</h2>
-          <span class="m3-section-meta">{{ todayEntries().length }} Einträge</span>
-        </div>
-        @for (entry of todayEntries(); track entry.id) {
-          <article class="entry-card">
-            <div class="entry-main">
-              <strong class="entry-title">{{ entry.entry_type === 'ingredient' ? getIngredientName(entry.ref_id) : getMealName(entry.ref_id) }}</strong>
-              <p class="entry-sub">
-                {{
-                  entry.quantity + (entry.entry_type === 'ingredient' ? 'g' : ' Portionen')
-                  + ' · P ' + entry.protein.toFixed(1) + 'g'
-                  + ' · KH ' + entry.carbs.toFixed(1) + 'g'
-                  + ' · F ' + entry.fat.toFixed(1) + 'g'
-                  + ' · ' + entry.kcal.toFixed(0) + ' kcal'
-                }}
-              </p>
-            </div>
-            <div class="entry-actions">
-              <button mat-flat-button type="button" class="entry-btn" (click)="openEntryActions(entry)">Verwalten</button>
-            </div>
-          </article>
         }
-      @if (todayEntries().length === 0) {
-          <p class="muted">Für heute ist noch nichts geloggt. Starte mit einem schnellen Eintrag oder zieh beim Gruppenrhythmus mit.</p>
-        }
-      </section>
+      </div>
 
     </main>
 
@@ -370,6 +362,47 @@ interface BrooBoardPost {
               Letzte Aktivitäten
             </button>
           </div>
+
+          @if (canShareProteinMilestone() || canShareStepsMilestone()) {
+            <div class="quick-add-share-stack">
+              @if (canShareProteinMilestone()) {
+                <button mat-flat-button type="button" class="menu-btn" (click)="shareProteinMilestone()">Protein-Ziel im Board teilen</button>
+              }
+              @if (canShareStepsMilestone()) {
+                <button mat-flat-button type="button" class="menu-btn" (click)="shareStepsMilestone()">Schrittziel im Board teilen</button>
+              }
+            </div>
+          }
+        </section>
+      }
+
+      @if (sheetMode() === 'layout') {
+        <section class="layout-sheet">
+          <p class="sheet-caption">Ordne die unteren Heute-Abschnitte so, wie du sie am liebsten siehst.</p>
+
+          <div class="layout-list">
+            @for (section of layoutSectionRows(); track section.id; let first = $first; let last = $last) {
+              <article class="layout-row">
+                <div class="layout-copy">
+                  <strong>{{ section.title }}</strong>
+                  <small>{{ section.description }}</small>
+                </div>
+
+                <div class="layout-controls">
+                  <button mat-icon-button type="button" class="round-icon-btn" [disabled]="first" (click)="moveTodaySection(section.id, 'up')" [attr.aria-label]="section.title + ' nach oben'">
+                    <lucide-icon [img]="icons.chevronUp" aria-hidden="true"></lucide-icon>
+                  </button>
+                  <button mat-icon-button type="button" class="round-icon-btn" [disabled]="last" (click)="moveTodaySection(section.id, 'down')" [attr.aria-label]="section.title + ' nach unten'">
+                    <lucide-icon [img]="icons.chevronDown" aria-hidden="true"></lucide-icon>
+                  </button>
+                </div>
+              </article>
+            }
+          </div>
+
+          <button mat-flat-button type="button" class="menu-btn apply-log-btn" [disabled]="savingTodayLayout()" (click)="saveTodaySectionOrder()">
+            {{ savingTodayLayout() ? 'Wird gespeichert …' : 'Reihenfolge speichern' }}
+          </button>
         </section>
       }
 
@@ -389,19 +422,28 @@ interface BrooBoardPost {
           </mat-form-field>
 
           <div class="food-hub-actions">
-            <button mat-flat-button type="button" class="food-hub-card" (click)="setSheetMode('copy')">
+            <button type="button" class="food-hub-card" (click)="setSheetMode('copy')">
               <span class="food-hub-card-kicker">Shortcut</span>
-              <strong>Von gestern kopieren</strong>
+              <span class="food-hub-card-head">
+                <strong>Von gestern kopieren</strong>
+                <span class="food-hub-card-action">Kopieren</span>
+              </span>
               <small>Bestehende Einträge direkt übernehmen.</small>
             </button>
-            <button mat-flat-button type="button" class="food-hub-card" (click)="setSheetMode('mealprep')">
+            <button type="button" class="food-hub-card" (click)="setSheetMode('mealprep')">
               <span class="food-hub-card-kicker">Batch</span>
-              <strong>Meal Prep aufteilen</strong>
+              <span class="food-hub-card-head">
+                <strong>Meal Prep aufteilen</strong>
+                <span class="food-hub-card-action">Verteilen</span>
+              </span>
               <small>Heutige Einträge auf mehrere Tage verteilen.</small>
             </button>
-            <button mat-flat-button type="button" class="food-hub-card food-hub-card-accent" (click)="openFoodBuilder()">
+            <button type="button" class="food-hub-card food-hub-card-accent" (click)="openFoodBuilder()">
               <span class="food-hub-card-kicker">Builder</span>
-              <strong>Schnelleingabe / Makros</strong>
+              <span class="food-hub-card-head">
+                <strong>Schnelleingabe / Makros</strong>
+                <span class="food-hub-card-action">Builder</span>
+              </span>
               <small>Bibliothek öffnen und den Log gezielt bauen.</small>
             </button>
           </div>
@@ -419,7 +461,7 @@ interface BrooBoardPost {
               <p class="sheet-kicker">Zuletzt geloggt</p>
               <p class="sheet-caption">Direkt loggen oder bei Bedarf im Builder öffnen.</p>
             </div>
-            <button mat-flat-button type="button" class="day-chip" (click)="openFoodBuilder('all')">Alle Lebensmittel</button>
+            <button type="button" class="sheet-link-btn" (click)="openFoodBuilder('all')">Alle Lebensmittel</button>
           </div>
 
           <div class="food-list hub-food-list">
@@ -770,8 +812,10 @@ interface BrooBoardPost {
 export class TodayComponent implements OnInit {
   readonly icons = {
     calendar: Calendar,
+    chevronDown: ChevronDown,
     chevronLeft: ChevronLeft,
     chevronRight: ChevronRight,
+    chevronUp: ChevronUp,
     weight: Weight,
     chartLine: ChartLine,
     listChecks: ListChecks,
@@ -807,13 +851,15 @@ export class TodayComponent implements OnInit {
   readonly loadingBrooBoard = signal(false);
   readonly errorMessage = signal<string | null>(null);
   readonly successMessage = signal<string | null>(null);
+  readonly savingTodayLayout = signal(false);
 
   readonly showActionSheet = signal(false);
-  readonly sheetMode = signal<'menu' | 'food' | 'builder' | 'copy' | 'mealprep' | 'weight' | 'steps' | 'gym' | 'entry'>('menu');
+  readonly sheetMode = signal<'menu' | 'food' | 'builder' | 'copy' | 'mealprep' | 'weight' | 'steps' | 'gym' | 'entry' | 'layout'>('menu');
   readonly foodSearch = signal('');
   readonly savingGymPost = signal(false);
   readonly gymPhotoName = signal<string | null>(null);
   readonly selectedEntryForActions = signal<LogEntry | null>(null);
+  readonly todaySectionOrderDraft = signal<TodaySectionId[]>([...TODAY_SECTION_ORDER_DEFAULT]);
   readonly gymPhotoInput = viewChild<ElementRef<HTMLInputElement>>('gymPhotoInput');
 
   readonly realToday = this.formatDate(new Date());
@@ -864,9 +910,30 @@ export class TodayComponent implements OnInit {
     this.brooPosts().map(post => ({
       post,
       displayName: this.brooProfiles()[post.user_id]?.display_name || 'Broo',
+      avatarUrl: this.brooProfiles()[post.user_id]?.avatar_url || null,
       photoUrl: this.brooPhotoSrcMap()[post.id] || null
     }))
   );
+
+  readonly orderedTodaySections = computed<TodaySectionId[]>(() =>
+    this.normalizeTodaySectionOrder(this.profile()?.today_section_order)
+  );
+
+  readonly layoutSectionRows = computed(() =>
+    this.todaySectionOrderDraft().map(sectionId => ({
+      id: sectionId,
+      title: this.todaySectionTitle(sectionId),
+      description: this.todaySectionDescription(sectionId)
+    }))
+  );
+
+  readonly mealLaunchCards = computed(() => ([
+    { id: 'breakfast' as MealSlot, label: 'Frühstück' },
+    { id: 'lunch' as MealSlot, label: 'Mittag' },
+    { id: 'dinner' as MealSlot, label: 'Abend' },
+    { id: 'snack' as MealSlot, label: 'Snack' },
+    { id: 'other' as MealSlot, label: 'Sonstiges' }
+  ]));
 
   readonly selectedDayWeight = computed(() =>
     this.weightLogs().find(entry => entry.logged_on === this.today()) || null
@@ -987,7 +1054,7 @@ export class TodayComponent implements OnInit {
     }
     return states;
   });
-  readonly canGoNextDay = computed(() => true);
+  readonly canGoNextDay = computed(() => this.today() !== this.realToday);
   readonly foodQueueCount = computed(() => this.foodQueue().length);
   readonly canShareProteinMilestone = computed(() =>
     this.proteinToday() >= this.proteinGoal && !this.proteinMilestonePosted()
@@ -1073,7 +1140,7 @@ export class TodayComponent implements OnInit {
 
       this.entries.set(dayResult.value.entries);
       this.summary.set(dayResult.value.summary);
-      this.profile.set(dayResult.value.profile);
+      this.profile.set(this.normalizeTodayProfile(dayResult.value.profile));
       this.weightLogs.set(dayResult.value.weightLogs);
       this.stepLogs.set(dayResult.value.stepLogs);
       this.gymDaysThisWeek.set(new Set(dayResult.value.gymDaysThisWeek));
@@ -1185,11 +1252,18 @@ export class TodayComponent implements OnInit {
     this.setSheetMode('menu');
   }
 
-  openFoodQuickLog(): void {
+  openFoodQuickLog(slot: MealSlot = this.selectedMealSlot()): void {
     this.showActionSheet.set(true);
+    this.selectedMealSlot.set(slot);
     this.foodSearch.set('');
     this.foodFilter.set('recent');
     this.setSheetMode('food');
+  }
+
+  openLayoutSheet(): void {
+    this.todaySectionOrderDraft.set([...this.orderedTodaySections()]);
+    this.showActionSheet.set(true);
+    this.setSheetMode('layout');
   }
 
   openGymCheckInComposer(): void {
@@ -1216,6 +1290,7 @@ export class TodayComponent implements OnInit {
     this.sheetMode.set('menu');
     this.foodSearch.set('');
     this.selectedEntryForActions.set(null);
+    this.todaySectionOrderDraft.set([...this.orderedTodaySections()]);
     this.copySelectedEntryIds.set([]);
     this.copySourceEntries.set([]);
     this.mealPrepSelectedEntryIds.set([]);
@@ -1228,7 +1303,7 @@ export class TodayComponent implements OnInit {
     }
   }
 
-  setSheetMode(mode: 'menu' | 'food' | 'builder' | 'copy' | 'mealprep' | 'weight' | 'steps' | 'gym' | 'entry'): void {
+  setSheetMode(mode: 'menu' | 'food' | 'builder' | 'copy' | 'mealprep' | 'weight' | 'steps' | 'gym' | 'entry' | 'layout'): void {
     const currentMode = this.sheetMode();
     const leavingFood = currentMode === 'food' || currentMode === 'builder';
     const enteringFood = mode === 'food' || mode === 'builder';
@@ -1274,9 +1349,13 @@ export class TodayComponent implements OnInit {
       const selected = this.stepLogs().find(entry => entry.logged_on === this.today());
       this.stepsInput = Number(selected?.steps || this.stepsGoal());
     }
+    if (mode === 'layout') {
+      this.todaySectionOrderDraft.set([...this.orderedTodaySections()]);
+    }
   }
 
   sheetTitle(): string {
+    if (this.sheetMode() === 'layout') return 'Heute anpassen';
     if (this.sheetMode() === 'food') return 'Essen loggen';
     if (this.sheetMode() === 'builder') return 'Meal Builder';
     if (this.sheetMode() === 'copy') return 'Von anderem Tag übernehmen';
@@ -1323,12 +1402,65 @@ export class TodayComponent implements OnInit {
     this.setSheetMode('builder');
   }
 
-  setWeightTrendDays(days: 7 | 30): void {
-    this.weightTrendDays.set(days);
-  }
-
   setMealSlot(slot: MealSlot): void {
     this.selectedMealSlot.set(slot);
+  }
+
+  moveTodaySection(sectionId: TodaySectionId, direction: 'up' | 'down'): void {
+    this.todaySectionOrderDraft.update(current => {
+      const index = current.indexOf(sectionId);
+      if (index < 0) {
+        return current;
+      }
+
+      const targetIndex = direction === 'up' ? index - 1 : index + 1;
+      if (targetIndex < 0 || targetIndex >= current.length) {
+        return current;
+      }
+
+      const next = [...current];
+      const [item] = next.splice(index, 1);
+      next.splice(targetIndex, 0, item);
+      return next;
+    });
+  }
+
+  async saveTodaySectionOrder(): Promise<void> {
+    const user = this.authService.user();
+    if (!user) {
+      return;
+    }
+
+    this.savingTodayLayout.set(true);
+    this.errorMessage.set(null);
+
+    try {
+      const nextOrder = this.normalizeTodaySectionOrder(this.todaySectionOrderDraft());
+      const { error } = await this.supabaseService.client
+        .from('profiles')
+        .upsert(
+          {
+            user_id: user.id,
+            today_section_order: nextOrder,
+            updated_at: new Date().toISOString()
+          },
+          { onConflict: 'user_id' }
+        );
+
+      if (error) {
+        throw error;
+      }
+
+      this.profile.update(current => current ? { ...current, today_section_order: nextOrder } : current);
+      this.queryCache.invalidatePrefix(`today:${user.id}:`);
+      this.successMessage.set('Heute-Layout gespeichert.');
+      this.closeActions();
+      await this.loadTodaySnapshot(true);
+    } catch (error: unknown) {
+      this.errorMessage.set(formatAppError(error, 'Heute-Layout konnte nicht gespeichert werden'));
+    } finally {
+      this.savingTodayLayout.set(false);
+    }
   }
 
   mealSlotLabel(slot: MealSlot): string {
@@ -1445,6 +1577,9 @@ export class TodayComponent implements OnInit {
       await this.communityFeed.ensureProteinMilestonePost(user.id, this.today(), this.summary());
       this.proteinMilestonePosted.set(true);
       this.successMessage.set('Protein-Ziel im Board geteilt.');
+      if (this.showActionSheet()) {
+        this.closeActions();
+      }
       await this.loadBrooBoard();
     } catch (error: unknown) {
       this.errorMessage.set(formatAppError(error, 'Protein-Ziel konnte nicht geteilt werden'));
@@ -1465,6 +1600,9 @@ export class TodayComponent implements OnInit {
       await this.communityFeed.createStepsMilestonePost(user.id, this.today(), steps, this.stepsGoal());
       this.stepsMilestonePosted.set(true);
       this.successMessage.set('Schrittziel im Board geteilt.');
+      if (this.showActionSheet()) {
+        this.closeActions();
+      }
       await this.loadBrooBoard();
     } catch (error: unknown) {
       this.errorMessage.set(formatAppError(error, 'Schrittziel konnte nicht geteilt werden'));
@@ -1849,6 +1987,10 @@ export class TodayComponent implements OnInit {
     return entry.entry_type === 'ingredient' ? this.getIngredientName(entry.ref_id) : this.getMealName(entry.ref_id);
   }
 
+  brooAvatarLabel(displayName: string): string {
+    return displayName.trim().slice(0, 1).toUpperCase() || 'B';
+  }
+
   brooPostLabel(post: CommunityPost): string {
     if (post.post_type === 'gym_checkin') {
       return 'Gym-Check-in';
@@ -1892,6 +2034,50 @@ export class TodayComponent implements OnInit {
     }
 
     return this.parseIsoDate(day).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
+  }
+
+  private normalizeTodayProfile(profile: Profile | null): Profile | null {
+    if (!profile) {
+      return profile;
+    }
+
+    return {
+      ...profile,
+      today_section_order: this.normalizeTodaySectionOrder(profile.today_section_order)
+    };
+  }
+
+  private normalizeTodaySectionOrder(order: string[] | null | undefined): TodaySectionId[] {
+    const values = Array.isArray(order)
+      ? order.filter((value): value is TodaySectionId =>
+          value === 'meals' || value === 'logs' || value === 'habits' || value === 'trends'
+        )
+      : [];
+
+    if (values.length !== TODAY_SECTION_ORDER_DEFAULT.length) {
+      return [...TODAY_SECTION_ORDER_DEFAULT];
+    }
+
+    const unique = Array.from(new Set(values));
+    if (unique.length !== TODAY_SECTION_ORDER_DEFAULT.length) {
+      return [...TODAY_SECTION_ORDER_DEFAULT];
+    }
+
+    return unique;
+  }
+
+  private todaySectionTitle(sectionId: TodaySectionId): string {
+    if (sectionId === 'meals') return 'Mahlzeiten';
+    if (sectionId === 'logs') return 'Logs';
+    if (sectionId === 'habits') return 'Gewohnheiten';
+    return 'Fortschritt';
+  }
+
+  private todaySectionDescription(sectionId: TodaySectionId): string {
+    if (sectionId === 'meals') return 'Direkte Mahlzeiten-Einstiege fuer deinen Tag.';
+    if (sectionId === 'logs') return 'Alle heutigen Eintraege in einer flachen Liste.';
+    if (sectionId === 'habits') return 'Dein Wochenrhythmus fuer Gym und Protein.';
+    return 'Kurzer Blick auf Gewicht und Schritte.';
   }
 
   private async loadBrooBoard(): Promise<void> {

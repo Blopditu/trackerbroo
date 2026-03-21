@@ -49,8 +49,8 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
 
       <section class="panel community-hero">
         <div>
-          <p class="period">Feed zuerst</p>
-          <p class="motto">Kurze Check-ins, direkte Reaktionen.</p>
+          <p class="period">Activity Log</p>
+          <p class="motto">Kurze Check-ins. Klare Reaktionen.</p>
         </div>
         <div class="hero-cta-row">
           <button mat-flat-button type="button" class="action-btn hero-cta" (click)="openGymSheet()">
@@ -219,13 +219,16 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
       gap: var(--layout-gap);
     }
 
-        .community-hero {
-          display: flex;
-          flex-wrap: wrap;
-          align-items: end;
-          justify-content: space-between;
-          gap: 12px;
-        }
+    .community-hero {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: end;
+      justify-content: space-between;
+      gap: 12px;
+      background:
+        radial-gradient(circle at top right, rgba(0, 228, 117, 0.08), transparent 28%),
+        linear-gradient(180deg, rgba(30, 32, 31, 0.98), rgba(18, 20, 19, 0.98));
+    }
 
         .section,
         .post-card {
@@ -234,8 +237,7 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
         }
 
     .post-card {
-      background: color-mix(in srgb, var(--m3-sys-color-surface-container-high) 90%, transparent);
-      border: 1px solid var(--m3-sys-color-outline-variant);
+      background: linear-gradient(180deg, rgba(28, 30, 29, 0.96), rgba(19, 21, 20, 0.96));
       border-radius: 24px;
       padding: 14px;
       box-shadow: none;
@@ -287,8 +289,7 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
           min-height: 32px;
           padding: 0 12px;
           border-radius: 999px;
-          border: 1px solid var(--m3-sys-color-outline-variant);
-          background: color-mix(in srgb, var(--m3-sys-color-surface) 62%, transparent);
+          background: rgba(20, 22, 21, 0.94);
           color: var(--m3-sys-color-on-surface-variant);
           font-size: 11px;
           font-weight: 800;
@@ -300,9 +301,8 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
       margin-top: 8px;
       width: fit-content;
       padding: 8px 12px;
-      border: 1px solid var(--m3-sys-color-outline-variant);
       border-radius: 999px;
-      background: var(--m3-sys-color-surface-container-high);
+      background: rgba(20, 22, 21, 0.94);
       font-size: 12px;
       font-weight: 600;
       color: var(--m3-sys-color-on-surface-variant);
@@ -327,8 +327,7 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
           width: 34px;
           height: 34px;
           border-radius: 999px;
-          border: 1px solid color-mix(in srgb, var(--m3-sys-color-outline-variant) 70%, transparent);
-          background: color-mix(in srgb, var(--m3-sys-color-surface) 52%, transparent);
+          background: rgba(20, 22, 21, 0.94);
           color: var(--m3-sys-color-on-surface-variant);
         }
 
@@ -398,9 +397,8 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
     }
 
     .action-card {
-      border: 1px solid var(--m3-sys-color-outline-variant);
       border-radius: 16px;
-      background: var(--m3-sys-color-surface-container-high);
+      background: rgba(21, 23, 22, 0.96);
       padding: 12px;
       display: grid;
       gap: 4px;
@@ -447,7 +445,6 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
 
     .photo {
       width: 100%;
-      border: 1px solid var(--m3-sys-color-outline-variant);
       border-radius: 16px;
       background: var(--m3-sys-color-surface-container);
       min-height: 120px;

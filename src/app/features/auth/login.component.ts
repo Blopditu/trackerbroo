@@ -29,7 +29,7 @@ import { formatAppError } from '../../core/error-format';
       }
 
       <section class="mx-auto grid min-h-[calc(100vh-8rem)] max-w-6xl items-center gap-8 lg:grid-cols-[minmax(0,0.95fr)_minmax(22rem,28rem)]">
-        <div class="rounded-[2rem] border border-shell-border bg-shell-card p-6 shadow-[0_24px_80px_rgba(0,0,0,0.18)] sm:p-8 lg:p-10">
+        <div class="rounded-[2rem] bg-[radial-gradient(circle_at_top_right,rgba(0,228,117,0.08),transparent_34%),linear-gradient(180deg,rgba(31,34,32,0.98),rgba(18,20,19,0.98))] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.28)] sm:p-8 lg:p-10">
           <div class="flex items-center gap-4">
             <div class="grid h-16 w-16 place-items-center rounded-[1.35rem] bg-shell-accent-muted text-[1.7rem] font-extrabold tracking-[-0.08em] text-shell-accent">
               TB
@@ -50,15 +50,15 @@ import { formatAppError } from '../../core/error-format';
           </div>
 
           <div class="mt-8 grid gap-4 sm:grid-cols-3">
-            <article class="rounded-[1.5rem] border border-shell-border bg-shell-card-strong p-4">
+            <article class="rounded-[1.5rem] bg-shell-card-strong p-4">
               <p class="text-[0.68rem] font-extrabold uppercase tracking-[0.24em] text-shell-ink-muted">Heute</p>
               <p class="mt-3 text-xl font-extrabold tracking-[-0.04em] text-shell-ink">Schnell loggen</p>
             </article>
-            <article class="rounded-[1.5rem] border border-shell-border bg-shell-card-strong p-4">
+            <article class="rounded-[1.5rem] bg-shell-card-strong p-4">
               <p class="text-[0.68rem] font-extrabold uppercase tracking-[0.24em] text-shell-ink-muted">Gym</p>
               <p class="mt-3 text-xl font-extrabold tracking-[-0.04em] text-shell-ink">Aktive Einheiten</p>
             </article>
-            <article class="rounded-[1.5rem] border border-shell-border bg-shell-card-strong p-4">
+            <article class="rounded-[1.5rem] bg-shell-card-strong p-4">
               <p class="text-[0.68rem] font-extrabold uppercase tracking-[0.24em] text-shell-ink-muted">Insights</p>
               <p class="mt-3 text-xl font-extrabold tracking-[-0.04em] text-shell-ink">Klare Verläufe</p>
             </article>
@@ -66,7 +66,7 @@ import { formatAppError } from '../../core/error-format';
         </div>
 
         <section
-          class="rounded-[2rem] border border-shell-border bg-shell-card p-6 shadow-[0_24px_80px_rgba(0,0,0,0.2)] sm:p-8"
+          class="rounded-[2rem] bg-[linear-gradient(180deg,rgba(29,31,30,0.98),rgba(18,20,19,0.98))] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.32)] sm:p-8"
           aria-labelledby="login-title"
         >
           <p class="text-[0.68rem] font-extrabold uppercase tracking-[0.28em] text-shell-accent">Google Login</p>
@@ -75,7 +75,7 @@ import { formatAppError } from '../../core/error-format';
             Der Login bleibt bewusst einfach: Google rein, direkt zum Tracking.
           </p>
 
-          <div class="mt-8 rounded-[1.5rem] border border-shell-border bg-shell-card-strong p-5">
+          <div class="mt-8 rounded-[1.5rem] bg-shell-card-strong p-5">
             <button
               mat-flat-button
               type="button"

@@ -974,6 +974,7 @@ export class ProfileComponent implements OnInit {
       track_gym: true,
       track_steps: false,
       daily_steps_target: 8000,
+      today_section_order: ['meals', 'logs', 'habits', 'trends'],
       updated_at: new Date().toISOString()
     };
 
@@ -996,7 +997,8 @@ export class ProfileComponent implements OnInit {
           track_nutrition: true,
           track_gym: true,
           track_steps: false,
-          daily_steps_target: 8000
+          daily_steps_target: 8000,
+          today_section_order: ['meals', 'logs', 'habits', 'trends']
         });
 
       if (insertError) {

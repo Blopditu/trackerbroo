@@ -27,9 +27,9 @@ type DetailKind = 'nutrition' | 'weight' | 'workouts' | 'volume';
       }
 
       <section class="panel hero insights-hero">
-        <p class="title-font hero-kicker">Insights</p>
-        <h1>Vier klare Verläufe</h1>
-        <p class="subtle">Ernährung, Gewicht und Training auf einen Blick.</p>
+        <p class="title-font hero-kicker">Graph Desk</p>
+        <h1>Weniger Dashboard, mehr Signal</h1>
+        <p class="subtle">Ernährung, Gewicht und Training in einer ruhigeren Analysefläche.</p>
 
         <div class="range-toggle" role="group" aria-label="Zeitraum für Insights">
           <button mat-flat-button type="button" class="range-btn" [class.active]="rangeDays() === 7" (click)="setRangeDays(7)">
@@ -42,7 +42,7 @@ type DetailKind = 'nutrition' | 'weight' | 'workouts' | 'volume';
       </section>
 
       <section class="insights-grid" aria-label="Trendkarten">
-        <button type="button" class="panel trend-card" (click)="openDetail('nutrition')" aria-label="Ernährungsverlauf ansehen">
+        <button type="button" class="panel trend-card featured" (click)="openDetail('nutrition')" aria-label="Ernährungsverlauf ansehen">
           <div class="card-head">
             <h2><lucide-icon [img]="icons.flame" class="icon" aria-hidden="true"></lucide-icon> Ernährung</h2>
             <span class="badge">{{ rangeDays() }}d</span>
@@ -145,7 +145,10 @@ type DetailKind = 'nutrition' | 'weight' | 'workouts' | 'volume';
     }
 
     .insights-hero {
-      gap: 12px;
+      gap: 14px;
+      background:
+        radial-gradient(circle at top right, rgba(0, 228, 117, 0.09), transparent 30%),
+        linear-gradient(180deg, rgba(30, 32, 31, 0.98), rgba(18, 20, 19, 0.98));
     }
 
     .hero-kicker {
@@ -177,9 +180,8 @@ type DetailKind = 'nutrition' | 'weight' | 'workouts' | 'volume';
 
     .range-btn {
       min-height: var(--touch-target-compact);
-      border: 1px solid var(--m3-sys-color-outline-variant);
       border-radius: 999px;
-      background: color-mix(in srgb, var(--m3-sys-color-surface) 72%, transparent);
+      background: rgba(20, 22, 21, 0.96);
       color: var(--m3-sys-color-on-surface-variant);
       font-size: 12px;
       font-weight: 800;
@@ -190,9 +192,8 @@ type DetailKind = 'nutrition' | 'weight' | 'workouts' | 'volume';
     }
 
     .range-btn.active {
-      border-color: transparent;
-      background: var(--m3-sys-color-primary);
-      color: var(--m3-sys-color-on-primary);
+      background: linear-gradient(180deg, rgba(28, 40, 33, 0.98), rgba(20, 28, 24, 0.98));
+      color: var(--m3-sys-color-primary);
     }
 
     .insights-grid {
@@ -203,14 +204,21 @@ type DetailKind = 'nutrition' | 'weight' | 'workouts' | 'volume';
 
     .trend-card {
       display: grid;
-      gap: 8px;
+      gap: 10px;
       text-align: left;
       width: 100%;
-      border: 1px solid var(--m3-sys-color-outline-variant);
       border-radius: 28px;
-      background: color-mix(in srgb, var(--m3-sys-color-surface-container-high) 92%, transparent);
+      background: linear-gradient(180deg, rgba(28, 30, 29, 0.98), rgba(19, 21, 20, 0.98));
       color: var(--m3-sys-color-on-surface);
       padding: var(--panel-padding);
+    }
+
+    .trend-card.featured {
+      grid-column: 1 / -1;
+      min-height: 15rem;
+      background:
+        radial-gradient(circle at top right, rgba(0, 228, 117, 0.08), transparent 34%),
+        linear-gradient(180deg, rgba(30, 34, 31, 0.98), rgba(20, 22, 21, 0.98));
     }
 
     .card-head {
@@ -232,8 +240,8 @@ type DetailKind = 'nutrition' | 'weight' | 'workouts' | 'volume';
       padding: 3px 8px;
       font-size: 11px;
       font-weight: 700;
-      color: var(--m3-sys-color-on-secondary-container);
-      background: var(--m3-sys-color-secondary-container);
+      color: var(--shell-accent);
+      background: rgba(22, 25, 23, 0.94);
     }
 
     .headline {
@@ -253,9 +261,8 @@ type DetailKind = 'nutrition' | 'weight' | 'workouts' | 'volume';
     .mini-graph,
     .detail-graph {
       width: 100%;
-      border: 1px solid var(--m3-sys-color-outline-variant);
       border-radius: 14px;
-      background: var(--m3-sys-color-surface-container);
+      background: rgba(16, 18, 17, 0.96);
     }
 
     .mini-graph {

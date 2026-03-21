@@ -9,31 +9,34 @@
 
   <section class="panel gym-shell-strip">
     <div class="gym-shell-head">
-      <div class="gym-tabs" role="tablist" aria-label="Gym Ansicht">
-        <button
-          type="button"
-          role="tab"
-          class="gym-tab-btn"
-          [class.active]="activeTab() === 'tracker'"
-          [attr.aria-selected]="activeTab() === 'tracker'"
-          [attr.tabindex]="activeTab() === 'tracker' ? 0 : -1"
-          (click)="onHeroTabChange('tracker')"
-        >
-          <lucide-icon [img]="dumbbellIcon" class="icon" aria-hidden="true"></lucide-icon>
-          Tracker
-        </button>
-        <button
-          type="button"
-          role="tab"
-          class="gym-tab-btn"
-          [class.active]="activeTab() === 'progress'"
-          [attr.aria-selected]="activeTab() === 'progress'"
-          [attr.tabindex]="activeTab() === 'progress' ? 0 : -1"
-          (click)="onHeroTabChange('progress')"
-        >
-          <lucide-icon [img]="barChartIcon" class="icon" aria-hidden="true"></lucide-icon>
-          Progress
-        </button>
+      <div class="gym-shell-copy">
+        <p class="eyebrow">Stoic Coach</p>
+        <div class="gym-tabs" role="tablist" aria-label="Gym Ansicht">
+          <button
+            type="button"
+            role="tab"
+            class="gym-tab-btn"
+            [class.active]="activeTab() === 'tracker'"
+            [attr.aria-selected]="activeTab() === 'tracker'"
+            [attr.tabindex]="activeTab() === 'tracker' ? 0 : -1"
+            (click)="onHeroTabChange('tracker')"
+          >
+            <lucide-icon [img]="dumbbellIcon" class="icon" aria-hidden="true"></lucide-icon>
+            Tracker
+          </button>
+          <button
+            type="button"
+            role="tab"
+            class="gym-tab-btn"
+            [class.active]="activeTab() === 'progress'"
+            [attr.aria-selected]="activeTab() === 'progress'"
+            [attr.tabindex]="activeTab() === 'progress' ? 0 : -1"
+            (click)="onHeroTabChange('progress')"
+          >
+            <lucide-icon [img]="barChartIcon" class="icon" aria-hidden="true"></lucide-icon>
+            Progress
+          </button>
+        </div>
       </div>
 
       <button mat-icon-button type="button" class="hero-profile-btn" routerLink="/profile" aria-label="Profil öffnen">

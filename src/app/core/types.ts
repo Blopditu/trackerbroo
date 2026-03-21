@@ -99,6 +99,7 @@ export interface Profile {
   track_gym: boolean;
   track_steps: boolean;
   daily_steps_target: number;
+  today_section_order?: string[] | null;
   updated_at: string;
 }
 
