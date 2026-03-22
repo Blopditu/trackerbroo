@@ -1,90 +1,135 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ChevronRight, LucideAngularModule } from 'lucide-angular';
 
 export type HabitState = 'empty' | 'complete' | 'missed';
 
 @Component({
   selector: 'app-habit-grid',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule],
+  imports: [CommonModule, LucideAngularModule],
   template: `
-    <div class="top">
-      <span class="name">{{ label() }}</span>
-      <span class="count">{{ completeCount() }}/{{ targetPerWeek() }} diese Woche</span>
-    </div>
+    <article class="heatmap-card">
+      <div class="top">
+        <div class="copy">
+          <span class="name">{{ label() }}</span>
+          <span class="window">{{ windowLabel() }}</span>
+        </div>
+      </div>
 
-    <div class="days" role="list" aria-label="{{ label() }} Wochenraster">
-      @for (day of dayLabels(); track day) {
-        <span class="day-label">{{ day }}</span>
-      }
-      @for (state of states(); track $index) {
-        <span
-          role="listitem"
-          class="cell"
-          [style.--index]="$index"
-          [class.complete]="state === 'complete'"
-          [class.missed]="state === 'missed'"
-        ></span>
-      }
-    </div>
+      <div class="heatmap" role="list" aria-label="{{ label() }} Heatmap">
+        @for (state of states(); track $index) {
+          <span
+            role="listitem"
+            class="cell"
+            [style.--index]="$index"
+            [style.--accent]="accentColor()"
+            [class.complete]="state === 'complete'"
+            [class.missed]="state === 'missed'"
+          ></span>
+        }
+      </div>
+
+      <div class="footer">
+        <span class="count">{{ recentCompleteCount() }}/{{ targetPerWeek() }} diese Woche</span>
+        <lucide-icon [img]="chevronRightIcon" class="footer-icon" aria-hidden="true"></lucide-icon>
+      </div>
+    </article>
   `,
   styles: [`
+    :host {
+      display: block;
+      min-width: 0;
+    }
+
+    .heatmap-card {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 12px;
+      min-height: 0;
+      aspect-ratio: 1 / 0.96;
+      border-radius: 18px;
+      background: rgba(20, 22, 21, 0.9);
+      padding: 12px;
+    }
+
     .top {
       display: flex;
       justify-content: space-between;
-      align-items: center;
+      align-items: flex-start;
       gap: 8px;
-      margin-bottom: 8px;
+    }
+
+    .copy {
+      display: grid;
+      gap: 3px;
     }
 
     .name {
-      font-size: 11px;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--m3-sys-color-on-surface-variant);
+      font-size: 15px;
+      line-height: 1.08;
+      letter-spacing: -0.03em;
+      text-transform: none;
+      color: var(--m3-sys-color-on-surface);
       font-weight: 700;
     }
 
-    .count {
-      font-size: 13px;
+    .window {
+      font-size: 11px;
       color: var(--m3-sys-color-on-surface-variant);
       font-weight: 600;
     }
 
-    .days {
+    .heatmap {
       display: grid;
-      grid-template-columns: repeat(7, minmax(0, 1fr));
+      grid-template-columns: repeat(10, minmax(0, 1fr));
       gap: 4px;
-    }
-
-    .day-label {
-      font-size: 11px;
-      color: color-mix(in srgb, var(--m3-sys-color-on-surface-variant) 72%, transparent);
-      text-align: center;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
+      align-items: center;
+      align-content: center;
     }
 
     .cell {
       display: block;
       width: 100%;
       aspect-ratio: 1;
-      min-height: 10px;
-      max-height: 12px;
-      background: var(--m3-sys-color-surface-container-highest);
-      border-radius: 999px;
+      min-height: 9px;
+      border-radius: 3px;
+      background: rgba(57, 60, 58, 0.72);
       opacity: 0;
       transform: translateY(3px);
       animation: cell-in var(--motion-duration-medium) var(--motion-easing-decelerate) both;
-      animation-delay: calc(var(--index, 0) * 24ms);
+      animation-delay: calc(var(--index, 0) * 18ms);
     }
 
     .cell.complete {
-      background: var(--success-500);
+      background: var(--accent, var(--m3-sys-color-primary));
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent, var(--m3-sys-color-primary)) 35%, transparent);
     }
 
     .cell.missed {
-      background: var(--m3-sys-color-error);
+      background: color-mix(in srgb, var(--m3-sys-color-error) 68%, rgba(57, 60, 58, 0.72));
+    }
+
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      padding-top: 8px;
+      border-top: 1px solid color-mix(in srgb, var(--m3-sys-color-outline-variant) 28%, transparent);
+    }
+
+    .count {
+      font-size: 12px;
+      color: var(--m3-sys-color-on-surface-variant);
+      font-weight: 600;
+    }
+
+    .footer-icon {
+      width: 15px;
+      height: 15px;
+      color: var(--m3-sys-color-on-surface-variant);
+      flex: 0 0 auto;
     }
 
     @keyframes cell-in {
@@ -97,14 +142,29 @@ export type HabitState = 'empty' | 'complete' | 'missed';
         transform: translateY(0);
       }
     }
+
+    @media (max-width: 360px) {
+      .heatmap-card {
+        padding: 10px;
+      }
+
+      .heatmap {
+        gap: 3px;
+      }
+
+      .cell {
+        min-height: 8px;
+      }
+    }
   `]
 })
 export class HabitGridComponent {
   readonly label = input.required<string>();
   readonly states = input.required<HabitState[]>();
   readonly targetPerWeek = input.required<number>();
+  readonly windowLabel = input('Letzte 30 Tage');
+  readonly accentColor = input('var(--m3-sys-color-primary)');
+  readonly chevronRightIcon = ChevronRight;
 
-  readonly dayLabels = input(['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']);
-
-  readonly completeCount = computed(() => this.states().filter(state => state === 'complete').length);
+  readonly recentCompleteCount = computed(() => this.states().slice(-7).filter(state => state === 'complete').length);
 }

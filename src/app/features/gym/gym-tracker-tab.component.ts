@@ -11,7 +11,7 @@ import { equipmentLabel } from './gym-view-utils';
   imports: [CommonModule, MatButtonModule, LucideAngularModule],
   styleUrl: './gym-tracker-tab.component.css',
   template: `
-    <section class="panel tracker-week-card">
+    <section class="tracker-week-card">
       <div class="tracker-week-head">
         <p class="eyebrow">Training Woche {{ activeWeekNumber() }}</p>
         <span class="tracker-week-progress">{{ completionLabel() }}</span>
@@ -56,11 +56,11 @@ import { equipmentLabel } from './gym-view-utils';
         </div>
 
         <div class="tracker-plan-stats" aria-label="Workout Überblick">
-          <article class="tracker-stat-card">
+          <article class="tracker-plan-stat">
             <span>Übungen</span>
             <strong>{{ selectedOverview()!.totalExercises }}</strong>
           </article>
-          <article class="tracker-stat-card">
+          <article class="tracker-plan-stat">
             <span>Sätze</span>
             <strong>{{ selectedOverview()!.totalSets }}</strong>
           </article>

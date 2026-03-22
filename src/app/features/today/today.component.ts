@@ -39,9 +39,9 @@ import { InteractionTelemetryService } from '../../core/interaction-telemetry.se
 import { CommunityFeedService, CommunityProfileDirectoryEntry } from '../../core/community-feed.service';
 
 type QuickItem = Ingredient | Meal;
-type TodaySectionId = 'meals' | 'logs' | 'habits' | 'trends';
+type TodaySectionId = 'logs' | 'habits' | 'trends';
 
-const TODAY_SECTION_ORDER_DEFAULT: TodaySectionId[] = ['meals', 'logs', 'habits', 'trends'];
+const TODAY_SECTION_ORDER_DEFAULT: TodaySectionId[] = ['logs', 'habits', 'trends'];
 
 interface MealMacroMap {
   [mealId: string]: MacroTotals;
@@ -54,6 +54,8 @@ interface TodaySnapshot {
   stepLogs: StepLog[];
   gymDaysThisWeek: string[];
   proteinDaysThisWeek: string[];
+  gymDaysWindow: string[];
+  proteinDaysWindow: string[];
   proteinMilestonePosted: boolean;
   stepsMilestonePosted: boolean;
   profile: Profile | null;
@@ -139,67 +141,82 @@ interface BrooBoardPost {
         }
       </section>
 
-      <section class="panel my-day-panel">
+      <section class="my-day-panel">
         <div class="my-day-head">
-          <div>
+          <div class="my-day-head-copy">
             <p class="title-font">Mein Tag</p>
-            <h2>{{ todayLabel() }}</h2>
           </div>
         </div>
 
-        <div class="day-nav day-nav-compact">
-          <button mat-icon-button type="button" class="nav-btn" (click)="goPreviousDay()" aria-label="Vorheriger Tag">
+        <div class="day-nav day-nav-compact day-control-row">
+          <button type="button" class="nav-btn" (click)="goPreviousDay()" aria-label="Vorheriger Tag">
             <lucide-icon [img]="icons.chevronLeft" aria-hidden="true"></lucide-icon>
           </button>
 
-          <mat-form-field class="m3-field day-field compact" appearance="outline" subscriptSizing="dynamic">
-            <mat-label>Tag</mat-label>
+          <div class="day-control-field">
             <input
-              matInput
+              #dayPickerInput
               type="date"
-              class="day-input"
+              class="day-input-native"
               [ngModel]="today()"
               (ngModelChange)="onDayPicked($event)"
             >
-          </mat-form-field>
+            <button type="button" class="day-display-btn" (click)="openDayPicker()" aria-label="Tag wählen">
+              <span class="day-display-value">{{ selectedDayDisplay() }}</span>
+              <lucide-icon [img]="icons.calendar" class="day-control-icon" aria-hidden="true"></lucide-icon>
+            </button>
+          </div>
 
-          <button mat-icon-button type="button" class="nav-btn" (click)="goNextDay()" [disabled]="!canGoNextDay()" aria-label="Nächster Tag">
+          <button type="button" class="nav-btn" (click)="goNextDay()" [disabled]="!canGoNextDay()" aria-label="Nächster Tag">
             <lucide-icon [img]="icons.chevronRight" aria-hidden="true"></lucide-icon>
           </button>
         </div>
 
-        @if (today() !== realToday) {
-          <div class="today-reset-row">
-            <button mat-flat-button type="button" class="day-chip today-reset-btn" (click)="jumpToToday()">Heute</button>
+        <article class="day-summary-card">
+          <div class="day-summary-top">
+            <div class="day-ring-slot day-ring-slot-centered">
+              <app-hero-ring [value]="proteinToday()" [target]="proteinGoal" [showLeftText]="false" accentColor="var(--m3-sys-color-primary)" />
+            </div>
+
+            <div class="day-summary-copy">
+              <p class="summary-caption">Protein heute</p>
+              <p class="summary-status">
+                @if (proteinRemaining() > 0) {
+                  Noch {{ proteinRemaining() }}g bis zum Ziel
+                } @else {
+                  Tagesziel erreicht
+                }
+              </p>
+            </div>
           </div>
-        }
 
-        <app-hero-ring [value]="proteinToday()" [target]="proteinGoal" accentColor="var(--m3-sys-color-primary)" />
-
-        <div class="bars">
-          <app-macro-bar label="Protein" [value]="proteinToday()" [target]="proteinGoal" color="var(--m3-sys-color-primary)" />
-          <app-macro-bar label="Fett" [value]="fatToday()" [target]="fatGoal" color="var(--warning-500)" />
-          <app-macro-bar label="Kohlenhydrate" [value]="carbsToday()" [target]="carbGoal" color="var(--success-500)" />
-        </div>
-
-        <div class="kcal-row">
-          <span>Kalorien</span>
-          <strong>{{ caloriesToday() }} kcal</strong>
-        </div>
-
-        <div class="weight-row">
-          <span><lucide-icon [img]="icons.weight" class="icon" aria-hidden="true"></lucide-icon> Gewicht</span>
-          <strong>{{ weightValueLabel() }}</strong>
-          <span class="delta">{{ weightDeltaLabel() }}</span>
-        </div>
-
-        @if (trackStepsEnabled()) {
-          <div class="weight-row">
-            <span><lucide-icon [img]="icons.footsteps" class="icon" aria-hidden="true"></lucide-icon> Schritte</span>
-            <strong>{{ stepsValueLabel() }}</strong>
-            <span class="delta">{{ stepsGoalLabel() }}</span>
+          <div class="bars summary-bars">
+            <app-macro-bar label="Protein" [value]="proteinToday()" [target]="proteinGoal" color="var(--m3-sys-color-primary)" />
+            <app-macro-bar label="Fett" [value]="fatToday()" [target]="fatGoal" color="var(--warning-500)" />
+            <app-macro-bar label="Kohlenhydrate" [value]="carbsToday()" [target]="carbGoal" color="var(--success-500)" />
           </div>
-        }
+
+          <div class="kcal-row summary-kcal-row">
+            <span>Kalorien</span>
+            <strong>{{ caloriesToday() }} kcal</strong>
+          </div>
+        </article>
+
+        <div class="today-stat-grid" [class.single]="!trackStepsEnabled()">
+          <article class="today-stat-card">
+            <span class="today-stat-label"><lucide-icon [img]="icons.weight" class="icon" aria-hidden="true"></lucide-icon> Gewicht</span>
+            <strong>{{ weightValueLabel() }}</strong>
+            <small>{{ weightDeltaLabel() }}</small>
+          </article>
+
+          @if (trackStepsEnabled()) {
+            <article class="today-stat-card">
+              <span class="today-stat-label"><lucide-icon [img]="icons.footsteps" class="icon" aria-hidden="true"></lucide-icon> Schritte</span>
+              <strong>{{ stepsValueLabel() }}</strong>
+              <small>{{ stepsGoalLabel() }}</small>
+            </article>
+          }
+        </div>
       </section>
 
       <div class="today-layout-row">
@@ -209,28 +226,8 @@ interface BrooBoardPost {
       <div class="today-lower-sections">
         @for (sectionId of orderedTodaySections(); track sectionId) {
           @switch (sectionId) {
-            @case ('meals') {
-              <section class="panel section">
-                <div class="m3-section-head">
-                  <h2><lucide-icon [img]="icons.utensils" class="icon" aria-hidden="true"></lucide-icon> Mahlzeiten</h2>
-                  <span class="m3-section-meta">Direkt loggen</span>
-                </div>
-
-                <div class="meal-slot-list" role="list" aria-label="Mahlzeiten">
-                  @for (slot of mealLaunchCards(); track slot.id) {
-                    <button type="button" class="meal-slot-card" (click)="openFoodQuickLog(slot.id)">
-                      <div class="meal-slot-copy">
-                        <strong>{{ slot.label }}</strong>
-                      </div>
-                      <span class="meal-slot-action">Loggen</span>
-                    </button>
-                  }
-                </div>
-              </section>
-            }
-
             @case ('logs') {
-              <section class="panel section">
+              <section class="section today-section">
                 <div class="m3-section-head">
                   <h2><lucide-icon [img]="icons.clock3" class="icon" aria-hidden="true"></lucide-icon> Log</h2>
                   <span class="m3-section-meta">{{ todayEntries().length }} Einträge</span>
@@ -263,18 +260,20 @@ interface BrooBoardPost {
             }
 
             @case ('habits') {
-              <section class="panel section">
+              <section class="section today-section">
                 <div class="m3-section-head">
                   <h2><lucide-icon [img]="icons.listChecks" class="icon" aria-hidden="true"></lucide-icon> Gewohnheiten</h2>
                   <span class="m3-section-meta">Diese Woche</span>
                 </div>
-                <app-habit-grid label="Gym" [states]="gymHabitStates()" [targetPerWeek]="3" />
-                <app-habit-grid label="Protein" [states]="proteinHabitStates()" [targetPerWeek]="7" />
+                <div class="habit-heatmap-grid">
+                  <app-habit-grid label="Gym" windowLabel="Letzte 30 Tage" [states]="gymHabitStates()" [targetPerWeek]="3" accentColor="var(--m3-sys-color-primary)" />
+                  <app-habit-grid label="Protein" windowLabel="Letzte 30 Tage" [states]="proteinHabitStates()" [targetPerWeek]="7" accentColor="color-mix(in srgb, var(--m3-sys-color-primary) 84%, white)" />
+                </div>
               </section>
             }
 
             @case ('trends') {
-              <section class="panel section trend-compact-section">
+              <section class="section today-section trend-compact-section">
                 <div class="m3-section-head">
                   <h2><lucide-icon [img]="icons.chartLine" class="icon" aria-hidden="true"></lucide-icon> Fortschritt</h2>
                   <span class="m3-section-meta">7 Tage</span>
@@ -841,6 +840,8 @@ export class TodayComponent implements OnInit {
   readonly editingEntryId = signal<string | null>(null);
   readonly gymDaysThisWeek = signal<Set<string>>(new Set<string>());
   readonly proteinDaysThisWeek = signal<Set<string>>(new Set<string>());
+  readonly gymDaysWindow = signal<Set<string>>(new Set<string>());
+  readonly proteinDaysWindow = signal<Set<string>>(new Set<string>());
   readonly weightLogs = signal<WeightLog[]>([]);
   readonly stepLogs = signal<StepLog[]>([]);
   readonly brooPosts = signal<CommunityPost[]>([]);
@@ -861,9 +862,13 @@ export class TodayComponent implements OnInit {
   readonly selectedEntryForActions = signal<LogEntry | null>(null);
   readonly todaySectionOrderDraft = signal<TodaySectionId[]>([...TODAY_SECTION_ORDER_DEFAULT]);
   readonly gymPhotoInput = viewChild<ElementRef<HTMLInputElement>>('gymPhotoInput');
+  readonly dayPickerInput = viewChild<ElementRef<HTMLInputElement>>('dayPickerInput');
 
   readonly realToday = this.formatDate(new Date());
   readonly today = signal(this.realToday);
+  readonly selectedDayDisplay = computed(() =>
+    this.parseIsoDate(this.today()).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  );
   readonly foodFilter = signal<FoodFilter>('recent');
   readonly selectedMealSlot = signal<MealSlot>('snack');
   readonly foodQueue = signal<FoodQueueItem[]>([]);
@@ -893,10 +898,8 @@ export class TodayComponent implements OnInit {
   private readonly telemetry = inject(InteractionTelemetryService);
   private readonly communityFeed = inject(CommunityFeedService);
 
-  readonly todayLabel = computed(() =>
-    this.parseIsoDate(this.today()).toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: '2-digit' })
-  );
   readonly proteinToday = computed(() => Math.round(Number(this.summary()?.protein || 0)));
+  readonly proteinRemaining = computed(() => Math.max(this.proteinGoal - this.proteinToday(), 0));
   readonly fatToday = computed(() => Math.round(Number(this.summary()?.fat || 0)));
   readonly carbsToday = computed(() => Math.round(Number(this.summary()?.carbs || 0)));
   readonly caloriesToday = computed(() => Math.round(Number(this.summary()?.kcal || 0)));
@@ -926,14 +929,6 @@ export class TodayComponent implements OnInit {
       description: this.todaySectionDescription(sectionId)
     }))
   );
-
-  readonly mealLaunchCards = computed(() => ([
-    { id: 'breakfast' as MealSlot, label: 'Frühstück' },
-    { id: 'lunch' as MealSlot, label: 'Mittag' },
-    { id: 'dinner' as MealSlot, label: 'Abend' },
-    { id: 'snack' as MealSlot, label: 'Snack' },
-    { id: 'other' as MealSlot, label: 'Sonstiges' }
-  ]));
 
   readonly selectedDayWeight = computed(() =>
     this.weightLogs().find(entry => entry.logged_on === this.today()) || null
@@ -1048,7 +1043,7 @@ export class TodayComponent implements OnInit {
   readonly gymHabitStates = computed(() => this.toHabitStates('gym'));
   readonly proteinHabitStates = computed(() => {
     const states = this.toHabitStates('protein');
-    const dayIndex = this.getCurrentWeekDayIndex();
+    const dayIndex = states.length - 1;
     if (this.proteinToday() >= this.proteinGoal && dayIndex >= 0 && dayIndex < states.length) {
       states[dayIndex] = 'complete';
     }
@@ -1145,6 +1140,8 @@ export class TodayComponent implements OnInit {
       this.stepLogs.set(dayResult.value.stepLogs);
       this.gymDaysThisWeek.set(new Set(dayResult.value.gymDaysThisWeek));
       this.proteinDaysThisWeek.set(new Set(dayResult.value.proteinDaysThisWeek));
+      this.gymDaysWindow.set(new Set(dayResult.value.gymDaysWindow));
+      this.proteinDaysWindow.set(new Set(dayResult.value.proteinDaysWindow));
       this.proteinMilestonePosted.set(dayResult.value.proteinMilestonePosted);
       this.stepsMilestonePosted.set(dayResult.value.stepsMilestonePosted);
 
@@ -1182,6 +1179,20 @@ export class TodayComponent implements OnInit {
     }
     this.today.set(normalized);
     void this.loadTodaySnapshot();
+  }
+
+  openDayPicker(): void {
+    const input = this.dayPickerInput()?.nativeElement;
+    if (!input) {
+      return;
+    }
+
+    if ('showPicker' in input && typeof input.showPicker === 'function') {
+      input.showPicker();
+      return;
+    }
+
+    input.click();
   }
 
   jumpToToday(): void {
@@ -2050,7 +2061,7 @@ export class TodayComponent implements OnInit {
   private normalizeTodaySectionOrder(order: string[] | null | undefined): TodaySectionId[] {
     const values = Array.isArray(order)
       ? order.filter((value): value is TodaySectionId =>
-          value === 'meals' || value === 'logs' || value === 'habits' || value === 'trends'
+          value === 'logs' || value === 'habits' || value === 'trends'
         )
       : [];
 
@@ -2067,14 +2078,12 @@ export class TodayComponent implements OnInit {
   }
 
   private todaySectionTitle(sectionId: TodaySectionId): string {
-    if (sectionId === 'meals') return 'Mahlzeiten';
     if (sectionId === 'logs') return 'Logs';
     if (sectionId === 'habits') return 'Gewohnheiten';
     return 'Fortschritt';
   }
 
   private todaySectionDescription(sectionId: TodaySectionId): string {
-    if (sectionId === 'meals') return 'Direkte Mahlzeiten-Einstiege fuer deinen Tag.';
     if (sectionId === 'logs') return 'Alle heutigen Eintraege in einer flachen Liste.';
     if (sectionId === 'habits') return 'Dein Wochenrhythmus fuer Gym und Protein.';
     return 'Kurzer Blick auf Gewicht und Schritte.';
@@ -2320,6 +2329,7 @@ export class TodayComponent implements OnInit {
   }
 
   private async fetchDaySnapshot(userId: string, day: string, weekStart: string, weekEnd: string): Promise<TodaySnapshot> {
+    const habitWindowStart = this.shiftIsoDay(day, -29);
     const [
       { data: entryData, error: entryError },
       { data: summaryData, error: summaryError },
@@ -2327,6 +2337,8 @@ export class TodayComponent implements OnInit {
       { data: stepData, error: stepError },
       { data: gymPostsData, error: gymPostsError },
       { data: proteinSummaryData, error: proteinSummaryError },
+      { data: gymWindowData, error: gymWindowError },
+      { data: proteinWindowData, error: proteinWindowError },
       { data: proteinPostData, error: proteinPostError },
       { data: stepsPostData, error: stepsPostError },
       { data: profileData, error: profileError }
@@ -2373,6 +2385,20 @@ export class TodayComponent implements OnInit {
         .lte('day', weekEnd),
       this.supabaseService.client
         .from('community_posts')
+        .select('day')
+        .eq('user_id', userId)
+        .eq('post_type', 'gym_checkin')
+        .gte('day', habitWindowStart)
+        .lte('day', day),
+      this.supabaseService.client
+        .from('daily_summaries')
+        .select('day,protein')
+        .eq('owner_id', userId)
+        .is('group_id', null)
+        .gte('day', habitWindowStart)
+        .lte('day', day),
+      this.supabaseService.client
+        .from('community_posts')
         .select('id')
         .eq('user_id', userId)
         .eq('post_type', 'protein_milestone')
@@ -2394,8 +2420,8 @@ export class TodayComponent implements OnInit {
         .maybeSingle()
     ]);
 
-    if (entryError || summaryError || weightError || stepError || gymPostsError || proteinSummaryError || proteinPostError || stepsPostError || profileError) {
-      throw entryError || summaryError || weightError || stepError || gymPostsError || proteinSummaryError || proteinPostError || stepsPostError || profileError;
+    if (entryError || summaryError || weightError || stepError || gymPostsError || proteinSummaryError || gymWindowError || proteinWindowError || proteinPostError || stepsPostError || profileError) {
+      throw entryError || summaryError || weightError || stepError || gymPostsError || proteinSummaryError || gymWindowError || proteinWindowError || proteinPostError || stepsPostError || profileError;
     }
 
     return {
@@ -2405,6 +2431,10 @@ export class TodayComponent implements OnInit {
       stepLogs: (stepData || []) as StepLog[],
       gymDaysThisWeek: (gymPostsData || []).map(row => String(row.day)),
       proteinDaysThisWeek: (proteinSummaryData || [])
+        .filter(row => Number(row.protein) >= this.proteinGoal)
+        .map(row => String(row.day)),
+      gymDaysWindow: (gymWindowData || []).map(row => String(row.day)),
+      proteinDaysWindow: (proteinWindowData || [])
         .filter(row => Number(row.protein) >= this.proteinGoal)
         .map(row => String(row.day)),
       proteinMilestonePosted: Boolean(proteinPostData?.id),
@@ -2431,27 +2461,14 @@ export class TodayComponent implements OnInit {
     };
   }
 
-  private getCurrentWeekDayIndex(): number {
-    const now = this.parseIsoDate(this.today());
-    return (now.getDay() + 6) % 7;
-  }
-
   private toHabitStates(type: 'gym' | 'protein'): HabitState[] {
-    const states: HabitState[] = Array.from({ length: 7 }, () => 'empty');
-    const week = this.getCurrentWeekRange();
-    const days: string[] = [];
-    const start = this.parseIsoDate(week.start);
+    const states: HabitState[] = [];
+    const start = this.shiftIsoDay(this.today(), -29);
+    const days = this.getIsoDayRange(start, this.today());
+    const hits = type === 'gym' ? this.gymDaysWindow() : this.proteinDaysWindow();
 
-    for (let i = 0; i < 7; i += 1) {
-      const date = new Date(start);
-      date.setDate(start.getDate() + i);
-      days.push(this.formatDate(date));
-    }
-
-    for (let i = 0; i < days.length; i += 1) {
-      const day = days[i];
-      const hit = type === 'gym' ? this.gymDaysThisWeek().has(day) : this.proteinDaysThisWeek().has(day);
-      states[i] = hit ? 'complete' : 'missed';
+    for (const day of days) {
+      states.push(hits.has(day) ? 'complete' : 'empty');
     }
 
     return states;

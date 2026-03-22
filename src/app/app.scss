@@ -15,7 +15,7 @@
 .layout-shell {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  min-height: calc(100vh - 88px);
+  min-height: calc(100vh - 76px);
 }
 
 .layout-shell.with-rail {
@@ -29,8 +29,8 @@
 
 .rail-slot {
   position: sticky;
-  top: 92px;
-  height: calc(100vh - 108px);
+  top: 76px;
+  height: calc(100vh - 92px);
   z-index: 26;
 }
 
@@ -57,7 +57,7 @@
 
 .app-surface[data-shell='auth'] .layout-shell,
 .app-surface[data-shell='onboarding'] .layout-shell {
-  min-height: calc(100vh - 72px);
+  min-height: calc(100vh - 64px);
 }
 
 .app-surface[data-shell='auth'] .route-host,

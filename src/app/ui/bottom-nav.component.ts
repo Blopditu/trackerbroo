@@ -28,24 +28,26 @@ interface NavItem {
   template: `
     <nav [class]="containerClasses()" aria-label="Hauptnavigation">
       @if (mode() === 'bottom') {
-        <div class="grid grid-cols-6 gap-1.5 rounded-[2.15rem] bg-[linear-gradient(180deg,rgba(24,26,25,0.96),rgba(12,13,13,0.96))] p-2.5 shadow-[0_-14px_44px_rgba(0,0,0,0.42)] backdrop-blur-xl">
-          @for (item of leadingItems(); track item.key) {
+        <div class="grid grid-cols-[1fr_1fr_auto_1fr_1fr] items-end gap-0 rounded-[1.55rem] bg-[linear-gradient(180deg,rgba(20,22,21,0.92),rgba(10,11,11,0.94))] px-2 py-2 shadow-[0_-8px_18px_rgba(0,0,0,0.22)] backdrop-blur-lg">
+          @for (item of mobileLeadingItems(); track item.key) {
             <a [routerLink]="item.route" [class]="linkClasses(item.key)">
               <lucide-icon [img]="item.icon" class="h-4 w-4" aria-hidden="true"></lucide-icon>
               <span>{{ item.label }}</span>
             </a>
           }
 
-          <a
-            routerLink="/today"
-            [queryParams]="{ quick: 'menu' }"
-            class="grid h-[3.7rem] place-items-center rounded-full bg-[linear-gradient(180deg,#1bff90,#00d86f)] text-[#03140a] shadow-[0_10px_28px_rgba(0,228,117,0.26)] transition active:translate-y-px"
-            aria-label="Schnelllog öffnen"
-          >
-            <lucide-icon [img]="icons.plus" class="h-5 w-5" aria-hidden="true"></lucide-icon>
-          </a>
+          <div class="flex justify-center px-1">
+            <a
+              routerLink="/today"
+              [queryParams]="{ quick: 'menu' }"
+              class="grid h-[3.2rem] w-[3.2rem] -translate-y-2 place-items-center rounded-full bg-[linear-gradient(180deg,#17ef85,#00d86f)] text-[#03140a] shadow-[0_10px_20px_rgba(0,228,117,0.16)] transition active:translate-y-[calc(-0.5rem+1px)]"
+              aria-label="Schnelllog öffnen"
+            >
+              <lucide-icon [img]="icons.plus" class="h-[1rem] w-[1rem]" aria-hidden="true"></lucide-icon>
+            </a>
+          </div>
 
-          @for (item of trailingItems(); track item.key) {
+          @for (item of mobileTrailingItems(); track item.key) {
             <a [routerLink]="item.route" [class]="linkClasses(item.key)">
               <lucide-icon [img]="item.icon" class="h-4 w-4" aria-hidden="true"></lucide-icon>
               <span>{{ item.label }}</span>
@@ -53,7 +55,7 @@ interface NavItem {
           }
         </div>
       } @else {
-        <div class="flex h-full flex-col gap-3 rounded-[2rem] bg-[linear-gradient(180deg,rgba(21,23,22,0.96),rgba(10,11,11,0.94))] p-3 shadow-[0_24px_64px_rgba(0,0,0,0.38)] backdrop-blur-xl">
+        <div class="flex h-full flex-col gap-3 rounded-[1.7rem] bg-[linear-gradient(180deg,rgba(21,23,22,0.94),rgba(10,11,11,0.92))] p-3 shadow-[0_16px_38px_rgba(0,0,0,0.24)] backdrop-blur-xl">
           <div class="px-2 pt-2">
             <p class="text-[0.65rem] font-extrabold uppercase tracking-[0.32em] text-shell-accent">Stoic Coach</p>
           </div>
@@ -73,7 +75,7 @@ interface NavItem {
             <a
               routerLink="/today"
               [queryParams]="{ quick: 'menu' }"
-              class="flex min-h-14 items-center justify-center gap-2 rounded-[1.35rem] bg-[linear-gradient(180deg,#19ff8d,#00d96f)] px-4 text-sm font-extrabold uppercase tracking-[0.18em] text-[#04170b] shadow-[0_0_30px_rgba(0,228,117,0.24)]"
+              class="flex min-h-12 items-center justify-center gap-2 rounded-[1.1rem] bg-[linear-gradient(180deg,#19ff8d,#00d96f)] px-4 text-sm font-extrabold uppercase tracking-[0.18em] text-[#04170b] shadow-[0_0_18px_rgba(0,228,117,0.16)]"
               aria-label="Schnelllog öffnen"
             >
               <lucide-icon [img]="icons.plus" class="h-4 w-4" aria-hidden="true"></lucide-icon>
@@ -101,37 +103,38 @@ export class BottomNavComponent {
     { key: 'profile', label: 'Profil', route: '/profile', icon: UserRound }
   ];
 
-  readonly leadingItems = computed(() => this.items.slice(0, 2));
-  readonly trailingItems = computed(() => this.items.slice(2));
+  readonly mobileItems = computed(() => this.items.filter(item => item.key !== 'library'));
+  readonly mobileLeadingItems = computed(() => this.mobileItems().slice(0, 2));
+  readonly mobileTrailingItems = computed(() => this.mobileItems().slice(2));
   readonly allItems = computed(() => this.items);
 
   containerClasses(): string {
     if (this.mode() === 'rail') {
-      return 'sticky top-[5.25rem] h-[calc(100vh-6.75rem)]';
+      return 'sticky top-[4.65rem] h-[calc(100vh-5.9rem)]';
     }
-    return 'fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-[36rem] px-3 pb-[calc(0.9rem+env(safe-area-inset-bottom))]';
+    return 'fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-[36rem] px-3 pb-[calc(0.5rem+env(safe-area-inset-bottom))]';
   }
 
   linkClasses(key: AppNavKey): string {
     const active = this.activeNav() === key;
     return [
       'flex',
-      'min-h-14',
+      'min-h-12',
       'min-w-0',
       'flex-col',
       'items-center',
       'justify-center',
       'gap-1',
-      'rounded-[1.35rem]',
+      'rounded-[1rem]',
       'px-1',
-      'text-[0.58rem]',
+      'text-[0.54rem]',
       'font-extrabold',
       'uppercase',
-      'tracking-[0.16em]',
+      'tracking-[0.14em]',
       'transition',
       active
-        ? 'bg-[radial-gradient(circle_at_top,rgba(0,228,117,0.14),transparent_70%),linear-gradient(180deg,rgba(25,54,39,0.55),rgba(19,28,23,0.85))] text-shell-accent'
-        : 'text-shell-ink-muted hover:bg-shell-card/80 hover:text-shell-ink'
+        ? 'text-shell-accent'
+        : 'text-shell-ink-muted hover:text-shell-ink'
     ].join(' ');
   }
 
@@ -139,16 +142,16 @@ export class BottomNavComponent {
     const active = this.activeNav() === key;
     return [
       'flex',
-      'min-h-14',
+      'min-h-12',
       'items-center',
       'gap-3',
-      'rounded-[1.35rem]',
+      'rounded-[1.1rem]',
       'px-3',
       'text-sm',
       'font-bold',
       'transition',
       active
-        ? 'bg-[radial-gradient(circle_at_top,rgba(0,228,117,0.12),transparent_75%),linear-gradient(180deg,rgba(20,35,27,0.92),rgba(18,24,21,0.96))] text-shell-accent'
+        ? 'bg-[linear-gradient(180deg,rgba(20,35,27,0.86),rgba(18,24,21,0.92))] text-shell-accent'
         : 'text-shell-ink-muted hover:bg-shell-card hover:text-shell-ink'
     ].join(' ');
   }

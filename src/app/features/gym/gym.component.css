@@ -1,5 +1,5 @@
 .gym-page {
-  gap: 1.25rem;
+  gap: 1rem;
 }
 
 .gym-page.session-active {
@@ -9,7 +9,7 @@
 
 .gym-mode-strip {
   display: grid;
-  gap: 0.75rem;
+  gap: 0.35rem;
 }
 
 .gym-workout-topbar {
@@ -69,23 +69,23 @@
 .gym-tabs {
   display: flex;
   align-items: center;
-  gap: 2rem;
-  padding-bottom: 0.15rem;
+  gap: 1.35rem;
+  padding-bottom: 0.1rem;
 }
 
 .gym-tab-btn {
   position: relative;
-  min-height: 2.5rem;
+  min-height: 2.15rem;
   border: 0;
   background: transparent;
   color: var(--m3-sys-color-on-surface-variant);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0 0 0.4rem;
-  font-size: 12px;
+  padding: 0 0 0.3rem;
+  font-size: 11px;
   font-weight: 800;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 
@@ -99,7 +99,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  height: 3px;
+  height: 2px;
   border-radius: 999px;
   background: var(--m3-sys-color-primary);
 }

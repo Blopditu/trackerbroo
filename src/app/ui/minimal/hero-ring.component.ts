@@ -18,20 +18,35 @@ import { CommonModule } from '@angular/common';
       </div>
     </div>
 
-    <p class="left">{{ leftText() }}</p>
+    @if (showLeftText()) {
+      <p class="left">{{ leftText() }}</p>
+    }
   `,
   styles: [`
+    :host {
+      display: block;
+      border: 0;
+      outline: 0;
+      box-shadow: none;
+    }
+
     .hero-wrap {
       position: relative;
       width: 180px;
       height: 180px;
       margin: 0 auto;
+      border: 0;
+      outline: 0;
+      box-shadow: none;
       transition: transform var(--motion-duration-medium) var(--motion-easing-standard);
     }
 
     .ring {
       width: 180px;
       height: 180px;
+      border: 0;
+      outline: 0;
+      box-shadow: none;
       transform: rotate(-90deg);
     }
 
@@ -97,6 +112,7 @@ export class HeroRingComponent {
   readonly value = input.required<number>();
   readonly target = input.required<number>();
   readonly accentColor = input('var(--m3-sys-color-primary)');
+  readonly showLeftText = input(true);
 
   readonly dashOffset = computed(() => {
     const circumference = 2 * Math.PI * 50;
