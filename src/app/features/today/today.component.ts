@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, computed, inject, OnInit, signal, viewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
@@ -59,19 +60,24 @@ interface TodaySnapshot {
   proteinMilestonePosted: boolean;
   stepsMilestonePosted: boolean;
   profile: Profile | null;
+  recentFoodRefs: FoodRecentRef[];
 }
 
 type FoodFilter = 'all' | 'favorites' | 'recent';
-type MealSlot = 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'other';
 
 interface FoodQueueItem {
   id: string;
   itemId: string;
   itemType: 'ingredient' | 'meal';
   name: string;
-  mealSlot: MealSlot;
   amount: number;
   totals: MacroTotals;
+}
+
+interface FoodRecentRef {
+  itemId: string;
+  itemType: 'ingredient' | 'meal';
+  lastLoggedAt: string;
 }
 
 interface BrooBoardPost {
@@ -87,6 +93,7 @@ interface BrooBoardPost {
   imports: [
     CommonModule,
     FormsModule,
+    ReactiveFormsModule,
     MatButtonModule,
     MatFormFieldModule,
     MatInputModule,
@@ -175,7 +182,7 @@ interface BrooBoardPost {
         <article class="day-summary-card">
           <div class="day-summary-top">
             <div class="day-ring-slot day-ring-slot-centered">
-              <app-hero-ring [value]="proteinToday()" [target]="proteinGoal" [showLeftText]="false" accentColor="var(--m3-sys-color-primary)" />
+              <app-hero-ring [value]="proteinToday()" [target]="proteinGoal" [showLeftText]="false" accentColor="var(--ui-primary)" />
             </div>
 
             <div class="day-summary-copy">
@@ -191,7 +198,7 @@ interface BrooBoardPost {
           </div>
 
           <div class="bars summary-bars">
-            <app-macro-bar label="Protein" [value]="proteinToday()" [target]="proteinGoal" color="var(--m3-sys-color-primary)" />
+            <app-macro-bar label="Protein" [value]="proteinToday()" [target]="proteinGoal" color="var(--ui-primary)" />
             <app-macro-bar label="Fett" [value]="fatToday()" [target]="fatGoal" color="var(--warning-500)" />
             <app-macro-bar label="Kohlenhydrate" [value]="carbsToday()" [target]="carbGoal" color="var(--success-500)" />
           </div>
@@ -217,6 +224,21 @@ interface BrooBoardPost {
             </article>
           }
         </div>
+
+        @if (canShareProteinMilestone() || canShareStepsMilestone()) {
+          <div class="today-milestone-actions" role="group" aria-label="Erfolge teilen">
+            @if (canShareProteinMilestone()) {
+              <button mat-flat-button type="button" class="today-milestone-btn" (click)="shareProteinMilestone()">
+                Protein-Ziel im Board teilen
+              </button>
+            }
+            @if (canShareStepsMilestone()) {
+              <button mat-flat-button type="button" class="today-milestone-btn" (click)="shareStepsMilestone()">
+                Schrittziel im Board teilen
+              </button>
+            }
+          </div>
+        }
       </section>
 
       <div class="today-layout-row">
@@ -266,8 +288,8 @@ interface BrooBoardPost {
                   <span class="m3-section-meta">Diese Woche</span>
                 </div>
                 <div class="habit-heatmap-grid">
-                  <app-habit-grid label="Gym" windowLabel="Letzte 30 Tage" [states]="gymHabitStates()" [targetPerWeek]="3" accentColor="var(--m3-sys-color-primary)" />
-                  <app-habit-grid label="Protein" windowLabel="Letzte 30 Tage" [states]="proteinHabitStates()" [targetPerWeek]="7" accentColor="color-mix(in srgb, var(--m3-sys-color-primary) 84%, white)" />
+                  <app-habit-grid label="Gym" windowLabel="Letzte 30 Tage" [states]="gymHabitStates()" [targetPerWeek]="3" accentColor="var(--ui-primary)" />
+                  <app-habit-grid label="Protein" windowLabel="Letzte 30 Tage" [states]="proteinHabitStates()" [targetPerWeek]="7" accentColor="color-mix(in srgb, var(--ui-primary) 84%, white)" />
                 </div>
               </section>
             }
@@ -311,67 +333,50 @@ interface BrooBoardPost {
     <app-bottom-sheet [open]="showActionSheet()" [title]="sheetTitle()" (closed)="closeActions()">
       @if (sheetMode() === 'menu') {
         <section class="quick-add-menu">
-          <div class="quick-add-grid" role="group" aria-label="Schnelllog-Aktionen">
-            <button mat-flat-button type="button" class="quick-add-tile" (click)="setSheetMode('gym')">
+          <button type="button" class="quick-add-hero" (click)="openFoodQuickLog()">
+            <span class="quick-add-hero-copy">
+              <span class="quick-add-kicker">Nutrition</span>
+              <strong>Essen hinzufügen</strong>
+              <small>Suche, Recents und Builder öffnen.</small>
+            </span>
+            <span class="quick-add-icon food"><lucide-icon [img]="icons.utensils" aria-hidden="true"></lucide-icon></span>
+          </button>
+
+          <div class="quick-add-utility-list" role="group" aria-label="Weitere Schnelllog-Aktionen">
+            <button type="button" class="quick-add-utility" (click)="setSheetMode('gym')">
               <span class="quick-add-icon gym"><lucide-icon [img]="icons.dumbbell" aria-hidden="true"></lucide-icon></span>
               <span class="quick-add-copy">
-                <span class="quick-add-kicker">Workout</span>
                 <strong>Gym-Session loggen</strong>
+                <small>Training schnell eintragen.</small>
+              </span>
+            </button>
+
+            <button type="button" class="quick-add-utility" (click)="setSheetMode('weight')">
+              <span class="quick-add-icon weight"><lucide-icon [img]="icons.weight" aria-hidden="true"></lucide-icon></span>
+              <span class="quick-add-copy">
+                <strong>Gewicht loggen</strong>
+                <small>Heutigen Messwert sichern.</small>
               </span>
             </button>
 
             @if (trackStepsEnabled()) {
-              <button mat-flat-button type="button" class="quick-add-tile" (click)="setSheetMode('steps')">
+              <button type="button" class="quick-add-utility" (click)="setSheetMode('steps')">
                 <span class="quick-add-icon steps"><lucide-icon [img]="icons.footsteps" aria-hidden="true"></lucide-icon></span>
                 <span class="quick-add-copy">
-                  <span class="quick-add-kicker">Aktivität</span>
                   <strong>Schritte hinzufügen</strong>
+                  <small>Aktivität ergänzen.</small>
                 </span>
               </button>
             } @else {
-              <button mat-flat-button type="button" class="quick-add-tile" (click)="setSheetMode('copy')">
+              <button type="button" class="quick-add-utility" (click)="setSheetMode('copy')">
                 <span class="quick-add-icon copy"><lucide-icon [img]="icons.clock3" aria-hidden="true"></lucide-icon></span>
                 <span class="quick-add-copy">
-                  <span class="quick-add-kicker">Shortcut</span>
                   <strong>Von gestern kopieren</strong>
+                  <small>Einträge direkt übernehmen.</small>
                 </span>
               </button>
             }
-
-            <button mat-flat-button type="button" class="quick-add-tile" (click)="setSheetMode('weight')">
-              <span class="quick-add-icon weight"><lucide-icon [img]="icons.weight" aria-hidden="true"></lucide-icon></span>
-              <span class="quick-add-copy">
-                <span class="quick-add-kicker">Messwert</span>
-                <strong>Gewicht loggen</strong>
-              </span>
-            </button>
-
-            <button mat-flat-button type="button" class="quick-add-tile" (click)="openFoodQuickLog()">
-              <span class="quick-add-icon food"><lucide-icon [img]="icons.utensils" aria-hidden="true"></lucide-icon></span>
-              <span class="quick-add-copy">
-                <span class="quick-add-kicker">Nutrition</span>
-                <strong>Essen hinzufügen</strong>
-              </span>
-            </button>
           </div>
-
-          <div class="quick-add-secondary">
-            <button mat-flat-button type="button" class="day-chip recent-activities-btn" (click)="openRecentActivities()">
-              <lucide-icon [img]="icons.clock3" class="icon" aria-hidden="true"></lucide-icon>
-              Letzte Aktivitäten
-            </button>
-          </div>
-
-          @if (canShareProteinMilestone() || canShareStepsMilestone()) {
-            <div class="quick-add-share-stack">
-              @if (canShareProteinMilestone()) {
-                <button mat-flat-button type="button" class="menu-btn" (click)="shareProteinMilestone()">Protein-Ziel im Board teilen</button>
-              }
-              @if (canShareStepsMilestone()) {
-                <button mat-flat-button type="button" class="menu-btn" (click)="shareStepsMilestone()">Schrittziel im Board teilen</button>
-              }
-            </div>
-          }
         </section>
       }
 
@@ -407,58 +412,77 @@ interface BrooBoardPost {
 
       @if (sheetMode() === 'food') {
         <section class="food-sheet food-hub">
-          <mat-form-field class="m3-field food-search-field" appearance="outline" subscriptSizing="dynamic">
-            <mat-label>Lebensmittel suchen</mat-label>
+          <label class="food-search-shell" aria-label="Lebensmittel suchen">
             <input
               #foodSearchInput
-              matInput
+              class="food-search-input"
               type="search"
               [ngModel]="foodSearch()"
               (ngModelChange)="onFoodSearchInput($event)"
               placeholder="Lebensmittel suchen"
               aria-label="Lebensmittel suchen"
             >
-          </mat-form-field>
+          </label>
 
-          <div class="food-hub-actions">
-            <button type="button" class="food-hub-card" (click)="setSheetMode('copy')">
-              <span class="food-hub-card-kicker">Shortcut</span>
-              <span class="food-hub-card-head">
-                <strong>Von gestern kopieren</strong>
-                <span class="food-hub-card-action">Kopieren</span>
-              </span>
-              <small>Bestehende Einträge direkt übernehmen.</small>
-            </button>
-            <button type="button" class="food-hub-card" (click)="setSheetMode('mealprep')">
-              <span class="food-hub-card-kicker">Batch</span>
-              <span class="food-hub-card-head">
-                <strong>Meal Prep aufteilen</strong>
-                <span class="food-hub-card-action">Verteilen</span>
-              </span>
-              <small>Heutige Einträge auf mehrere Tage verteilen.</small>
-            </button>
-            <button type="button" class="food-hub-card food-hub-card-accent" (click)="openFoodBuilder()">
-              <span class="food-hub-card-kicker">Builder</span>
-              <span class="food-hub-card-head">
-                <strong>Schnelleingabe / Makros</strong>
-                <span class="food-hub-card-action">Builder</span>
-              </span>
-              <small>Bibliothek öffnen und den Log gezielt bauen.</small>
-            </button>
-          </div>
+          @if (!foodSearch().trim()) {
+            <div class="food-hub-actions food-hub-actions-compact">
+              <button type="button" class="food-tool-btn" (click)="setSheetMode('copy')">
+                <span class="food-tool-kicker">Shortcut</span>
+                <strong>Von gestern</strong>
+              </button>
+              <button type="button" class="food-tool-btn" (click)="setSheetMode('mealprep')">
+                <span class="food-tool-kicker">Batch</span>
+                <strong>Meal Prep</strong>
+              </button>
+            </div>
+          }
 
-          <div class="slot-row" role="group" aria-label="Mahlzeiten-Slot">
-            <button mat-flat-button type="button" class="slot-chip" [class.active]="selectedMealSlot() === 'breakfast'" (click)="setMealSlot('breakfast')">Frühstück</button>
-            <button mat-flat-button type="button" class="slot-chip" [class.active]="selectedMealSlot() === 'lunch'" (click)="setMealSlot('lunch')">Mittag</button>
-            <button mat-flat-button type="button" class="slot-chip" [class.active]="selectedMealSlot() === 'dinner'" (click)="setMealSlot('dinner')">Abend</button>
-            <button mat-flat-button type="button" class="slot-chip" [class.active]="selectedMealSlot() === 'snack'" (click)="setMealSlot('snack')">Snack</button>
-            <button mat-flat-button type="button" class="slot-chip" [class.active]="selectedMealSlot() === 'other'" (click)="setMealSlot('other')">Sonstiges</button>
-          </div>
+          @if (canOfferIngredientQuickCreate()) {
+            <div class="quick-create-block">
+              @if (!showIngredientQuickCreate()) {
+                <button type="button" class="quick-create-cta" (click)="openIngredientQuickCreate()">
+                  Neue Zutat „{{ foodSearch().trim() }}“ anlegen
+                </button>
+              } @else {
+                <form class="quick-create-form" [formGroup]="ingredientQuickCreateForm" (ngSubmit)="saveQuickCreateIngredient()">
+                  <label class="quick-create-field quick-create-field-full">
+                    <span>Name</span>
+                    <input type="text" formControlName="name" placeholder="Name der Zutat">
+                  </label>
+
+                  <div class="quick-create-grid">
+                    <label class="quick-create-field">
+                      <span>Kcal</span>
+                      <input type="number" min="0" step="0.1" formControlName="kcal_per_100" placeholder="0">
+                    </label>
+                    <label class="quick-create-field">
+                      <span>Protein</span>
+                      <input type="number" min="0" step="0.1" formControlName="protein_per_100" placeholder="0">
+                    </label>
+                    <label class="quick-create-field">
+                      <span>KH</span>
+                      <input type="number" min="0" step="0.1" formControlName="carbs_per_100" placeholder="0">
+                    </label>
+                    <label class="quick-create-field">
+                      <span>Fett</span>
+                      <input type="number" min="0" step="0.1" formControlName="fat_per_100" placeholder="0">
+                    </label>
+                  </div>
+
+                  <div class="quick-create-actions">
+                    <button type="button" class="food-tool-btn" (click)="resetIngredientQuickCreate()">Abbrechen</button>
+                    <button type="submit" class="quick-create-cta quick-create-cta-primary" [disabled]="ingredientQuickCreateForm.invalid || savingIngredientQuickCreate()">
+                      {{ savingIngredientQuickCreate() ? 'Wird erstellt …' : 'Zutat anlegen' }}
+                    </button>
+                  </div>
+                </form>
+              }
+            </div>
+          }
 
           <div class="sheet-subhead">
             <div>
-              <p class="sheet-kicker">Zuletzt geloggt</p>
-              <p class="sheet-caption">Direkt loggen oder bei Bedarf im Builder öffnen.</p>
+              <p class="sheet-kicker">{{ foodSearch().trim() ? 'Treffer' : 'Zuletzt genutzt' }}</p>
             </div>
             <button type="button" class="sheet-link-btn" (click)="openFoodBuilder('all')">Alle Lebensmittel</button>
           </div>
@@ -466,19 +490,19 @@ interface BrooBoardPost {
           <div class="food-list hub-food-list">
             @for (item of foodHubItems(); track item.id) {
               <article class="food-row">
-                <button mat-flat-button type="button" class="food-open-btn" (click)="openAmountPicker(item, 'queue')">
+                <button type="button" class="food-open-btn" (click)="openAmountPicker(item, 'queue')">
                   <span class="food-name">{{ item.name }}</span>
                   <small class="food-macros">{{ quickItemMacroLine(item) }}</small>
                 </button>
                 <div class="food-row-actions">
-                  <button mat-icon-button type="button" class="round-icon-btn primary" (click)="addDefaultToQueue(item)" aria-label="Zur Log-Liste hinzufügen">
+                  <button type="button" class="round-icon-btn primary" (click)="addDefaultToQueue(item)" aria-label="Zur Log-Liste hinzufügen">
                     <lucide-icon [img]="icons.plus" aria-hidden="true"></lucide-icon>
                   </button>
                 </div>
               </article>
             }
             @if (foodHubItems().length === 0) {
-              <p class="muted">Keine Treffer für deinen Filter.</p>
+              <p class="muted">{{ foodSearch().trim() ? 'Keine Treffer für deine Suche.' : 'Noch keine zuletzt genutzten Lebensmittel.' }}</p>
             }
           </div>
 
@@ -490,8 +514,8 @@ interface BrooBoardPost {
                 <small>P {{ queueTotals().protein.toFixed(0) }} · KH {{ queueTotals().carbs.toFixed(0) }} · F {{ queueTotals().fat.toFixed(0) }} · {{ queueTotals().kcal.toFixed(0) }} kcal</small>
               </div>
               <div class="queue-preview-actions">
-                <button mat-flat-button type="button" class="day-chip" (click)="openFoodBuilder()">Bearbeiten</button>
-                <button mat-flat-button type="button" class="menu-btn apply-log-btn" (click)="applyFoodQueue()">Loggen</button>
+                <button type="button" class="food-tool-btn" (click)="openFoodBuilder()">Bearbeiten</button>
+                <button type="button" class="menu-btn apply-log-btn" (click)="applyFoodQueue()">Loggen</button>
               </div>
             </article>
           }
@@ -501,21 +525,20 @@ interface BrooBoardPost {
       @if (sheetMode() === 'builder') {
         <section class="food-sheet meal-builder-sheet">
           <div class="utility-row">
-            <button mat-flat-button type="button" class="day-chip" (click)="setSheetMode('food')">Zurück zum Hub</button>
-            <button mat-flat-button type="button" class="day-chip" (click)="setSheetMode('mealprep')">Meal Prep</button>
+            <button type="button" class="food-tool-btn" (click)="setSheetMode('food')">Zurück zum Hub</button>
+            <button type="button" class="food-tool-btn" (click)="setSheetMode('mealprep')">Meal Prep</button>
           </div>
 
-          <mat-form-field class="m3-field food-search-field" appearance="outline" subscriptSizing="dynamic">
-            <mat-label>Lebensmittel suchen</mat-label>
+          <label class="food-search-shell" aria-label="Lebensmittel suchen">
             <input
-              matInput
+              class="food-search-input"
               type="search"
               [ngModel]="foodSearch()"
               (ngModelChange)="onFoodSearchInput($event)"
               placeholder="Lebensmittel suchen"
               aria-label="Lebensmittel suchen"
             >
-          </mat-form-field>
+          </label>
 
           <div class="builder-macro-grid" aria-label="Meal Builder Makros">
             <article class="builder-macro-card">
@@ -536,17 +559,8 @@ interface BrooBoardPost {
             </article>
           </div>
 
-          <div class="slot-row" role="group" aria-label="Mahlzeiten-Slot">
-            <button mat-flat-button type="button" class="slot-chip" [class.active]="selectedMealSlot() === 'breakfast'" (click)="setMealSlot('breakfast')">Frühstück</button>
-            <button mat-flat-button type="button" class="slot-chip" [class.active]="selectedMealSlot() === 'lunch'" (click)="setMealSlot('lunch')">Mittag</button>
-            <button mat-flat-button type="button" class="slot-chip" [class.active]="selectedMealSlot() === 'dinner'" (click)="setMealSlot('dinner')">Abend</button>
-            <button mat-flat-button type="button" class="slot-chip" [class.active]="selectedMealSlot() === 'snack'" (click)="setMealSlot('snack')">Snack</button>
-            <button mat-flat-button type="button" class="slot-chip" [class.active]="selectedMealSlot() === 'other'" (click)="setMealSlot('other')">Sonstiges</button>
-          </div>
-
           <div class="filter-toggle compact-filter" role="group" aria-label="Food Filter">
             <button
-              mat-flat-button
               type="button"
               class="filter-btn"
               [class.active]="foodFilter() === 'recent'"
@@ -555,7 +569,6 @@ interface BrooBoardPost {
               Zuletzt
             </button>
             <button
-              mat-flat-button
               type="button"
               class="filter-btn"
               [class.active]="foodFilter() === 'favorites'"
@@ -564,7 +577,6 @@ interface BrooBoardPost {
               Favoriten
             </button>
             <button
-              mat-flat-button
               type="button"
               class="filter-btn"
               [class.active]="foodFilter() === 'all'"
@@ -574,25 +586,68 @@ interface BrooBoardPost {
             </button>
           </div>
 
+          @if (canOfferIngredientQuickCreate()) {
+            <div class="quick-create-block">
+              @if (!showIngredientQuickCreate()) {
+                <button type="button" class="quick-create-cta" (click)="openIngredientQuickCreate()">
+                  Neue Zutat „{{ foodSearch().trim() }}“ anlegen
+                </button>
+              } @else {
+                <form class="quick-create-form" [formGroup]="ingredientQuickCreateForm" (ngSubmit)="saveQuickCreateIngredient()">
+                  <label class="quick-create-field quick-create-field-full">
+                    <span>Name</span>
+                    <input type="text" formControlName="name" placeholder="Name der Zutat">
+                  </label>
+
+                  <div class="quick-create-grid">
+                    <label class="quick-create-field">
+                      <span>Kcal</span>
+                      <input type="number" min="0" step="0.1" formControlName="kcal_per_100" placeholder="0">
+                    </label>
+                    <label class="quick-create-field">
+                      <span>Protein</span>
+                      <input type="number" min="0" step="0.1" formControlName="protein_per_100" placeholder="0">
+                    </label>
+                    <label class="quick-create-field">
+                      <span>KH</span>
+                      <input type="number" min="0" step="0.1" formControlName="carbs_per_100" placeholder="0">
+                    </label>
+                    <label class="quick-create-field">
+                      <span>Fett</span>
+                      <input type="number" min="0" step="0.1" formControlName="fat_per_100" placeholder="0">
+                    </label>
+                  </div>
+
+                  <div class="quick-create-actions">
+                    <button type="button" class="food-tool-btn" (click)="resetIngredientQuickCreate()">Abbrechen</button>
+                    <button type="submit" class="quick-create-cta quick-create-cta-primary" [disabled]="ingredientQuickCreateForm.invalid || savingIngredientQuickCreate()">
+                      {{ savingIngredientQuickCreate() ? 'Wird erstellt …' : 'Zutat anlegen' }}
+                    </button>
+                  </div>
+                </form>
+              }
+            </div>
+          }
+
           <div class="food-list">
             @for (item of quickFoodItems(); track item.id) {
               <article class="food-row">
-                <button mat-flat-button type="button" class="food-open-btn" (click)="openAmountPicker(item, 'queue')">
+                <button type="button" class="food-open-btn" (click)="openAmountPicker(item, 'queue')">
                   <span class="food-name">{{ item.name }}</span>
                   <small class="food-macros">{{ quickItemMacroLine(item) }}</small>
                 </button>
                 <div class="food-row-actions">
-                  <button mat-icon-button type="button" class="round-icon-btn" (click)="toggleFavoriteFood(item.id)" [attr.aria-label]="isFavoriteFood(item.id) ? 'Favorit entfernen' : 'Als Favorit speichern'">
+                  <button type="button" class="round-icon-btn" (click)="toggleFavoriteFood(item.id)" [attr.aria-label]="isFavoriteFood(item.id) ? 'Favorit entfernen' : 'Als Favorit speichern'">
                     <lucide-icon [img]="icons.star" [class.is-favorite]="isFavoriteFood(item.id)" aria-hidden="true"></lucide-icon>
                   </button>
-                  <button mat-icon-button type="button" class="round-icon-btn primary" (click)="addDefaultToQueue(item)" aria-label="Zur Log-Liste hinzufügen">
+                  <button type="button" class="round-icon-btn primary" (click)="addDefaultToQueue(item)" aria-label="Zur Log-Liste hinzufügen">
                     <lucide-icon [img]="icons.plus" aria-hidden="true"></lucide-icon>
                   </button>
                 </div>
               </article>
             }
             @if (quickFoodItems().length === 0) {
-              <p class="muted">Keine Treffer für deinen Filter.</p>
+              <p class="muted">{{ foodSearch().trim() ? 'Keine Treffer für deine Suche.' : 'Keine Lebensmittel für diesen Filter.' }}</p>
             }
           </div>
 
@@ -600,14 +655,13 @@ interface BrooBoardPost {
             @if (foodQueueCount() > 0) {
               <div class="queue-head-row">
                 <p class="queue-head">Log-Liste ({{ foodQueueCount() }})</p>
-                <button mat-flat-button type="button" class="day-chip queue-clear-btn" (click)="clearFoodQueue()">Leeren</button>
+                <button type="button" class="food-tool-btn queue-clear-btn" (click)="clearFoodQueue()">Leeren</button>
               </div>
             }
             @for (item of foodQueue(); track item.id) {
               <article class="queue-item">
                 <div class="queue-main">
                   <strong>{{ item.name }}</strong>
-                  <small>{{ mealSlotLabel(item.mealSlot) }}</small>
                   <small>P {{ item.totals.protein.toFixed(1) }} · KH {{ item.totals.carbs.toFixed(1) }} · F {{ item.totals.fat.toFixed(1) }} · {{ item.totals.kcal.toFixed(0) }} kcal</small>
                 </div>
                 <div class="queue-controls">
@@ -615,7 +669,7 @@ interface BrooBoardPost {
                     <mat-label>{{ queueUnitLabel(item) }}</mat-label>
                     <input matInput type="number" min="0.1" step="0.1" [ngModel]="item.amount" (ngModelChange)="onQueueAmountChange(item.id, $event)">
                   </mat-form-field>
-                  <button mat-icon-button type="button" class="round-icon-btn" (click)="removeFoodQueueItem(item.id)" aria-label="Aus Log-Liste entfernen">
+                  <button type="button" class="round-icon-btn" (click)="removeFoodQueueItem(item.id)" aria-label="Aus Log-Liste entfernen">
                     <lucide-icon [img]="icons.trash" aria-hidden="true"></lucide-icon>
                   </button>
                 </div>
@@ -857,10 +911,13 @@ export class TodayComponent implements OnInit {
   readonly showActionSheet = signal(false);
   readonly sheetMode = signal<'menu' | 'food' | 'builder' | 'copy' | 'mealprep' | 'weight' | 'steps' | 'gym' | 'entry' | 'layout'>('menu');
   readonly foodSearch = signal('');
+  readonly recentFoodRefs = signal<FoodRecentRef[]>([]);
   readonly savingGymPost = signal(false);
+  readonly savingIngredientQuickCreate = signal(false);
   readonly gymPhotoName = signal<string | null>(null);
   readonly selectedEntryForActions = signal<LogEntry | null>(null);
   readonly todaySectionOrderDraft = signal<TodaySectionId[]>([...TODAY_SECTION_ORDER_DEFAULT]);
+  readonly showIngredientQuickCreate = signal(false);
   readonly gymPhotoInput = viewChild<ElementRef<HTMLInputElement>>('gymPhotoInput');
   readonly dayPickerInput = viewChild<ElementRef<HTMLInputElement>>('dayPickerInput');
 
@@ -870,7 +927,6 @@ export class TodayComponent implements OnInit {
     this.parseIsoDate(this.today()).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
   );
   readonly foodFilter = signal<FoodFilter>('recent');
-  readonly selectedMealSlot = signal<MealSlot>('snack');
   readonly foodQueue = signal<FoodQueueItem[]>([]);
   readonly favoriteFoodIds = signal<string[]>([]);
   readonly amountPickerMode = signal<'queue' | 'edit'>('queue');
@@ -891,12 +947,20 @@ export class TodayComponent implements OnInit {
   private readonly supabaseService = inject(SupabaseService);
   private readonly authService = inject(AuthService);
   private readonly libraryDataService = inject(LibraryDataService);
+  private readonly formBuilder = inject(FormBuilder);
   private readonly queryCache = inject(QueryCacheService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
   private readonly telemetry = inject(InteractionTelemetryService);
   private readonly communityFeed = inject(CommunityFeedService);
+  readonly ingredientQuickCreateForm = this.formBuilder.nonNullable.group({
+    name: ['', [Validators.required]],
+    kcal_per_100: [0, [Validators.required]],
+    protein_per_100: [0, [Validators.required]],
+    carbs_per_100: [0, [Validators.required]],
+    fat_per_100: [0, [Validators.required]]
+  });
 
   readonly proteinToday = computed(() => Math.round(Number(this.summary()?.protein || 0)));
   readonly proteinRemaining = computed(() => Math.max(this.proteinGoal - this.proteinToday(), 0));
@@ -964,33 +1028,94 @@ export class TodayComponent implements OnInit {
       .join(' ');
   });
 
-  readonly allFoodItems = computed(() => {
-    const recentIds = this.entries().map(entry => entry.ref_id);
-    const recentIngredients = this.ingredients().filter(item => recentIds.includes(item.id));
-    const recentMeals = this.meals().filter(item => recentIds.includes(item.id));
-    const base = [...recentIngredients, ...recentMeals, ...this.ingredients(), ...this.meals()];
-    return Array.from(new Map(base.map(item => [item.id, item])).values());
+  readonly allFoodItems = computed(() =>
+    Array.from(new Map(
+      [...this.ingredients(), ...this.meals()].map(item => [this.foodKeyForItem(item), item])
+    ).values())
+  );
+
+  readonly recentFoodKeyOrder = computed(() =>
+    this.recentFoodRefs().map(item => this.foodKey(item.itemType, item.itemId))
+  );
+
+  readonly recentFoodKeyIndex = computed(() =>
+    this.recentFoodRefs().reduce<Map<string, number>>((index, item, position) => {
+      index.set(this.foodKey(item.itemType, item.itemId), position);
+      return index;
+    }, new Map<string, number>())
+  );
+
+  readonly recentFoodItems = computed(() => {
+    const itemMap = new Map(this.allFoodItems().map(item => [this.foodKeyForItem(item), item]));
+    return this.recentFoodRefs()
+      .map(item => itemMap.get(this.foodKey(item.itemType, item.itemId)) || null)
+      .filter((item): item is QuickItem => Boolean(item));
+  });
+
+  readonly foodSearchResults = computed(() => {
+    const query = this.foodSearch().trim().toLowerCase();
+    if (!query) {
+      return [];
+    }
+
+    const favorites = new Set(this.favoriteFoodIds());
+    const recentIndex = this.recentFoodKeyIndex();
+
+    return this.allFoodItems()
+      .filter(item => item.name.toLowerCase().includes(query))
+      .sort((a, b) => {
+        const aName = a.name.toLowerCase();
+        const bName = b.name.toLowerCase();
+        const aExact = aName === query ? 1 : 0;
+        const bExact = bName === query ? 1 : 0;
+        if (aExact !== bExact) {
+          return bExact - aExact;
+        }
+
+        const aStarts = aName.startsWith(query) ? 1 : 0;
+        const bStarts = bName.startsWith(query) ? 1 : 0;
+        if (aStarts !== bStarts) {
+          return bStarts - aStarts;
+        }
+
+        const aFavorite = favorites.has(a.id) ? 1 : 0;
+        const bFavorite = favorites.has(b.id) ? 1 : 0;
+        if (aFavorite !== bFavorite) {
+          return bFavorite - aFavorite;
+        }
+
+        const aRecentIndex = recentIndex.get(this.foodKeyForItem(a)) ?? Number.MAX_SAFE_INTEGER;
+        const bRecentIndex = recentIndex.get(this.foodKeyForItem(b)) ?? Number.MAX_SAFE_INTEGER;
+        if (aRecentIndex !== bRecentIndex) {
+          return aRecentIndex - bRecentIndex;
+        }
+
+        return a.name.localeCompare(b.name, 'de-DE');
+      })
+      .slice(0, 24);
   });
 
   readonly quickFoodItems = computed(() => {
-    const query = this.foodSearch().trim().toLowerCase();
+    const query = this.foodSearch().trim();
+    if (query.length > 0) {
+      return this.foodSearchResults();
+    }
+
     const requestedFilter = this.foodFilter();
     const favorites = new Set(this.favoriteFoodIds());
-    const recentIds = new Set(this.entries().map(entry => entry.ref_id));
+    const recentKeys = new Set(this.recentFoodKeyOrder());
     const filter: FoodFilter =
-      requestedFilter === 'recent' && recentIds.size === 0
+      requestedFilter === 'recent' && recentKeys.size === 0
         ? (favorites.size > 0 ? 'favorites' : 'all')
         : requestedFilter;
 
     return this.allFoodItems()
       .filter(item => {
-        if (query && !item.name.toLowerCase().includes(query)) {
-          return false;
-        }
+        const key = this.foodKeyForItem(item);
         if (filter === 'favorites' && !favorites.has(item.id)) {
           return false;
         }
-        if (filter === 'recent' && !recentIds.has(item.id)) {
+        if (filter === 'recent' && !recentKeys.has(key)) {
           return false;
         }
         return true;
@@ -1002,10 +1127,10 @@ export class TodayComponent implements OnInit {
           return bFavorite - aFavorite;
         }
 
-        const aRecent = recentIds.has(a.id) ? 1 : 0;
-        const bRecent = recentIds.has(b.id) ? 1 : 0;
-        if (aRecent !== bRecent) {
-          return bRecent - aRecent;
+        const aRecentIndex = this.recentFoodKeyIndex().get(this.foodKeyForItem(a)) ?? Number.MAX_SAFE_INTEGER;
+        const bRecentIndex = this.recentFoodKeyIndex().get(this.foodKeyForItem(b)) ?? Number.MAX_SAFE_INTEGER;
+        if (aRecentIndex !== bRecentIndex) {
+          return aRecentIndex - bRecentIndex;
         }
 
         return a.name.localeCompare(b.name, 'de-DE');
@@ -1018,7 +1143,19 @@ export class TodayComponent implements OnInit {
     return this.allFoodItems().filter(item => favorites.has(item.id)).slice(0, 8);
   });
 
-  readonly foodHubItems = computed(() => this.quickFoodItems().slice(0, 6));
+  readonly foodHubItems = computed(() =>
+    (this.foodSearch().trim().length > 0 ? this.foodSearchResults() : this.recentFoodItems()).slice(0, 12)
+  );
+
+  readonly canOfferIngredientQuickCreate = computed(() => {
+    const query = this.foodSearch().trim();
+    if (query.length < 2) {
+      return false;
+    }
+
+    const normalizedQuery = this.normalizeFoodName(query);
+    return !this.allFoodItems().some(item => this.normalizeFoodName(item.name) === normalizedQuery);
+  });
 
   readonly queueTotals = computed<MacroTotals>(() => {
     return this.foodQueue().reduce<MacroTotals>(
@@ -1089,10 +1226,15 @@ export class TodayComponent implements OnInit {
     this.route.queryParamMap
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(params => {
-        if (!params.get('quick')) {
+        const quickMode = params.get('quick');
+        if (!quickMode) {
           return;
         }
-        this.openActions();
+        if (quickMode === 'food') {
+          this.openFoodQuickLog();
+        } else {
+          this.openActions();
+        }
         void this.router.navigate([], {
           relativeTo: this.route,
           queryParams: { quick: null },
@@ -1144,6 +1286,7 @@ export class TodayComponent implements OnInit {
       this.proteinDaysWindow.set(new Set(dayResult.value.proteinDaysWindow));
       this.proteinMilestonePosted.set(dayResult.value.proteinMilestonePosted);
       this.stepsMilestonePosted.set(dayResult.value.stepsMilestonePosted);
+      this.recentFoodRefs.set(dayResult.value.recentFoodRefs);
 
       const selectedWeight = this.weightLogs().find(entry => entry.logged_on === day);
       this.weightInput = Number(selectedWeight?.weight_kg || this.weightInput);
@@ -1263,11 +1406,11 @@ export class TodayComponent implements OnInit {
     this.setSheetMode('menu');
   }
 
-  openFoodQuickLog(slot: MealSlot = this.selectedMealSlot()): void {
+  openFoodQuickLog(): void {
     this.showActionSheet.set(true);
-    this.selectedMealSlot.set(slot);
     this.foodSearch.set('');
     this.foodFilter.set('recent');
+    this.resetIngredientQuickCreate();
     this.setSheetMode('food');
   }
 
@@ -1282,13 +1425,6 @@ export class TodayComponent implements OnInit {
     this.setSheetMode('gym');
   }
 
-  openRecentActivities(): void {
-    this.showActionSheet.set(true);
-    this.foodSearch.set('');
-    this.foodFilter.set('recent');
-    this.setSheetMode('food');
-  }
-
   closeActions(): void {
     const mode = this.sheetMode();
     if (mode === 'food' || mode === 'builder') {
@@ -1300,6 +1436,7 @@ export class TodayComponent implements OnInit {
     this.showActionSheet.set(false);
     this.sheetMode.set('menu');
     this.foodSearch.set('');
+    this.resetIngredientQuickCreate();
     this.selectedEntryForActions.set(null);
     this.todaySectionOrderDraft.set([...this.orderedTodaySections()]);
     this.copySelectedEntryIds.set([]);
@@ -1328,12 +1465,10 @@ export class TodayComponent implements OnInit {
     this.sheetMode.set(mode);
     if (enteringFood) {
       this.startFoodJourney('sheet_mode');
-      if (this.foodQueueCount() === 0) {
-        this.selectedMealSlot.set('snack');
-      }
       if (mode === 'food') {
         this.foodSearch.set('');
         this.foodFilter.set('recent');
+        this.resetIngredientQuickCreate();
       }
     }
     if (mode === 'copy') {
@@ -1406,6 +1541,33 @@ export class TodayComponent implements OnInit {
   onFoodSearchInput(value: string): void {
     this.foodSearch.set(value);
     this.foodFilter.set(value.trim().length > 0 ? 'all' : 'recent');
+    if (!value.trim()) {
+      this.resetIngredientQuickCreate();
+    }
+  }
+
+  openIngredientQuickCreate(): void {
+    const query = this.foodSearch().trim();
+    this.ingredientQuickCreateForm.reset({
+      name: query,
+      kcal_per_100: 0,
+      protein_per_100: 0,
+      carbs_per_100: 0,
+      fat_per_100: 0
+    });
+    this.showIngredientQuickCreate.set(true);
+  }
+
+  resetIngredientQuickCreate(): void {
+    this.showIngredientQuickCreate.set(false);
+    this.savingIngredientQuickCreate.set(false);
+    this.ingredientQuickCreateForm.reset({
+      name: '',
+      kcal_per_100: 0,
+      protein_per_100: 0,
+      carbs_per_100: 0,
+      fat_per_100: 0
+    });
   }
 
   openFoodBuilder(filter: FoodFilter = this.foodFilter()): void {
@@ -1413,8 +1575,36 @@ export class TodayComponent implements OnInit {
     this.setSheetMode('builder');
   }
 
-  setMealSlot(slot: MealSlot): void {
-    this.selectedMealSlot.set(slot);
+  async saveQuickCreateIngredient(): Promise<void> {
+    const user = this.authService.user();
+    if (!user || this.ingredientQuickCreateForm.invalid) {
+      this.ingredientQuickCreateForm.markAllAsTouched();
+      return;
+    }
+
+    const raw = this.ingredientQuickCreateForm.getRawValue();
+    this.savingIngredientQuickCreate.set(true);
+    this.errorMessage.set(null);
+
+    try {
+      const ingredient = await this.libraryDataService.createIngredient(user.id, {
+        name: raw.name,
+        kcal_per_100: Number(raw.kcal_per_100),
+        protein_per_100: Number(raw.protein_per_100),
+        carbs_per_100: Number(raw.carbs_per_100),
+        fat_per_100: Number(raw.fat_per_100)
+      });
+
+      this.ingredients.update(current => [ingredient, ...current.filter(item => item.id !== ingredient.id)]);
+      this.foodSearch.set(ingredient.name);
+      this.resetIngredientQuickCreate();
+      this.successMessage.set('Zutat erstellt.');
+      this.openAmountPicker(ingredient, 'queue');
+    } catch (error: unknown) {
+      this.errorMessage.set(formatAppError(error, 'Zutat konnte nicht erstellt werden'));
+    } finally {
+      this.savingIngredientQuickCreate.set(false);
+    }
   }
 
   moveTodaySection(sectionId: TodaySectionId, direction: 'up' | 'down'): void {
@@ -1474,14 +1664,6 @@ export class TodayComponent implements OnInit {
     }
   }
 
-  mealSlotLabel(slot: MealSlot): string {
-    if (slot === 'breakfast') return 'Frühstück';
-    if (slot === 'lunch') return 'Mittag';
-    if (slot === 'dinner') return 'Abendessen';
-    if (slot === 'snack') return 'Snack';
-    return 'Sonstiges';
-  }
-
   isFavoriteFood(itemId: string): boolean {
     return this.favoriteFoodIds().includes(itemId);
   }
@@ -1498,7 +1680,7 @@ export class TodayComponent implements OnInit {
 
   addDefaultToQueue(item: QuickItem): void {
     const amount = this.isIngredient(item) ? 100 : 1;
-    this.addToFoodQueue(item, amount, this.scaledMacros(item, amount), this.selectedMealSlot());
+    this.addToFoodQueue(item, amount, this.scaledMacros(item, amount));
   }
 
   removeFoodQueueItem(queueId: string): void {
@@ -1754,7 +1936,7 @@ export class TodayComponent implements OnInit {
     const pickerMode = this.amountPickerMode();
 
     if (!editingId && pickerMode === 'queue') {
-      this.addToFoodQueue(item, result.amount, result.totals, this.selectedMealSlot());
+      this.addToFoodQueue(item, result.amount, result.totals);
       this.successMessage.set(`${item.name} zur Log-Liste hinzugefügt.`);
       this.closeAmountPicker();
       this.sheetMode.set(this.returnSheetMode());
@@ -2214,8 +2396,7 @@ export class TodayComponent implements OnInit {
   private addToFoodQueue(
     item: QuickItem,
     amount: number,
-    totals: MacroTotals,
-    mealSlot: MealSlot
+    totals: MacroTotals
   ): void {
     this.foodQueue.update(current => [
       ...current,
@@ -2224,7 +2405,6 @@ export class TodayComponent implements OnInit {
         itemId: item.id,
         itemType: this.isIngredient(item) ? 'ingredient' : 'meal',
         name: item.name,
-        mealSlot,
         amount,
         totals
       }
@@ -2277,6 +2457,39 @@ export class TodayComponent implements OnInit {
     const date = this.parseIsoDate(value);
     date.setDate(date.getDate() + delta);
     return this.formatDate(date);
+  }
+
+  private foodKey(itemType: 'ingredient' | 'meal', itemId: string): string {
+    return `${itemType}:${itemId}`;
+  }
+
+  private foodKeyForItem(item: QuickItem): string {
+    return this.foodKey(this.isIngredient(item) ? 'ingredient' : 'meal', item.id);
+  }
+
+  private normalizeFoodName(value: string): string {
+    return value.trim().toLocaleLowerCase('de-DE').replace(/\s+/g, ' ');
+  }
+
+  private buildHistoricalRecentFoodRefs(entries: Pick<LogEntry, 'entry_type' | 'ref_id' | 'created_at'>[]): FoodRecentRef[] {
+    const seen = new Set<string>();
+    const refs: FoodRecentRef[] = [];
+
+    for (const entry of entries) {
+      const key = this.foodKey(entry.entry_type, entry.ref_id);
+      if (seen.has(key)) {
+        continue;
+      }
+
+      seen.add(key);
+      refs.push({
+        itemId: entry.ref_id,
+        itemType: entry.entry_type,
+        lastLoggedAt: entry.created_at
+      });
+    }
+
+    return refs.slice(0, 24);
   }
 
   private makeLocalId(): string {
@@ -2339,6 +2552,7 @@ export class TodayComponent implements OnInit {
       { data: proteinSummaryData, error: proteinSummaryError },
       { data: gymWindowData, error: gymWindowError },
       { data: proteinWindowData, error: proteinWindowError },
+      { data: recentFoodData, error: recentFoodError },
       { data: proteinPostData, error: proteinPostError },
       { data: stepsPostData, error: stepsPostError },
       { data: profileData, error: profileError }
@@ -2398,6 +2612,13 @@ export class TodayComponent implements OnInit {
         .gte('day', habitWindowStart)
         .lte('day', day),
       this.supabaseService.client
+        .from('log_entries')
+        .select('entry_type,ref_id,created_at')
+        .eq('owner_id', userId)
+        .is('group_id', null)
+        .order('created_at', { ascending: false })
+        .limit(120),
+      this.supabaseService.client
         .from('community_posts')
         .select('id')
         .eq('user_id', userId)
@@ -2420,8 +2641,8 @@ export class TodayComponent implements OnInit {
         .maybeSingle()
     ]);
 
-    if (entryError || summaryError || weightError || stepError || gymPostsError || proteinSummaryError || gymWindowError || proteinWindowError || proteinPostError || stepsPostError || profileError) {
-      throw entryError || summaryError || weightError || stepError || gymPostsError || proteinSummaryError || gymWindowError || proteinWindowError || proteinPostError || stepsPostError || profileError;
+    if (entryError || summaryError || weightError || stepError || gymPostsError || proteinSummaryError || gymWindowError || proteinWindowError || recentFoodError || proteinPostError || stepsPostError || profileError) {
+      throw entryError || summaryError || weightError || stepError || gymPostsError || proteinSummaryError || gymWindowError || proteinWindowError || recentFoodError || proteinPostError || stepsPostError || profileError;
     }
 
     return {
@@ -2437,6 +2658,7 @@ export class TodayComponent implements OnInit {
       proteinDaysWindow: (proteinWindowData || [])
         .filter(row => Number(row.protein) >= this.proteinGoal)
         .map(row => String(row.day)),
+      recentFoodRefs: this.buildHistoricalRecentFoodRefs((recentFoodData || []) as Pick<LogEntry, 'entry_type' | 'ref_id' | 'created_at'>[]),
       proteinMilestonePosted: Boolean(proteinPostData?.id),
       stepsMilestonePosted: Boolean(stepsPostData?.id),
       profile: (profileData as Profile | null) || null

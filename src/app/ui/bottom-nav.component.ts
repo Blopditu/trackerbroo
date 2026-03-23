@@ -28,7 +28,7 @@ interface NavItem {
   template: `
     <nav [class]="containerClasses()" aria-label="Hauptnavigation">
       @if (mode() === 'bottom') {
-        <div class="grid grid-cols-[1fr_1fr_auto_1fr_1fr] items-end gap-0 rounded-[1.55rem] bg-[linear-gradient(180deg,rgba(20,22,21,0.92),rgba(10,11,11,0.94))] px-2 py-2 shadow-[0_-8px_18px_rgba(0,0,0,0.22)] backdrop-blur-lg">
+        <div class="mx-auto grid h-[3.7rem] w-full max-w-[1240px] grid-cols-[1fr_1fr_auto_1fr_1fr] items-end gap-0 px-4 pb-[calc(0.55rem+env(safe-area-inset-bottom))] pt-2 sm:px-6 xl:px-8">
           @for (item of mobileLeadingItems(); track item.key) {
             <a [routerLink]="item.route" [class]="linkClasses(item.key)">
               <lucide-icon [img]="item.icon" class="h-4 w-4" aria-hidden="true"></lucide-icon>
@@ -40,7 +40,7 @@ interface NavItem {
             <a
               routerLink="/today"
               [queryParams]="{ quick: 'menu' }"
-              class="grid h-[3.2rem] w-[3.2rem] -translate-y-2 place-items-center rounded-full bg-[linear-gradient(180deg,#17ef85,#00d86f)] text-[#03140a] shadow-[0_10px_20px_rgba(0,228,117,0.16)] transition active:translate-y-[calc(-0.5rem+1px)]"
+              class="grid h-[3rem] w-[3rem] -translate-y-1 place-items-center rounded-full bg-[linear-gradient(180deg,#19f28a,#03d66d)] text-[#04140b] shadow-[0_8px_16px_rgba(0,228,117,0.12)] transition active:translate-y-[calc(-0.25rem+1px)]"
               aria-label="Schnelllog öffnen"
             >
               <lucide-icon [img]="icons.plus" class="h-[1rem] w-[1rem]" aria-hidden="true"></lucide-icon>
@@ -112,7 +112,7 @@ export class BottomNavComponent {
     if (this.mode() === 'rail') {
       return 'sticky top-[4.65rem] h-[calc(100vh-5.9rem)]';
     }
-    return 'fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-[36rem] px-3 pb-[calc(0.5rem+env(safe-area-inset-bottom))]';
+    return 'fixed inset-x-0 bottom-0 z-30 bg-[linear-gradient(180deg,rgba(11,12,12,0.84),rgba(11,12,12,0.92))] backdrop-blur-md';
   }
 
   linkClasses(key: AppNavKey): string {

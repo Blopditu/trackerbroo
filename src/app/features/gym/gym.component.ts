@@ -62,8 +62,11 @@ export class GymComponent implements OnInit, AfterViewInit, OnDestroy {
   readonly activeSheet = signal<'none' | 'hub' | 'builder' | 'graphs' | 'graph-detail' | 'session-share' | 'session-exit'>('none');
   readonly sessionHubTab = signal<'plans' | 'exercises' | 'help'>('plans');
   readonly workoutSurfaceMode = signal<'workout' | 'history'>('workout');
+  readonly workoutStartedAt = signal<number | null>(null);
+  readonly workoutNow = signal(Date.now());
   readonly workoutHeaderTitle = computed(() => this.facade.selectedOverview()?.dayName || 'Workout Session');
   readonly workoutHeaderMeta = computed(() => this.facade.currentExercise()?.name || 'Aktive Session');
+  readonly workoutElapsedLabel = computed(() => this.formatElapsedWorkoutTime());
 
   readonly dumbbellIcon = Dumbbell;
   readonly barChartIcon = BarChart3;
@@ -72,6 +75,9 @@ export class GymComponent implements OnInit, AfterViewInit, OnDestroy {
   readonly backIcon = ArrowLeft;
   readonly moreIcon = Ellipsis;
 
+  private workoutTimerHandle: ReturnType<typeof setInterval> | null = null;
+  private trackedSessionClientRef: string | null = null;
+
   constructor() {
     effect(() => {
       const sessionActive = Boolean(this.facade.activeSession());
@@ -79,6 +85,26 @@ export class GymComponent implements OnInit, AfterViewInit, OnDestroy {
       if (!sessionActive) {
         this.workoutSurfaceMode.set('workout');
       }
+    });
+
+    effect(() => {
+      const sessionClientRef = this.facade.activeSession()?.sessionClientRef || null;
+      if (!sessionClientRef) {
+        this.trackedSessionClientRef = null;
+        this.workoutStartedAt.set(null);
+        this.stopWorkoutTimer();
+        return;
+      }
+
+      if (this.trackedSessionClientRef === sessionClientRef) {
+        return;
+      }
+
+      this.trackedSessionClientRef = sessionClientRef;
+      const now = Date.now();
+      this.workoutStartedAt.set(now);
+      this.workoutNow.set(now);
+      this.startWorkoutTimer();
     });
   }
 
@@ -92,6 +118,7 @@ export class GymComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.chromeService.setSuppressed(false);
+    this.stopWorkoutTimer();
     this.facade.deactivate(this.readScrollY());
   }
 
@@ -201,5 +228,37 @@ export class GymComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     return window.scrollY || window.pageYOffset || 0;
+  }
+
+  private startWorkoutTimer(): void {
+    this.stopWorkoutTimer();
+    this.workoutTimerHandle = setInterval(() => {
+      this.workoutNow.set(Date.now());
+    }, 1000);
+  }
+
+  private stopWorkoutTimer(): void {
+    if (this.workoutTimerHandle) {
+      clearInterval(this.workoutTimerHandle);
+      this.workoutTimerHandle = null;
+    }
+  }
+
+  private formatElapsedWorkoutTime(): string {
+    const startedAt = this.workoutStartedAt();
+    if (!startedAt) {
+      return '00:00';
+    }
+
+    const totalSeconds = Math.max(0, Math.floor((this.workoutNow() - startedAt) / 1000));
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    if (hours > 0) {
+      return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    }
+
+    return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
   }
 }

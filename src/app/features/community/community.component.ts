@@ -215,7 +215,7 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
   `,
   styles: [`
     .community-page {
-      color: var(--m3-sys-color-on-surface);
+      color: var(--ui-ink);
       gap: var(--layout-gap);
     }
 
@@ -258,7 +258,7 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
     .post-summary,
     .post-foods {
       margin: 0;
-      color: var(--m3-sys-color-on-surface-variant);
+      color: var(--ui-ink-muted);
       font-size: 13px;
       font-weight: 700;
     }
@@ -290,7 +290,7 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
           padding: 0 12px;
           border-radius: 999px;
           background: rgba(20, 22, 21, 0.94);
-          color: var(--m3-sys-color-on-surface-variant);
+          color: var(--ui-ink-muted);
           font-size: 11px;
           font-weight: 800;
           letter-spacing: 0.12em;
@@ -305,7 +305,7 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
       background: rgba(20, 22, 21, 0.94);
       font-size: 12px;
       font-weight: 600;
-      color: var(--m3-sys-color-on-surface-variant);
+      color: var(--ui-ink-muted);
       letter-spacing: 0.04em;
       text-transform: uppercase;
     }
@@ -328,13 +328,13 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
           height: 34px;
           border-radius: 999px;
           background: rgba(20, 22, 21, 0.94);
-          color: var(--m3-sys-color-on-surface-variant);
+          color: var(--ui-ink-muted);
         }
 
     .post-note,
     .comment-item {
       margin: 0;
-      color: var(--m3-sys-color-on-surface);
+      color: var(--ui-ink);
       font-size: 14px;
       font-weight: 500;
     }
@@ -363,7 +363,7 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
     .file-label {
       margin: 0;
       font-size: 13px;
-      color: var(--m3-sys-color-on-surface-variant);
+      color: var(--ui-ink-muted);
       font-weight: 600;
     }
 
@@ -376,7 +376,7 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
     }
 
     .file-name {
-      color: var(--m3-sys-color-on-surface-variant);
+      color: var(--ui-ink-muted);
       font-size: 13px;
       font-weight: 600;
       overflow: hidden;
@@ -406,14 +406,14 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
 
     .action-title {
       margin: 0;
-      color: var(--m3-sys-color-on-surface);
+      color: var(--ui-ink);
       font-size: 15px;
       font-weight: 700;
     }
 
     .action-sub {
       margin: 0;
-      color: var(--m3-sys-color-on-surface-variant);
+      color: var(--ui-ink-muted);
       font-size: 13px;
       font-weight: 600;
     }
@@ -446,7 +446,7 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
     .photo {
       width: 100%;
       border-radius: 16px;
-      background: var(--m3-sys-color-surface-container);
+      background: var(--ui-surface-1);
       min-height: 120px;
       object-fit: cover;
     }

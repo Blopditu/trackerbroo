@@ -6,7 +6,13 @@
 
     <div class="gym-workout-topbar-copy">
       <p>{{ workoutHeaderTitle() }}</p>
-      <strong>{{ workoutHeaderMeta() }}</strong>
+      <div class="gym-workout-topbar-meta">
+        <strong>{{ workoutHeaderMeta() }}</strong>
+        <span class="gym-workout-timer" aria-label="Workout Laufzeit">
+          <lucide-icon [img]="workoutIcon" aria-hidden="true"></lucide-icon>
+          {{ workoutElapsedLabel() }}
+        </span>
+      </div>
     </div>
 
     <button type="button" class="gym-workout-topbar-btn" (click)="openSessionHub('help')" aria-label="Workout Optionen">

@@ -35,6 +35,15 @@ export interface LoadLibraryOptions {
   allowStaleOnError?: boolean;
 }
 
+export interface CreateIngredientInput {
+  name: string;
+  kcal_per_100: number;
+  protein_per_100: number;
+  carbs_per_100: number;
+  fat_per_100: number;
+  source_type?: Ingredient['source_type'];
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -88,6 +97,41 @@ export class LibraryDataService {
 
     this.queryCache.set(this.libraryCacheKey(userId), snapshot, this.libraryTtlMs);
     return snapshot;
+  }
+
+  async createIngredient(userId: string, input: CreateIngredientInput): Promise<Ingredient> {
+    const payload = {
+      owner_id: userId,
+      source_type: input.source_type || 'manual',
+      name: input.name.trim(),
+      kcal_per_100: Number(input.kcal_per_100),
+      protein_per_100: Number(input.protein_per_100),
+      carbs_per_100: Number(input.carbs_per_100),
+      fat_per_100: Number(input.fat_per_100)
+    };
+
+    const { data, error } = await this.supabaseService.client
+      .from('ingredients')
+      .insert(payload)
+      .select('id,owner_id,name,source_type,blv_food_id,swissfir_id,category,reference_unit,source_dataset,base_ingredient_id,kcal_per_100,cost_per_100,market_name,protein_per_100,carbs_per_100,fat_per_100,brand,created_at')
+      .single();
+
+    if (error || !data) {
+      throw error || new Error('Zutat konnte nicht erstellt werden');
+    }
+
+    const createdIngredient = data as Ingredient;
+    const currentSnapshot = this.getCachedIngredientsSnapshot(userId);
+    if (currentSnapshot) {
+      this.setIngredientsSnapshot(userId, {
+        ingredients: [createdIngredient, ...currentSnapshot.ingredients.filter(item => item.id !== createdIngredient.id)],
+        fetchedAt: new Date().toISOString()
+      });
+    } else {
+      this.invalidate(userId);
+    }
+
+    return createdIngredient;
   }
 
   setIngredientsSnapshot(userId: string, snapshot: IngredientsSnapshot): void {

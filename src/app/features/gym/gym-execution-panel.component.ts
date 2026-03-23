@@ -1,7 +1,7 @@
-import { ChangeDetectionStrategy, Component, OnDestroy, computed, effect, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, input, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
-import { LucideAngularModule, Check, Pencil, Timer } from 'lucide-angular';
+import { LucideAngularModule, Check, ChevronDown, Info, Pencil } from 'lucide-angular';
 import {
   TrainingExecutionExercise,
   TrainingExecutionSession,
@@ -25,6 +25,11 @@ interface PreviousPerformanceRow {
 }
 
 interface QuickWeightOption {
+  label: string;
+  value: number;
+}
+
+interface QuickRepOption {
   label: string;
   value: number;
 }
@@ -59,99 +64,92 @@ interface QuickWeightOption {
 
         @if (currentExercise()) {
           <article class="execution-context">
-            <div class="execution-context-copy">
-              <div>
-                <p class="context-kicker">Active Exercise</p>
-                <h3>{{ currentExercise()!.name }}</h3>
+            <div class="execution-context-head">
+              <div class="execution-context-copy">
+                <div>
+                  <p class="context-kicker">Active Exercise</p>
+                  <h3>{{ currentExercise()!.name }}</h3>
+                </div>
+                <p class="execution-context-meta">Übung {{ activeExerciseIndex() + 1 }} / {{ session()!.exercises.length }}</p>
               </div>
-              <p class="muted">Übung {{ activeExerciseIndex() + 1 }} / {{ session()!.exercises.length }} • Satz für Satz durchziehen</p>
+
+              <button
+                type="button"
+                class="context-info-btn"
+                [class.active]="infoExpanded()"
+                [attr.aria-expanded]="infoExpanded()"
+                (click)="toggleInfo()"
+              >
+                <lucide-icon [img]="infoIcon" aria-hidden="true"></lucide-icon>
+                <span>Info</span>
+                <lucide-icon [img]="chevronDownIcon" class="context-info-chevron" aria-hidden="true"></lucide-icon>
+              </button>
             </div>
 
-            <div class="execution-context-grid">
-              <article class="context-stat">
-                <span>Target</span>
-                <strong>{{ targetLabel(currentExercise()!) }}</strong>
-              </article>
-              <article class="context-stat">
-                <span>Equipment</span>
-                <strong>{{ equipmentLabel(currentExercise()!.equipment) }}</strong>
-              </article>
+            @if (infoExpanded()) {
+              <section class="context-info-panel" aria-label="Übungsinfos">
+                <div class="context-info-grid">
+                  <article class="context-info-stat">
+                    <span>Target</span>
+                    <strong>{{ targetLabel(currentExercise()!) }}</strong>
+                  </article>
+                  <article class="context-info-stat">
+                    <span>Equipment</span>
+                    <strong>{{ equipmentLabel(currentExercise()!.equipment) }}</strong>
+                  </article>
+                </div>
 
-              @if (workingPreviousPerformance().length > 0) {
-                <article class="context-ref">
-                  <div class="context-ref-head">
-                    <span>Previous Session Ref</span>
-                    <lucide-icon [img]="timerIcon" aria-hidden="true"></lucide-icon>
-                  </div>
-                  <p>{{ previousSessionSummary() }}</p>
+                <article class="context-info-ref" [class.empty]="workingPreviousPerformance().length === 0">
+                  <span>Previous Session Ref</span>
+                  <p>{{ workingPreviousPerformance().length > 0 ? previousSessionSummary() : 'Noch keine Referenz für diese Übung.' }}</p>
                 </article>
-              } @else {
-                <article class="context-ref empty">
-                  <div class="context-ref-head">
-                    <span>Previous Session Ref</span>
-                  </div>
-                  <p>Noch keine Referenz für diese Übung.</p>
-                </article>
-              }
-            </div>
+              </section>
+            }
 
             @if (mode() === 'workout') {
               <section class="set-flow" aria-label="Satzfolge">
-                @for (setRow of completedSets(); track setRow.clientRef) {
-                  <article class="set-row done">
-                    <div class="set-row-leading done">
-                      <lucide-icon [img]="checkIcon" aria-hidden="true"></lucide-icon>
-                    </div>
-                    <div class="set-row-copy">
-                      <span class="set-row-label">Set {{ setRow.setNumber }}</span>
-                      <strong>{{ formatSetValue(setRow.weightKg, 'kg') }} <span>/</span> {{ formatSetValue(setRow.reps, 'reps') }}</strong>
-                    </div>
-                    <button
-                      type="button"
-                      class="set-row-icon"
-                      (click)="toggleSetComplete.emit(setRow)"
-                      aria-label="Satz erneut öffnen"
-                    >
-                      <lucide-icon [img]="pencilIcon" aria-hidden="true"></lucide-icon>
-                    </button>
-                  </article>
-                }
-
                 @if (activeSet()) {
                   <article class="active-set-card">
                     <div class="active-set-head">
                       <div>
                         <span class="active-set-label">Set {{ activeSet()!.setNumber }}</span>
-                        <p>Active Set</p>
+                        <p>Jetzt eintragen</p>
                       </div>
-                      <div class="active-set-timer">
-                        <lucide-icon [img]="timerIcon" aria-hidden="true"></lucide-icon>
-                        <span>{{ timerLabel() }}</span>
-                      </div>
+                      <span class="active-set-progress">{{ completedSets().length }} / {{ currentExercise()!.sets.length }} erledigt</span>
                     </div>
 
                     <div class="active-set-fields">
                       <label class="active-set-field">
                         <span>Weight (kg)</span>
-                        <input
-                          type="number"
-                          min="0"
-                          step="0.5"
-                          inputmode="decimal"
-                          [value]="activeSet()!.weightKg ?? ''"
-                          (input)="emitSetInput(activeSet()!, 'weight', $event)"
-                        >
+                        <div class="active-set-input-shell">
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.5"
+                            inputmode="decimal"
+                            enterkeyhint="next"
+                            placeholder="0"
+                            [value]="activeSet()!.weightKg ?? ''"
+                            (input)="emitSetInput(activeSet()!, 'weight', $event)"
+                          >
+                          <small>kg</small>
+                        </div>
                       </label>
                       <label class="active-set-field">
                         <span>Reps</span>
-                        <input
-                          type="number"
-                          min="0"
-                          step="1"
-                          inputmode="numeric"
-                          [value]="activeSet()!.reps ?? ''"
-                          (input)="emitSetInput(activeSet()!, 'reps', $event)"
-                        >
+                        <div class="active-set-input-shell">
+                          <input
+                            type="number"
+                            min="0"
+                            step="1"
+                            inputmode="numeric"
+                            enterkeyhint="done"
+                            placeholder="0"
+                            [value]="activeSet()!.reps ?? ''"
+                            (input)="emitSetInput(activeSet()!, 'reps', $event)"
+                          >
+                          <small>reps</small>
+                        </div>
                       </label>
                     </div>
 
@@ -164,42 +162,83 @@ interface QuickWeightOption {
                         }
                       </div>
                     }
-                  </article>
-                }
 
-                @for (setRow of upcomingSets(); track setRow.clientRef) {
-                  <article class="set-row upcoming">
-                    <div class="set-row-leading upcoming">{{ setRow.setNumber }}</div>
-                    <div class="set-row-copy">
-                      <span class="set-row-label">Upcoming</span>
-                      <strong>{{ formatSetValue(setRow.weightKg, 'kg') }} <span>/</span> {{ formatSetValue(setRow.reps, 'reps') }}</strong>
+                    @if (quickRepOptions(currentExercise()!).length > 0) {
+                      <div class="quick-adjust-row reps" role="group" aria-label="Wiederholungen schnell anpassen">
+                        @for (option of quickRepOptions(currentExercise()!); track option.label + '-' + option.value) {
+                          <button type="button" class="quick-adjust-chip rep" (click)="applyQuickReps(activeSet()!, option.value)">
+                            {{ option.label }}
+                          </button>
+                        }
+                      </div>
+                    }
+
+                    <div class="active-set-actions">
+                      <button
+                        mat-flat-button
+                        type="button"
+                        class="action-btn"
+                        (click)="runPrimaryAction()"
+                      >
+                        {{ primaryActionLabel() }}
+                      </button>
+                      <button
+                        mat-flat-button
+                        type="button"
+                        class="action-btn ghost compact"
+                        (click)="finishWorkout.emit()"
+                      >
+                        Finish Workout
+                      </button>
                     </div>
                   </article>
                 }
+
+                @if (completedSets().length > 0) {
+                  <div class="set-section">
+                    <p class="set-section-label">Erledigt</p>
+                    @for (setRow of completedSets(); track setRow.clientRef) {
+                      <article class="set-row done">
+                        <div class="set-row-leading done">
+                          <lucide-icon [img]="checkIcon" aria-hidden="true"></lucide-icon>
+                        </div>
+                        <div class="set-row-copy">
+                          <span class="set-row-label">Set {{ setRow.setNumber }}</span>
+                          <strong>{{ formatSetValue(setRow.weightKg, 'kg') }} <span>/</span> {{ formatSetValue(setRow.reps, 'reps') }}</strong>
+                        </div>
+                        <button
+                          type="button"
+                          class="set-row-icon"
+                          (click)="toggleSetComplete.emit(setRow)"
+                          aria-label="Satz erneut öffnen"
+                        >
+                          <lucide-icon [img]="pencilIcon" aria-hidden="true"></lucide-icon>
+                        </button>
+                      </article>
+                    }
+                  </div>
+                }
+
+                @if (upcomingSets().length > 0) {
+                  <div class="set-section">
+                    <p class="set-section-label">Als Nächstes</p>
+                    @for (setRow of upcomingSets(); track setRow.clientRef) {
+                      <article class="set-row upcoming">
+                        <div class="set-row-leading upcoming">{{ setRow.setNumber }}</div>
+                        <div class="set-row-copy">
+                          <span class="set-row-label">Upcoming</span>
+                          <strong>{{ formatSetValue(setRow.weightKg, 'kg') }} <span>/</span> {{ formatSetValue(setRow.reps, 'reps') }}</strong>
+                        </div>
+                      </article>
+                    }
+                  </div>
+                }
+
               </section>
 
               @if (currentExerciseSaveHint()) {
                 <p class="save-hint">{{ currentExerciseSaveHint() }}</p>
               }
-
-              <div class="execution-actions">
-                <button
-                  mat-flat-button
-                  type="button"
-                  class="action-btn"
-                  (click)="runPrimaryAction()"
-                >
-                  {{ primaryActionLabel() }}
-                </button>
-                <button
-                  mat-flat-button
-                  type="button"
-                  class="action-btn ghost compact"
-                  (click)="finishWorkout.emit()"
-                >
-                  Finish Workout
-                </button>
-              </div>
             } @else {
               <section class="history-mode-block" aria-label="Workout History">
                 <header class="history-mode-head">
@@ -243,7 +282,7 @@ interface QuickWeightOption {
     }
   `
 })
-export class GymExecutionPanelComponent implements OnDestroy {
+export class GymExecutionPanelComponent {
   readonly session = input.required<TrainingExecutionSession | null>();
   readonly activeExerciseIndex = input.required<number>();
   readonly currentExercise = input<TrainingExecutionExercise | null>(null);
@@ -260,10 +299,11 @@ export class GymExecutionPanelComponent implements OnDestroy {
 
   readonly checkIcon = Check;
   readonly pencilIcon = Pencil;
-  readonly timerIcon = Timer;
+  readonly infoIcon = Info;
+  readonly chevronDownIcon = ChevronDown;
   readonly equipmentLabel = equipmentLabel;
   readonly targetLabel = targetLabel;
-  readonly elapsedSeconds = signal(102);
+  readonly infoExpanded = signal(false);
   readonly completedSets = computed(() => this.currentExercise()?.sets.filter(setRow => setRow.isCompleted) ?? []);
   readonly activeSet = computed(() => this.currentFocusSet());
   readonly upcomingSets = computed(() => {
@@ -275,26 +315,17 @@ export class GymExecutionPanelComponent implements OnDestroy {
     return exercise.sets.filter(setRow => !setRow.isCompleted && setRow.clientRef !== currentSet.clientRef);
   });
 
-  private timerHandle: ReturnType<typeof setInterval> | null = null;
+  private lastExerciseSessionId: string | null = null;
 
   constructor() {
     effect(() => {
-      const focusKey = this.currentFocusSet()?.clientRef || null;
-      if (!focusKey || this.mode() !== 'workout') {
-        this.clearTimer();
+      const exerciseSessionId = this.currentExercise()?.sessionExerciseId || null;
+      if (exerciseSessionId === this.lastExerciseSessionId) {
         return;
       }
-
-      this.elapsedSeconds.set(102);
-      this.clearTimer();
-      this.timerHandle = setInterval(() => {
-        this.elapsedSeconds.update(value => value + 1);
-      }, 1000);
+      this.lastExerciseSessionId = exerciseSessionId;
+      this.infoExpanded.set(false);
     });
-  }
-
-  ngOnDestroy(): void {
-    this.clearTimer();
   }
 
   emitSetInput(setRow: TrainingExecutionSet, field: 'weight' | 'reps', event: Event): void {
@@ -339,6 +370,10 @@ export class GymExecutionPanelComponent implements OnDestroy {
     }
 
     return `${firstRow.session_date} • ${firstRow.weight_kg || 0} kg × ${firstRow.reps || 0}`;
+  }
+
+  toggleInfo(): void {
+    this.infoExpanded.update(value => !value);
   }
 
   hasNextExercise(): boolean {
@@ -397,6 +432,33 @@ export class GymExecutionPanelComponent implements OnDestroy {
     this.setInput.emit({ setRow, field: 'weight', value: this.formatWeight(value) });
   }
 
+  quickRepOptions(exercise: TrainingExecutionExercise): QuickRepOption[] {
+    const target = exercise.targetReps;
+    if (!target || target <= 0) {
+      return [];
+    }
+
+    const values = [target - 1, target, target + 1, target + 2].filter(value => value > 0);
+    const seen = new Set<number>();
+
+    return values
+      .filter(value => {
+        if (seen.has(value)) {
+          return false;
+        }
+        seen.add(value);
+        return true;
+      })
+      .map(value => ({
+        label: `${value}`,
+        value
+      }));
+  }
+
+  applyQuickReps(setRow: TrainingExecutionSet, value: number): void {
+    this.setInput.emit({ setRow, field: 'reps', value: String(value) });
+  }
+
   private previousWeightForSet(setNumber: number): number | null {
     return this.workingPreviousPerformance().find(row => row.set_number === setNumber)?.weight_kg ?? null;
   }
@@ -417,19 +479,5 @@ export class GymExecutionPanelComponent implements OnDestroy {
       return 'Jetzt';
     }
     return this.isExerciseComplete(exercise) ? 'Erledigt' : `${exercise.sets.length} Sätze`;
-  }
-
-  timerLabel(): string {
-    const totalSeconds = this.elapsedSeconds();
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-  }
-
-  private clearTimer(): void {
-    if (this.timerHandle) {
-      clearInterval(this.timerHandle);
-      this.timerHandle = null;
-    }
   }
 }

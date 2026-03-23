@@ -487,18 +487,17 @@ export class LibraryFacadeService {
         const confirmedIngredients = this.ingredients().map(item => (item.id === editingIngredient.id ? data as Ingredient : item));
         this.applyLocalLibraryState(confirmedIngredients, this.meals(), this.allMealItems());
       } else {
-        const { data, error } = await this.supabaseService.client
-          .from('ingredients')
-          .insert({ ...payload, owner_id: user.id })
-          .select('id,owner_id,name,source_type,blv_food_id,swissfir_id,category,reference_unit,source_dataset,base_ingredient_id,kcal_per_100,cost_per_100,market_name,protein_per_100,carbs_per_100,fat_per_100,brand,created_at')
-          .single();
-
-        if (error || !data) {
-          throw error || new Error('Zutat konnte nicht erstellt werden');
-        }
+        const data = await this.libraryDataService.createIngredient(user.id, {
+          name: payload.name,
+          kcal_per_100: Number(payload.kcal_per_100),
+          protein_per_100: Number(payload.protein_per_100),
+          carbs_per_100: Number(payload.carbs_per_100),
+          fat_per_100: Number(payload.fat_per_100),
+          source_type: payload.source_type as Ingredient['source_type']
+        });
 
         const confirmedIngredients = this.ingredients().map(item =>
-          item.id === optimisticIngredient.id ? data as Ingredient : item
+          item.id === optimisticIngredient.id ? data : item
         );
         this.applyLocalLibraryState(confirmedIngredients, this.meals(), this.allMealItems());
       }

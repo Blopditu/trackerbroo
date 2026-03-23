@@ -70,13 +70,13 @@ export type HabitState = 'empty' | 'complete' | 'missed';
       line-height: 1.08;
       letter-spacing: -0.03em;
       text-transform: none;
-      color: var(--m3-sys-color-on-surface);
+      color: var(--ui-ink);
       font-weight: 700;
     }
 
     .window {
       font-size: 11px;
-      color: var(--m3-sys-color-on-surface-variant);
+      color: var(--ui-ink-muted);
       font-weight: 600;
     }
 
@@ -102,12 +102,12 @@ export type HabitState = 'empty' | 'complete' | 'missed';
     }
 
     .cell.complete {
-      background: var(--accent, var(--m3-sys-color-primary));
-      box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent, var(--m3-sys-color-primary)) 35%, transparent);
+      background: var(--accent, var(--ui-primary));
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent, var(--ui-primary)) 35%, transparent);
     }
 
     .cell.missed {
-      background: color-mix(in srgb, var(--m3-sys-color-error) 68%, rgba(57, 60, 58, 0.72));
+      background: color-mix(in srgb, var(--ui-error) 68%, rgba(57, 60, 58, 0.72));
     }
 
     .footer {
@@ -116,19 +116,19 @@ export type HabitState = 'empty' | 'complete' | 'missed';
       align-items: center;
       gap: 8px;
       padding-top: 8px;
-      border-top: 1px solid color-mix(in srgb, var(--m3-sys-color-outline-variant) 28%, transparent);
+      border-top: 1px solid color-mix(in srgb, var(--ui-outline) 28%, transparent);
     }
 
     .count {
       font-size: 12px;
-      color: var(--m3-sys-color-on-surface-variant);
+      color: var(--ui-ink-muted);
       font-weight: 600;
     }
 
     .footer-icon {
       width: 15px;
       height: 15px;
-      color: var(--m3-sys-color-on-surface-variant);
+      color: var(--ui-ink-muted);
       flex: 0 0 auto;
     }
 
@@ -163,7 +163,7 @@ export class HabitGridComponent {
   readonly states = input.required<HabitState[]>();
   readonly targetPerWeek = input.required<number>();
   readonly windowLabel = input('Letzte 30 Tage');
-  readonly accentColor = input('var(--m3-sys-color-primary)');
+  readonly accentColor = input('var(--ui-primary)');
   readonly chevronRightIcon = ChevronRight;
 
   readonly recentCompleteCount = computed(() => this.states().slice(-7).filter(state => state === 'complete').length);

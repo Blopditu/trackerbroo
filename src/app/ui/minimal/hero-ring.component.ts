@@ -57,7 +57,7 @@ import { CommonModule } from '@angular/common';
     }
 
     .track {
-      stroke: var(--m3-sys-color-surface-container-highest);
+      stroke: var(--ui-surface-3);
     }
 
     .progress {
@@ -74,7 +74,7 @@ import { CommonModule } from '@angular/common';
       display: grid;
       place-content: center;
       text-align: center;
-      color: var(--m3-sys-color-on-surface);
+      color: var(--ui-ink);
     }
 
     .center strong {
@@ -87,7 +87,7 @@ import { CommonModule } from '@angular/common';
     .center span {
       margin-top: 4px;
       font-size: 13px;
-      color: var(--m3-sys-color-on-surface-variant);
+      color: var(--ui-ink-muted);
       font-weight: 600;
     }
 
@@ -95,7 +95,7 @@ import { CommonModule } from '@angular/common';
       margin: 8px 0 0;
       text-align: center;
       font-size: 13px;
-      color: var(--m3-sys-color-on-surface-variant);
+      color: var(--ui-ink-muted);
       font-weight: 600;
     }
 
@@ -111,7 +111,7 @@ import { CommonModule } from '@angular/common';
 export class HeroRingComponent {
   readonly value = input.required<number>();
   readonly target = input.required<number>();
-  readonly accentColor = input('var(--m3-sys-color-primary)');
+  readonly accentColor = input('var(--ui-primary)');
   readonly showLeftText = input(true);
 
   readonly dashOffset = computed(() => {

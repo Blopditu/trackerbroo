@@ -71,7 +71,7 @@ let sheetTitleIdCounter = 0;
         radial-gradient(circle at top, rgba(0, 228, 117, 0.07), transparent 32%),
         linear-gradient(180deg, rgba(31, 34, 32, 0.98), rgba(17, 18, 18, 0.985));
       border-radius: 32px 32px 0 0;
-      padding: 10px 20px calc(20px + env(safe-area-inset-bottom));
+      padding: 8px 18px calc(16px + env(safe-area-inset-bottom));
       max-height: min(86vh, calc(100vh - 12px - var(--sheet-keyboard-inset, 0px)));
       overflow: auto;
       scroll-padding-bottom: calc(var(--sheet-keyboard-inset, 0px) + 96px);
@@ -100,11 +100,11 @@ let sheetTitleIdCounter = 0;
     }
 
     .drag-handle {
-      width: 48px;
-      height: 5px;
+      width: 44px;
+      height: 4px;
       border-radius: 99px;
       background: rgba(133, 140, 135, 0.44);
-      margin: 0 auto 10px;
+      margin: 0 auto 8px;
       touch-action: none;
       cursor: grab;
       position: relative;
@@ -119,23 +119,23 @@ let sheetTitleIdCounter = 0;
       justify-content: space-between;
       align-items: start;
       gap: 12px;
-      margin-bottom: 14px;
+      margin-bottom: 10px;
     }
 
     h2 {
       margin: 0;
-      font-size: 22px;
-      color: var(--m3-sys-color-on-surface);
+      font-size: 18px;
+      color: var(--ui-ink);
       font-weight: 700;
       letter-spacing: -0.05em;
     }
 
     .close {
       flex: 0 0 auto;
-      width: 44px;
-      height: 44px;
+      width: 38px;
+      height: 38px;
       background: rgba(23, 26, 24, 0.92);
-      color: var(--m3-sys-color-on-surface-variant);
+      color: var(--ui-ink-muted);
       font-size: 12px;
       line-height: 1;
       border-radius: 999px;

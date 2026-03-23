@@ -25,10 +25,10 @@ import { TrainingGraphDataPoint } from '../../core/training/training-data.servic
 
     .progress-range-btn {
       min-height: var(--touch-target-compact);
-      border: 1px solid var(--m3-sys-color-outline-variant);
+      border: 1px solid var(--ui-outline);
       border-radius: 999px;
-      background: var(--m3-sys-color-surface-container-high);
-      color: var(--m3-sys-color-on-surface-variant);
+      background: var(--ui-surface-2);
+      color: var(--ui-ink-muted);
       font-size: 12px;
       font-weight: 700;
       justify-content: center;
@@ -38,9 +38,9 @@ import { TrainingGraphDataPoint } from '../../core/training/training-data.servic
     .graph {
       width: 100%;
       height: 62px;
-      border: 1px solid var(--m3-sys-color-outline-variant);
+      border: 1px solid var(--ui-outline);
       border-radius: 16px;
-      background: var(--m3-sys-color-surface-container);
+      background: var(--ui-surface-1);
     }
 
     .graph.detail {
@@ -49,21 +49,21 @@ import { TrainingGraphDataPoint } from '../../core/training/training-data.servic
 
     .graph polyline {
       fill: none;
-      stroke: var(--m3-sys-color-primary);
+      stroke: var(--ui-primary);
       stroke-width: 2;
       stroke-linecap: round;
       stroke-linejoin: round;
     }
 
     .detail-dot {
-      fill: var(--m3-sys-color-surface-container-highest);
-      stroke: var(--m3-sys-color-primary);
+      fill: var(--ui-surface-3);
+      stroke: var(--ui-primary);
       stroke-width: 0.8;
       cursor: pointer;
     }
 
     .detail-dot.active {
-      fill: var(--m3-sys-color-primary);
+      fill: var(--ui-primary);
       transform: scale(1.2);
       transform-origin: center;
     }

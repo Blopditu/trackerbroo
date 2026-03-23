@@ -66,7 +66,7 @@ export interface AmountPickResult {
     }
 
     .sheet-card {
-      background: linear-gradient(180deg, color-mix(in srgb, var(--m3-sys-color-surface-container-high) 92%, transparent), color-mix(in srgb, var(--m3-sys-color-surface-container) 98%, transparent));
+      background: linear-gradient(180deg, color-mix(in srgb, var(--ui-surface-2) 92%, transparent), color-mix(in srgb, var(--ui-surface-1) 98%, transparent));
       border: 1px solid var(--border-strong);
       border-radius: 32px;
       padding: 1.1rem;
@@ -107,7 +107,7 @@ export interface AmountPickResult {
     .preview {
       border: 1px solid var(--border-strong);
       border-radius: 18px;
-      background: color-mix(in srgb, var(--m3-sys-color-surface) 76%, transparent);
+      background: color-mix(in srgb, var(--ui-surface-0) 76%, transparent);
       padding: 0.8rem;
       display: flex;
       justify-content: space-between;

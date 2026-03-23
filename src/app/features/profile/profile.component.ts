@@ -468,7 +468,7 @@ interface ProfileViewCache {
       height: 84px;
       border-radius: 20px;
       border: 1px solid var(--border-strong);
-      background: var(--m3-sys-color-surface-container-high);
+      background: var(--ui-surface-2);
     }
 
     .avatar-image {
@@ -487,7 +487,7 @@ interface ProfileViewCache {
       margin-top: 1rem;
       border: 1px solid var(--border-strong);
       border-radius: 24px;
-      background: color-mix(in srgb, var(--m3-sys-color-surface) 74%, transparent);
+      background: color-mix(in srgb, var(--ui-surface-0) 74%, transparent);
       padding: 0.95rem 1rem;
       display: flex;
       align-items: center;
@@ -546,7 +546,7 @@ interface ProfileViewCache {
     .sparkline-wrap {
       border: 1px solid var(--border-strong);
       border-radius: 24px;
-      background: color-mix(in srgb, var(--m3-sys-color-surface) 74%, transparent);
+      background: color-mix(in srgb, var(--ui-surface-0) 74%, transparent);
       padding: 0.95rem;
       margin-bottom: 0.65rem;
     }
@@ -562,7 +562,7 @@ interface ProfileViewCache {
       min-height: var(--touch-target-compact);
       border: 1px solid var(--border-strong);
       border-radius: 999px;
-      background: color-mix(in srgb, var(--m3-sys-color-surface) 72%, transparent);
+      background: color-mix(in srgb, var(--ui-surface-0) 72%, transparent);
       color: var(--ink-700);
       font-size: var(--text-xs);
       font-weight: 800;
@@ -574,8 +574,8 @@ interface ProfileViewCache {
 
     .trend-range-btn.active {
       border-color: transparent;
-      background: var(--m3-sys-color-primary);
-      color: var(--m3-sys-color-on-primary);
+      background: var(--ui-primary);
+      color: var(--ui-on-primary);
     }
 
     .sparkline {
@@ -618,8 +618,8 @@ interface ProfileViewCache {
     }
 
     .danger-zone {
-      border-color: var(--m3-sys-color-error);
-      background: var(--m3-sys-color-error-container);
+      border-color: var(--ui-error);
+      background: var(--ui-error-soft);
     }
 
     .subtle {
@@ -637,7 +637,7 @@ interface ProfileViewCache {
     .install-guide-card {
       border: 1px solid var(--border-strong);
       border-radius: 18px;
-      background: var(--m3-sys-color-surface-container-high);
+      background: var(--ui-surface-2);
       padding: 0.85rem;
       display: grid;
       gap: 0.35rem;
@@ -652,9 +652,9 @@ interface ProfileViewCache {
     }
 
     .danger-btn {
-      border-color: var(--m3-sys-color-error);
-      color: var(--m3-sys-color-on-error-container);
-      background: color-mix(in srgb, var(--m3-sys-color-error-container) 90%, var(--m3-sys-color-surface-container-low));
+      border-color: var(--ui-error);
+      color: var(--ui-error-ink);
+      background: color-mix(in srgb, var(--ui-error-soft) 90%, var(--ui-surface-1));
     }
 
     .theme-seed-row {
@@ -687,7 +687,7 @@ interface ProfileViewCache {
       min-height: var(--touch-target-compact);
       border: 1px solid var(--border-strong);
       border-radius: 999px;
-      background: color-mix(in srgb, var(--m3-sys-color-surface) 72%, transparent);
+      background: color-mix(in srgb, var(--ui-surface-0) 72%, transparent);
       color: var(--ink-700);
       font-size: var(--text-xs);
       font-weight: 800;
@@ -697,8 +697,8 @@ interface ProfileViewCache {
 
     .mode-segmented button.active {
       border-color: transparent;
-      background: var(--m3-sys-color-primary);
-      color: var(--m3-sys-color-on-primary);
+      background: var(--ui-primary);
+      color: var(--ui-on-primary);
     }
 
     .theme-preset-grid {
@@ -726,7 +726,7 @@ interface ProfileViewCache {
 
     .theme-advanced summary {
       cursor: pointer;
-      color: var(--m3-sys-color-on-surface);
+      color: var(--ui-ink);
       font-size: var(--text-sm);
       font-weight: 700;
       list-style: none;
@@ -741,7 +741,7 @@ interface ProfileViewCache {
     }
 
     .error-copy {
-      color: var(--m3-sys-color-error);
+      color: var(--ui-error);
     }
   `]
 })

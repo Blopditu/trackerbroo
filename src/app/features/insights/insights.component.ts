@@ -182,7 +182,7 @@ type DetailKind = 'nutrition' | 'weight' | 'workouts' | 'volume';
       min-height: var(--touch-target-compact);
       border-radius: 999px;
       background: rgba(20, 22, 21, 0.96);
-      color: var(--m3-sys-color-on-surface-variant);
+      color: var(--ui-ink-muted);
       font-size: 12px;
       font-weight: 800;
       letter-spacing: 0.18em;
@@ -193,7 +193,7 @@ type DetailKind = 'nutrition' | 'weight' | 'workouts' | 'volume';
 
     .range-btn.active {
       background: linear-gradient(180deg, rgba(28, 40, 33, 0.98), rgba(20, 28, 24, 0.98));
-      color: var(--m3-sys-color-primary);
+      color: var(--ui-primary);
     }
 
     .insights-grid {
@@ -209,7 +209,7 @@ type DetailKind = 'nutrition' | 'weight' | 'workouts' | 'volume';
       width: 100%;
       border-radius: 28px;
       background: linear-gradient(180deg, rgba(28, 30, 29, 0.98), rgba(19, 21, 20, 0.98));
-      color: var(--m3-sys-color-on-surface);
+      color: var(--ui-ink);
       padding: var(--panel-padding);
     }
 
@@ -248,13 +248,13 @@ type DetailKind = 'nutrition' | 'weight' | 'workouts' | 'volume';
       margin: 0;
       font-size: clamp(1.2rem, 3.4vw, 1.5rem);
       font-weight: 700;
-      color: var(--m3-sys-color-on-surface);
+      color: var(--ui-ink);
     }
 
     .meta {
       margin: 0;
       font-size: 12px;
-      color: var(--m3-sys-color-on-surface-variant);
+      color: var(--ui-ink-muted);
       font-weight: 600;
     }
 
@@ -276,15 +276,15 @@ type DetailKind = 'nutrition' | 'weight' | 'workouts' | 'volume';
     .mini-graph polyline,
     .detail-graph polyline {
       fill: none;
-      stroke: var(--m3-sys-color-primary);
+      stroke: var(--ui-primary);
       stroke-width: 2;
       stroke-linecap: round;
       stroke-linejoin: round;
     }
 
     .detail-dot {
-      fill: var(--m3-sys-color-surface-container-highest);
-      stroke: var(--m3-sys-color-primary);
+      fill: var(--ui-surface-3);
+      stroke: var(--ui-primary);
       stroke-width: 0.8;
       cursor: pointer;
       transition: transform var(--motion-duration-short) var(--motion-easing-standard);
@@ -292,12 +292,12 @@ type DetailKind = 'nutrition' | 'weight' | 'workouts' | 'volume';
     }
 
     .detail-dot.active {
-      fill: var(--m3-sys-color-primary);
+      fill: var(--ui-primary);
       transform: scale(1.2);
     }
 
     .detail-dot:focus-visible {
-      outline: 2px solid var(--m3-sys-color-primary);
+      outline: 2px solid var(--ui-primary);
       outline-offset: 2px;
     }
 
@@ -310,13 +310,13 @@ type DetailKind = 'nutrition' | 'weight' | 'workouts' | 'volume';
 
     .detail-head strong {
       font-size: 22px;
-      color: var(--m3-sys-color-on-surface);
+      color: var(--ui-ink);
     }
 
     .detail-note,
     .empty-note {
       margin: 0;
-      color: var(--m3-sys-color-on-surface-variant);
+      color: var(--ui-ink-muted);
       font-size: 12px;
       font-weight: 600;
     }
