@@ -20,7 +20,7 @@ type MaterialColorUtilitiesModule = {
 };
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class ThemeService {
   private readonly document = inject(DOCUMENT);
@@ -60,7 +60,7 @@ export class ThemeService {
     '--m3-sys-color-surface-container': 'surfaceContainer',
     '--m3-sys-color-surface-container-high': 'surfaceContainerHigh',
     '--m3-sys-color-surface-container-highest': 'surfaceContainerHighest',
-    '--m3-sys-color-surface-tint': 'surfaceTint'
+    '--m3-sys-color-surface-tint': 'surfaceTint',
   };
 
   initialize(): void {
@@ -169,8 +169,8 @@ export class ThemeService {
       }
 
       this.updateBrowserChrome(
-        style.getPropertyValue('--m3-sys-color-surface').trim()
-        || materialUtils.hexFromArgb(dynamicColors['surface'].getArgb(scheme))
+        style.getPropertyValue('--m3-sys-color-surface').trim() ||
+          materialUtils.hexFromArgb(dynamicColors['surface'].getArgb(scheme)),
       );
     } catch {
       // Keep fallback CSS vars when dynamic color utilities fail to load.
@@ -179,7 +179,8 @@ export class ThemeService {
 
   private ensureMaterialUtils(): Promise<MaterialColorUtilitiesModule> {
     if (!this.materialUtilsPromise) {
-      this.materialUtilsPromise = import('@material/material-color-utilities') as unknown as Promise<MaterialColorUtilitiesModule>;
+      this.materialUtilsPromise =
+        import('@material/material-color-utilities') as unknown as Promise<MaterialColorUtilitiesModule>;
     }
     return this.materialUtilsPromise;
   }
@@ -221,9 +222,14 @@ export class ThemeService {
       metaTheme.setAttribute('content', themeColor);
     }
 
-    const appleStatusBar = this.document?.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+    const appleStatusBar = this.document?.querySelector(
+      'meta[name="apple-mobile-web-app-status-bar-style"]',
+    );
     if (appleStatusBar) {
-      appleStatusBar.setAttribute('content', this.resolveActiveTheme() === 'dark' ? 'black-translucent' : 'default');
+      appleStatusBar.setAttribute(
+        'content',
+        this.resolveActiveTheme() === 'dark' ? 'black-translucent' : 'default',
+      );
     }
   }
 
@@ -232,7 +238,11 @@ export class ThemeService {
   }
 
   private bindSystemPreferenceListener(): void {
-    if (this.mediaQueryListenerBound || typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+    if (
+      this.mediaQueryListenerBound ||
+      typeof window === 'undefined' ||
+      typeof window.matchMedia !== 'function'
+    ) {
       return;
     }
 

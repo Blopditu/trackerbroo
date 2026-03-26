@@ -2,7 +2,7 @@ import {
   calculateVolume,
   estimateTenRm,
   startOfIsoWeek,
-  suggestNextWeightKg
+  suggestNextWeightKg,
 } from './training-utils';
 
 describe('training-utils', () => {
@@ -25,9 +25,9 @@ describe('training-utils', () => {
         sets: [
           { reps: 10, isWarmup: true },
           { reps: 8, isWarmup: false },
-          { reps: 9, isWarmup: false }
-        ]
-      })
+          { reps: 9, isWarmup: false },
+        ],
+      }),
     ).toBe(72.5);
 
     expect(
@@ -36,9 +36,9 @@ describe('training-utils', () => {
         currentWeightKg: 70,
         sets: [
           { reps: 8, isWarmup: false },
-          { reps: 7, isWarmup: false }
-        ]
-      })
+          { reps: 7, isWarmup: false },
+        ],
+      }),
     ).toBeNull();
   });
 

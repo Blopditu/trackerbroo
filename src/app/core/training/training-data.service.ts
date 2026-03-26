@@ -7,11 +7,11 @@ import {
   TrainingGraphConfig,
   TrainingGraphType,
   TrainingMeasurementType,
-  TrainingPlan
+  TrainingPlan,
 } from '../types';
 import {
   QueueSaveGraphConfigsPayload,
-  TrainingSyncQueueService
+  TrainingSyncQueueService,
 } from './training-sync-queue.service';
 import { addDays, newClientRef, startOfIsoWeek, toIsoDate } from './training-utils';
 
@@ -227,7 +227,7 @@ export interface UpsertMeasurementInput {
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class TrainingDataService {
   private readonly supabaseService = inject(SupabaseService);
@@ -251,7 +251,7 @@ export class TrainingDataService {
       ttlMs: this.dashboardTtlMs,
       forceRefresh,
       allowStaleOnError: true,
-      loader: () => this.fetchDashboardWeek(weekStart)
+      loader: () => this.fetchDashboardWeek(weekStart),
     });
 
     return value;
@@ -266,7 +266,7 @@ export class TrainingDataService {
       ttlMs: this.planOverviewTtlMs,
       forceRefresh,
       allowStaleOnError: true,
-      loader: () => this.fetchPlanOverview(planDayId)
+      loader: () => this.fetchPlanOverview(planDayId),
     });
 
     return value;
@@ -279,7 +279,7 @@ export class TrainingDataService {
       const { error } = await this.supabaseService.client.rpc('training_start_session', {
         p_plan_day_id: planDayId,
         p_session_date: date,
-        p_client_ref: clientRef
+        p_client_ref: clientRef,
       });
 
       if (!error) {
@@ -294,7 +294,7 @@ export class TrainingDataService {
     this.syncQueue.enqueue('start_session', {
       planDayId,
       sessionDate: date,
-      clientRef
+      clientRef,
     });
 
     const overview = await this.getPlanOverview(planDayId, true);
@@ -304,7 +304,7 @@ export class TrainingDataService {
       sessionDate: date,
       planDayId,
       status: 'in_progress',
-      exercises: overview.exercises.map(exercise => ({
+      exercises: overview.exercises.map((exercise) => ({
         sessionExerciseId: `local:${clientRef}:${exercise.sortOrder}`,
         exerciseId: exercise.exerciseId,
         sortOrder: exercise.sortOrder,
@@ -326,9 +326,9 @@ export class TrainingDataService {
           estimated10Rm: null,
           volume: 0,
           isCompleted: false,
-          clientRef: newClientRef('set')
-        }))
-      }))
+          clientRef: newClientRef('set'),
+        })),
+      })),
     };
   }
 
@@ -353,7 +353,9 @@ export class TrainingDataService {
 
     const { data: exercisesData, error: exerciseError } = await this.supabaseService.client
       .from('training_session_exercises')
-      .select('id,exercise_id,exercise_name,equipment,primary_muscle,secondary_muscles,images,type,planned_sets,target_reps,target_seconds,sort_order')
+      .select(
+        'id,exercise_id,exercise_name,equipment,primary_muscle,secondary_muscles,images,type,planned_sets,target_reps,target_seconds,sort_order',
+      )
       .eq('session_id', session.id)
       .order('sort_order', { ascending: true });
 
@@ -362,11 +364,10 @@ export class TrainingDataService {
     }
 
     const exerciseRows = (exercisesData || []) as SessionExerciseRow[];
-    const sessionExerciseIds = exerciseRows.map(row => row.id);
+    const sessionExerciseIds = exerciseRows.map((row) => row.id);
 
-    const logRows = sessionExerciseIds.length > 0
-      ? await this.fetchSetLogs(sessionExerciseIds)
-      : [];
+    const logRows =
+      sessionExerciseIds.length > 0 ? await this.fetchSetLogs(sessionExerciseIds) : [];
 
     const logsByExercise = new Map<string, SetLogRow[]>();
     for (const log of logRows) {
@@ -381,9 +382,13 @@ export class TrainingDataService {
       sessionDate: session.session_date,
       planDayId: session.plan_day_id,
       status: session.status as 'in_progress' | 'completed' | 'aborted',
-      exercises: exerciseRows.map(exercise => {
-        const existingLogs = (logsByExercise.get(exercise.id) || []).sort((a, b) => a.set_number - b.set_number);
-        const bySet = new Map(existingLogs.map(log => [`${log.is_warmup}-${log.set_number}`, log]));
+      exercises: exerciseRows.map((exercise) => {
+        const existingLogs = (logsByExercise.get(exercise.id) || []).sort(
+          (a, b) => a.set_number - b.set_number,
+        );
+        const bySet = new Map(
+          existingLogs.map((log) => [`${log.is_warmup}-${log.set_number}`, log]),
+        );
 
         const sets: TrainingExecutionSet[] = [];
         for (let setNumber = 1; setNumber <= exercise.planned_sets; setNumber += 1) {
@@ -399,7 +404,7 @@ export class TrainingDataService {
             estimated10Rm: row?.estimated_10rm || null,
             volume: Number(row?.volume || 0),
             isCompleted: Boolean(row?.is_completed),
-            clientRef: row?.client_ref || newClientRef('set')
+            clientRef: row?.client_ref || newClientRef('set'),
           });
         }
 
@@ -415,9 +420,9 @@ export class TrainingDataService {
           plannedSets: exercise.planned_sets,
           primaryMuscle: exercise.primary_muscle,
           secondaryMuscles: exercise.secondary_muscles || [],
-          sets
+          sets,
         };
-      })
+      }),
     };
   }
 
@@ -431,7 +436,7 @@ export class TrainingDataService {
       reps: input.reps,
       durationSeconds: input.durationSeconds,
       isCompleted: input.isCompleted,
-      clientRef: input.clientRef || newClientRef('set')
+      clientRef: input.clientRef || newClientRef('set'),
     };
 
     if (!this.isOnline()) {
@@ -448,7 +453,7 @@ export class TrainingDataService {
       p_reps: payload.reps,
       p_duration_seconds: payload.durationSeconds,
       p_is_completed: payload.isCompleted,
-      p_client_ref: payload.clientRef
+      p_client_ref: payload.clientRef,
     });
 
     if (error) {
@@ -463,7 +468,7 @@ export class TrainingDataService {
     }
 
     const { error } = await this.supabaseService.client.rpc('training_complete_session_by_client', {
-      p_session_client_ref: sessionClientRef
+      p_session_client_ref: sessionClientRef,
     });
 
     if (error) {
@@ -476,15 +481,17 @@ export class TrainingDataService {
   async getPreviousPerformance(
     exerciseId: string,
     beforeDate: string,
-    forceRefresh = false
-  ): Promise<Array<{
-    session_date: string;
-    set_number: number;
-    is_warmup: boolean;
-    weight_kg: number | null;
-    reps: number | null;
-    estimated_10rm: number | null;
-  }>> {
+    forceRefresh = false,
+  ): Promise<
+    Array<{
+      session_date: string;
+      set_number: number;
+      is_warmup: boolean;
+      weight_kg: number | null;
+      reps: number | null;
+      estimated_10rm: number | null;
+    }>
+  > {
     const user = this.requireUser();
     const cacheKey = `training:previous-performance:${user.id}:${exerciseId}:${beforeDate}`;
 
@@ -494,10 +501,13 @@ export class TrainingDataService {
       forceRefresh,
       allowStaleOnError: true,
       loader: async () => {
-        const { data, error } = await this.supabaseService.client.rpc('training_previous_exercise_performance', {
-          p_exercise_id: exerciseId,
-          p_before: beforeDate
-        });
+        const { data, error } = await this.supabaseService.client.rpc(
+          'training_previous_exercise_performance',
+          {
+            p_exercise_id: exerciseId,
+            p_before: beforeDate,
+          },
+        );
 
         if (error) {
           throw error;
@@ -511,7 +521,7 @@ export class TrainingDataService {
           reps: number | null;
           estimated_10rm: number | null;
         }>;
-      }
+      },
     });
 
     return value;
@@ -529,7 +539,9 @@ export class TrainingDataService {
       loader: async () => {
         const { data, error } = await this.supabaseService.client
           .from('training_plans')
-          .select('id,user_id,name,days_per_week,duration_weeks,start_date,is_active,created_at,updated_at')
+          .select(
+            'id,user_id,name,days_per_week,duration_weeks,start_date,is_active,created_at,updated_at',
+          )
           .eq('user_id', user.id)
           .order('is_active', { ascending: false })
           .order('created_at', { ascending: false });
@@ -539,7 +551,7 @@ export class TrainingDataService {
         }
 
         return (data || []) as TrainingPlan[];
-      }
+      },
     });
 
     return value;
@@ -591,7 +603,7 @@ export class TrainingDataService {
       duration_weeks: input.durationWeeks,
       start_date: input.startDate,
       is_active: input.isActive,
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     };
 
     const { data: planData, error: planError } = input.id
@@ -624,7 +636,7 @@ export class TrainingDataService {
         throw existingDaysError;
       }
 
-      const dayIds = (existingDays || []).map(day => String(day.id));
+      const dayIds = (existingDays || []).map((day) => String(day.id));
       if (dayIds.length > 0) {
         const { error: deleteExercisesError } = await this.supabaseService.client
           .from('training_day_exercises')
@@ -652,7 +664,7 @@ export class TrainingDataService {
         day_number: index + 1,
         name: day.name,
         target_muscles: day.targetMuscles,
-        sort_order: index + 1
+        sort_order: index + 1,
       }));
 
       const { data: dayRows, error: dayError } = await this.supabaseService.client
@@ -692,7 +704,7 @@ export class TrainingDataService {
             sets: exercise.sets,
             target_reps: exercise.targetReps,
             target_seconds: exercise.targetSeconds,
-            sort_order: exerciseIndex + 1
+            sort_order: exerciseIndex + 1,
           });
         });
       }
@@ -724,7 +736,9 @@ export class TrainingDataService {
       loader: async () => {
         const { data, error } = await this.supabaseService.client
           .from('training_exercises')
-          .select('id,owner_id,name,equipment,primary_muscle,secondary_muscles,images,type,is_system,created_at,updated_at')
+          .select(
+            'id,owner_id,name,equipment,primary_muscle,secondary_muscles,images,type,is_system,created_at,updated_at',
+          )
           .or(`is_system.eq.true,owner_id.eq.${user.id}`)
           .order('is_system', { ascending: false })
           .order('name', { ascending: true });
@@ -734,7 +748,7 @@ export class TrainingDataService {
         }
 
         return (data || []) as TrainingExercise[];
-      }
+      },
     });
 
     return value;
@@ -750,18 +764,16 @@ export class TrainingDataService {
   }): Promise<void> {
     const user = this.requireUser();
 
-    const { error } = await this.supabaseService.client
-      .from('training_exercises')
-      .insert({
-        owner_id: user.id,
-        name: input.name,
-        equipment: input.equipment,
-        type: input.type,
-        primary_muscle: input.primaryMuscle,
-        secondary_muscles: input.secondaryMuscles,
-        images: input.images,
-        is_system: false
-      });
+    const { error } = await this.supabaseService.client.from('training_exercises').insert({
+      owner_id: user.id,
+      name: input.name,
+      equipment: input.equipment,
+      type: input.type,
+      primary_muscle: input.primaryMuscle,
+      secondary_muscles: input.secondaryMuscles,
+      images: input.images,
+      is_system: false,
+    });
 
     if (error) {
       throw error;
@@ -782,7 +794,9 @@ export class TrainingDataService {
       loader: async () => {
         const { data, error } = await this.supabaseService.client
           .from('training_graph_configs')
-          .select('id,user_id,graph_type,exercise_id,muscle_group,position,settings,created_at,updated_at')
+          .select(
+            'id,user_id,graph_type,exercise_id,muscle_group,position,settings,created_at,updated_at',
+          )
           .eq('user_id', user.id)
           .order('position', { ascending: true });
 
@@ -805,7 +819,7 @@ export class TrainingDataService {
             position: 1,
             settings: {},
             created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
+            updated_at: new Date().toISOString(),
           },
           {
             id: 'local-total-volume',
@@ -816,7 +830,7 @@ export class TrainingDataService {
             position: 2,
             settings: {},
             created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
+            updated_at: new Date().toISOString(),
           },
           {
             id: 'local-bodyweight',
@@ -827,10 +841,10 @@ export class TrainingDataService {
             position: 3,
             settings: {},
             created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          }
+            updated_at: new Date().toISOString(),
+          },
         ];
-      }
+      },
     });
 
     return value;
@@ -858,14 +872,14 @@ export class TrainingDataService {
       const { error: insertError } = await this.supabaseService.client
         .from('training_graph_configs')
         .insert(
-          configs.map(config => ({
+          configs.map((config) => ({
             user_id: user.id,
             graph_type: config.graph_type,
             exercise_id: config.exercise_id,
             muscle_group: config.muscle_group,
             position: config.position,
-            settings: config.settings
-          }))
+            settings: config.settings,
+          })),
         );
 
       if (insertError) {
@@ -890,18 +904,18 @@ export class TrainingDataService {
           p_from: query.from || null,
           p_to: query.to || null,
           p_exercise_id: query.exerciseId || null,
-          p_muscle_group: query.muscleGroup || null
+          p_muscle_group: query.muscleGroup || null,
         });
 
         if (error) {
           throw error;
         }
 
-        return ((data || []) as TrainingGraphDataPoint[]).map(point => ({
+        return ((data || []) as TrainingGraphDataPoint[]).map((point) => ({
           point_date: String(point.point_date),
-          point_value: Number(point.point_value)
+          point_value: Number(point.point_value),
         }));
-      }
+      },
     });
 
     return value;
@@ -911,7 +925,7 @@ export class TrainingDataService {
     exerciseId: string,
     from?: string,
     to?: string,
-    forceRefresh = false
+    forceRefresh = false,
   ): Promise<TrainingGraphDataPoint[]> {
     const user = this.requireUser();
     const cacheKey = `training:progress:${user.id}:exercise_volume:${exerciseId}:${from || ''}:${to || ''}`;
@@ -922,21 +936,24 @@ export class TrainingDataService {
       forceRefresh,
       allowStaleOnError: true,
       loader: async () => {
-        const { data, error } = await this.supabaseService.client.rpc('training_exercise_volume_series', {
-          p_exercise_id: exerciseId,
-          p_from: from || null,
-          p_to: to || null
-        });
+        const { data, error } = await this.supabaseService.client.rpc(
+          'training_exercise_volume_series',
+          {
+            p_exercise_id: exerciseId,
+            p_from: from || null,
+            p_to: to || null,
+          },
+        );
 
         if (error) {
           throw error;
         }
 
-        return ((data || []) as TrainingGraphDataPoint[]).map(point => ({
+        return ((data || []) as TrainingGraphDataPoint[]).map((point) => ({
           point_date: String(point.point_date),
-          point_value: Number(point.point_value)
+          point_value: Number(point.point_value),
         }));
-      }
+      },
     });
 
     return value;
@@ -967,7 +984,7 @@ export class TrainingDataService {
       this.syncQueue.enqueue('upsert_measurement', {
         type: input.type,
         value: input.value,
-        measuredOn: input.measuredOn
+        measuredOn: input.measuredOn,
       });
       return;
     }
@@ -977,16 +994,16 @@ export class TrainingDataService {
         user_id: user.id,
         type: input.type,
         value: input.value,
-        measured_on: input.measuredOn
+        measured_on: input.measuredOn,
       },
-      { onConflict: 'user_id,type,measured_on' }
+      { onConflict: 'user_id,type,measured_on' },
     );
 
     if (error) {
       this.syncQueue.enqueue('upsert_measurement', {
         type: input.type,
         value: input.value,
-        measuredOn: input.measuredOn
+        measuredOn: input.measuredOn,
       });
       return;
     }
@@ -997,16 +1014,16 @@ export class TrainingDataService {
           user_id: user.id,
           logged_on: input.measuredOn,
           weight_kg: input.value,
-          note: null
+          note: null,
         },
-        { onConflict: 'user_id,logged_on' }
+        { onConflict: 'user_id,logged_on' },
       );
 
       if (weightError) {
         this.syncQueue.enqueue('upsert_measurement', {
           type: input.type,
           value: input.value,
-          measuredOn: input.measuredOn
+          measuredOn: input.measuredOn,
         });
       }
     }
@@ -1024,7 +1041,11 @@ export class TrainingDataService {
       forceRefresh,
       allowStaleOnError: true,
       loader: async () => {
-        const [{ data: sessionsData, error: sessionsError }, { data: profileData }, { data: weightData }] = await Promise.all([
+        const [
+          { data: sessionsData, error: sessionsError },
+          { data: profileData },
+          { data: weightData },
+        ] = await Promise.all([
           this.supabaseService.client
             .from('training_sessions')
             .select('session_date')
@@ -1043,15 +1064,17 @@ export class TrainingDataService {
             .eq('user_id', user.id)
             .order('logged_on', { ascending: false })
             .limit(1)
-            .maybeSingle()
+            .maybeSingle(),
         ]);
 
         if (sessionsError) {
           throw sessionsError;
         }
 
-        const dates = (sessionsData || []).map(item => String(item.session_date));
-        const weekSet = new Set(dates.map(date => toIsoDate(startOfIsoWeek(new Date(`${date}T00:00:00`)))));
+        const dates = (sessionsData || []).map((item) => String(item.session_date));
+        const weekSet = new Set(
+          dates.map((date) => toIsoDate(startOfIsoWeek(new Date(`${date}T00:00:00`)))),
+        );
 
         let streak = 0;
         let cursor = startOfIsoWeek(new Date());
@@ -1068,9 +1091,11 @@ export class TrainingDataService {
           totalWorkouts: dates.length,
           currentStreakWeeks: streak,
           gymName: (profileData as { gym_name?: string | null } | null)?.gym_name || null,
-          latestBodyweight: weightData ? Number((weightData as { weight_kg: number }).weight_kg) : null
+          latestBodyweight: weightData
+            ? Number((weightData as { weight_kg: number }).weight_kg)
+            : null,
         };
-      }
+      },
     });
 
     return value;
@@ -1088,9 +1113,12 @@ export class TrainingDataService {
     const weekStartDate = new Date(`${weekStart}T00:00:00`);
     const weekEnd = toIsoDate(addDays(weekStartDate, 6));
 
-    const { data, error } = await this.supabaseService.client.rpc('training_dashboard_week_snapshot', {
-      p_week_start: weekStart
-    });
+    const { data, error } = await this.supabaseService.client.rpc(
+      'training_dashboard_week_snapshot',
+      {
+        p_week_start: weekStart,
+      },
+    );
 
     if (error) {
       throw error;
@@ -1105,7 +1133,7 @@ export class TrainingDataService {
       weekdays.push({
         iso,
         label: day.toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric' }),
-        isToday: iso === toIsoDate(new Date())
+        isToday: iso === toIsoDate(new Date()),
       });
     }
 
@@ -1115,7 +1143,7 @@ export class TrainingDataService {
         weekEnd,
         days: weekdays,
         activePlan: null,
-        workoutDays: []
+        workoutDays: [],
       };
     }
 
@@ -1130,17 +1158,17 @@ export class TrainingDataService {
         name: first.plan_name,
         durationWeeks: Number(first.duration_weeks),
         startDate: first.start_date,
-        weekNumber: Number(first.week_number || 1)
+        weekNumber: Number(first.week_number || 1),
       },
-      workoutDays: rows.map(row => ({
+      workoutDays: rows.map((row) => ({
         dayId: row.day_id,
         dayNumber: Number(row.day_number),
         name: row.day_name,
         exerciseCount: Number(row.exercise_count || 0),
         thumbnails: row.exercise_thumbnails || [],
         completed: Boolean(row.completed),
-        currentSessionClientRef: row.current_session_client_ref
-      }))
+        currentSessionClientRef: row.current_session_client_ref,
+      })),
     };
   }
 
@@ -1173,11 +1201,18 @@ export class TrainingDataService {
       throw planError || new Error('Plan not found');
     }
 
-    const plan = planData as { id: string; name: string; duration_weeks: number; start_date: string | null };
+    const plan = planData as {
+      id: string;
+      name: string;
+      duration_weeks: number;
+      start_date: string | null;
+    };
 
     const { data: exerciseData, error: exerciseError } = await this.supabaseService.client
       .from('training_day_exercises')
-      .select('id,sets,target_reps,target_seconds,sort_order,exercise:training_exercises(id,owner_id,name,equipment,primary_muscle,secondary_muscles,images,type,is_system,created_at,updated_at)')
+      .select(
+        'id,sets,target_reps,target_seconds,sort_order,exercise:training_exercises(id,owner_id,name,equipment,primary_muscle,secondary_muscles,images,type,is_system,created_at,updated_at)',
+      )
       .eq('day_id', planDayId)
       .order('sort_order', { ascending: true });
 
@@ -1187,7 +1222,7 @@ export class TrainingDataService {
 
     const exerciseRows = (exerciseData || []) as unknown as PlanDayExerciseJoinedRow[];
 
-    const exercises: TrainingPlanOverviewExercise[] = exerciseRows.map(row => ({
+    const exercises: TrainingPlanOverviewExercise[] = exerciseRows.map((row) => ({
       dayExerciseId: row.id,
       exerciseId: row.exercise.id,
       name: row.exercise.name,
@@ -1198,12 +1233,18 @@ export class TrainingDataService {
       targetSeconds: row.target_seconds,
       sortOrder: row.sort_order,
       primaryMuscle: row.exercise.primary_muscle,
-      secondaryMuscles: row.exercise.secondary_muscles || []
+      secondaryMuscles: row.exercise.secondary_muscles || [],
     }));
 
     const totalSets = exercises.reduce((sum, exercise) => sum + exercise.sets, 0);
     const weekNumber = plan.start_date
-      ? Math.max(1, Math.floor((new Date().getTime() - new Date(`${plan.start_date}T00:00:00`).getTime()) / (1000 * 60 * 60 * 24 * 7)) + 1)
+      ? Math.max(
+          1,
+          Math.floor(
+            (new Date().getTime() - new Date(`${plan.start_date}T00:00:00`).getTime()) /
+              (1000 * 60 * 60 * 24 * 7),
+          ) + 1,
+        )
       : 1;
 
     return {
@@ -1215,14 +1256,16 @@ export class TrainingDataService {
       totalExercises: exercises.length,
       totalSets,
       targetMuscles: (day.target_muscles || []) as string[],
-      exercises
+      exercises,
     };
   }
 
   private async fetchSetLogs(sessionExerciseIds: string[]): Promise<SetLogRow[]> {
     const { data, error } = await this.supabaseService.client
       .from('training_set_logs')
-      .select('id,session_exercise_id,set_number,is_warmup,weight_kg,reps,duration_seconds,volume,estimated_10rm,is_completed,client_ref')
+      .select(
+        'id,session_exercise_id,set_number,is_warmup,weight_kg,reps,duration_seconds,volume,estimated_10rm,is_completed,client_ref',
+      )
       .in('session_exercise_id', sessionExerciseIds)
       .order('set_number', { ascending: true });
 

@@ -43,7 +43,10 @@ import { LibraryMealListRow, formatMacroValue, roundKcal } from './library-view-
           </article>
         }
         @if (meals().length === 0) {
-          <p class="empty-state">Noch keine Mahlzeiten. Lege deine erste Mahlzeit an, damit du später schneller loggen kannst.</p>
+          <p class="empty-state">
+            Noch keine Mahlzeiten. Lege deine erste Mahlzeit an, damit du später schneller loggen
+            kannst.
+          </p>
         }
       </div>
 
@@ -55,7 +58,7 @@ import { LibraryMealListRow, formatMacroValue, roundKcal } from './library-view-
         </div>
       }
     }
-  `
+  `,
 })
 export class LibraryMealsTabComponent {
   readonly loading = input.required<boolean>();

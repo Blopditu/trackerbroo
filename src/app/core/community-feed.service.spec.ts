@@ -9,19 +9,17 @@ import { CommunityPost } from './types';
 class QueryCacheStub {
   private readonly store = new Map<string, unknown>();
 
-  readonly getOrLoad = vi.fn(async <T>(options: {
-    key: string;
-    loader: () => Promise<T>;
-    forceRefresh?: boolean;
-  }) => {
-    if (!options.forceRefresh && this.store.has(options.key)) {
-      return { value: this.store.get(options.key) as T, source: 'cache' as const };
-    }
+  readonly getOrLoad = vi.fn(
+    async <T>(options: { key: string; loader: () => Promise<T>; forceRefresh?: boolean }) => {
+      if (!options.forceRefresh && this.store.has(options.key)) {
+        return { value: this.store.get(options.key) as T, source: 'cache' as const };
+      }
 
-    const value = await options.loader();
-    this.store.set(options.key, value);
-    return { value, source: 'network' as const };
-  });
+      const value = await options.loader();
+      this.store.set(options.key, value);
+      return { value, source: 'network' as const };
+    },
+  );
 
   readonly set = vi.fn((key: string, value: unknown) => {
     this.store.set(key, value);
@@ -48,29 +46,32 @@ function createSupabaseClientMock(posts: CommunityPost[], newestPost = posts[0])
                     order: vi.fn(() => ({
                       limit: vi.fn(() => ({
                         maybeSingle: vi.fn(async () => ({
-                          data: newestPost ? { id: newestPost.id, created_at: newestPost.created_at } : null,
-                          error: null
-                        }))
-                      }))
-                    }))
-                  }))
+                          data: newestPost
+                            ? { id: newestPost.id, created_at: newestPost.created_at }
+                            : null,
+                          error: null,
+                        })),
+                      })),
+                    })),
+                  })),
                 };
               }
 
               const result = { data: posts, error: null };
               const queryResult = {
                 or: vi.fn(async () => result),
-                then: (resolve: (value: typeof result) => unknown) => Promise.resolve(result).then(resolve)
+                then: (resolve: (value: typeof result) => unknown) =>
+                  Promise.resolve(result).then(resolve),
               };
 
               return {
                 order: vi.fn(() => ({
                   order: vi.fn(() => ({
-                    limit: vi.fn(() => queryResult)
+                    limit: vi.fn(() => queryResult),
                   })),
                 })),
               };
-            })
+            }),
           };
         }
 
@@ -78,17 +79,17 @@ function createSupabaseClientMock(posts: CommunityPost[], newestPost = posts[0])
           return {
             select: vi.fn(() => ({
               in: vi.fn(() => ({
-                order: vi.fn(async () => ({ data: [], error: null }))
-              }))
-            }))
+                order: vi.fn(async () => ({ data: [], error: null })),
+              })),
+            })),
           };
         }
 
         if (table === 'profiles') {
           return {
             select: vi.fn(() => ({
-              in: vi.fn(async () => ({ data: [], error: null }))
-            }))
+              in: vi.fn(async () => ({ data: [], error: null })),
+            })),
           };
         }
 
@@ -97,24 +98,26 @@ function createSupabaseClientMock(posts: CommunityPost[], newestPost = posts[0])
       storage: {
         from: vi.fn(() => ({
           createSignedUrl: vi.fn(),
-          getPublicUrl: vi.fn(() => ({ data: { publicUrl: '' } }))
-        }))
-      }
-    }
+          getPublicUrl: vi.fn(() => ({ data: { publicUrl: '' } })),
+        })),
+      },
+    },
   };
 }
 
 describe('CommunityFeedService', () => {
-  const posts: CommunityPost[] = [{
-    id: 'post-2',
-    user_id: 'user-2',
-    post_type: 'gym_checkin',
-    day: '2026-03-19',
-    note: 'Lifted',
-    summary: null,
-    photo_url: null,
-    created_at: '2026-03-19T10:00:00Z'
-  }];
+  const posts: CommunityPost[] = [
+    {
+      id: 'post-2',
+      user_id: 'user-2',
+      post_type: 'gym_checkin',
+      day: '2026-03-19',
+      note: 'Lifted',
+      summary: null,
+      photo_url: null,
+      created_at: '2026-03-19T10:00:00Z',
+    },
+  ];
 
   let service: CommunityFeedService;
   let queryCache: QueryCacheStub;
@@ -128,8 +131,8 @@ describe('CommunityFeedService', () => {
         CommunityFeedService,
         { provide: QueryCacheService, useValue: queryCache as unknown as QueryCacheService },
         { provide: SupabaseService, useValue: { client: supabase.client } },
-        { provide: LibraryDataService, useValue: {} }
-      ]
+        { provide: LibraryDataService, useValue: {} },
+      ],
     });
 
     service = TestBed.inject(CommunityFeedService);
@@ -141,24 +144,28 @@ describe('CommunityFeedService', () => {
 
     expect(first.posts).toEqual(posts);
     expect(second.posts).toEqual(posts);
-    expect(queryCache.getOrLoad).toHaveBeenCalledWith(expect.objectContaining({
-      key: 'community:feed:first-page:user-1'
-    }));
-    expect(queryCache.getFresh('community:feed:first-page:user-1')).toEqual(expect.objectContaining({ posts }));
+    expect(queryCache.getOrLoad).toHaveBeenCalledWith(
+      expect.objectContaining({
+        key: 'community:feed:first-page:user-1',
+      }),
+    );
+    expect(queryCache.getFresh('community:feed:first-page:user-1')).toEqual(
+      expect.objectContaining({ posts }),
+    );
   });
 
   it('warms the first-page cache when newer posts exist', async () => {
     const warmed = await service.checkForNewPosts(
       'user-1',
       { id: 'post-1', createdAt: '2026-03-18T10:00:00Z' },
-      10
+      10,
     );
 
     expect(warmed).toBe(true);
     expect(queryCache.set).toHaveBeenCalledWith(
       'community:feed:first-page:user-1',
       expect.objectContaining({ posts }),
-      expect.any(Number)
+      expect.any(Number),
     );
   });
 });

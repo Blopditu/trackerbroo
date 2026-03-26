@@ -5,7 +5,7 @@ import {
   CommunityFeedCursor,
   CommunityFeedPage,
   CommunityFeedService,
-  CommunityProfileDirectoryEntry
+  CommunityProfileDirectoryEntry,
 } from '../../core/community-feed.service';
 import { CommunityComment, CommunityPost } from '../../core/types';
 
@@ -15,7 +15,7 @@ interface DayGroup {
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class CommunityFacadeService {
   readonly pageSize = 10;
@@ -108,12 +108,13 @@ export class CommunityFacadeService {
     try {
       await this.communityFeed.ensureProteinMilestonePost(user.id, today);
       const cachedPage = !forceRefresh ? this.communityFeed.getCachedFirstPage(user.id) : null;
-      const page = cachedPage
-        || await this.communityFeed.fetchFeedPage(null, this.pageSize, {
+      const page =
+        cachedPage ||
+        (await this.communityFeed.fetchFeedPage(null, this.pageSize, {
           userId: user.id,
           forceRefresh,
-          allowCachedFirstPage: true
-        });
+          allowCachedFirstPage: true,
+        }));
       this.applyPage(page, 'replace');
     } finally {
       this.loadingInitial.set(false);
@@ -128,7 +129,7 @@ export class CommunityFacadeService {
     this.loadingMore.set(true);
     try {
       const page = await this.communityFeed.fetchFeedPage(this.nextCursor(), this.pageSize, {
-        allowCachedFirstPage: false
+        allowCachedFirstPage: false,
       });
       this.applyPage(page, 'append');
     } finally {
@@ -137,7 +138,7 @@ export class CommunityFacadeService {
   }
 
   setCommentInput(postId: string, value: string): void {
-    this.commentInputs.update(current => ({ ...current, [postId]: value }));
+    this.commentInputs.update((current) => ({ ...current, [postId]: value }));
   }
 
   async submitComment(postId: string): Promise<void> {
@@ -156,7 +157,7 @@ export class CommunityFacadeService {
       .insert({
         post_id: postId,
         user_id: user.id,
-        comment_text: text
+        comment_text: text,
       })
       .select('*')
       .single();
@@ -166,11 +167,11 @@ export class CommunityFacadeService {
     }
 
     this.setCommentInput(postId, '');
-    this.commentsByPost.update(current => {
+    this.commentsByPost.update((current) => {
       const existing = current[postId] || [];
       return {
         ...current,
-        [postId]: [...existing, data as CommunityComment]
+        [postId]: [...existing, data as CommunityComment],
       };
     });
   }
@@ -201,13 +202,13 @@ export class CommunityFacadeService {
       throw error;
     }
 
-    this.posts.update(current => current.filter(post => post.id !== postId));
-    this.commentsByPost.update(current => {
+    this.posts.update((current) => current.filter((post) => post.id !== postId));
+    this.commentsByPost.update((current) => {
       const { [postId]: removed, ...rest } = current;
       void removed;
       return rest;
     });
-    this.photoSrcMap.update(current => {
+    this.photoSrcMap.update((current) => {
       const { [postId]: removed, ...rest } = current;
       void removed;
       return rest;
@@ -220,7 +221,7 @@ export class CommunityFacadeService {
     const page = await this.communityFeed.fetchFeedPage(null, this.pageSize, {
       userId,
       forceRefresh: true,
-      allowCachedFirstPage: false
+      allowCachedFirstPage: false,
     });
     this.communityFeed.setCachedFirstPage(userId, page);
     this.applyPage(page, 'replace');
@@ -237,7 +238,7 @@ export class CommunityFacadeService {
       return;
     }
 
-    const existingIds = new Set(this.posts().map(post => post.id));
+    const existingIds = new Set(this.posts().map((post) => post.id));
     const nextPosts = [...this.posts()];
     for (const post of page.posts) {
       if (!existingIds.has(post.id)) {
@@ -247,9 +248,9 @@ export class CommunityFacadeService {
     }
 
     this.posts.set(nextPosts);
-    this.commentsByPost.update(current => ({ ...current, ...page.commentsByPost }));
-    this.profiles.update(current => ({ ...current, ...page.profiles }));
-    this.photoSrcMap.update(current => ({ ...current, ...page.photoSrcMap }));
+    this.commentsByPost.update((current) => ({ ...current, ...page.commentsByPost }));
+    this.profiles.update((current) => ({ ...current, ...page.profiles }));
+    this.photoSrcMap.update((current) => ({ ...current, ...page.photoSrcMap }));
     this.nextCursor.set(page.nextCursor);
     this.hasMore.set(page.hasMore);
   }
@@ -262,7 +263,7 @@ export class CommunityFacadeService {
 
     return {
       id: firstPost.id,
-      createdAt: firstPost.created_at
+      createdAt: firstPost.created_at,
     };
   }
 
@@ -287,7 +288,11 @@ export class CommunityFacadeService {
       return;
     }
 
-    const hasNewPosts = await this.communityFeed.checkForNewPosts(userId, this.currentHead(), this.pageSize);
+    const hasNewPosts = await this.communityFeed.checkForNewPosts(
+      userId,
+      this.currentHead(),
+      this.pageSize,
+    );
     if (hasNewPosts) {
       this.pendingFreshHead.set(true);
     }

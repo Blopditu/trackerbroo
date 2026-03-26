@@ -45,7 +45,7 @@ export interface CreateIngredientInput {
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class LibraryDataService {
   private readonly supabaseService = inject(SupabaseService);
@@ -53,7 +53,10 @@ export class LibraryDataService {
 
   private readonly libraryTtlMs = 1000 * 60 * 60 * 12; // 12h
 
-  async loadIngredients(userId: string, options: LoadLibraryOptions = {}): Promise<IngredientsSnapshot> {
+  async loadIngredients(
+    userId: string,
+    options: LoadLibraryOptions = {},
+  ): Promise<IngredientsSnapshot> {
     const cacheKey = this.ingredientsCacheKey(userId);
 
     const { value } = await this.queryCache.getOrLoad({
@@ -61,7 +64,7 @@ export class LibraryDataService {
       ttlMs: this.libraryTtlMs,
       forceRefresh: options.forceRefresh,
       allowStaleOnError: options.allowStaleOnError,
-      loader: () => this.fetchIngredientsFromNetwork(userId)
+      loader: () => this.fetchIngredientsFromNetwork(userId),
     });
 
     return value;
@@ -75,7 +78,7 @@ export class LibraryDataService {
       ttlMs: this.libraryTtlMs,
       forceRefresh: options.forceRefresh,
       allowStaleOnError: options.allowStaleOnError,
-      loader: () => this.fetchMealsFromNetwork(userId)
+      loader: () => this.fetchMealsFromNetwork(userId),
     });
 
     return value;
@@ -84,7 +87,7 @@ export class LibraryDataService {
   async loadLibrary(userId: string, options: LoadLibraryOptions = {}): Promise<LibrarySnapshot> {
     const [ingredientsSnapshot, mealsSnapshot] = await Promise.all([
       this.loadIngredients(userId, options),
-      this.loadMeals(userId, options)
+      this.loadMeals(userId, options),
     ]);
 
     const snapshot: LibrarySnapshot = {
@@ -92,7 +95,7 @@ export class LibraryDataService {
       meals: mealsSnapshot.meals,
       mealItems: mealsSnapshot.mealItems,
       mealMacros: mealsSnapshot.mealMacros,
-      fetchedAt: new Date().toISOString()
+      fetchedAt: new Date().toISOString(),
     };
 
     this.queryCache.set(this.libraryCacheKey(userId), snapshot, this.libraryTtlMs);
@@ -107,13 +110,15 @@ export class LibraryDataService {
       kcal_per_100: Number(input.kcal_per_100),
       protein_per_100: Number(input.protein_per_100),
       carbs_per_100: Number(input.carbs_per_100),
-      fat_per_100: Number(input.fat_per_100)
+      fat_per_100: Number(input.fat_per_100),
     };
 
     const { data, error } = await this.supabaseService.client
       .from('ingredients')
       .insert(payload)
-      .select('id,owner_id,name,source_type,blv_food_id,swissfir_id,category,reference_unit,source_dataset,base_ingredient_id,kcal_per_100,cost_per_100,market_name,protein_per_100,carbs_per_100,fat_per_100,brand,created_at')
+      .select(
+        'id,owner_id,name,source_type,blv_food_id,swissfir_id,category,reference_unit,source_dataset,base_ingredient_id,kcal_per_100,cost_per_100,market_name,protein_per_100,carbs_per_100,fat_per_100,brand,created_at',
+      )
       .single();
 
     if (error || !data) {
@@ -124,8 +129,11 @@ export class LibraryDataService {
     const currentSnapshot = this.getCachedIngredientsSnapshot(userId);
     if (currentSnapshot) {
       this.setIngredientsSnapshot(userId, {
-        ingredients: [createdIngredient, ...currentSnapshot.ingredients.filter(item => item.id !== createdIngredient.id)],
-        fetchedAt: new Date().toISOString()
+        ingredients: [
+          createdIngredient,
+          ...currentSnapshot.ingredients.filter((item) => item.id !== createdIngredient.id),
+        ],
+        fetchedAt: new Date().toISOString(),
       });
     } else {
       this.invalidate(userId);
@@ -151,19 +159,25 @@ export class LibraryDataService {
   }
 
   getCachedIngredientsSnapshot(userId: string): IngredientsSnapshot | null {
-    return this.queryCache.getFresh<IngredientsSnapshot>(this.ingredientsCacheKey(userId))
-      || this.queryCache.getStale<IngredientsSnapshot>(this.ingredientsCacheKey(userId));
+    return (
+      this.queryCache.getFresh<IngredientsSnapshot>(this.ingredientsCacheKey(userId)) ||
+      this.queryCache.getStale<IngredientsSnapshot>(this.ingredientsCacheKey(userId))
+    );
   }
 
   getCachedMealsSnapshot(userId: string): MealsSnapshot | null {
-    return this.queryCache.getFresh<MealsSnapshot>(this.mealsCacheKey(userId))
-      || this.queryCache.getStale<MealsSnapshot>(this.mealsCacheKey(userId));
+    return (
+      this.queryCache.getFresh<MealsSnapshot>(this.mealsCacheKey(userId)) ||
+      this.queryCache.getStale<MealsSnapshot>(this.mealsCacheKey(userId))
+    );
   }
 
   private async fetchIngredientsFromNetwork(userId: string): Promise<IngredientsSnapshot> {
     const { data, error } = await this.supabaseService.client
       .from('ingredients')
-      .select('id,owner_id,name,source_type,blv_food_id,swissfir_id,category,reference_unit,source_dataset,base_ingredient_id,kcal_per_100,cost_per_100,market_name,protein_per_100,carbs_per_100,fat_per_100,brand,created_at')
+      .select(
+        'id,owner_id,name,source_type,blv_food_id,swissfir_id,category,reference_unit,source_dataset,base_ingredient_id,kcal_per_100,cost_per_100,market_name,protein_per_100,carbs_per_100,fat_per_100,brand,created_at',
+      )
       .eq('owner_id', userId);
 
     if (error) {
@@ -172,12 +186,13 @@ export class LibraryDataService {
 
     return {
       ingredients: (data || []) as Ingredient[],
-      fetchedAt: new Date().toISOString()
+      fetchedAt: new Date().toISOString(),
     };
   }
 
   private async fetchMealsFromNetwork(userId: string): Promise<MealsSnapshot> {
-    const ingredientsSnapshot = this.getCachedIngredientsSnapshot(userId) || await this.fetchIngredientsFromNetwork(userId);
+    const ingredientsSnapshot =
+      this.getCachedIngredientsSnapshot(userId) || (await this.fetchIngredientsFromNetwork(userId));
     const { data: mealsData, error: mealsError } = await this.supabaseService.client
       .from('meals')
       .select('id,owner_id,name,created_at')
@@ -188,14 +203,14 @@ export class LibraryDataService {
     }
 
     const meals = (mealsData || []) as Meal[];
-    const mealIds = meals.map(item => item.id);
+    const mealIds = meals.map((item) => item.id);
     const mealItems = mealIds.length > 0 ? await this.fetchMealItems(mealIds) : [];
 
     return {
       meals,
       mealItems,
       mealMacros: this.buildMealMacros(meals, mealItems, ingredientsSnapshot.ingredients),
-      fetchedAt: new Date().toISOString()
+      fetchedAt: new Date().toISOString(),
     };
   }
 
@@ -212,8 +227,12 @@ export class LibraryDataService {
     return (data || []) as MealItem[];
   }
 
-  private buildMealMacros(meals: Meal[], mealItems: MealItem[], ingredients: Ingredient[]): Record<string, MealMacroTotals> {
-    const ingredientMap = new Map(ingredients.map(item => [item.id, item]));
+  private buildMealMacros(
+    meals: Meal[],
+    mealItems: MealItem[],
+    ingredients: Ingredient[],
+  ): Record<string, MealMacroTotals> {
+    const ingredientMap = new Map(ingredients.map((item) => [item.id, item]));
     const mealMacros: Record<string, MealMacroTotals> = {};
 
     for (const meal of meals) {
@@ -240,19 +259,23 @@ export class LibraryDataService {
   private syncCombinedSnapshot(
     userId: string,
     ingredientsSnapshot: IngredientsSnapshot | null,
-    mealsSnapshot: MealsSnapshot | null
+    mealsSnapshot: MealsSnapshot | null,
   ): void {
     if (!ingredientsSnapshot || !mealsSnapshot) {
       return;
     }
 
-    this.queryCache.set(this.libraryCacheKey(userId), {
-      ingredients: ingredientsSnapshot.ingredients,
-      meals: mealsSnapshot.meals,
-      mealItems: mealsSnapshot.mealItems,
-      mealMacros: mealsSnapshot.mealMacros,
-      fetchedAt: new Date().toISOString()
-    }, this.libraryTtlMs);
+    this.queryCache.set(
+      this.libraryCacheKey(userId),
+      {
+        ingredients: ingredientsSnapshot.ingredients,
+        meals: mealsSnapshot.meals,
+        mealItems: mealsSnapshot.mealItems,
+        mealMacros: mealsSnapshot.mealMacros,
+        fetchedAt: new Date().toISOString(),
+      },
+      this.libraryTtlMs,
+    );
   }
 
   private ingredientsCacheKey(userId: string): string {

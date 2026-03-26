@@ -1,4 +1,15 @@
-import { ChangeDetectionStrategy, Component, ElementRef, OnDestroy, computed, effect, input, output, signal, viewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  OnDestroy,
+  computed,
+  effect,
+  input,
+  output,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { LucideAngularModule, X } from 'lucide-angular';
 import { MatButtonModule } from '@angular/material/button';
@@ -9,7 +20,7 @@ let sheetTitleIdCounter = 0;
   selector: 'app-bottom-sheet',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
-    '(document:keydown)': 'onDocumentKeydown($event)'
+    '(document:keydown)': 'onDocumentKeydown($event)',
   },
   imports: [CommonModule, LucideAngularModule, MatButtonModule],
   template: `
@@ -21,7 +32,7 @@ let sheetTitleIdCounter = 0;
         [style.--sheet-keyboard-inset.px]="keyboardInset()"
         [style.--sheet-drag-y.px]="dragOffsetY()"
         [style.--sheet-drag-progress]="dragProgress()"
-        (click)="onBackdropClick()"
+        (pointerdown)="onBackdropPointerDown($event)"
       >
         <section
           #sheet
@@ -30,7 +41,7 @@ let sheetTitleIdCounter = 0;
           aria-modal="true"
           [attr.aria-labelledby]="titleId"
           tabindex="-1"
-          (click)="$event.stopPropagation()"
+          (pointerdown)="$event.stopPropagation()"
         >
           <div
             class="drag-handle"
@@ -42,7 +53,13 @@ let sheetTitleIdCounter = 0;
           ></div>
           <div class="head">
             <h2 [id]="titleId">{{ title() }}</h2>
-            <button mat-icon-button type="button" class="close" (click)="closed.emit()" aria-label="Schließen">
+            <button
+              mat-icon-button
+              type="button"
+              class="close"
+              (click)="closed.emit()"
+              aria-label="Schließen"
+            >
               <lucide-icon [img]="icons.x" aria-hidden="true"></lucide-icon>
             </button>
           </div>
@@ -51,113 +68,115 @@ let sheetTitleIdCounter = 0;
       </div>
     }
   `,
-  styles: [`
-    .overlay {
-      position: fixed;
-      inset: 0;
-      z-index: 40;
-      display: grid;
-      align-items: end;
-      padding-bottom: var(--sheet-keyboard-inset, 0px);
-      background: rgba(4, 6, 5, 0.74);
-      touch-action: pan-y;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity var(--motion-duration-medium) var(--motion-easing-standard);
-    }
+  styles: [
+    `
+      .overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 40;
+        display: grid;
+        align-items: end;
+        padding-bottom: var(--sheet-keyboard-inset, 0px);
+        background: rgba(4, 6, 5, 0.74);
+        touch-action: pan-y;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity var(--motion-duration-medium) var(--motion-easing-standard);
+      }
 
-    .sheet {
-      background:
-        radial-gradient(circle at top, rgba(0, 228, 117, 0.07), transparent 32%),
-        linear-gradient(180deg, rgba(31, 34, 32, 0.98), rgba(17, 18, 18, 0.985));
-      border-radius: 32px 32px 0 0;
-      padding: 8px 18px calc(16px + env(safe-area-inset-bottom));
-      max-height: min(86vh, calc(100vh - 12px - var(--sheet-keyboard-inset, 0px)));
-      overflow: auto;
-      scroll-padding-bottom: calc(var(--sheet-keyboard-inset, 0px) + 96px);
-      -webkit-overflow-scrolling: touch;
-      overscroll-behavior: contain;
-      box-shadow: 0 -20px 48px rgba(0, 0, 0, 0.48);
-      transform: translateY(calc(28px + var(--sheet-drag-y, 0px))) scale(0.985);
-      opacity: 0;
-      transition:
-        transform var(--motion-duration-long) var(--motion-easing-decelerate),
-        opacity var(--motion-duration-medium) var(--motion-easing-standard);
-    }
-
-    .overlay.active {
-      opacity: calc(1 - (var(--sheet-drag-progress, 0) * 0.35));
-      pointer-events: auto;
-    }
-
-    .overlay.active .sheet {
-      transform: translateY(var(--sheet-drag-y, 0px)) scale(1);
-      opacity: 1;
-    }
-
-    .overlay.dragging .sheet {
-      transition: none;
-    }
-
-    .drag-handle {
-      width: 44px;
-      height: 4px;
-      border-radius: 99px;
-      background: rgba(133, 140, 135, 0.44);
-      margin: 0 auto 8px;
-      touch-action: none;
-      cursor: grab;
-      position: relative;
-    }
-
-    .overlay.dragging .drag-handle {
-      cursor: grabbing;
-    }
-
-    .head {
-      display: flex;
-      justify-content: space-between;
-      align-items: start;
-      gap: 12px;
-      margin-bottom: 10px;
-    }
-
-    h2 {
-      margin: 0;
-      font-size: 18px;
-      color: var(--ui-ink);
-      font-weight: 700;
-      letter-spacing: -0.05em;
-    }
-
-    .close {
-      flex: 0 0 auto;
-      width: 38px;
-      height: 38px;
-      background: rgba(23, 26, 24, 0.92);
-      color: var(--ui-ink-muted);
-      font-size: 12px;
-      line-height: 1;
-      border-radius: 999px;
-      display: grid;
-      place-items: center;
-      margin-top: -2px;
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .overlay,
       .sheet {
+        background:
+          radial-gradient(circle at top, rgba(0, 228, 117, 0.07), transparent 32%),
+          linear-gradient(180deg, rgba(31, 34, 32, 0.98), rgba(17, 18, 18, 0.985));
+        border-radius: 32px 32px 0 0;
+        padding: 8px 18px calc(16px + env(safe-area-inset-bottom));
+        max-height: min(86vh, calc(100vh - 12px - var(--sheet-keyboard-inset, 0px)));
+        overflow: auto;
+        scroll-padding-bottom: calc(var(--sheet-keyboard-inset, 0px) + 96px);
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+        box-shadow: 0 -20px 48px rgba(0, 0, 0, 0.48);
+        transform: translateY(calc(28px + var(--sheet-drag-y, 0px))) scale(0.985);
+        opacity: 0;
+        transition:
+          transform var(--motion-duration-long) var(--motion-easing-decelerate),
+          opacity var(--motion-duration-medium) var(--motion-easing-standard);
+      }
+
+      .overlay.active {
+        opacity: calc(1 - (var(--sheet-drag-progress, 0) * 0.35));
+        pointer-events: auto;
+      }
+
+      .overlay.active .sheet {
+        transform: translateY(var(--sheet-drag-y, 0px)) scale(1);
+        opacity: 1;
+      }
+
+      .overlay.dragging .sheet {
         transition: none;
       }
-    }
-  `]
+
+      .drag-handle {
+        width: 44px;
+        height: 4px;
+        border-radius: 99px;
+        background: rgba(133, 140, 135, 0.44);
+        margin: 0 auto 8px;
+        touch-action: none;
+        cursor: grab;
+        position: relative;
+      }
+
+      .overlay.dragging .drag-handle {
+        cursor: grabbing;
+      }
+
+      .head {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        gap: 12px;
+        margin-bottom: 10px;
+      }
+
+      h2 {
+        margin: 0;
+        font-size: 18px;
+        color: var(--ui-ink);
+        font-weight: 700;
+        letter-spacing: -0.05em;
+      }
+
+      .close {
+        flex: 0 0 auto;
+        width: 38px;
+        height: 38px;
+        background: rgba(23, 26, 24, 0.92);
+        color: var(--ui-ink-muted);
+        font-size: 12px;
+        line-height: 1;
+        border-radius: 999px;
+        display: grid;
+        place-items: center;
+        margin-top: -2px;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .overlay,
+        .sheet {
+          transition: none;
+        }
+      }
+    `,
+  ],
 })
 export class BottomSheetComponent implements OnDestroy {
   readonly icons = {
-    x: X
+    x: X,
   };
 
-  readonly titleId = `app-bottom-sheet-title-${sheetTitleIdCounter += 1}`;
+  readonly titleId = `app-bottom-sheet-title-${(sheetTitleIdCounter += 1)}`;
   readonly sheet = viewChild<ElementRef<HTMLElement>>('sheet');
   readonly open = input.required<boolean>();
   readonly title = input.required<string>();
@@ -211,6 +230,14 @@ export class BottomSheetComponent implements OnDestroy {
     if (this.closeOnBackdrop() && this.isActive()) {
       this.closed.emit();
     }
+  }
+
+  onBackdropPointerDown(event: PointerEvent): void {
+    if (event.target !== event.currentTarget) {
+      return;
+    }
+
+    this.onBackdropClick();
   }
 
   onDocumentKeydown(event: KeyboardEvent): void {
@@ -339,11 +366,13 @@ export class BottomSheetComponent implements OnDestroy {
       'input:not([disabled])',
       'select:not([disabled])',
       'textarea:not([disabled])',
-      '[tabindex]:not([tabindex="-1"])'
+      '[tabindex]:not([tabindex="-1"])',
     ];
 
-    return Array.from(root.querySelectorAll<HTMLElement>(selectors.join(',')))
-      .filter(element => !element.hasAttribute('hidden') && element.getAttribute('aria-hidden') !== 'true');
+    return Array.from(root.querySelectorAll<HTMLElement>(selectors.join(','))).filter(
+      (element) =>
+        !element.hasAttribute('hidden') && element.getAttribute('aria-hidden') !== 'true',
+    );
   }
 
   private restorePreviousFocus(): void {
@@ -425,10 +454,11 @@ export class BottomSheetComponent implements OnDestroy {
     }
 
     const activeElement = document.activeElement;
-    const activeIsInput = activeElement instanceof HTMLInputElement
-      || activeElement instanceof HTMLTextAreaElement
-      || activeElement instanceof HTMLSelectElement
-      || (activeElement instanceof HTMLElement && activeElement.isContentEditable);
+    const activeIsInput =
+      activeElement instanceof HTMLInputElement ||
+      activeElement instanceof HTMLTextAreaElement ||
+      activeElement instanceof HTMLSelectElement ||
+      (activeElement instanceof HTMLElement && activeElement.isContentEditable);
 
     const rawInset = Math.max(0, window.innerHeight - (viewport.height + viewport.offsetTop));
     const resolvedInset = activeIsInput && rawInset > 80 ? Math.round(rawInset) : 0;

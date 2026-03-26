@@ -9,7 +9,7 @@ describe('GymExecutionPanelComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [GymExecutionPanelComponent]
+      imports: [GymExecutionPanelComponent],
     }).compileComponents();
 
     fixture = TestBed.createComponent(GymExecutionPanelComponent);
@@ -45,14 +45,17 @@ describe('GymExecutionPanelComponent', () => {
               estimated10Rm: null,
               volume: 160,
               isCompleted: false,
-              clientRef: 'set-client-1'
-            }
-          ]
-        }
-      ]
+              clientRef: 'set-client-1',
+            },
+          ],
+        },
+      ],
     });
     fixture.componentRef.setInput('activeExerciseIndex', 0);
-    fixture.componentRef.setInput('currentExercise', fixture.componentInstance.session()!.exercises[0]);
+    fixture.componentRef.setInput(
+      'currentExercise',
+      fixture.componentInstance.session()!.exercises[0],
+    );
     fixture.componentRef.setInput('previousPerformance', []);
     fixture.componentRef.setInput('currentExerciseSaveHint', null);
     fixture.detectChanges();
@@ -61,21 +64,23 @@ describe('GymExecutionPanelComponent', () => {
   it('emits parsed set input updates', () => {
     const emitSpy = vi.spyOn(component.setInput, 'emit');
 
-    const input = fixture.debugElement.queryAll(By.css('input'))[0].nativeElement as HTMLInputElement;
+    const input = fixture.debugElement.queryAll(By.css('input'))[0]
+      .nativeElement as HTMLInputElement;
     input.value = '22.5';
     input.dispatchEvent(new Event('input'));
 
     expect(emitSpy).toHaveBeenCalledWith({
       setRow: expect.objectContaining({ clientRef: 'set-client-1' }),
       field: 'weight',
-      value: '22.5'
+      value: '22.5',
     });
   });
 
   it('emits completion toggles for the active set', () => {
     const emitSpy = vi.spyOn(component.toggleSetComplete, 'emit');
 
-    const button = fixture.debugElement.query(By.css('.check-btn')).nativeElement as HTMLButtonElement;
+    const button = fixture.debugElement.query(By.css('.check-btn'))
+      .nativeElement as HTMLButtonElement;
     button.click();
 
     expect(emitSpy).toHaveBeenCalledWith(expect.objectContaining({ clientRef: 'set-client-1' }));

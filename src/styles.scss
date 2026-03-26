@@ -1,4 +1,5 @@
 @use '@angular/material' as mat;
+@use './styles/tokens' as tokens;
 
 $trackerbroo-shell-mint-palette: (
   0: #000000,
@@ -101,39 +102,43 @@ $trackerbroo-shell-mint-palette: (
   ),
 );
 
-$trackerbroo-theme-light: mat.define-theme((
-  color: (
-    theme-type: light,
-    primary: mat.$green-palette,
-    tertiary: mat.$orange-palette,
-    use-system-variables: true,
-  ),
-  typography: (
-    brand-family: '"Manrope", "Segoe UI", sans-serif',
-    plain-family: '"Manrope", "Segoe UI", sans-serif',
-    use-system-variables: true,
-  ),
-  density: (
-    scale: 0,
+$trackerbroo-theme-light: mat.define-theme(
+  (
+    color: (
+      theme-type: light,
+      primary: mat.$green-palette,
+      tertiary: mat.$orange-palette,
+      use-system-variables: true,
+    ),
+    typography: (
+      brand-family: '"Manrope", "Segoe UI", sans-serif',
+      plain-family: '"Manrope", "Segoe UI", sans-serif',
+      use-system-variables: true,
+    ),
+    density: (
+      scale: 0,
+    ),
   )
-));
+);
 
-$trackerbroo-theme-dark: mat.define-theme((
-  color: (
-    theme-type: dark,
-    primary: $trackerbroo-shell-mint-palette,
-    tertiary: mat.$orange-palette,
-    use-system-variables: true,
-  ),
-  typography: (
-    brand-family: '"Manrope", "Segoe UI", sans-serif',
-    plain-family: '"Manrope", "Segoe UI", sans-serif',
-    use-system-variables: true,
-  ),
-  density: (
-    scale: 0,
+$trackerbroo-theme-dark: mat.define-theme(
+  (
+    color: (
+      theme-type: dark,
+      primary: $trackerbroo-shell-mint-palette,
+      tertiary: mat.$orange-palette,
+      use-system-variables: true,
+    ),
+    typography: (
+      brand-family: '"Manrope", "Segoe UI", sans-serif',
+      plain-family: '"Manrope", "Segoe UI", sans-serif',
+      use-system-variables: true,
+    ),
+    density: (
+      scale: 0,
+    ),
   )
-));
+);
 
 @include mat.core();
 
@@ -144,9 +149,10 @@ $trackerbroo-theme-dark: mat.define-theme((
   @include mat.form-field-theme($trackerbroo-theme-light);
   @include mat.select-theme($trackerbroo-theme-light);
   @include mat.system-level-colors($trackerbroo-theme-light);
+  @include tokens.semantic-light();
 
-  --font-body: "Manrope", "Segoe UI", sans-serif;
-  --font-display: "Manrope", "Segoe UI", sans-serif;
+  --font-body: 'Manrope', 'Segoe UI', sans-serif;
+  --font-display: 'Manrope', 'Segoe UI', sans-serif;
 
   --m3-sys-color-primary: #0aa45b;
   --m3-sys-color-on-primary: #f3fff7;
@@ -177,11 +183,11 @@ $trackerbroo-theme-dark: mat.define-theme((
   --m3-sys-color-surface-container: #eceee7;
   --m3-sys-color-surface-container-high: #e4e6df;
   --m3-sys-color-surface-container-highest: #daddd5;
-  --m3-sys-color-surface-tint: var(--ui-primary);
+  --m3-sys-color-surface-tint: var(--accent);
 
-  --md-sys-color-primary: var(--ui-primary);
-  --md-sys-color-on-primary: var(--ui-on-primary);
-  --md-sys-color-primary-container: var(--ui-primary-muted);
+  --md-sys-color-primary: var(--accent);
+  --md-sys-color-on-primary: var(--text-on-accent);
+  --md-sys-color-primary-container: var(--accent-muted);
   --md-sys-color-on-primary-container: var(--m3-sys-color-on-primary-container);
   --md-sys-color-secondary: var(--m3-sys-color-secondary);
   --md-sys-color-on-secondary: var(--m3-sys-color-on-secondary);
@@ -191,41 +197,27 @@ $trackerbroo-theme-dark: mat.define-theme((
   --md-sys-color-on-tertiary: var(--m3-sys-color-on-tertiary);
   --md-sys-color-tertiary-container: var(--m3-sys-color-tertiary-container);
   --md-sys-color-on-tertiary-container: var(--m3-sys-color-on-tertiary-container);
-  --md-sys-color-error: var(--ui-error);
+  --md-sys-color-error: var(--error);
   --md-sys-color-on-error: var(--m3-sys-color-on-error);
-  --md-sys-color-error-container: var(--ui-error-soft);
-  --md-sys-color-on-error-container: var(--ui-error-ink);
-  --md-sys-color-surface: var(--ui-surface-0);
-  --md-sys-color-on-surface: var(--ui-ink);
-  --md-sys-color-surface-container: var(--ui-surface-1);
-  --md-sys-color-surface-container-high: var(--ui-surface-2);
-  --md-sys-color-surface-container-highest: var(--ui-surface-3);
+  --md-sys-color-error-container: var(--error-muted);
+  --md-sys-color-on-error-container: var(--error-text);
+  --md-sys-color-surface: var(--surface-page);
+  --md-sys-color-on-surface: var(--text-primary);
+  --md-sys-color-surface-container: var(--surface-shell);
+  --md-sys-color-surface-container-high: var(--surface-panel);
+  --md-sys-color-surface-container-highest: var(--surface-panel-strong);
   --md-sys-color-outline: var(--m3-sys-color-outline);
-  --md-sys-color-outline-variant: var(--ui-outline);
-
-  --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-5: 24px;
-  --space-6: 32px;
+  --md-sys-color-outline-variant: var(--border-default);
 
   --layout-margin: 16px;
   --layout-gap: 12px;
   --panel-padding: 16px;
-  --touch-target: 48px;
-  --touch-target-compact: 44px;
 
   --md-sys-shape-corner-extra-small: 8px;
-  --md-sys-shape-corner-small: 12px;
-  --md-sys-shape-corner-medium: 16px;
-  --md-sys-shape-corner-large: 28px;
-  --md-sys-shape-corner-full: 999px;
-
-  --radius-sm: var(--md-sys-shape-corner-small);
-  --radius-md: var(--md-sys-shape-corner-medium);
-  --radius-lg: var(--md-sys-shape-corner-large);
-  --radius-pill: 999px;
+  --md-sys-shape-corner-small: var(--radius-sm);
+  --md-sys-shape-corner-medium: var(--radius-md);
+  --md-sys-shape-corner-large: var(--radius-lg);
+  --md-sys-shape-corner-full: var(--radius-pill);
 
   --text-xs: 11px;
   --text-sm: 14px;
@@ -241,62 +233,67 @@ $trackerbroo-theme-dark: mat.define-theme((
   --md-sys-typescale-title-large-size: 22px;
   --md-sys-typescale-title-large-line-height: 28px;
 
-  --bg-page: var(--ui-surface-0);
-  --bg-shell: linear-gradient(180deg, color-mix(in srgb, var(--ui-primary-muted) 18%, transparent), transparent 34%), var(--ui-surface-0);
-  --bg-surface-1: var(--ui-surface-1);
-  --bg-surface-2: var(--ui-surface-2);
-  --bg-muted: var(--ui-surface-3);
+  --bg-page: var(--surface-page);
+  --bg-shell:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--accent-muted) 18%, transparent),
+      transparent 34%
+    ),
+    var(--surface-page);
+  --bg-surface-1: var(--surface-shell);
+  --bg-surface-2: var(--surface-panel);
+  --bg-muted: var(--surface-muted);
 
-  --ink-900: var(--ui-ink);
-  --ink-600: color-mix(in srgb, var(--ui-ink-muted) 92%, transparent);
-  --ink-700: var(--ui-ink-muted);
-  --ink-500: color-mix(in srgb, var(--ui-ink-muted) 76%, transparent);
+  --ink-900: var(--text-primary);
+  --ink-600: color-mix(in srgb, var(--text-secondary) 92%, transparent);
+  --ink-700: var(--text-secondary);
+  --ink-500: var(--text-muted);
 
-  --border-strong: var(--ui-outline);
-  --border-soft: var(--ui-outline);
+  --border-soft: var(--border-subtle);
 
-  --accent-500: var(--ui-primary);
-  --accent-600: #087b45;
-  --accent-soft: var(--ui-primary-muted);
+  --accent-500: var(--accent);
+  --accent-600: var(--accent-strong);
+  --accent-soft: var(--accent-muted);
 
-  --success-500: #6ed39e;
-  --warning-500: #d8a460;
-  --danger-500: var(--ui-error);
+  --success-500: var(--success);
+  --warning-500: var(--warning);
+  --danger-500: var(--error);
 
-  --shadow-soft: 0 1px 2px 0 color-mix(in srgb, #161b17 10%, transparent);
   --shadow-level-1: 0 18px 48px color-mix(in srgb, #161b17 10%, transparent);
   --shadow-level-2: 0 28px 60px color-mix(in srgb, #161b17 14%, transparent);
   --shadow-level-3: 0 34px 84px color-mix(in srgb, #161b17 18%, transparent);
 
-  --shell-bg: #f3f4ee;
-  --shell-elevated: #fbfcf8;
-  --shell-muted: #ebede6;
-  --shell-card: #ffffff;
-  --shell-card-strong: #f2f4ed;
-  --shell-border: rgba(22, 27, 23, 0.1);
-  --shell-border-soft: rgba(22, 27, 23, 0.06);
-  --shell-ink: #161b17;
-  --shell-ink-muted: #5f675f;
-  --shell-accent: #00c96b;
-  --shell-accent-strong: #00a857;
-  --shell-accent-muted: rgba(0, 201, 107, 0.12);
-  --shell-danger: #c86d67;
+  --shell-bg: var(--surface-page);
+  --shell-elevated: var(--surface-shell);
+  --shell-muted: var(--surface-muted);
+  --shell-card: var(--surface-panel);
+  --shell-card-strong: var(--surface-panel-strong);
+  --shell-border: var(--border-default);
+  --shell-border-soft: var(--border-subtle);
+  --shell-ink: var(--text-primary);
+  --shell-ink-muted: var(--text-secondary);
+  --shell-ink-dim: var(--text-muted);
+  --shell-accent: var(--accent);
+  --shell-accent-strong: var(--accent-strong);
+  --shell-accent-muted: var(--accent-muted);
+  --shell-danger: var(--error);
 
-  --ui-primary: var(--shell-accent);
-  --ui-primary-strong: var(--shell-accent-strong);
-  --ui-primary-muted: var(--shell-accent-muted);
-  --ui-on-primary: #f3fff7;
-  --ui-surface-0: var(--shell-bg);
-  --ui-surface-1: var(--shell-elevated);
-  --ui-surface-2: var(--shell-card);
-  --ui-surface-3: var(--shell-card-strong);
-  --ui-ink: var(--shell-ink);
-  --ui-ink-muted: var(--shell-ink-muted);
-  --ui-outline: var(--shell-border);
-  --ui-outline-soft: var(--shell-border-soft);
-  --ui-error: var(--shell-danger);
-  --ui-error-soft: color-mix(in srgb, var(--shell-danger) 16%, var(--shell-card));
-  --ui-error-ink: #4a1715;
+  --ui-primary: var(--accent);
+  --ui-primary-strong: var(--accent-strong);
+  --ui-primary-muted: var(--accent-muted);
+  --ui-on-primary: var(--text-on-accent);
+  --ui-surface-0: var(--surface-page);
+  --ui-surface-1: var(--surface-shell);
+  --ui-surface-2: var(--surface-panel);
+  --ui-surface-3: var(--surface-panel-strong);
+  --ui-ink: var(--text-primary);
+  --ui-ink-muted: var(--text-secondary);
+  --ui-outline: var(--border-default);
+  --ui-outline-soft: var(--border-subtle);
+  --ui-error: var(--error);
+  --ui-error-soft: var(--error-muted);
+  --ui-error-ink: var(--error-text);
 
   /* M3 expressive motion */
   --motion-duration-short: 140ms;
@@ -318,6 +315,7 @@ $trackerbroo-theme-dark: mat.define-theme((
   @include mat.form-field-theme($trackerbroo-theme-dark);
   @include mat.select-theme($trackerbroo-theme-dark);
   @include mat.system-level-colors($trackerbroo-theme-dark);
+  @include tokens.semantic-dark();
 
   --m3-sys-color-primary: #19f28a;
   --m3-sys-color-on-primary: #00341c;
@@ -348,44 +346,46 @@ $trackerbroo-theme-dark: mat.define-theme((
   --m3-sys-color-surface-container: #181918;
   --m3-sys-color-surface-container-high: #1f2020;
   --m3-sys-color-surface-container-highest: #2b2c2c;
-  --bg-shell: radial-gradient(circle at top, rgba(0, 228, 117, 0.08), transparent 28%), linear-gradient(180deg, #0f1110 0%, #070807 100%);
-  --accent-600: #03d66d;
-  --success-500: #03d66d;
-  --warning-500: #d7a867;
-  --shadow-soft: 0 1px 2px 0 color-mix(in srgb, #000 28%, transparent);
+  --bg-shell:
+    radial-gradient(circle at top, rgba(0, 228, 117, 0.08), transparent 28%),
+    linear-gradient(180deg, #0f1110 0%, #070807 100%);
+  --accent-600: var(--accent-strong);
+  --success-500: var(--success);
+  --warning-500: var(--warning);
   --shadow-level-1: 0 18px 48px color-mix(in srgb, #000 26%, transparent);
   --shadow-level-2: 0 28px 68px color-mix(in srgb, #000 30%, transparent);
   --shadow-level-3: 0 40px 96px color-mix(in srgb, #000 38%, transparent);
 
-  --shell-bg: #070807;
-  --shell-elevated: #0f1110;
-  --shell-muted: #131514;
-  --shell-card: #1a1c1b;
-  --shell-card-strong: #212422;
-  --shell-border: rgba(255, 255, 255, 0.04);
-  --shell-border-soft: rgba(255, 255, 255, 0.02);
-  --shell-ink: #eceae5;
-  --shell-ink-muted: #8e948f;
-  --shell-accent: #19f28a;
-  --shell-accent-strong: #03d66d;
-  --shell-accent-muted: rgba(25, 242, 138, 0.1);
-  --shell-danger: #ee7d77;
+  --shell-bg: var(--surface-page);
+  --shell-elevated: var(--surface-shell);
+  --shell-muted: var(--surface-muted);
+  --shell-card: var(--surface-panel);
+  --shell-card-strong: var(--surface-panel-strong);
+  --shell-border: var(--border-default);
+  --shell-border-soft: var(--border-subtle);
+  --shell-ink: var(--text-primary);
+  --shell-ink-muted: var(--text-secondary);
+  --shell-ink-dim: var(--text-muted);
+  --shell-accent: var(--accent);
+  --shell-accent-strong: var(--accent-strong);
+  --shell-accent-muted: var(--accent-muted);
+  --shell-danger: var(--error);
 
-  --ui-primary: var(--shell-accent);
-  --ui-primary-strong: var(--shell-accent-strong);
-  --ui-primary-muted: var(--shell-accent-muted);
-  --ui-on-primary: #04140b;
-  --ui-surface-0: var(--shell-bg);
-  --ui-surface-1: var(--shell-elevated);
-  --ui-surface-2: var(--shell-card);
-  --ui-surface-3: var(--shell-card-strong);
-  --ui-ink: var(--shell-ink);
-  --ui-ink-muted: var(--shell-ink-muted);
-  --ui-outline: var(--shell-border);
-  --ui-outline-soft: var(--shell-border-soft);
-  --ui-error: var(--shell-danger);
-  --ui-error-soft: color-mix(in srgb, var(--shell-danger) 16%, var(--shell-card));
-  --ui-error-ink: #ffd8d5;
+  --ui-primary: var(--accent);
+  --ui-primary-strong: var(--accent-strong);
+  --ui-primary-muted: var(--accent-muted);
+  --ui-on-primary: var(--text-on-accent);
+  --ui-surface-0: var(--surface-page);
+  --ui-surface-1: var(--surface-shell);
+  --ui-surface-2: var(--surface-panel);
+  --ui-surface-3: var(--surface-panel-strong);
+  --ui-ink: var(--text-primary);
+  --ui-ink-muted: var(--text-secondary);
+  --ui-outline: var(--border-default);
+  --ui-outline-soft: var(--border-subtle);
+  --ui-error: var(--error);
+  --ui-error-soft: var(--error-muted);
+  --ui-error-ink: var(--error-text);
 }
 
 * {
@@ -642,8 +642,7 @@ button[disabled] {
 }
 
 .panel {
-  background:
-    linear-gradient(180deg, rgba(32, 34, 33, 0.98), rgba(24, 26, 25, 0.98));
+  background: linear-gradient(180deg, rgba(32, 34, 33, 0.98), rgba(24, 26, 25, 0.98));
   border-radius: 34px;
   padding: var(--panel-padding);
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.26);
@@ -1545,8 +1544,7 @@ app-today {
   }
 
   .food-tool-btn-accent {
-    background:
-      linear-gradient(180deg, rgba(24, 34, 29, 0.98), rgba(19, 24, 22, 0.98));
+    background: linear-gradient(180deg, rgba(24, 34, 29, 0.98), rgba(19, 24, 22, 0.98));
   }
 
   .food-hub-card {
@@ -1583,8 +1581,7 @@ app-today {
   }
 
   .food-hub-card-accent {
-    background:
-      linear-gradient(180deg, rgba(24, 34, 29, 0.98), rgba(19, 24, 22, 0.98));
+    background: linear-gradient(180deg, rgba(24, 34, 29, 0.98), rgba(19, 24, 22, 0.98));
   }
 
   .food-hub-card strong,
@@ -2587,7 +2584,9 @@ app-gym-execution-panel {
     border-radius: 1.3rem;
     padding: 0.9rem;
     background: linear-gradient(180deg, rgba(31, 33, 33, 0.98), rgba(21, 23, 22, 0.98));
-    box-shadow: inset 3px 0 0 var(--shell-accent), 0 14px 28px rgba(0, 0, 0, 0.18);
+    box-shadow:
+      inset 3px 0 0 var(--shell-accent),
+      0 14px 28px rgba(0, 0, 0, 0.18);
   }
 
   .active-set-head {
@@ -3080,7 +3079,9 @@ app-gym-execution-panel {
   background: rgba(20, 22, 21, 0.96);
   color: var(--shell-accent);
   padding: 0.15rem 0.5rem;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  font-family:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
+    monospace;
   font-weight: 700;
   font-size: var(--text-xs);
 }
@@ -3430,7 +3431,9 @@ textarea {
   display: grid;
   place-items: center;
   font-size: 1.3rem;
-  box-shadow: 0 0 26px color-mix(in srgb, var(--ui-primary) 16%, transparent), var(--shadow-level-3);
+  box-shadow:
+    0 0 26px color-mix(in srgb, var(--ui-primary) 16%, transparent),
+    var(--shadow-level-3);
   z-index: 26;
 }
 

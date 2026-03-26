@@ -62,7 +62,7 @@ interface QueueItem {
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class TrainingSyncQueueService {
   readonly pendingCount = signal(0);
@@ -87,7 +87,7 @@ export class TrainingSyncQueueService {
       id: `${action}:${Date.now()}:${Math.random().toString(16).slice(2)}`,
       action,
       createdAt: new Date().toISOString(),
-      payload
+      payload,
     });
     this.writeQueue(current);
   }
@@ -131,7 +131,7 @@ export class TrainingSyncQueueService {
       const { error } = await this.supabaseService.client.rpc('training_start_session', {
         p_plan_day_id: payload.planDayId,
         p_session_date: payload.sessionDate,
-        p_client_ref: payload.clientRef
+        p_client_ref: payload.clientRef,
       });
       if (error) {
         throw error;
@@ -150,7 +150,7 @@ export class TrainingSyncQueueService {
         p_reps: payload.reps,
         p_duration_seconds: payload.durationSeconds,
         p_is_completed: payload.isCompleted,
-        p_client_ref: payload.clientRef
+        p_client_ref: payload.clientRef,
       });
       if (error) {
         throw error;
@@ -160,9 +160,12 @@ export class TrainingSyncQueueService {
 
     if (item.action === 'complete_session') {
       const payload = item.payload as QueueCompleteSessionPayload;
-      const { error } = await this.supabaseService.client.rpc('training_complete_session_by_client', {
-        p_session_client_ref: payload.sessionClientRef
-      });
+      const { error } = await this.supabaseService.client.rpc(
+        'training_complete_session_by_client',
+        {
+          p_session_client_ref: payload.sessionClientRef,
+        },
+      );
       if (error) {
         throw error;
       }
@@ -176,9 +179,9 @@ export class TrainingSyncQueueService {
           user_id: userId,
           type: payload.type,
           value: payload.value,
-          measured_on: payload.measuredOn
+          measured_on: payload.measuredOn,
         },
-        { onConflict: 'user_id,type,measured_on' }
+        { onConflict: 'user_id,type,measured_on' },
       );
 
       if (error) {
@@ -191,9 +194,9 @@ export class TrainingSyncQueueService {
             user_id: userId,
             logged_on: payload.measuredOn,
             weight_kg: payload.value,
-            note: null
+            note: null,
           },
-          { onConflict: 'user_id,logged_on' }
+          { onConflict: 'user_id,logged_on' },
         );
 
         if (weightError) {
@@ -219,14 +222,14 @@ export class TrainingSyncQueueService {
       return;
     }
 
-    const insertPayload = payload.configs.map(config => ({
+    const insertPayload = payload.configs.map((config) => ({
       id: config.id,
       user_id: userId,
       graph_type: config.graph_type,
       exercise_id: config.exercise_id,
       muscle_group: config.muscle_group,
       position: config.position,
-      settings: config.settings
+      settings: config.settings,
     }));
 
     const { error: insertError } = await this.supabaseService.client

@@ -5,44 +5,47 @@ import { CommunityFacadeService } from './community-facade.service';
 import { AuthService } from '../../core/auth.service';
 import { CommunityFeedService } from '../../core/community-feed.service';
 import { SupabaseService } from '../../core/supabase.service';
-import { CommunityPost } from '../../core/types';
 
 describe('CommunityFacadeService', () => {
   const firstPage = {
-    posts: [{
-      id: 'post-1',
-      user_id: 'user-2',
-      post_type: 'gym_checkin' as const,
-      day: '2026-03-19',
-      note: 'Old post',
-      summary: null,
-      photo_url: null,
-      created_at: '2026-03-19T09:00:00Z'
-    }],
+    posts: [
+      {
+        id: 'post-1',
+        user_id: 'user-2',
+        post_type: 'gym_checkin' as const,
+        day: '2026-03-19',
+        note: 'Old post',
+        summary: null,
+        photo_url: null,
+        created_at: '2026-03-19T09:00:00Z',
+      },
+    ],
     commentsByPost: {},
     profiles: {},
     photoSrcMap: {},
     nextCursor: { id: 'post-1', createdAt: '2026-03-19T09:00:00Z' },
     hasMore: true,
     newestCursor: { id: 'post-1', createdAt: '2026-03-19T09:00:00Z' },
-    fetchedAt: '2026-03-19T09:00:00Z'
+    fetchedAt: '2026-03-19T09:00:00Z',
   };
 
   const refreshedFirstPage = {
     ...firstPage,
-    posts: [{
-      id: 'post-2',
-      user_id: 'user-3',
-      post_type: 'gym_checkin' as const,
-      day: '2026-03-19',
-      note: 'New post',
-      summary: null,
-      photo_url: null,
-      created_at: '2026-03-19T10:00:00Z'
-    }],
+    posts: [
+      {
+        id: 'post-2',
+        user_id: 'user-3',
+        post_type: 'gym_checkin' as const,
+        day: '2026-03-19',
+        note: 'New post',
+        summary: null,
+        photo_url: null,
+        created_at: '2026-03-19T10:00:00Z',
+      },
+    ],
     nextCursor: { id: 'post-2', createdAt: '2026-03-19T10:00:00Z' },
     newestCursor: { id: 'post-2', createdAt: '2026-03-19T10:00:00Z' },
-    fetchedAt: '2026-03-19T10:00:00Z'
+    fetchedAt: '2026-03-19T10:00:00Z',
   };
 
   let facade: CommunityFacadeService;
@@ -68,14 +71,17 @@ describe('CommunityFacadeService', () => {
       fetchFeedPage: vi.fn().mockResolvedValue(firstPage),
       createGymCheckinPost: vi.fn().mockResolvedValue(undefined),
       checkForNewPosts: vi.fn().mockResolvedValue(false),
-      setCachedFirstPage: vi.fn()
+      setCachedFirstPage: vi.fn(),
     };
 
     TestBed.configureTestingModule({
       providers: [
         CommunityFacadeService,
         { provide: AuthService, useValue: { user: authUser } },
-        { provide: CommunityFeedService, useValue: communityFeed as unknown as CommunityFeedService },
+        {
+          provide: CommunityFeedService,
+          useValue: communityFeed as unknown as CommunityFeedService,
+        },
         {
           provide: SupabaseService,
           useValue: {
@@ -91,12 +97,12 @@ describe('CommunityFacadeService', () => {
                             post_id: 'post-1',
                             user_id: 'user-1',
                             comment_text: 'Nice',
-                            created_at: '2026-03-19T10:05:00Z'
+                            created_at: '2026-03-19T10:05:00Z',
                           },
-                          error: null
-                        })
-                      })
-                    })
+                          error: null,
+                        }),
+                      }),
+                    }),
                   };
                 }
 
@@ -104,18 +110,18 @@ describe('CommunityFacadeService', () => {
                   return {
                     delete: () => ({
                       eq: () => ({
-                        eq: async () => ({ error: null })
-                      })
-                    })
+                        eq: async () => ({ error: null }),
+                      }),
+                    }),
                   };
                 }
 
                 throw new Error(`Unexpected table ${table}`);
-              }
-            }
-          }
-        }
-      ]
+              },
+            },
+          },
+        },
+      ],
     });
 
     facade = TestBed.inject(CommunityFacadeService);
@@ -160,7 +166,7 @@ describe('CommunityFacadeService', () => {
 
     expect(facade.commentInputs()['post-1']).toBe('');
     expect(facade.commentsByPost()['post-1']).toEqual([
-      expect.objectContaining({ comment_text: 'Nice' })
+      expect.objectContaining({ comment_text: 'Nice' }),
     ]);
     expect(communityFeed.fetchFeedPage).toHaveBeenCalledTimes(1);
   });

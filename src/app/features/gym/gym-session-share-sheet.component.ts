@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, ElementRef, input, output, viewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  input,
+  output,
+  viewChild,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -25,18 +32,40 @@ import { MatInputModule } from '@angular/material/input';
 
     <p class="file-label">Foto (optional)</p>
     <div class="file-row">
-      <button mat-flat-button type="button" class="action-btn ghost compact" (click)="pickPhoto()">Foto auswählen</button>
+      <button mat-flat-button type="button" class="action-btn ghost compact" (click)="pickPhoto()">
+        Foto auswählen
+      </button>
       <span class="file-name">{{ photoName() || 'Kein Foto ausgewählt' }}</span>
     </div>
-    <input #photoInput class="sr-only" type="file" accept="image/*" (change)="onPhotoSelected($event)">
+    <input
+      #photoInput
+      class="sr-only"
+      type="file"
+      accept="image/*"
+      (change)="onPhotoSelected($event)"
+    />
 
     <div class="action-list">
-      <button mat-flat-button type="button" class="action-btn" [disabled]="sharing()" (click)="submit.emit()">
+      <button
+        mat-flat-button
+        type="button"
+        class="action-btn"
+        [disabled]="sharing()"
+        (click)="submit.emit()"
+      >
         {{ sharing() ? 'Wird geteilt …' : 'In der Community teilen' }}
       </button>
-      <button mat-flat-button type="button" class="action-btn ghost" [disabled]="sharing()" (click)="skip.emit()">Überspringen</button>
+      <button
+        mat-flat-button
+        type="button"
+        class="action-btn ghost"
+        [disabled]="sharing()"
+        (click)="skip.emit()"
+      >
+        Überspringen
+      </button>
     </div>
-  `
+  `,
 })
 export class GymSessionShareSheetComponent {
   readonly suggestion = input.required<string>();

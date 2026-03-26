@@ -22,7 +22,7 @@ interface LoadOptions<T> {
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class QueryCacheService {
   private readonly prefix = 'trackerbroo:cache:v1:';
@@ -79,7 +79,7 @@ export class QueryCacheService {
     const entry: CacheRecord<T> = {
       value,
       updatedAt: now,
-      expiresAt: now + ttlMs
+      expiresAt: now + ttlMs,
     };
 
     try {
@@ -116,7 +116,10 @@ export class QueryCacheService {
     }
   }
 
-  private async loadAndCache<T>(options: LoadOptions<T>, allowStaleOnError: boolean): Promise<CachedLoadResult<T>> {
+  private async loadAndCache<T>(
+    options: LoadOptions<T>,
+    allowStaleOnError: boolean,
+  ): Promise<CachedLoadResult<T>> {
     try {
       const value = await options.loader();
       this.set(options.key, value, options.ttlMs);
@@ -144,7 +147,12 @@ export class QueryCacheService {
 
     try {
       const parsed = JSON.parse(raw) as CacheRecord<T>;
-      if (!parsed || typeof parsed !== 'object' || !('value' in parsed) || !('expiresAt' in parsed)) {
+      if (
+        !parsed ||
+        typeof parsed !== 'object' ||
+        !('value' in parsed) ||
+        !('expiresAt' in parsed)
+      ) {
         return null;
       }
       return parsed;

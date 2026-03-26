@@ -5,8 +5,11 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { TrainingGraphDataPoint, TrainingPersonalStats } from '../../core/training/training-data.service';
-import { TrainingExercise, TrainingMeasurementType } from '../../core/types';
+import {
+  TrainingGraphDataPoint,
+  TrainingPersonalStats,
+} from '../../core/training/training-data.service';
+import { TrainingExercise } from '../../core/types';
 import { ExerciseProgressRow, equipmentLabel, muscleLabel, toLinePoints } from './gym-view-utils';
 
 @Component({
@@ -18,7 +21,7 @@ import { ExerciseProgressRow, equipmentLabel, muscleLabel, toLinePoints } from '
     MatButtonModule,
     MatFormFieldModule,
     MatInputModule,
-    MatSelectModule
+    MatSelectModule,
   ],
   styleUrl: './gym-progress-tab.component.css',
   template: `
@@ -26,13 +29,24 @@ import { ExerciseProgressRow, equipmentLabel, muscleLabel, toLinePoints } from '
       <div class="section-copy">
         <p class="eyebrow">Übungs-Progress</p>
         <h2>Bewegung wählen, Trend lesen, weitertrainieren</h2>
-        <p class="muted">Konzentriere dich auf eine Übung und lies sofort, ob dein stärkster Satz und dein Volumen steigen.</p>
+        <p class="muted">
+          Konzentriere dich auf eine Übung und lies sofort, ob dein stärkster Satz und dein Volumen
+          steigen.
+        </p>
       </div>
 
       <div class="progress-head">
-        <mat-form-field class="m3-field progress-exercise-field" appearance="outline" subscriptSizing="dynamic">
+        <mat-form-field
+          class="m3-field progress-exercise-field"
+          appearance="outline"
+          subscriptSizing="dynamic"
+        >
           <mat-label>Übung</mat-label>
-          <mat-select id="progress-exercise" [value]="selectedProgressExerciseId()" (valueChange)="selectExercise.emit($event)">
+          <mat-select
+            id="progress-exercise"
+            [value]="selectedProgressExerciseId()"
+            (valueChange)="selectExercise.emit($event)"
+          >
             <mat-option value="">Bitte wählen</mat-option>
             @for (exercise of exercises(); track exercise.id) {
               <mat-option [value]="exercise.id">{{ exercise.name }}</mat-option>
@@ -64,8 +78,13 @@ import { ExerciseProgressRow, equipmentLabel, muscleLabel, toLinePoints } from '
 
       @if (selectedProgressExercise()) {
         <div class="progress-exercise-meta">
-          <p class="muted">{{ equipmentLabel(selectedProgressExercise()!.equipment) }} • {{ muscleLabel(selectedProgressExercise()!.primary_muscle) }}</p>
-          <p class="muted">Tippe auf einen Graphen, um die Detailansicht für diese Übung zu öffnen.</p>
+          <p class="muted">
+            {{ equipmentLabel(selectedProgressExercise()!.equipment) }} •
+            {{ muscleLabel(selectedProgressExercise()!.primary_muscle) }}
+          </p>
+          <p class="muted">
+            Tippe auf einen Graphen, um die Detailansicht für diese Übung zu öffnen.
+          </p>
         </div>
       }
 
@@ -85,13 +104,23 @@ import { ExerciseProgressRow, equipmentLabel, muscleLabel, toLinePoints } from '
       </div>
 
       <div class="progress-graph-grid">
-        <button type="button" class="graph-card main-graph-card" (click)="openProgressDetail.emit('10rm')" aria-label="Leistungstrend im Detail öffnen">
+        <button
+          type="button"
+          class="graph-card main-graph-card"
+          (click)="openProgressDetail.emit('10rm')"
+          aria-label="Leistungstrend im Detail öffnen"
+        >
           <div class="graph-head">
             <strong>Leistungstrend</strong>
             <span class="muted">Stärkster Satz pro Einheit • {{ progressRangeLabel() }}</span>
           </div>
           @if (tenRmSeries().length > 0) {
-            <svg class="graph" viewBox="0 0 100 34" preserveAspectRatio="none" aria-label="Leistungstrend">
+            <svg
+              class="graph"
+              viewBox="0 0 100 34"
+              preserveAspectRatio="none"
+              aria-label="Leistungstrend"
+            >
               <polyline [attr.points]="toLinePoints(tenRmSeries())"></polyline>
             </svg>
           } @else {
@@ -99,17 +128,29 @@ import { ExerciseProgressRow, equipmentLabel, muscleLabel, toLinePoints } from '
           }
         </button>
 
-        <button type="button" class="graph-card main-graph-card graph-card-volume" (click)="openProgressDetail.emit('volume')" aria-label="Volumentrend im Detail öffnen">
+        <button
+          type="button"
+          class="graph-card main-graph-card graph-card-volume"
+          (click)="openProgressDetail.emit('volume')"
+          aria-label="Volumentrend im Detail öffnen"
+        >
           <div class="graph-head">
             <strong>Volumentrend</strong>
             <span class="muted">Gesamte Arbeit pro Einheit • {{ progressRangeLabel() }}</span>
           </div>
           @if (exerciseVolumeSeries().length > 0) {
-            <svg class="graph" viewBox="0 0 100 34" preserveAspectRatio="none" aria-label="Volumentrend">
+            <svg
+              class="graph"
+              viewBox="0 0 100 34"
+              preserveAspectRatio="none"
+              aria-label="Volumentrend"
+            >
               <polyline [attr.points]="toLinePoints(exerciseVolumeSeries())"></polyline>
             </svg>
           } @else {
-            <p class="muted">Nach deinen ersten Einträgen siehst du hier, wie sich dein Arbeitsvolumen entwickelt.</p>
+            <p class="muted">
+              Nach deinen ersten Einträgen siehst du hier, wie sich dein Arbeitsvolumen entwickelt.
+            </p>
           }
         </button>
       </div>
@@ -133,7 +174,9 @@ import { ExerciseProgressRow, equipmentLabel, muscleLabel, toLinePoints } from '
     <section class="panel stats-card">
       <div class="section-copy">
         <h2>Trainingsstand</h2>
-        <p class="muted">Rhythmus, aktiver Plan und aktuelles Körpergewicht bleiben kompakt im Blick.</p>
+        <p class="muted">
+          Rhythmus, aktiver Plan und aktuelles Körpergewicht bleiben kompakt im Blick.
+        </p>
       </div>
       <div class="stats-grid">
         <article class="stat-box">
@@ -158,9 +201,15 @@ import { ExerciseProgressRow, equipmentLabel, muscleLabel, toLinePoints } from '
     <section class="panel measurement-panel">
       <div class="section-copy">
         <h2>Messwert eintragen</h2>
-        <p class="muted">Gewicht oder Umfang kurz nachtragen, ohne den eigentlichen Trainingsverlauf zu überladen.</p>
+        <p class="muted">
+          Gewicht oder Umfang kurz nachtragen, ohne den eigentlichen Trainingsverlauf zu überladen.
+        </p>
       </div>
-      <form class="measurement-form" [formGroup]="measurementForm()" (ngSubmit)="saveMeasurement.emit()">
+      <form
+        class="measurement-form"
+        [formGroup]="measurementForm()"
+        (ngSubmit)="saveMeasurement.emit()"
+      >
         <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
           <mat-label>Messung</mat-label>
           <mat-select id="measure-type" formControlName="type">
@@ -173,18 +222,32 @@ import { ExerciseProgressRow, equipmentLabel, muscleLabel, toLinePoints } from '
 
         <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
           <mat-label>Wert</mat-label>
-          <input matInput id="measure-value" type="number" min="0" step="0.1" formControlName="value">
+          <input
+            matInput
+            id="measure-value"
+            type="number"
+            min="0"
+            step="0.1"
+            formControlName="value"
+          />
         </mat-form-field>
 
         <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
           <mat-label>Datum</mat-label>
-          <input matInput id="measure-date" type="date" formControlName="measuredOn">
+          <input matInput id="measure-date" type="date" formControlName="measuredOn" />
         </mat-form-field>
 
-        <button mat-flat-button type="submit" class="action-btn" [disabled]="measurementForm().invalid">Wert speichern</button>
+        <button
+          mat-flat-button
+          type="submit"
+          class="action-btn"
+          [disabled]="measurementForm().invalid"
+        >
+          Wert speichern
+        </button>
       </form>
     </section>
-  `
+  `,
 })
 export class GymProgressTabComponent {
   readonly personalStats = input<TrainingPersonalStats | null>(null);

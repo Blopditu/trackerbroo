@@ -1,6 +1,6 @@
 import {
   TrainingExecutionExercise,
-  TrainingGraphDataPoint
+  TrainingGraphDataPoint,
 } from '../../core/training/training-data.service';
 import { TrainingGraphConfig } from '../../core/types';
 import { roundTo } from '../../core/training/training-utils';
@@ -26,7 +26,7 @@ export function equipmentLabel(equipment: string): string {
     cable: 'Kabel',
     bodyweight: 'Koerpergewicht',
     bands: 'Baender',
-    other: 'Sonstiges'
+    other: 'Sonstiges',
   };
 
   return map[equipment] || equipment;
@@ -65,7 +65,7 @@ export function muscleLabel(muscle: string): string {
     teres_major: 'Teres Major',
     soleus: 'Soleus',
     adductors: 'Adduktoren',
-    abductors: 'Abduktoren'
+    abductors: 'Abduktoren',
   };
 
   return map[muscle] || muscle;
@@ -84,7 +84,8 @@ export function targetLabel(exercise: TrainingExecutionExercise): string {
 export function graphTitle(widget: TrainingGraphConfig, exerciseName?: string | null): string {
   if (widget.graph_type === 'workout_count') return 'Workout-Haeufigkeit';
   if (widget.graph_type === 'exercise_10rm') return `${exerciseName || 'Übung'} 10RM`;
-  if (widget.graph_type === 'muscle_volume') return `Muskelvolumen (${widget.muscle_group || 'alle'})`;
+  if (widget.graph_type === 'muscle_volume')
+    return `Muskelvolumen (${widget.muscle_group || 'alle'})`;
   if (widget.graph_type === 'bodyweight') return 'Koerpergewicht';
   return 'Gesamtvolumen';
 }
@@ -100,7 +101,7 @@ export function toLinePoints(points: TrainingGraphDataPoint[]): string {
     return '0,34 100,34';
   }
 
-  const values = points.map(point => Number(point.point_value));
+  const values = points.map((point) => Number(point.point_value));
   const min = Math.min(...values);
   const max = Math.max(...values);
   const range = Math.max(max - min, 1);
@@ -119,7 +120,7 @@ export function detailChartPoints(points: TrainingGraphDataPoint[]): DetailChart
     return [];
   }
 
-  const values = points.map(point => Number(point.point_value));
+  const values = points.map((point) => Number(point.point_value));
   const min = Math.min(...values);
   const max = Math.max(...values);
   const range = Math.max(max - min, 1);
@@ -131,14 +132,14 @@ export function detailChartPoints(points: TrainingGraphDataPoint[]): DetailChart
       date: point.point_date,
       value: Number(point.point_value),
       x: Number(roundTo(x, 2)),
-      y: Number(roundTo(y, 2))
+      y: Number(roundTo(y, 2)),
     };
   });
 }
 
 export function buildExerciseProgressRows(
   tenRmSeries: TrainingGraphDataPoint[],
-  exerciseVolumeSeries: TrainingGraphDataPoint[]
+  exerciseVolumeSeries: TrainingGraphDataPoint[],
 ): ExerciseProgressRow[] {
   const tenRmByDay = new Map<string, number>();
   const volumeByDay = new Map<string, number>();
@@ -155,9 +156,9 @@ export function buildExerciseProgressRows(
     .sort((a, b) => (a < b ? 1 : -1))
     .slice(0, 8);
 
-  return dates.map(date => ({
+  return dates.map((date) => ({
     date,
     tenRm: tenRmByDay.has(date) ? `${tenRmByDay.get(date)!.toFixed(1)} kg` : '--',
-    volume: volumeByDay.has(date) ? `${Math.round(volumeByDay.get(date)!)} kg` : '--'
+    volume: volumeByDay.has(date) ? `${Math.round(volumeByDay.get(date)!)} kg` : '--',
   }));
 }

@@ -22,33 +22,35 @@ import { formatAppError } from '../../core/error-format';
       </section>
     </main>
   `,
-  styles: [`
-    .auth-callback-page {
-      min-height: calc(100vh - 180px);
-      align-content: center;
-    }
+  styles: [
+    `
+      .auth-callback-page {
+        min-height: calc(100vh - 180px);
+        align-content: center;
+      }
 
-    .auth-callback-panel {
-      display: grid;
-      gap: 0.8rem;
-      text-align: left;
-    }
+      .auth-callback-panel {
+        display: grid;
+        gap: 0.8rem;
+        text-align: left;
+      }
 
-    h1 {
-      font-size: 1.5rem;
-      line-height: 1.15;
-      margin: 0;
-    }
+      h1 {
+        font-size: 1.5rem;
+        line-height: 1.15;
+        margin: 0;
+      }
 
-    p {
-      margin: 0;
-      color: var(--ink-500);
-    }
+      p {
+        margin: 0;
+        color: var(--ink-500);
+      }
 
-    .error {
-      color: var(--danger-400);
-    }
-  `]
+      .error {
+        color: var(--danger-400);
+      }
+    `,
+  ],
 })
 export class AuthCallbackComponent {
   readonly message = signal('Bitte kurz warten ...');

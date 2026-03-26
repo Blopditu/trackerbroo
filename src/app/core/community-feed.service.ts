@@ -4,7 +4,10 @@ import { CommunityComment, CommunityPost, DailySummary, LogEntry, Profile } from
 import { LibraryDataService } from './library-data.service';
 import { QueryCacheService } from './query-cache.service';
 
-export type CommunityProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_url'>;
+export type CommunityProfileDirectoryEntry = Pick<
+  Profile,
+  'user_id' | 'display_name' | 'avatar_url'
+>;
 
 export interface CommunityFeedCursor {
   id: string;
@@ -23,7 +26,7 @@ export interface CommunityFeedPage {
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class CommunityFeedService {
   private readonly supabaseService = inject(SupabaseService);
@@ -34,7 +37,7 @@ export class CommunityFeedService {
   async fetchFeedPage(
     cursor: CommunityFeedCursor | null,
     pageSize: number,
-    options: { userId?: string; forceRefresh?: boolean; allowCachedFirstPage?: boolean } = {}
+    options: { userId?: string; forceRefresh?: boolean; allowCachedFirstPage?: boolean } = {},
   ): Promise<CommunityFeedPage> {
     if (!cursor && options.userId && options.allowCachedFirstPage !== false) {
       const { value } = await this.queryCache.getOrLoad({
@@ -42,7 +45,7 @@ export class CommunityFeedService {
         ttlMs: this.firstPageTtlMs,
         forceRefresh: options.forceRefresh,
         allowStaleOnError: true,
-        loader: () => this.fetchFeedPageNetwork(null, pageSize)
+        loader: () => this.fetchFeedPageNetwork(null, pageSize),
       });
 
       return value;
@@ -52,8 +55,10 @@ export class CommunityFeedService {
   }
 
   getCachedFirstPage(userId: string): CommunityFeedPage | null {
-    return this.queryCache.getFresh<CommunityFeedPage>(this.firstPageCacheKey(userId))
-      || this.queryCache.getStale<CommunityFeedPage>(this.firstPageCacheKey(userId));
+    return (
+      this.queryCache.getFresh<CommunityFeedPage>(this.firstPageCacheKey(userId)) ||
+      this.queryCache.getStale<CommunityFeedPage>(this.firstPageCacheKey(userId))
+    );
   }
 
   setCachedFirstPage(userId: string, page: CommunityFeedPage): void {
@@ -63,7 +68,7 @@ export class CommunityFeedService {
   async checkForNewPosts(
     userId: string,
     currentHead: CommunityFeedCursor | null,
-    pageSize: number
+    pageSize: number,
   ): Promise<boolean> {
     const { data, error } = await this.supabaseService.client
       .from('community_posts')
@@ -79,7 +84,7 @@ export class CommunityFeedService {
 
     const newestCursor: CommunityFeedCursor = {
       id: String(data.id),
-      createdAt: String(data.created_at)
+      createdAt: String(data.created_at),
     };
 
     if (!this.isCursorNewer(newestCursor, currentHead)) {
@@ -98,7 +103,7 @@ export class CommunityFeedService {
   async ensureProteinMilestonePost(
     userId: string,
     day: string,
-    initialSummary?: Pick<DailySummary, 'protein' | 'kcal' | 'carbs' | 'fat'> | null
+    initialSummary?: Pick<DailySummary, 'protein' | 'kcal' | 'carbs' | 'fat'> | null,
   ): Promise<void> {
     const markerKey = this.getProteinMilestoneCacheKey(userId, day);
     if (this.queryCache.getFresh<boolean>(markerKey)) {
@@ -146,7 +151,10 @@ export class CommunityFeedService {
 
     const foods = entries
       .slice(0, 4)
-      .map(entry => `${nameMap.get(entry.ref_id) || 'Unbekannt'} (${Number(entry.protein || 0).toFixed(1)}g)`);
+      .map(
+        (entry) =>
+          `${nameMap.get(entry.ref_id) || 'Unbekannt'} (${Number(entry.protein || 0).toFixed(1)}g)`,
+      );
 
     await this.supabaseService.client.from('community_posts').upsert(
       {
@@ -159,11 +167,11 @@ export class CommunityFeedService {
           carbs: Number(summaryData?.carbs || 0),
           fat: Number(summaryData?.fat || 0),
           kcal: Number(summaryData?.kcal || 0),
-          foods
+          foods,
         },
-        photo_url: null
+        photo_url: null,
       },
-      { onConflict: 'user_id,day,post_type' }
+      { onConflict: 'user_id,day,post_type' },
     );
 
     this.queryCache.set(markerKey, true, 1000 * 60 * 60 * 6);
@@ -173,26 +181,29 @@ export class CommunityFeedService {
     }
   }
 
-  async createGymCheckinPost(userId: string, day: string, note: string, photo: File | null): Promise<void> {
+  async createGymCheckinPost(
+    userId: string,
+    day: string,
+    note: string,
+    photo: File | null,
+  ): Promise<void> {
     const wasExisting = await this.hasExistingPost(userId, day, 'gym_checkin');
     let photoUrl: string | null = null;
     if (photo) {
       photoUrl = await this.uploadImage(photo, 'gym-checkins', userId);
     }
 
-    const { error } = await this.supabaseService.client
-      .from('community_posts')
-      .upsert(
-        {
-          user_id: userId,
-          post_type: 'gym_checkin',
-          day,
-          note: note.trim() || null,
-          summary: null,
-          photo_url: photoUrl
-        },
-        { onConflict: 'user_id,day,post_type' }
-      );
+    const { error } = await this.supabaseService.client.from('community_posts').upsert(
+      {
+        user_id: userId,
+        post_type: 'gym_checkin',
+        day,
+        note: note.trim() || null,
+        summary: null,
+        photo_url: photoUrl,
+      },
+      { onConflict: 'user_id,day,post_type' },
+    );
 
     if (error) {
       throw error;
@@ -203,24 +214,27 @@ export class CommunityFeedService {
     }
   }
 
-  async createStepsMilestonePost(userId: string, day: string, steps: number, target: number): Promise<void> {
+  async createStepsMilestonePost(
+    userId: string,
+    day: string,
+    steps: number,
+    target: number,
+  ): Promise<void> {
     const wasExisting = await this.hasExistingPost(userId, day, 'steps_milestone');
-    const { error } = await this.supabaseService.client
-      .from('community_posts')
-      .upsert(
-        {
-          user_id: userId,
-          post_type: 'steps_milestone',
-          day,
-          note: 'Schrittziel erreicht.',
-          summary: {
-            steps,
-            target
-          },
-          photo_url: null
+    const { error } = await this.supabaseService.client.from('community_posts').upsert(
+      {
+        user_id: userId,
+        post_type: 'steps_milestone',
+        day,
+        note: 'Schrittziel erreicht.',
+        summary: {
+          steps,
+          target,
         },
-        { onConflict: 'user_id,day,post_type' }
-      );
+        photo_url: null,
+      },
+      { onConflict: 'user_id,day,post_type' },
+    );
 
     if (error) {
       throw error;
@@ -239,7 +253,10 @@ export class CommunityFeedService {
     this.invalidateFirstPageCache(userId);
   }
 
-  private async fetchFeedPageNetwork(cursor: CommunityFeedCursor | null, pageSize: number): Promise<CommunityFeedPage> {
+  private async fetchFeedPageNetwork(
+    cursor: CommunityFeedCursor | null,
+    pageSize: number,
+  ): Promise<CommunityFeedPage> {
     let query = this.supabaseService.client
       .from('community_posts')
       .select('*')
@@ -249,7 +266,7 @@ export class CommunityFeedService {
 
     if (cursor) {
       query = query.or(
-        `created_at.lt.${cursor.createdAt},and(created_at.eq.${cursor.createdAt},id.lt.${cursor.id})`
+        `created_at.lt.${cursor.createdAt},and(created_at.eq.${cursor.createdAt},id.lt.${cursor.id})`,
       );
     }
 
@@ -264,7 +281,8 @@ export class CommunityFeedService {
     const profiles = await this.loadProfiles(posts, commentsByPost);
     const photoSrcMap = await this.resolvePostPhotoUrls(posts);
     const newestCursor = this.toCursor(posts[0] || null);
-    const nextCursor = posts.length === pageSize ? this.toCursor(posts[posts.length - 1] || null) : null;
+    const nextCursor =
+      posts.length === pageSize ? this.toCursor(posts[posts.length - 1] || null) : null;
 
     return {
       posts,
@@ -274,12 +292,12 @@ export class CommunityFeedService {
       nextCursor,
       hasMore: posts.length === pageSize,
       newestCursor,
-      fetchedAt: new Date().toISOString()
+      fetchedAt: new Date().toISOString(),
     };
   }
 
   private async loadComments(posts: CommunityPost[]): Promise<Record<string, CommunityComment[]>> {
-    const postIds = posts.map(post => post.id);
+    const postIds = posts.map((post) => post.id);
     if (postIds.length === 0) {
       return {};
     }
@@ -307,12 +325,12 @@ export class CommunityFeedService {
 
   private async loadProfiles(
     posts: CommunityPost[],
-    commentsByPost: Record<string, CommunityComment[]>
+    commentsByPost: Record<string, CommunityComment[]>,
   ): Promise<Record<string, CommunityProfileDirectoryEntry>> {
     const commentAuthors = Object.values(commentsByPost)
       .flat()
-      .map(comment => comment.user_id);
-    const userIds = Array.from(new Set([...posts.map(post => post.user_id), ...commentAuthors]));
+      .map((comment) => comment.user_id);
+    const userIds = Array.from(new Set([...posts.map((post) => post.user_id), ...commentAuthors]));
 
     if (userIds.length === 0) {
       return {};
@@ -342,7 +360,10 @@ export class CommunityFeedService {
     }
 
     const resolvedEntries = await Promise.all(
-      posts.map(async post => [post.id, await this.resolvePhotoUrl(post.photo_url, 'gym-checkins')] as const)
+      posts.map(
+        async (post) =>
+          [post.id, await this.resolvePhotoUrl(post.photo_url, 'gym-checkins')] as const,
+      ),
     );
 
     const toMerge: Record<string, string> = {};
@@ -370,7 +391,10 @@ export class CommunityFeedService {
     return filePath;
   }
 
-  private async resolvePhotoUrl(photoUrlOrPath: string | null, bucketName: string): Promise<string | null> {
+  private async resolvePhotoUrl(
+    photoUrlOrPath: string | null,
+    bucketName: string,
+  ): Promise<string | null> {
     if (!photoUrlOrPath) {
       return null;
     }
@@ -415,7 +439,7 @@ export class CommunityFeedService {
     const markers = [
       `/storage/v1/object/sign/${bucketName}/`,
       `/storage/v1/object/authenticated/${bucketName}/`,
-      `/storage/v1/object/public/${bucketName}/`
+      `/storage/v1/object/public/${bucketName}/`,
     ];
 
     for (const marker of markers) {
@@ -430,7 +454,11 @@ export class CommunityFeedService {
     return null;
   }
 
-  private async hasExistingPost(userId: string, day: string, postType: CommunityPost['post_type']): Promise<boolean> {
+  private async hasExistingPost(
+    userId: string,
+    day: string,
+    postType: CommunityPost['post_type'],
+  ): Promise<boolean> {
     const { data } = await this.supabaseService.client
       .from('community_posts')
       .select('id')
@@ -443,27 +471,34 @@ export class CommunityFeedService {
     return Boolean(data?.id);
   }
 
-  private async notifyCommunityPost(userId: string, day: string, postType: CommunityPost['post_type']): Promise<void> {
+  private async notifyCommunityPost(
+    userId: string,
+    day: string,
+    postType: CommunityPost['post_type'],
+  ): Promise<void> {
     try {
       const {
-        data: { session }
+        data: { session },
       } = await this.supabaseService.client.auth.getSession();
       const accessToken = session?.access_token;
       if (!accessToken) {
         throw new Error('Missing access token for push notification.');
       }
 
-      const { error } = await this.supabaseService.client.functions.invoke('send-push-notifications', {
-        body: {
-          kind: 'community_post',
-          actorUserId: userId,
-          day,
-          postType
+      const { error } = await this.supabaseService.client.functions.invoke(
+        'send-push-notifications',
+        {
+          body: {
+            kind: 'community_post',
+            actorUserId: userId,
+            day,
+            postType,
+          },
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
         },
-        headers: {
-          Authorization: `Bearer ${accessToken}`
-        }
-      });
+      );
 
       if (error) {
         throw error;
@@ -492,11 +527,14 @@ export class CommunityFeedService {
 
     return {
       id: post.id,
-      createdAt: post.created_at
+      createdAt: post.created_at,
     };
   }
 
-  private isCursorNewer(candidate: CommunityFeedCursor | null, current: CommunityFeedCursor | null): boolean {
+  private isCursorNewer(
+    candidate: CommunityFeedCursor | null,
+    current: CommunityFeedCursor | null,
+  ): boolean {
     if (!candidate) {
       return false;
     }

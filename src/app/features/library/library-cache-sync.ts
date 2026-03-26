@@ -1,7 +1,7 @@
 import {
   IngredientsSnapshot,
   LibraryDataService,
-  MealsSnapshot
+  MealsSnapshot,
 } from '../../core/library-data.service';
 import { Ingredient, Meal, MealItem } from '../../core/types';
 import { buildMealCosts, buildMealMacros } from './library-view-utils';
@@ -14,31 +14,31 @@ export interface DerivedLibraryMetrics {
 export function deriveLibraryMetrics(
   ingredients: Ingredient[],
   meals: Meal[],
-  mealItems: MealItem[]
+  mealItems: MealItem[],
 ): DerivedLibraryMetrics {
   return {
     mealMacros: buildMealMacros(meals, mealItems, ingredients),
-    mealCosts: buildMealCosts(meals, mealItems, ingredients)
+    mealCosts: buildMealCosts(meals, mealItems, ingredients),
   };
 }
 
 export function createIngredientsSnapshot(ingredients: Ingredient[]): IngredientsSnapshot {
   return {
     ingredients,
-    fetchedAt: new Date().toISOString()
+    fetchedAt: new Date().toISOString(),
   };
 }
 
 export function createMealsSnapshot(
   meals: Meal[],
   mealItems: MealItem[],
-  ingredients: Ingredient[]
+  ingredients: Ingredient[],
 ): MealsSnapshot {
   return {
     meals,
     mealItems,
     mealMacros: buildMealMacros(meals, mealItems, ingredients),
-    fetchedAt: new Date().toISOString()
+    fetchedAt: new Date().toISOString(),
   };
 }
 
@@ -58,14 +58,14 @@ export function syncLibraryCaches(params: {
   if (params.ingredientsLoaded) {
     params.libraryDataService.setIngredientsSnapshot(
       params.userId,
-      createIngredientsSnapshot(params.ingredients)
+      createIngredientsSnapshot(params.ingredients),
     );
   }
 
   if (params.mealsLoaded) {
     params.libraryDataService.setMealsSnapshot(
       params.userId,
-      createMealsSnapshot(params.meals, params.mealItems, params.ingredients)
+      createMealsSnapshot(params.meals, params.mealItems, params.ingredients),
     );
   }
 }

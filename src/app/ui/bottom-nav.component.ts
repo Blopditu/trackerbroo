@@ -8,7 +8,7 @@ import {
   LucideAngularModule,
   Plus,
   UserRound,
-  Users
+  Users,
 } from 'lucide-angular';
 import { AppNavKey } from '../app.routes';
 
@@ -28,7 +28,9 @@ interface NavItem {
   template: `
     <nav [class]="containerClasses()" aria-label="Hauptnavigation">
       @if (mode() === 'bottom') {
-        <div class="mx-auto grid h-[3.7rem] w-full max-w-[1240px] grid-cols-[1fr_1fr_auto_1fr_1fr] items-end gap-0 px-4 pb-[calc(0.55rem+env(safe-area-inset-bottom))] pt-2 sm:px-6 xl:px-8">
+        <div
+          class="mx-auto grid h-[3.7rem] w-full max-w-[1240px] grid-cols-[1fr_1fr_auto_1fr_1fr] items-end gap-0 px-4 pb-[calc(0.55rem+env(safe-area-inset-bottom))] pt-2 sm:px-6 xl:px-8"
+        >
           @for (item of mobileLeadingItems(); track item.key) {
             <a [routerLink]="item.route" [class]="linkClasses(item.key)">
               <lucide-icon [img]="item.icon" class="h-4 w-4" aria-hidden="true"></lucide-icon>
@@ -43,7 +45,11 @@ interface NavItem {
               class="grid h-[3rem] w-[3rem] -translate-y-1 place-items-center rounded-full bg-[linear-gradient(180deg,#19f28a,#03d66d)] text-[#04140b] shadow-[0_8px_16px_rgba(0,228,117,0.12)] transition active:translate-y-[calc(-0.25rem+1px)]"
               aria-label="Schnelllog öffnen"
             >
-              <lucide-icon [img]="icons.plus" class="h-[1rem] w-[1rem]" aria-hidden="true"></lucide-icon>
+              <lucide-icon
+                [img]="icons.plus"
+                class="h-[1rem] w-[1rem]"
+                aria-hidden="true"
+              ></lucide-icon>
             </a>
           </div>
 
@@ -55,15 +61,21 @@ interface NavItem {
           }
         </div>
       } @else {
-        <div class="flex h-full flex-col gap-3 rounded-[1.7rem] bg-[linear-gradient(180deg,rgba(21,23,22,0.94),rgba(10,11,11,0.92))] p-3 shadow-[0_16px_38px_rgba(0,0,0,0.24)] backdrop-blur-xl">
+        <div
+          class="flex h-full flex-col gap-3 rounded-[1.7rem] bg-[linear-gradient(180deg,rgba(21,23,22,0.94),rgba(10,11,11,0.92))] p-3 shadow-[0_16px_38px_rgba(0,0,0,0.24)] backdrop-blur-xl"
+        >
           <div class="px-2 pt-2">
-            <p class="text-[0.65rem] font-extrabold uppercase tracking-[0.32em] text-shell-accent">Stoic Coach</p>
+            <p class="text-[0.65rem] font-extrabold uppercase tracking-[0.32em] text-shell-accent">
+              Stoic Coach
+            </p>
           </div>
 
           <div class="grid gap-2">
             @for (item of allItems(); track item.key) {
               <a [routerLink]="item.route" [class]="railLinkClasses(item.key)">
-                <span class="grid h-10 w-10 place-items-center rounded-full bg-current/0 transition">
+                <span
+                  class="grid h-10 w-10 place-items-center rounded-full bg-current/0 transition"
+                >
                   <lucide-icon [img]="item.icon" class="h-4 w-4" aria-hidden="true"></lucide-icon>
                 </span>
                 <span class="min-w-0 truncate">{{ item.label }}</span>
@@ -85,14 +97,14 @@ interface NavItem {
         </div>
       }
     </nav>
-  `
+  `,
 })
 export class BottomNavComponent {
   readonly mode = input<NavMode>('bottom');
   readonly activeNav = input<AppNavKey>(null);
 
   readonly icons = {
-    plus: Plus
+    plus: Plus,
   };
 
   private readonly items: NavItem[] = [
@@ -100,10 +112,10 @@ export class BottomNavComponent {
     { key: 'gym', label: 'Gym', route: '/gym', icon: Dumbbell },
     { key: 'library', label: 'Bib', route: '/library', icon: BookOpen },
     { key: 'community', label: 'Feed', route: '/community', icon: Users },
-    { key: 'profile', label: 'Profil', route: '/profile', icon: UserRound }
+    { key: 'profile', label: 'Profil', route: '/profile', icon: UserRound },
   ];
 
-  readonly mobileItems = computed(() => this.items.filter(item => item.key !== 'library'));
+  readonly mobileItems = computed(() => this.items.filter((item) => item.key !== 'library'));
   readonly mobileLeadingItems = computed(() => this.mobileItems().slice(0, 2));
   readonly mobileTrailingItems = computed(() => this.mobileItems().slice(2));
   readonly allItems = computed(() => this.items);
@@ -132,9 +144,7 @@ export class BottomNavComponent {
       'uppercase',
       'tracking-[0.14em]',
       'transition',
-      active
-        ? 'text-shell-accent'
-        : 'text-shell-ink-muted hover:text-shell-ink'
+      active ? 'text-shell-accent' : 'text-shell-ink-muted hover:text-shell-ink',
     ].join(' ');
   }
 
@@ -152,7 +162,7 @@ export class BottomNavComponent {
       'transition',
       active
         ? 'bg-[linear-gradient(180deg,rgba(20,35,27,0.86),rgba(18,24,21,0.92))] text-shell-accent'
-        : 'text-shell-ink-muted hover:bg-shell-card hover:text-shell-ink'
+        : 'text-shell-ink-muted hover:bg-shell-card hover:text-shell-ink',
     ].join(' ');
   }
 }

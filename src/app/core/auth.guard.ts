@@ -4,7 +4,7 @@ import { AuthService } from './auth.service';
 import { SupabaseService } from './supabase.service';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class AuthGuard implements CanActivate {
   private readonly authService = inject(AuthService);

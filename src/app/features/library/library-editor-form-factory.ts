@@ -42,33 +42,38 @@ export function createIngredientForm(formBuilder: FormBuilder): IngredientFormGr
     protein_per_100: [0, [Validators.required]],
     carbs_per_100: [0, [Validators.required]],
     fat_per_100: [0, [Validators.required]],
-    brand: ['']
+    brand: [''],
   });
 }
 
 export function createMealForm(formBuilder: FormBuilder): MealFormGroup {
   return formBuilder.nonNullable.group({
     name: ['', [Validators.required]],
-    items: formBuilder.array<MealItemFormGroup>([createMealItemGroup(formBuilder, { ingredient_id: '', grams: 0 })])
+    items: formBuilder.array<MealItemFormGroup>([
+      createMealItemGroup(formBuilder, { ingredient_id: '', grams: 0 }),
+    ]),
   });
 }
 
-export function createMealItemGroup(formBuilder: FormBuilder, value: MealItemDraft): MealItemFormGroup {
+export function createMealItemGroup(
+  formBuilder: FormBuilder,
+  value: MealItemDraft,
+): MealItemFormGroup {
   return formBuilder.nonNullable.group({
     ingredient_id: value.ingredient_id,
-    grams: value.grams
+    grams: value.grams,
   });
 }
 
 export function replaceMealItems(
   formBuilder: FormBuilder,
   mealForm: MealFormGroup,
-  items: MealItemDraft[]
+  items: MealItemDraft[],
 ): void {
   const nextItems = items.length > 0 ? items : [{ ingredient_id: '', grams: 0 }];
   mealForm.setControl(
     'items',
-    formBuilder.array(nextItems.map(item => createMealItemGroup(formBuilder, item)))
+    formBuilder.array(nextItems.map((item) => createMealItemGroup(formBuilder, item))),
   );
 }
 
@@ -83,11 +88,14 @@ export function resetIngredientFormForCreate(ingredientForm: IngredientFormGroup
     protein_per_100: 0,
     carbs_per_100: 0,
     fat_per_100: 0,
-    brand: ''
+    brand: '',
   });
 }
 
-export function resetIngredientFormForEdit(ingredientForm: IngredientFormGroup, ingredient: Ingredient): void {
+export function resetIngredientFormForEdit(
+  ingredientForm: IngredientFormGroup,
+  ingredient: Ingredient,
+): void {
   ingredientForm.reset({
     source_type: ingredient.source_type || 'manual',
     base_ingredient_id: ingredient.base_ingredient_id ?? null,
@@ -98,14 +106,11 @@ export function resetIngredientFormForEdit(ingredientForm: IngredientFormGroup, 
     protein_per_100: Number(ingredient.protein_per_100),
     carbs_per_100: Number(ingredient.carbs_per_100),
     fat_per_100: Number(ingredient.fat_per_100),
-    brand: ingredient.brand || ''
+    brand: ingredient.brand || '',
   });
 }
 
-export function resetMealFormForCreate(
-  formBuilder: FormBuilder,
-  mealForm: MealFormGroup
-): void {
+export function resetMealFormForCreate(formBuilder: FormBuilder, mealForm: MealFormGroup): void {
   mealForm.reset({ name: '' });
   replaceMealItems(formBuilder, mealForm, [{ ingredient_id: '', grams: 0 }]);
 }
@@ -114,15 +119,15 @@ export function resetMealFormForEdit(
   formBuilder: FormBuilder,
   mealForm: MealFormGroup,
   mealName: string,
-  items: MealItem[]
+  items: MealItem[],
 ): void {
   mealForm.controls.name.setValue(mealName);
   replaceMealItems(
     formBuilder,
     mealForm,
-    items.map(item => ({
+    items.map((item) => ({
       ingredient_id: item.ingredient_id,
-      grams: Number(item.grams)
-    }))
+      grams: Number(item.grams),
+    })),
   );
 }

@@ -19,7 +19,7 @@ import { formatMacroValue, sourceTypeLabel } from './library-view-utils';
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
-    LucideAngularModule
+    LucideAngularModule,
   ],
   template: `
     <div class="toolbar">
@@ -32,11 +32,15 @@ import { formatMacroValue, sourceTypeLabel } from './library-view-utils';
           (ngModelChange)="ingredientSearchChange.emit($event)"
           placeholder="Zutat suchen"
           aria-label="Zutaten suchen"
-        >
+        />
       </mat-form-field>
       <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
         <mat-label>Markt</mat-label>
-        <mat-select [ngModel]="marketFilter()" (ngModelChange)="marketFilterChange.emit($event)" aria-label="Nach Markt filtern">
+        <mat-select
+          [ngModel]="marketFilter()"
+          (ngModelChange)="marketFilterChange.emit($event)"
+          aria-label="Nach Markt filtern"
+        >
           <mat-option value="">Alle Märkte</mat-option>
           @for (market of marketSuggestions(); track market) {
             <mat-option [value]="market">{{ market }}</mat-option>
@@ -91,7 +95,7 @@ import { formatMacroValue, sourceTypeLabel } from './library-view-utils';
         </div>
       }
     }
-  `
+  `,
 })
 export class LibraryIngredientsTabComponent {
   readonly loading = input.required<boolean>();

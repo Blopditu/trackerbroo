@@ -1,6 +1,11 @@
 @if (facade.activeSession()) {
   <header class="gym-workout-topbar">
-    <button type="button" class="gym-workout-topbar-btn" (click)="openSessionExitSheet()" aria-label="Workout verlassen">
+    <button
+      type="button"
+      class="gym-workout-topbar-btn"
+      (click)="openSessionExitSheet()"
+      aria-label="Workout verlassen"
+    >
       <lucide-icon [img]="backIcon" aria-hidden="true"></lucide-icon>
     </button>
 
@@ -15,7 +20,12 @@
       </div>
     </div>
 
-    <button type="button" class="gym-workout-topbar-btn" (click)="openSessionHub('help')" aria-label="Workout Optionen">
+    <button
+      type="button"
+      class="gym-workout-topbar-btn"
+      (click)="openSessionHub('help')"
+      aria-label="Workout Optionen"
+    >
       <lucide-icon [img]="moreIcon" aria-hidden="true"></lucide-icon>
     </button>
   </header>
@@ -23,11 +33,15 @@
 
 <main class="page gym-page" [class.session-active]="facade.activeSession()">
   @if (facade.errorMessage()) {
-    <p class="toast error" role="status" aria-live="polite" aria-atomic="true">{{ facade.errorMessage() }}</p>
+    <p class="toast error" role="status" aria-live="polite" aria-atomic="true">
+      {{ facade.errorMessage() }}
+    </p>
   }
 
   @if (facade.successMessage()) {
-    <p class="toast success" role="status" aria-live="polite" aria-atomic="true">{{ facade.successMessage() }}</p>
+    <p class="toast success" role="status" aria-live="polite" aria-atomic="true">
+      {{ facade.successMessage() }}
+    </p>
   }
 
   @if (!facade.activeSession()) {
@@ -117,18 +131,32 @@
 
 @if (facade.activeSession()) {
   <nav class="gym-workout-nav" aria-label="Workout Modus">
-    <button type="button" class="gym-workout-nav-btn" [class.active]="workoutSurfaceMode() === 'workout'" (click)="setWorkoutSurfaceMode('workout')">
+    <button
+      type="button"
+      class="gym-workout-nav-btn"
+      [class.active]="workoutSurfaceMode() === 'workout'"
+      (click)="setWorkoutSurfaceMode('workout')"
+    >
       <lucide-icon [img]="workoutIcon" aria-hidden="true"></lucide-icon>
       <span>Workout</span>
     </button>
-    <button type="button" class="gym-workout-nav-btn" [class.active]="workoutSurfaceMode() === 'history'" (click)="setWorkoutSurfaceMode('history')">
+    <button
+      type="button"
+      class="gym-workout-nav-btn"
+      [class.active]="workoutSurfaceMode() === 'history'"
+      (click)="setWorkoutSurfaceMode('history')"
+    >
       <lucide-icon [img]="barChartIcon" aria-hidden="true"></lucide-icon>
       <span>History</span>
     </button>
   </nav>
 }
 
-<app-bottom-sheet [open]="activeSheet() === 'hub'" [title]="sessionHubTitle()" (closed)="closeSheet()">
+<app-bottom-sheet
+  [open]="activeSheet() === 'hub'"
+  [title]="sessionHubTitle()"
+  (closed)="closeSheet()"
+>
   <app-gym-session-hub-sheet
     [tab]="sessionHubTab()"
     [plans]="facade.plans()"
@@ -148,7 +176,12 @@
   />
 </app-bottom-sheet>
 
-<app-bottom-sheet [open]="activeSheet() === 'builder'" [closeOnBackdrop]="false" title="Plan Builder" (closed)="closeSheet()">
+<app-bottom-sheet
+  [open]="activeSheet() === 'builder'"
+  [closeOnBackdrop]="false"
+  title="Plan Builder"
+  (closed)="closeSheet()"
+>
   <app-gym-plan-builder-sheet
     [planMetaForm]="facade.planMetaForm"
     [frequencies]="facade.frequencies"
@@ -157,7 +190,9 @@
     (syncDayCount)="facade.syncBuilderDayCount()"
     (dayNameChange)="facade.setBuilderDayName($event.dayIndex, $event.value)"
     (dayMusclesChange)="facade.setBuilderDayMuscles($event.dayIndex, $event.value)"
-    (exerciseChange)="facade.setBuilderExercise($event.dayIndex, $event.exerciseIndex, $event.field, $event.value)"
+    (exerciseChange)="
+      facade.setBuilderExercise($event.dayIndex, $event.exerciseIndex, $event.field, $event.value)
+    "
     (addExercise)="facade.addBuilderExercise($event)"
     (removeExercise)="facade.removeBuilderExercise($event.dayIndex, $event.exerciseIndex)"
     (addDay)="facade.addBuilderDay()"
@@ -165,7 +200,12 @@
   />
 </app-bottom-sheet>
 
-<app-bottom-sheet [open]="activeSheet() === 'session-share'" [closeOnBackdrop]="false" title="Workout teilen" (closed)="closeSheet()">
+<app-bottom-sheet
+  [open]="activeSheet() === 'session-share'"
+  [closeOnBackdrop]="false"
+  title="Workout teilen"
+  (closed)="closeSheet()"
+>
   <app-gym-session-share-sheet
     [suggestion]="facade.workoutShareSuggestion()"
     [note]="facade.workoutShareNote()"
@@ -178,18 +218,34 @@
   />
 </app-bottom-sheet>
 
-<app-bottom-sheet [open]="activeSheet() === 'session-exit'" [closeOnBackdrop]="false" title="Workout verlassen" (closed)="closeSheet()">
+<app-bottom-sheet
+  [open]="activeSheet() === 'session-exit'"
+  [closeOnBackdrop]="false"
+  title="Workout verlassen"
+  (closed)="closeSheet()"
+>
   <article class="action-card">
     <p class="action-title">{{ workoutHeaderTitle() }}</p>
-    <p class="action-sub">Die Session läuft noch. Du kannst weitertrainieren oder das Workout jetzt abschließen.</p>
+    <p class="action-sub">
+      Die Session läuft noch. Du kannst weitertrainieren oder das Workout jetzt abschließen.
+    </p>
   </article>
   <div class="action-list">
-    <button mat-flat-button type="button" class="action-btn" (click)="onFinishWorkout()">Workout abschließen</button>
-    <button mat-flat-button type="button" class="action-btn ghost" (click)="closeSheet()">Weitertrainieren</button>
+    <button mat-flat-button type="button" class="action-btn" (click)="onFinishWorkout()">
+      Workout abschließen
+    </button>
+    <button mat-flat-button type="button" class="action-btn ghost" (click)="closeSheet()">
+      Weitertrainieren
+    </button>
   </div>
 </app-bottom-sheet>
 
-<app-bottom-sheet [open]="activeSheet() === 'graphs'" [closeOnBackdrop]="false" title="Graph hinzufuegen" (closed)="closeSheet()">
+<app-bottom-sheet
+  [open]="activeSheet() === 'graphs'"
+  [closeOnBackdrop]="false"
+  title="Graph hinzufuegen"
+  (closed)="closeSheet()"
+>
   <form class="sheet-stack" [formGroup]="facade.graphForm" (ngSubmit)="onAddGraphWidget()">
     <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
       <mat-label>Graph-Typ</mat-label>
@@ -217,15 +273,27 @@
     @if (facade.graphForm.value.graphType === 'muscle_volume') {
       <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
         <mat-label>Muskelgruppe</mat-label>
-        <input matInput id="graph-muscle" type="text" formControlName="muscleGroup" placeholder="z.B. quads">
+        <input
+          matInput
+          id="graph-muscle"
+          type="text"
+          formControlName="muscleGroup"
+          placeholder="z.B. quads"
+        />
       </mat-form-field>
     }
 
-    <button mat-flat-button type="submit" class="action-btn" [disabled]="facade.graphForm.invalid">Graph hinzufügen</button>
+    <button mat-flat-button type="submit" class="action-btn" [disabled]="facade.graphForm.invalid">
+      Graph hinzufügen
+    </button>
   </form>
 </app-bottom-sheet>
 
-<app-bottom-sheet [open]="activeSheet() === 'graph-detail'" [title]="facade.detailSheetTitle()" (closed)="closeSheet()">
+<app-bottom-sheet
+  [open]="activeSheet() === 'graph-detail'"
+  [title]="facade.detailSheetTitle()"
+  (closed)="closeSheet()"
+>
   <app-gym-graph-detail-sheet
     [title]="facade.detailSheetTitle()"
     [hasDetailContext]="facade.hasDetailContext()"

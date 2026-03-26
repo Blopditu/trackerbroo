@@ -1,4 +1,12 @@
-import { Component, signal, computed, inject, OnDestroy, effect } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  OnDestroy,
+  signal,
+} from '@angular/core';
 import { RouterOutlet, Router, NavigationEnd, ActivatedRouteSnapshot } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { filter } from 'rxjs/operators';
@@ -13,9 +21,10 @@ import { AppChromeService } from './core/app-chrome.service';
 
 @Component({
   selector: 'app-root',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterOutlet, CommonModule, BottomNavComponent, TopBarComponent],
   templateUrl: './app.html',
-  styleUrl: './app.scss'
+  styleUrl: './app.scss',
 })
 export class App implements OnDestroy {
   private readonly router = inject(Router);
@@ -28,7 +37,7 @@ export class App implements OnDestroy {
     shell: 'app',
     title: 'Heute',
     nav: 'today',
-    accentLabel: 'Broo Board'
+    accentLabel: 'Broo Board',
   });
   private readonly isKeyboardOpen = signal(false);
   private readonly viewportWidth = signal(typeof window === 'undefined' ? 390 : window.innerWidth);
@@ -39,11 +48,17 @@ export class App implements OnDestroy {
 
   // Use computed signal to determine if nav should be shown
   readonly shellVariant = computed<AppShellVariant>(() => this.currentRouteData().shell);
-  readonly showNav = computed(() => this.shellVariant() === 'app' && !this.chromeService.suppressAppChrome());
-  readonly showTopBar = computed(() => this.shellVariant() !== 'auth' && !this.chromeService.suppressAppChrome());
+  readonly showNav = computed(
+    () => this.shellVariant() === 'app' && !this.chromeService.suppressAppChrome(),
+  );
+  readonly showTopBar = computed(
+    () => this.shellVariant() !== 'auth' && !this.chromeService.suppressAppChrome(),
+  );
   readonly chromeSuppressed = computed(() => this.chromeService.suppressAppChrome());
   readonly currentTitle = computed(() => this.currentRouteData().title);
-  readonly currentAccentLabel = computed(() => this.currentRouteData().accentLabel ?? 'Tracker Broo');
+  readonly currentAccentLabel = computed(
+    () => this.currentRouteData().accentLabel ?? 'Tracker Broo',
+  );
   readonly currentNavKey = computed<AppNavKey>(() => this.currentRouteData().nav);
   readonly layoutMode = computed<'compact' | 'medium' | 'expanded'>(() => {
     const width = this.viewportWidth();
@@ -68,7 +83,7 @@ export class App implements OnDestroy {
     });
 
     this.routeSubscription = this.router.events
-      .pipe(filter(event => event instanceof NavigationEnd))
+      .pipe(filter((event) => event instanceof NavigationEnd))
       .subscribe((event: NavigationEnd) => {
         this.currentRoute.set(event.url);
         this.currentRouteData.set(this.readRouteData());
@@ -134,10 +149,10 @@ export class App implements OnDestroy {
     const currentHeight = visualViewport.height;
     const activeElement = document.activeElement;
     const activeIsInput =
-      activeElement instanceof HTMLInputElement
-      || activeElement instanceof HTMLTextAreaElement
-      || activeElement instanceof HTMLSelectElement
-      || (activeElement instanceof HTMLElement && activeElement.isContentEditable);
+      activeElement instanceof HTMLInputElement ||
+      activeElement instanceof HTMLTextAreaElement ||
+      activeElement instanceof HTMLSelectElement ||
+      (activeElement instanceof HTMLElement && activeElement.isContentEditable);
 
     if (currentHeight > this.viewportBaseHeight - 40) {
       this.viewportBaseHeight = Math.max(this.viewportBaseHeight, currentHeight);
@@ -178,7 +193,8 @@ export class App implements OnDestroy {
       }
 
       const profileSeed = (data as { theme_seed_color?: string | null } | null)?.theme_seed_color;
-      const resolvedSeed = profileSeed || this.themeService.readStoredSeed() || this.themeService.getDefaultSeed();
+      const resolvedSeed =
+        profileSeed || this.themeService.readStoredSeed() || this.themeService.getDefaultSeed();
       this.themeService.applySeed(resolvedSeed, { persistLocal: true });
     } catch {
       if (requestId !== this.themeLoadRequestId) {
@@ -201,7 +217,7 @@ export class App implements OnDestroy {
       shell: data?.shell ?? 'app',
       title: data?.title ?? 'Tracker Broo',
       nav: data?.nav ?? null,
-      accentLabel: data?.accentLabel ?? 'Tracker Broo'
+      accentLabel: data?.accentLabel ?? 'Tracker Broo',
     };
   }
 }

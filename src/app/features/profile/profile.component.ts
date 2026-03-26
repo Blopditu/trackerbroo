@@ -1,4 +1,13 @@
-import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, OnInit, signal, viewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  computed,
+  inject,
+  OnInit,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -26,22 +35,33 @@ interface ProfileViewCache {
 @Component({
   selector: 'app-profile',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, ReactiveFormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatSelectModule],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    MatButtonModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+  ],
   template: `
     <main class="page profile-page">
       @if (errorMessage()) {
-        <p class="toast error" role="status" aria-live="polite" aria-atomic="true">{{ errorMessage() }}</p>
+        <p class="toast error" role="status" aria-live="polite" aria-atomic="true">
+          {{ errorMessage() }}
+        </p>
       }
 
       @if (successMessage()) {
-        <p class="toast success" role="status" aria-live="polite" aria-atomic="true">{{ successMessage() }}</p>
+        <p class="toast success" role="status" aria-live="polite" aria-atomic="true">
+          {{ successMessage() }}
+        </p>
       }
 
       <section class="panel halftone">
         <div class="profile-head">
           <div class="avatar-wrap">
             @if (avatarPreview()) {
-              <img [src]="avatarPreview() || ''" alt="Profilvorschau" class="avatar-image">
+              <img [src]="avatarPreview() || ''" alt="Profilvorschau" class="avatar-image" />
             } @else {
               <div class="avatar-fallback" aria-hidden="true">◉</div>
             }
@@ -62,11 +82,41 @@ interface ProfileViewCache {
 
       <section class="panel profile-section-panel">
         <div class="profile-section-nav segmented" role="group" aria-label="Profilbereiche">
-          <button type="button" [class.active]="activeProfileSection() === 'account'" (click)="setProfileSection('account')">Account</button>
-          <button type="button" [class.active]="activeProfileSection() === 'goals'" (click)="setProfileSection('goals')">Ziele</button>
-          <button type="button" [class.active]="activeProfileSection() === 'weight'" (click)="setProfileSection('weight')">Gewicht</button>
-          <button type="button" [class.active]="activeProfileSection() === 'steps'" (click)="setProfileSection('steps')">Schritte</button>
-          <button type="button" [class.active]="activeProfileSection() === 'appearance'" (click)="setProfileSection('appearance')">Darstellung</button>
+          <button
+            type="button"
+            [class.active]="activeProfileSection() === 'account'"
+            (click)="setProfileSection('account')"
+          >
+            Account
+          </button>
+          <button
+            type="button"
+            [class.active]="activeProfileSection() === 'goals'"
+            (click)="setProfileSection('goals')"
+          >
+            Ziele
+          </button>
+          <button
+            type="button"
+            [class.active]="activeProfileSection() === 'weight'"
+            (click)="setProfileSection('weight')"
+          >
+            Gewicht
+          </button>
+          <button
+            type="button"
+            [class.active]="activeProfileSection() === 'steps'"
+            (click)="setProfileSection('steps')"
+          >
+            Schritte
+          </button>
+          <button
+            type="button"
+            [class.active]="activeProfileSection() === 'appearance'"
+            (click)="setProfileSection('appearance')"
+          >
+            Darstellung
+          </button>
         </div>
       </section>
 
@@ -77,673 +127,802 @@ interface ProfileViewCache {
         </section>
       } @else {
         @if (activeProfileSection() !== 'weight' && activeProfileSection() !== 'steps') {
-        <section class="panel" aria-labelledby="profile-form-title">
-          <div id="profile-form-title" class="scroll-header">{{ activeProfileSectionLabel() }}</div>
-          <form class="stack-form" [formGroup]="profileForm" (ngSubmit)="saveProfile()">
-            @if (activeProfileSection() === 'account') {
-            <label for="avatar">Profilfoto</label>
-            <div class="file-row">
-              <button mat-flat-button type="button" class="action-btn ghost" (click)="pickAvatar()">Foto auswählen</button>
-              <span class="file-name">{{ avatarFileName() || 'Kein Foto ausgewählt' }}</span>
+          <section class="panel" aria-labelledby="profile-form-title">
+            <div id="profile-form-title" class="scroll-header">
+              {{ activeProfileSectionLabel() }}
             </div>
-            <input #avatarInput id="avatar" class="sr-only" type="file" accept="image/*" (change)="onAvatarSelected($event)">
-
-            <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
-              <mat-label>Anzeigename</mat-label>
-              <input matInput id="display-name" type="text" formControlName="display_name" placeholder="Dein Name">
-            </mat-form-field>
-
-            <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
-              <mat-label>Kurzbeschreibung</mat-label>
-              <textarea matInput id="bio" formControlName="bio" rows="3" placeholder="Optionale Notiz zu deinem Ziel"></textarea>
-            </mat-form-field>
-            }
-
-            @if (activeProfileSection() === 'goals') {
-            <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
-              <mat-label>Gym-Name</mat-label>
-              <input matInput id="gym-name" type="text" formControlName="gym_name" placeholder="z.B. Mein Gym">
-            </mat-form-field>
-
-            <div class="grid-two">
-              <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
-                <mat-label>Größe (cm)</mat-label>
-                <input matInput id="height" type="number" min="80" max="260" formControlName="height_cm">
-              </mat-form-field>
-              <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
-                <mat-label>Gym-Ziel / Woche</mat-label>
-                <input matInput id="weekly-target" type="number" min="1" max="14" formControlName="weekly_gym_target">
-              </mat-form-field>
-            </div>
-
-            <div class="grid-two">
-              <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
-                <mat-label>Aktuelles Gewicht (kg)</mat-label>
-                <input matInput id="current-weight" type="number" min="20" step="0.1" formControlName="current_weight_kg">
-              </mat-form-field>
-              <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
-                <mat-label>Zielgewicht (kg)</mat-label>
-                <input matInput id="target-weight" type="number" min="20" step="0.1" formControlName="target_weight_kg">
-              </mat-form-field>
-            </div>
-
-            <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
-              <mat-label>Aktivitätslevel</mat-label>
-              <mat-select id="activity-level" formControlName="activity_level">
-                <mat-option value="low">Niedrig</mat-option>
-                <mat-option value="moderate">Mittel</mat-option>
-                <mat-option value="high">Hoch</mat-option>
-              </mat-select>
-            </mat-form-field>
-
-            <div class="grid-two">
-              <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
-                <mat-label>Schritte tracken</mat-label>
-                <mat-select id="track-steps" formControlName="track_steps">
-                  <mat-option [value]="true">Ja</mat-option>
-                  <mat-option [value]="false">Nein</mat-option>
-                </mat-select>
-              </mat-form-field>
-
-              @if (profileForm.controls.track_steps.value) {
-                <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
-                  <mat-label>Schrittziel pro Tag</mat-label>
-                  <input matInput id="daily-steps-target" type="number" min="1000" max="50000" formControlName="daily_steps_target">
-                </mat-form-field>
-              }
-            </div>
-            }
-
-            @if (activeProfileSection() === 'appearance') {
-            <label>Thema</label>
-            <div class="mode-segmented" role="group" aria-label="Farbschema">
-              @for (mode of themeModes; track mode.value) {
-                <button
-                  type="button"
-                  [class.active]="profileForm.controls.theme_mode.value === mode.value"
-                  (click)="applyThemeMode(mode.value)"
-                >
-                  {{ mode.label }}
-                </button>
-              }
-            </div>
-            <p class="subtle">Hell und dunkel bleiben ruhig. Die Akzentfarbe gibt der App ihren Ton.</p>
-
-            <label>Akzentfarbe</label>
-            <div class="theme-preset-grid" role="list" aria-label="Farbvorschläge">
-              @for (preset of themeSeedPresets; track preset) {
-                <button
-                  type="button"
-                  role="listitem"
-                  class="theme-swatch"
-                  [class.active]="profileForm.controls.theme_seed_color.value === preset"
-                  [style.background]="preset"
-                  (click)="applyThemePreset(preset)"
-                  [attr.aria-label]="'Farbpreset ' + preset"
-                ></button>
-              }
-            </div>
-            <details class="theme-advanced">
-              <summary>Eigene Farbe wählen</summary>
-              <p class="subtle compact">Wenn dir kein Vorschlag passt, kannst du hier deine eigene Nuance setzen.</p>
-              <div class="theme-seed-row advanced">
+            <form class="stack-form" [formGroup]="profileForm" (ngSubmit)="saveProfile()">
+              @if (activeProfileSection() === 'account') {
+                <label for="avatar">Profilfoto</label>
+                <div class="file-row">
+                  <button
+                    mat-flat-button
+                    type="button"
+                    class="action-btn ghost"
+                    (click)="pickAvatar()"
+                  >
+                    Foto auswählen
+                  </button>
+                  <span class="file-name">{{ avatarFileName() || 'Kein Foto ausgewählt' }}</span>
+                </div>
                 <input
-                  id="theme-seed-picker"
-                  type="color"
-                  [value]="profileForm.controls.theme_seed_color.value"
-                  (input)="onThemeSeedPickerInput($event)"
-                  aria-label="Akzentfarbe auswählen"
-                >
-                <mat-form-field class="m3-field theme-seed-text-field" appearance="outline" subscriptSizing="dynamic">
-                  <mat-label>Hex</mat-label>
+                  #avatarInput
+                  id="avatar"
+                  class="sr-only"
+                  type="file"
+                  accept="image/*"
+                  (change)="onAvatarSelected($event)"
+                />
+
+                <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+                  <mat-label>Anzeigename</mat-label>
                   <input
                     matInput
-                    id="theme-seed-text"
+                    id="display-name"
                     type="text"
-                    formControlName="theme_seed_color"
-                    placeholder="#78b457"
-                    (input)="onThemeSeedTextInput($event)"
-                    (blur)="normalizeThemeSeedControl()"
-                  >
+                    formControlName="display_name"
+                    placeholder="Dein Name"
+                  />
                 </mat-form-field>
-              </div>
-            </details>
-            }
 
-            <button mat-flat-button type="submit" class="action-btn" [disabled]="savingProfile() || profileForm.invalid">
-              {{ savingProfile() ? 'Wird aktualisiert …' : 'Änderungen speichern' }}
-            </button>
-          </form>
-        </section>
+                <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+                  <mat-label>Kurzbeschreibung</mat-label>
+                  <textarea
+                    matInput
+                    id="bio"
+                    formControlName="bio"
+                    rows="3"
+                    placeholder="Optionale Notiz zu deinem Ziel"
+                  ></textarea>
+                </mat-form-field>
+              }
+
+              @if (activeProfileSection() === 'goals') {
+                <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+                  <mat-label>Gym-Name</mat-label>
+                  <input
+                    matInput
+                    id="gym-name"
+                    type="text"
+                    formControlName="gym_name"
+                    placeholder="z.B. Mein Gym"
+                  />
+                </mat-form-field>
+
+                <div class="grid-two">
+                  <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+                    <mat-label>Größe (cm)</mat-label>
+                    <input
+                      matInput
+                      id="height"
+                      type="number"
+                      min="80"
+                      max="260"
+                      formControlName="height_cm"
+                    />
+                  </mat-form-field>
+                  <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+                    <mat-label>Gym-Ziel / Woche</mat-label>
+                    <input
+                      matInput
+                      id="weekly-target"
+                      type="number"
+                      min="1"
+                      max="14"
+                      formControlName="weekly_gym_target"
+                    />
+                  </mat-form-field>
+                </div>
+
+                <div class="grid-two">
+                  <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+                    <mat-label>Aktuelles Gewicht (kg)</mat-label>
+                    <input
+                      matInput
+                      id="current-weight"
+                      type="number"
+                      min="20"
+                      step="0.1"
+                      formControlName="current_weight_kg"
+                    />
+                  </mat-form-field>
+                  <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+                    <mat-label>Zielgewicht (kg)</mat-label>
+                    <input
+                      matInput
+                      id="target-weight"
+                      type="number"
+                      min="20"
+                      step="0.1"
+                      formControlName="target_weight_kg"
+                    />
+                  </mat-form-field>
+                </div>
+
+                <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+                  <mat-label>Aktivitätslevel</mat-label>
+                  <mat-select id="activity-level" formControlName="activity_level">
+                    <mat-option value="low">Niedrig</mat-option>
+                    <mat-option value="moderate">Mittel</mat-option>
+                    <mat-option value="high">Hoch</mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+                <div class="grid-two">
+                  <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+                    <mat-label>Schritte tracken</mat-label>
+                    <mat-select id="track-steps" formControlName="track_steps">
+                      <mat-option [value]="true">Ja</mat-option>
+                      <mat-option [value]="false">Nein</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+
+                  @if (profileForm.controls.track_steps.value) {
+                    <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+                      <mat-label>Schrittziel pro Tag</mat-label>
+                      <input
+                        matInput
+                        id="daily-steps-target"
+                        type="number"
+                        min="1000"
+                        max="50000"
+                        formControlName="daily_steps_target"
+                      />
+                    </mat-form-field>
+                  }
+                </div>
+              }
+
+              @if (activeProfileSection() === 'appearance') {
+                <p class="field-label">Thema</p>
+                <div class="mode-segmented" role="group" aria-label="Farbschema">
+                  @for (mode of themeModes; track mode.value) {
+                    <button
+                      type="button"
+                      [class.active]="profileForm.controls.theme_mode.value === mode.value"
+                      (click)="applyThemeMode(mode.value)"
+                    >
+                      {{ mode.label }}
+                    </button>
+                  }
+                </div>
+                <p class="subtle">
+                  Hell und dunkel bleiben ruhig. Die Akzentfarbe gibt der App ihren Ton.
+                </p>
+
+                <p class="field-label">Akzentfarbe</p>
+                <div class="theme-preset-grid" role="list" aria-label="Farbvorschläge">
+                  @for (preset of themeSeedPresets; track preset) {
+                    <button
+                      type="button"
+                      role="listitem"
+                      class="theme-swatch"
+                      [class.active]="profileForm.controls.theme_seed_color.value === preset"
+                      [style.background]="preset"
+                      (click)="applyThemePreset(preset)"
+                      [attr.aria-label]="'Farbpreset ' + preset"
+                    ></button>
+                  }
+                </div>
+                <details class="theme-advanced">
+                  <summary>Eigene Farbe wählen</summary>
+                  <p class="subtle compact">
+                    Wenn dir kein Vorschlag passt, kannst du hier deine eigene Nuance setzen.
+                  </p>
+                  <div class="theme-seed-row advanced">
+                    <input
+                      id="theme-seed-picker"
+                      type="color"
+                      [value]="profileForm.controls.theme_seed_color.value"
+                      (input)="onThemeSeedPickerInput($event)"
+                      aria-label="Akzentfarbe auswählen"
+                    />
+                    <mat-form-field
+                      class="m3-field theme-seed-text-field"
+                      appearance="outline"
+                      subscriptSizing="dynamic"
+                    >
+                      <mat-label>Hex</mat-label>
+                      <input
+                        matInput
+                        id="theme-seed-text"
+                        type="text"
+                        formControlName="theme_seed_color"
+                        placeholder="#78b457"
+                        (input)="onThemeSeedTextInput($event)"
+                        (blur)="normalizeThemeSeedControl()"
+                      />
+                    </mat-form-field>
+                  </div>
+                </details>
+              }
+
+              <button
+                mat-flat-button
+                type="submit"
+                class="action-btn"
+                [disabled]="savingProfile() || profileForm.invalid"
+              >
+                {{ savingProfile() ? 'Wird aktualisiert …' : 'Änderungen speichern' }}
+              </button>
+            </form>
+          </section>
         }
       }
 
       @if (activeProfileSection() === 'weight') {
-      <section class="panel" aria-labelledby="weight-log-title">
-        <div id="weight-log-title" class="m3-section-head">
-          <div class="scroll-header">Tägliches Gewicht</div>
-          <span class="mono-badge">Zuletzt {{ latestWeightLabel() }}</span>
-        </div>
-
-        <div class="trend-range" role="group" aria-label="Zeitraum für Gewichtstrend">
-          <button
-            mat-flat-button
-            type="button"
-            class="trend-range-btn"
-            [class.active]="weightTrendDays() === 7"
-            (click)="setWeightTrendDays(7)"
-          >
-            7 Tage
-          </button>
-          <button
-            mat-flat-button
-            type="button"
-            class="trend-range-btn"
-            [class.active]="weightTrendDays() === 30"
-            (click)="setWeightTrendDays(30)"
-          >
-            30 Tage
-          </button>
-        </div>
-
-        <div class="sparkline-wrap" [attr.aria-label]="weightTrendDays() + '-Tage-Trend'">
-          <svg viewBox="0 0 100 28" preserveAspectRatio="none" class="sparkline">
-            <polyline [attr.points]="sparklinePoints()" />
-          </svg>
-          <div class="trend-note">{{ weightTrendDays() }}-Tage-Veränderung: {{ weeklyTrendLabel() }}</div>
-        </div>
-
-        <form class="stack-form" [formGroup]="weightForm" (ngSubmit)="saveWeightLog()">
-          <div class="grid-two">
-            <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
-              <mat-label>Datum</mat-label>
-              <input matInput id="logged-on" type="date" formControlName="logged_on">
-            </mat-form-field>
-            <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
-              <mat-label>Gewicht (kg)</mat-label>
-              <input matInput id="weight-kg" type="number" step="0.1" min="20" formControlName="weight_kg">
-            </mat-form-field>
+        <section class="panel" aria-labelledby="weight-log-title">
+          <div id="weight-log-title" class="m3-section-head">
+            <div class="scroll-header">Tägliches Gewicht</div>
+            <span class="mono-badge">Zuletzt {{ latestWeightLabel() }}</span>
           </div>
 
-          <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
-            <mat-label>Notiz (optional)</mat-label>
-            <textarea matInput id="weight-note" formControlName="note" rows="2" placeholder="Kontext zu diesem Wiegen"></textarea>
-          </mat-form-field>
+          <div class="trend-range" role="group" aria-label="Zeitraum für Gewichtstrend">
+            <button
+              mat-flat-button
+              type="button"
+              class="trend-range-btn"
+              [class.active]="weightTrendDays() === 7"
+              (click)="setWeightTrendDays(7)"
+            >
+              7 Tage
+            </button>
+            <button
+              mat-flat-button
+              type="button"
+              class="trend-range-btn"
+              [class.active]="weightTrendDays() === 30"
+              (click)="setWeightTrendDays(30)"
+            >
+              30 Tage
+            </button>
+          </div>
 
-          <button mat-flat-button type="submit" class="action-btn tonal" [disabled]="savingWeight() || weightForm.invalid">
-            {{ savingWeight() ? 'Wird gespeichert …' : 'Gewicht speichern' }}
-          </button>
-        </form>
+          <div class="sparkline-wrap" [attr.aria-label]="weightTrendDays() + '-Tage-Trend'">
+            <svg viewBox="0 0 100 28" preserveAspectRatio="none" class="sparkline">
+              <polyline [attr.points]="sparklinePoints()" />
+            </svg>
+            <div class="trend-note">
+              {{ weightTrendDays() }}-Tage-Veränderung: {{ weeklyTrendLabel() }}
+            </div>
+          </div>
 
-        <div class="entries-list" aria-label="Letzte Gewichtseinträge">
-          @for (entry of weightLogs(); track entry.id) {
-            <article class="list-card">
-              <div>
-                <strong>{{ entry.weight_kg }} kg</strong>
-                <div class="entry-sub">{{ entry.logged_on }}</div>
-                @if (entry.note) {
-                  <div class="entry-note">{{ entry.note }}</div>
-                }
-              </div>
-            </article>
-          }
-          @if (weightLogs().length === 0) {
-            <p class="empty-state">Noch keine Gewichtseinträge.</p>
-          }
-        </div>
-      </section>
-      }
-
-      @if (activeProfileSection() === 'steps') {
-      <section class="panel" aria-labelledby="steps-log-title">
-        <div id="steps-log-title" class="m3-section-head">
-          <div class="scroll-header">Tägliche Schritte</div>
-          <span class="mono-badge">Zuletzt {{ latestStepsLabel() }}</span>
-        </div>
-
-        @if (profileForm.controls.track_steps.value) {
-          <p class="subtle compact">Dein Ziel: {{ stepsTargetLabel() }} Schritte pro Tag.</p>
-
-          <form class="stack-form" [formGroup]="stepForm" (ngSubmit)="saveStepLog()">
+          <form class="stack-form" [formGroup]="weightForm" (ngSubmit)="saveWeightLog()">
             <div class="grid-two">
               <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
                 <mat-label>Datum</mat-label>
-                <input matInput id="steps-logged-on" type="date" formControlName="logged_on">
+                <input matInput id="logged-on" type="date" formControlName="logged_on" />
               </mat-form-field>
               <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
-                <mat-label>Schritte</mat-label>
-                <input matInput id="steps-count" type="number" min="0" step="1" formControlName="steps">
+                <mat-label>Gewicht (kg)</mat-label>
+                <input
+                  matInput
+                  id="weight-kg"
+                  type="number"
+                  step="0.1"
+                  min="20"
+                  formControlName="weight_kg"
+                />
               </mat-form-field>
             </div>
 
-            <button mat-flat-button type="submit" class="action-btn tonal" [disabled]="savingSteps() || stepForm.invalid">
-              {{ savingSteps() ? 'Wird gespeichert …' : 'Schritte speichern' }}
+            <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+              <mat-label>Notiz (optional)</mat-label>
+              <textarea
+                matInput
+                id="weight-note"
+                formControlName="note"
+                rows="2"
+                placeholder="Kontext zu diesem Wiegen"
+              ></textarea>
+            </mat-form-field>
+
+            <button
+              mat-flat-button
+              type="submit"
+              class="action-btn tonal"
+              [disabled]="savingWeight() || weightForm.invalid"
+            >
+              {{ savingWeight() ? 'Wird gespeichert …' : 'Gewicht speichern' }}
             </button>
           </form>
 
-          <div class="entries-list" aria-label="Letzte Schritteinträge">
-            @for (entry of stepLogs(); track entry.id) {
+          <div class="entries-list" aria-label="Letzte Gewichtseinträge">
+            @for (entry of weightLogs(); track entry.id) {
               <article class="list-card">
                 <div>
-                  <strong>{{ entry.steps.toLocaleString('de-CH') }} Schritte</strong>
+                  <strong>{{ entry.weight_kg }} kg</strong>
                   <div class="entry-sub">{{ entry.logged_on }}</div>
+                  @if (entry.note) {
+                    <div class="entry-note">{{ entry.note }}</div>
+                  }
                 </div>
               </article>
             }
-            @if (stepLogs().length === 0) {
-              <p class="empty-state">Noch keine Schritte eingetragen.</p>
+            @if (weightLogs().length === 0) {
+              <p class="empty-state">Noch keine Gewichtseinträge.</p>
             }
           </div>
-        } @else {
-          <p class="empty-state">Aktiviere Schrittetracking unter Ziele, damit du hier deinen Tagesstand speichern kannst.</p>
-        }
-      </section>
+        </section>
+      }
+
+      @if (activeProfileSection() === 'steps') {
+        <section class="panel" aria-labelledby="steps-log-title">
+          <div id="steps-log-title" class="m3-section-head">
+            <div class="scroll-header">Tägliche Schritte</div>
+            <span class="mono-badge">Zuletzt {{ latestStepsLabel() }}</span>
+          </div>
+
+          @if (profileForm.controls.track_steps.value) {
+            <p class="subtle compact">Dein Ziel: {{ stepsTargetLabel() }} Schritte pro Tag.</p>
+
+            <form class="stack-form" [formGroup]="stepForm" (ngSubmit)="saveStepLog()">
+              <div class="grid-two">
+                <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+                  <mat-label>Datum</mat-label>
+                  <input matInput id="steps-logged-on" type="date" formControlName="logged_on" />
+                </mat-form-field>
+                <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
+                  <mat-label>Schritte</mat-label>
+                  <input
+                    matInput
+                    id="steps-count"
+                    type="number"
+                    min="0"
+                    step="1"
+                    formControlName="steps"
+                  />
+                </mat-form-field>
+              </div>
+
+              <button
+                mat-flat-button
+                type="submit"
+                class="action-btn tonal"
+                [disabled]="savingSteps() || stepForm.invalid"
+              >
+                {{ savingSteps() ? 'Wird gespeichert …' : 'Schritte speichern' }}
+              </button>
+            </form>
+
+            <div class="entries-list" aria-label="Letzte Schritteinträge">
+              @for (entry of stepLogs(); track entry.id) {
+                <article class="list-card">
+                  <div>
+                    <strong>{{ entry.steps.toLocaleString('de-CH') }} Schritte</strong>
+                    <div class="entry-sub">{{ entry.logged_on }}</div>
+                  </div>
+                </article>
+              }
+              @if (stepLogs().length === 0) {
+                <p class="empty-state">Noch keine Schritte eingetragen.</p>
+              }
+            </div>
+          } @else {
+            <p class="empty-state">
+              Aktiviere Schrittetracking unter Ziele, damit du hier deinen Tagesstand speichern
+              kannst.
+            </p>
+          }
+        </section>
       }
 
       @if (activeProfileSection() === 'account') {
-      <section class="panel" aria-labelledby="install-app-title">
-        <div id="install-app-title" class="scroll-header">Als Web-App installieren</div>
-        <p class="subtle">
-          Installiert wirkt Tracker Broo wie eine richtige App und läuft ohne die normale Browser-Leiste.
-        </p>
-        <div class="install-guide-list">
-          @for (guide of installGuides; track guide.platform) {
-            <article class="install-guide-card">
-              <strong>{{ guide.platform }}</strong>
-              <p>{{ guide.steps }}</p>
-            </article>
-          }
-        </div>
-      </section>
-
-      <section class="panel" aria-labelledby="push-notifications-title">
-        <div id="push-notifications-title" class="scroll-header">Push-Benachrichtigungen</div>
-        <p class="subtle">{{ pushNotifications.statusLabel() }}</p>
-        <p class="subtle compact">Auf dem iPhone funktionieren Pushs nur in der installierten Web-App, nicht im normalen Safari-Tab.</p>
-        @if (!pushNotifications.supported()) {
-          <div class="push-debug" aria-live="polite">
-            @if (pushNotifications.unavailableReason(); as reason) {
-              <p class="subtle compact error-copy">{{ reason }}</p>
+        <section class="panel" aria-labelledby="install-app-title">
+          <div id="install-app-title" class="scroll-header">Als Web-App installieren</div>
+          <p class="subtle">
+            Installiert wirkt Tracker Broo wie eine richtige App und läuft ohne die normale
+            Browser-Leiste.
+          </p>
+          <div class="install-guide-list">
+            @for (guide of installGuides; track guide.platform) {
+              <article class="install-guide-card">
+                <strong>{{ guide.platform }}</strong>
+                <p>{{ guide.steps }}</p>
+              </article>
             }
-            <div class="push-debug-list">
-              @for (diagnostic of pushNotifications.diagnostics(); track diagnostic.label) {
-                <p class="subtle compact">
-                  {{ diagnostic.ok ? 'OK' : 'Fehlt' }} · {{ diagnostic.label }}
-                </p>
-              }
-            </div>
           </div>
-        }
+        </section>
 
-        <div class="action-list">
-          @if (!pushNotifications.subscribed()) {
-            <button
-              mat-flat-button
-              type="button"
-              class="action-btn"
-              (click)="pushNotifications.enable()"
-              [disabled]="pushNotifications.busy() || !pushNotifications.supported()"
-            >
-              {{ pushNotifications.busy() ? 'Wird aktiviert …' : 'Push aktivieren' }}
-            </button>
-          } @else {
-            <button
-              mat-flat-button
-              type="button"
-              class="action-btn tonal"
-              (click)="pushNotifications.sendTestNotification()"
-              [disabled]="pushNotifications.busy()"
-            >
-              Test-Push senden
-            </button>
-            <button
-              mat-flat-button
-              type="button"
-              class="action-btn ghost"
-              (click)="pushNotifications.disable()"
-              [disabled]="pushNotifications.busy()"
-            >
-              Push deaktivieren
-            </button>
+        <section class="panel" aria-labelledby="push-notifications-title">
+          <div id="push-notifications-title" class="scroll-header">Push-Benachrichtigungen</div>
+          <p class="subtle">{{ pushNotifications.statusLabel() }}</p>
+          <p class="subtle compact">
+            Auf dem iPhone funktionieren Pushs nur in der installierten Web-App, nicht im normalen
+            Safari-Tab.
+          </p>
+          @if (!pushNotifications.supported()) {
+            <div class="push-debug" aria-live="polite">
+              @if (pushNotifications.unavailableReason(); as reason) {
+                <p class="subtle compact error-copy">{{ reason }}</p>
+              }
+              <div class="push-debug-list">
+                @for (diagnostic of pushNotifications.diagnostics(); track diagnostic.label) {
+                  <p class="subtle compact">
+                    {{ diagnostic.ok ? 'OK' : 'Fehlt' }} · {{ diagnostic.label }}
+                  </p>
+                }
+              </div>
+            </div>
           }
-        </div>
 
-        @if (pushNotifications.lastError()) {
-          <p class="subtle error-copy">{{ pushNotifications.lastError() }}</p>
-        }
-      </section>
+          <div class="action-list">
+            @if (!pushNotifications.subscribed()) {
+              <button
+                mat-flat-button
+                type="button"
+                class="action-btn"
+                (click)="pushNotifications.enable()"
+                [disabled]="pushNotifications.busy() || !pushNotifications.supported()"
+              >
+                {{ pushNotifications.busy() ? 'Wird aktiviert …' : 'Push aktivieren' }}
+              </button>
+            } @else {
+              <button
+                mat-flat-button
+                type="button"
+                class="action-btn tonal"
+                (click)="pushNotifications.sendTestNotification()"
+                [disabled]="pushNotifications.busy()"
+              >
+                Test-Push senden
+              </button>
+              <button
+                mat-flat-button
+                type="button"
+                class="action-btn ghost"
+                (click)="pushNotifications.disable()"
+                [disabled]="pushNotifications.busy()"
+              >
+                Push deaktivieren
+              </button>
+            }
+          </div>
 
-      <section class="panel danger-zone" aria-labelledby="reset-onboarding-title">
-        <div id="reset-onboarding-title" class="scroll-header">Onboarding zurücksetzen</div>
-        <p class="subtle">
-          Setzt nur Profildaten zurück und startet das Onboarding neu. Zutaten, Mahlzeiten und Bibliothekseinträge
-          bleiben erhalten.
-        </p>
-        <button mat-flat-button type="button" class="action-btn ghost danger-btn" (click)="resetOnboarding()" [disabled]="savingProfile()">
-          Onboarding neu starten
-        </button>
-      </section>
+          @if (pushNotifications.lastError()) {
+            <p class="subtle error-copy">{{ pushNotifications.lastError() }}</p>
+          }
+        </section>
+
+        <section class="panel danger-zone" aria-labelledby="reset-onboarding-title">
+          <div id="reset-onboarding-title" class="scroll-header">Onboarding zurücksetzen</div>
+          <p class="subtle">
+            Setzt nur Profildaten zurück und startet das Onboarding neu. Zutaten, Mahlzeiten und
+            Bibliothekseinträge bleiben erhalten.
+          </p>
+          <button
+            mat-flat-button
+            type="button"
+            class="action-btn ghost danger-btn"
+            (click)="resetOnboarding()"
+            [disabled]="savingProfile()"
+          >
+            Onboarding neu starten
+          </button>
+        </section>
       }
     </main>
   `,
-  styles: [`
-    .profile-page {
-      display: grid;
-      gap: var(--layout-gap);
-    }
+  styles: [
+    `
+      .profile-page {
+        display: grid;
+        gap: var(--layout-gap);
+      }
 
-    .profile-section-panel {
-      padding: 14px;
-    }
+      .profile-section-panel {
+        padding: 14px;
+      }
 
-    .profile-section-nav {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
+      .profile-section-nav {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
 
-    .profile-head {
-      display: grid;
-      grid-template-columns: auto 1fr;
-      gap: 0.9rem;
-      align-items: center;
-    }
+      .profile-head {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 0.9rem;
+        align-items: center;
+      }
 
-    h1 {
-      margin-top: 0.35rem;
-      font-size: clamp(2rem, 4vw, 2.8rem);
-      line-height: 0.98;
-      letter-spacing: -0.06em;
-    }
+      h1 {
+        margin-top: 0.35rem;
+        font-size: clamp(2rem, 4vw, 2.8rem);
+        line-height: 0.98;
+        letter-spacing: -0.06em;
+      }
 
-    .sub {
-      margin: 0.45rem 0 0;
-      color: var(--shell-ink-muted);
-      font-size: var(--text-sm);
-      font-weight: 600;
-      line-height: 1.6;
-    }
+      .sub {
+        margin: 0.45rem 0 0;
+        color: var(--shell-ink-muted);
+        font-size: var(--text-sm);
+        font-weight: 600;
+        line-height: 1.6;
+      }
 
-    .avatar-image,
-    .avatar-fallback {
-      width: 84px;
-      height: 84px;
-      border-radius: 20px;
-      border: 1px solid var(--border-strong);
-      background: var(--ui-surface-2);
-    }
+      .avatar-image,
+      .avatar-fallback {
+        width: 84px;
+        height: 84px;
+        border-radius: 20px;
+        border: 1px solid var(--border-strong);
+        background: var(--ui-surface-2);
+      }
 
-    .avatar-image {
-      object-fit: cover;
-    }
+      .avatar-image {
+        object-fit: cover;
+      }
 
-    .avatar-fallback {
-      display: grid;
-      place-items: center;
-      font-size: 1.3rem;
-      font-weight: 800;
-      color: var(--ink-700);
-    }
+      .avatar-fallback {
+        display: grid;
+        place-items: center;
+        font-size: 1.3rem;
+        font-weight: 800;
+        color: var(--ink-700);
+      }
 
-    .gym-target {
-      margin-top: 1rem;
-      border: 1px solid var(--border-strong);
-      border-radius: 24px;
-      background: color-mix(in srgb, var(--ui-surface-0) 74%, transparent);
-      padding: 0.95rem 1rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 0.5rem;
-      font-weight: 700;
-    }
+      .gym-target {
+        margin-top: 1rem;
+        border: 1px solid var(--border-strong);
+        border-radius: 24px;
+        background: color-mix(in srgb, var(--ui-surface-0) 74%, transparent);
+        padding: 0.95rem 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+        font-weight: 700;
+      }
 
-    .stack-form {
-      margin-top: 0.75rem;
-      display: grid;
-      gap: 0.75rem;
-    }
+      .stack-form {
+        margin-top: 0.75rem;
+        display: grid;
+        gap: 0.75rem;
+      }
 
-    .stack-form label {
-      font-size: var(--text-sm);
-      color: var(--ink-700);
-      font-weight: 700;
-    }
+      .stack-form label {
+        font-size: var(--text-sm);
+        color: var(--ink-700);
+        font-weight: 700;
+      }
 
-    .file-row {
-      display: grid;
-      grid-template-columns: auto 1fr;
-      align-items: center;
-      gap: 0.65rem;
-      margin-bottom: 0.35rem;
-    }
+      .file-row {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        align-items: center;
+        gap: 0.65rem;
+        margin-bottom: 0.35rem;
+      }
 
-    .file-name {
-      color: var(--ink-700);
-      font-size: var(--text-sm);
-      font-weight: 700;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
+      .file-name {
+        color: var(--ink-700);
+        font-size: var(--text-sm);
+        font-weight: 700;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
 
-    .sr-only {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      padding: 0;
-      margin: -1px;
-      overflow: hidden;
-      clip: rect(0, 0, 0, 0);
-      white-space: nowrap;
-      border: 0;
-    }
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
 
-    .grid-two {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 0.75rem;
-    }
+      .grid-two {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.75rem;
+      }
 
-    .sparkline-wrap {
-      border: 1px solid var(--border-strong);
-      border-radius: 24px;
-      background: color-mix(in srgb, var(--ui-surface-0) 74%, transparent);
-      padding: 0.95rem;
-      margin-bottom: 0.65rem;
-    }
+      .sparkline-wrap {
+        border: 1px solid var(--border-strong);
+        border-radius: 24px;
+        background: color-mix(in srgb, var(--ui-surface-0) 74%, transparent);
+        padding: 0.95rem;
+        margin-bottom: 0.65rem;
+      }
 
-    .trend-range {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 0.5rem;
-      margin-bottom: 0.65rem;
-    }
+      .trend-range {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.5rem;
+        margin-bottom: 0.65rem;
+      }
 
-    .trend-range-btn {
-      min-height: var(--touch-target-compact);
-      border: 1px solid var(--border-strong);
-      border-radius: 999px;
-      background: color-mix(in srgb, var(--ui-surface-0) 72%, transparent);
-      color: var(--ink-700);
-      font-size: var(--text-xs);
-      font-weight: 800;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      justify-content: center;
-      width: 100%;
-    }
+      .trend-range-btn {
+        min-height: var(--touch-target-compact);
+        border: 1px solid var(--border-strong);
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--ui-surface-0) 72%, transparent);
+        color: var(--ink-700);
+        font-size: var(--text-xs);
+        font-weight: 800;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        justify-content: center;
+        width: 100%;
+      }
 
-    .trend-range-btn.active {
-      border-color: transparent;
-      background: var(--ui-primary);
-      color: var(--ui-on-primary);
-    }
+      .trend-range-btn.active {
+        border-color: transparent;
+        background: var(--ui-primary);
+        color: var(--ui-on-primary);
+      }
 
-    .sparkline {
-      width: 100%;
-      height: 48px;
-    }
+      .sparkline {
+        width: 100%;
+        height: 48px;
+      }
 
-    .sparkline polyline {
-      fill: none;
-      stroke: var(--accent-500);
-      stroke-width: 2;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
+      .sparkline polyline {
+        fill: none;
+        stroke: var(--accent-500);
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
 
-    .trend-note {
-      margin-top: 0.2rem;
-      color: var(--ink-500);
-      font-size: var(--text-xs);
-      font-weight: 700;
-    }
+      .trend-note {
+        margin-top: 0.2rem;
+        color: var(--ink-500);
+        font-size: var(--text-xs);
+        font-weight: 700;
+      }
 
-    .entries-list {
-      margin-top: 0.75rem;
-      display: grid;
-      gap: 0.65rem;
-    }
+      .entries-list {
+        margin-top: 0.75rem;
+        display: grid;
+        gap: 0.65rem;
+      }
 
-    .entry-sub {
-      margin-top: 0.15rem;
-      font-size: var(--text-sm);
-      color: var(--ink-500);
-      font-weight: 700;
-    }
+      .entry-sub {
+        margin-top: 0.15rem;
+        font-size: var(--text-sm);
+        color: var(--ink-500);
+        font-weight: 700;
+      }
 
-    .entry-note {
-      margin-top: 0.2rem;
-      font-size: var(--text-sm);
-      color: var(--ink-700);
-    }
+      .entry-note {
+        margin-top: 0.2rem;
+        font-size: var(--text-sm);
+        color: var(--ink-700);
+      }
 
-    .danger-zone {
-      border-color: var(--ui-error);
-      background: var(--ui-error-soft);
-    }
+      .danger-zone {
+        border-color: var(--ui-error);
+        background: var(--ui-error-soft);
+      }
 
-    .subtle {
-      margin: 0.45rem 0 0.65rem;
-      color: var(--ink-500);
-      font-size: var(--text-sm);
-      font-weight: 600;
-    }
+      .subtle {
+        margin: 0.45rem 0 0.65rem;
+        color: var(--ink-500);
+        font-size: var(--text-sm);
+        font-weight: 600;
+      }
 
-    .install-guide-list {
-      display: grid;
-      gap: 0.65rem;
-    }
+      .install-guide-list {
+        display: grid;
+        gap: 0.65rem;
+      }
 
-    .install-guide-card {
-      border: 1px solid var(--border-strong);
-      border-radius: 18px;
-      background: var(--ui-surface-2);
-      padding: 0.85rem;
-      display: grid;
-      gap: 0.35rem;
-    }
+      .install-guide-card {
+        border: 1px solid var(--border-strong);
+        border-radius: 18px;
+        background: var(--ui-surface-2);
+        padding: 0.85rem;
+        display: grid;
+        gap: 0.35rem;
+      }
 
-    .install-guide-card p {
-      margin: 0;
-      color: var(--ink-600);
-      font-size: var(--text-sm);
-      font-weight: 600;
-      line-height: 1.4;
-    }
+      .install-guide-card p {
+        margin: 0;
+        color: var(--ink-600);
+        font-size: var(--text-sm);
+        font-weight: 600;
+        line-height: 1.4;
+      }
 
-    .danger-btn {
-      border-color: var(--ui-error);
-      color: var(--ui-error-ink);
-      background: color-mix(in srgb, var(--ui-error-soft) 90%, var(--ui-surface-1));
-    }
+      .danger-btn {
+        border-color: var(--ui-error);
+        color: var(--ui-error-ink);
+        background: color-mix(in srgb, var(--ui-error-soft) 90%, var(--ui-surface-1));
+      }
 
-    .theme-seed-row {
-      display: grid;
-      grid-template-columns: 56px 1fr;
-      gap: 0.75rem;
-      align-items: center;
-    }
+      .theme-seed-row {
+        display: grid;
+        grid-template-columns: 56px 1fr;
+        gap: 0.75rem;
+        align-items: center;
+      }
 
-    .theme-seed-row.advanced {
-      margin-top: 0.55rem;
-    }
+      .theme-seed-row.advanced {
+        margin-top: 0.55rem;
+      }
 
-    .theme-seed-row input[type='color'] {
-      padding: 0.24rem;
-      min-height: var(--touch-target);
-      border-radius: 16px;
-      border: 1px solid var(--border-strong);
-      background: var(--bg-surface-2);
-    }
+      .theme-seed-row input[type='color'] {
+        padding: 0.24rem;
+        min-height: var(--touch-target);
+        border-radius: 16px;
+        border: 1px solid var(--border-strong);
+        background: var(--bg-surface-2);
+      }
 
-    .mode-segmented {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 0.5rem;
-      margin-bottom: 0.5rem;
-    }
+      .mode-segmented {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+      }
 
-    .mode-segmented button {
-      min-height: var(--touch-target-compact);
-      border: 1px solid var(--border-strong);
-      border-radius: 999px;
-      background: color-mix(in srgb, var(--ui-surface-0) 72%, transparent);
-      color: var(--ink-700);
-      font-size: var(--text-xs);
-      font-weight: 800;
-      letter-spacing: 0.16em;
-      text-transform: uppercase;
-    }
+      .mode-segmented button {
+        min-height: var(--touch-target-compact);
+        border: 1px solid var(--border-strong);
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--ui-surface-0) 72%, transparent);
+        color: var(--ink-700);
+        font-size: var(--text-xs);
+        font-weight: 800;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
 
-    .mode-segmented button.active {
-      border-color: transparent;
-      background: var(--ui-primary);
-      color: var(--ui-on-primary);
-    }
+      .mode-segmented button.active {
+        border-color: transparent;
+        background: var(--ui-primary);
+        color: var(--ui-on-primary);
+      }
 
-    .theme-preset-grid {
-      display: grid;
-      grid-template-columns: repeat(8, minmax(0, 1fr));
-      gap: 0.55rem;
-      margin-top: 0.35rem;
-    }
+      .theme-preset-grid {
+        display: grid;
+        grid-template-columns: repeat(8, minmax(0, 1fr));
+        gap: 0.55rem;
+        margin-top: 0.35rem;
+      }
 
-    .theme-swatch {
-      min-height: var(--touch-target-compact);
-      border-radius: 999px;
-      border: 1px solid var(--border-strong);
-    }
+      .theme-swatch {
+        min-height: var(--touch-target-compact);
+        border-radius: 999px;
+        border: 1px solid var(--border-strong);
+      }
 
-    .theme-swatch.active {
-      box-shadow: inset 0 0 0 2px color-mix(in srgb, #ffffff 65%, transparent);
-    }
+      .theme-swatch.active {
+        box-shadow: inset 0 0 0 2px color-mix(in srgb, #ffffff 65%, transparent);
+      }
 
-    .theme-advanced {
-      margin-top: 0.55rem;
-      border-top: 1px solid var(--border-strong);
-      padding-top: 0.7rem;
-    }
+      .theme-advanced {
+        margin-top: 0.55rem;
+        border-top: 1px solid var(--border-strong);
+        padding-top: 0.7rem;
+      }
 
-    .theme-advanced summary {
-      cursor: pointer;
-      color: var(--ui-ink);
-      font-size: var(--text-sm);
-      font-weight: 700;
-      list-style: none;
-    }
+      .theme-advanced summary {
+        cursor: pointer;
+        color: var(--ui-ink);
+        font-size: var(--text-sm);
+        font-weight: 700;
+        list-style: none;
+      }
 
-    .theme-advanced summary::-webkit-details-marker {
-      display: none;
-    }
+      .theme-advanced summary::-webkit-details-marker {
+        display: none;
+      }
 
-    .subtle.compact {
-      margin-bottom: 0;
-    }
+      .subtle.compact {
+        margin-bottom: 0;
+      }
 
-    .error-copy {
-      color: var(--ui-error);
-    }
-  `]
+      .error-copy {
+        color: var(--ui-error);
+      }
+    `,
+  ],
 })
 export class ProfileComponent implements OnInit {
   private readonly supabaseService = inject(SupabaseService);
@@ -761,7 +940,9 @@ export class ProfileComponent implements OnInit {
   readonly loading = signal(false);
   readonly successMessage = signal<string | null>(null);
   readonly errorMessage = signal<string | null>(null);
-  readonly activeProfileSection = signal<'account' | 'goals' | 'weight' | 'steps' | 'appearance'>('account');
+  readonly activeProfileSection = signal<'account' | 'goals' | 'weight' | 'steps' | 'appearance'>(
+    'account',
+  );
   readonly activeWeightJourneyId = signal<string | null>(null);
   readonly profile = signal<Profile | null>(null);
   readonly weightLogs = signal<WeightLog[]>([]);
@@ -774,7 +955,7 @@ export class ProfileComponent implements OnInit {
   readonly themeModes: Array<{ value: ThemeMode; label: string }> = [
     { value: 'system', label: 'System' },
     { value: 'light', label: 'Hell' },
-    { value: 'dark', label: 'Dunkel' }
+    { value: 'dark', label: 'Dunkel' },
   ];
   readonly themeSeedPresets = [
     '#78b457',
@@ -784,21 +965,23 @@ export class ProfileComponent implements OnInit {
     '#85b96a',
     '#c59a52',
     '#a5ba5d',
-    '#6f9d4a'
+    '#6f9d4a',
   ];
   readonly installGuides = [
     {
       platform: 'macOS Safari',
-      steps: 'Seite öffnen, Teilen wählen und dann Zum Dock hinzufügen.'
+      steps: 'Seite öffnen, Teilen wählen und dann Zum Dock hinzufügen.',
     },
     {
       platform: 'iPhone Safari',
-      steps: 'Seite öffnen, Teilen tippen und dann Zum Home-Bildschirm. Falls angeboten, Als Web-App öffnen aktivieren.'
+      steps:
+        'Seite öffnen, Teilen tippen und dann Zum Home-Bildschirm. Falls angeboten, Als Web-App öffnen aktivieren.',
     },
     {
       platform: 'Android Chrome',
-      steps: 'Seite öffnen und im Browser-Menü Install app oder Zum Startbildschirm hinzufügen wählen.'
-    }
+      steps:
+        'Seite öffnen und im Browser-Menü Install app oder Zum Startbildschirm hinzufügen wählen.',
+    },
   ];
 
   private avatarFile: File | null = null;
@@ -816,18 +999,21 @@ export class ProfileComponent implements OnInit {
     track_steps: [false],
     daily_steps_target: [8000, [Validators.min(1000), Validators.max(50000)]],
     theme_mode: [this.themeService.getCurrentMode() as ThemeMode],
-    theme_seed_color: [this.themeService.getCurrentSeed(), [Validators.pattern(/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/)]]
+    theme_seed_color: [
+      this.themeService.getCurrentSeed(),
+      [Validators.pattern(/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/)],
+    ],
   });
 
   readonly weightForm = this.formBuilder.nonNullable.group({
     logged_on: [this.formatDate(new Date()), [Validators.required]],
     weight_kg: [70, [Validators.required, Validators.min(20)]],
-    note: ['']
+    note: [''],
   });
 
   readonly stepForm = this.formBuilder.nonNullable.group({
     logged_on: [this.formatDate(new Date()), [Validators.required]],
-    steps: [8000, [Validators.required, Validators.min(0), Validators.max(100000)]]
+    steps: [8000, [Validators.required, Validators.min(0), Validators.max(100000)]],
   });
 
   readonly latestWeightLabel = computed(() => {
@@ -846,7 +1032,7 @@ export class ProfileComponent implements OnInit {
   });
 
   readonly stepsTargetLabel = computed(() =>
-    Number(this.profileForm.controls.daily_steps_target.value || 8000).toLocaleString('de-CH')
+    Number(this.profileForm.controls.daily_steps_target.value || 8000).toLocaleString('de-CH'),
   );
 
   readonly trendWeightLogs = computed(() => this.weightLogs().slice(0, this.weightTrendDays()));
@@ -857,7 +1043,7 @@ export class ProfileComponent implements OnInit {
       return '0,24 100,24';
     }
 
-    const values = points.map(entry => Number(entry.weight_kg));
+    const values = points.map((entry) => Number(entry.weight_kg));
     const min = Math.min(...values);
     const max = Math.max(...values);
     const range = Math.max(max - min, 1);
@@ -975,40 +1161,40 @@ export class ProfileComponent implements OnInit {
       track_steps: false,
       daily_steps_target: 8000,
       today_section_order: ['meals', 'logs', 'habits', 'trends'],
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     };
 
     if (!data) {
-      const { error: insertError } = await this.supabaseService.client
-        .from('profiles')
-        .insert({
-          user_id: user.id,
-          display_name: '',
-          bio: '',
-          gym_name: null,
-          age: null,
-          height_cm: 170,
-          current_weight_kg: 70,
-          target_weight_kg: 70,
-          weekly_gym_target: 3,
-          activity_level: 'moderate',
-          theme_seed_color: this.themeService.getCurrentSeed(),
-          onboarding_completed: false,
-          track_nutrition: true,
-          track_gym: true,
-          track_steps: false,
-          daily_steps_target: 8000,
-          today_section_order: ['meals', 'logs', 'habits', 'trends']
-        });
+      const { error: insertError } = await this.supabaseService.client.from('profiles').insert({
+        user_id: user.id,
+        display_name: '',
+        bio: '',
+        gym_name: null,
+        age: null,
+        height_cm: 170,
+        current_weight_kg: 70,
+        target_weight_kg: 70,
+        weekly_gym_target: 3,
+        activity_level: 'moderate',
+        theme_seed_color: this.themeService.getCurrentSeed(),
+        onboarding_completed: false,
+        track_nutrition: true,
+        track_gym: true,
+        track_steps: false,
+        daily_steps_target: 8000,
+        today_section_order: ['meals', 'logs', 'habits', 'trends'],
+      });
 
       if (insertError) {
-        this.errorMessage.set(formatAppError(insertError, 'Profil konnte nicht initialisiert werden'));
+        this.errorMessage.set(
+          formatAppError(insertError, 'Profil konnte nicht initialisiert werden'),
+        );
       }
     }
 
     const resolvedThemeSeed = this.themeService.applySeed(
       (resolvedProfile as Profile).theme_seed_color || this.themeService.getCurrentSeed(),
-      { persistLocal: true }
+      { persistLocal: true },
     );
     const resolvedThemeMode = this.themeService.getCurrentMode();
 
@@ -1029,7 +1215,7 @@ export class ProfileComponent implements OnInit {
       track_steps: Boolean(resolvedProfile.track_steps),
       daily_steps_target: Number(resolvedProfile.daily_steps_target || 8000),
       theme_mode: resolvedThemeMode,
-      theme_seed_color: resolvedThemeSeed
+      theme_seed_color: resolvedThemeSeed,
     });
   }
 
@@ -1080,7 +1266,7 @@ export class ProfileComponent implements OnInit {
     if (latest) {
       this.stepForm.patchValue({
         logged_on: latest.logged_on,
-        steps: Number(latest.steps)
+        steps: Number(latest.steps),
       });
     }
   }
@@ -1092,7 +1278,9 @@ export class ProfileComponent implements OnInit {
     }
 
     const weekStart = this.getWeekStart(this.formatDate(new Date()));
-    const weekEnd = this.formatDate(new Date(new Date(`${weekStart}T00:00:00`).getTime() + 6 * 24 * 60 * 60 * 1000));
+    const weekEnd = this.formatDate(
+      new Date(new Date(`${weekStart}T00:00:00`).getTime() + 6 * 24 * 60 * 60 * 1000),
+    );
 
     const { data } = await this.supabaseService.client
       .from('community_posts')
@@ -1102,7 +1290,7 @@ export class ProfileComponent implements OnInit {
       .gte('day', weekStart)
       .lte('day', weekEnd);
 
-    const uniqueDays = new Set((data || []).map(entry => String(entry.day)));
+    const uniqueDays = new Set((data || []).map((entry) => String(entry.day)));
     this.gymWeekSessions.set(uniqueDays.size);
   }
 
@@ -1146,8 +1334,12 @@ export class ProfileComponent implements OnInit {
       }
 
       const formValue = this.profileForm.getRawValue();
-      const normalizedThemeMode = this.themeService.applyMode(formValue.theme_mode, { persistLocal: true });
-      const normalizedThemeSeed = this.themeService.applySeed(formValue.theme_seed_color, { persistLocal: false });
+      const normalizedThemeMode = this.themeService.applyMode(formValue.theme_mode, {
+        persistLocal: true,
+      });
+      const normalizedThemeSeed = this.themeService.applySeed(formValue.theme_seed_color, {
+        persistLocal: false,
+      });
 
       const payload = {
         user_id: user.id,
@@ -1163,7 +1355,7 @@ export class ProfileComponent implements OnInit {
         track_steps: formValue.track_steps,
         daily_steps_target: formValue.track_steps ? formValue.daily_steps_target : 8000,
         theme_seed_color: normalizedThemeSeed,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       };
 
       const { error } = await this.supabaseService.client
@@ -1209,39 +1401,37 @@ export class ProfileComponent implements OnInit {
       const formValue = this.weightForm.getRawValue();
       const note = formValue.note.trim();
 
-      const { error } = await this.supabaseService.client
-        .from('weight_logs')
-        .upsert(
-          {
-            user_id: user.id,
-            logged_on: formValue.logged_on,
-            weight_kg: formValue.weight_kg,
-            note: note || null
-          },
-          { onConflict: 'user_id,logged_on' }
-        );
+      const { error } = await this.supabaseService.client.from('weight_logs').upsert(
+        {
+          user_id: user.id,
+          logged_on: formValue.logged_on,
+          weight_kg: formValue.weight_kg,
+          note: note || null,
+        },
+        { onConflict: 'user_id,logged_on' },
+      );
 
       if (error) {
         throw error;
       }
 
-      await this.supabaseService.client
-        .from('profiles')
-        .upsert(
-          {
-            user_id: user.id,
-            current_weight_kg: formValue.weight_kg,
-            updated_at: new Date().toISOString()
-          },
-          { onConflict: 'user_id' }
-        );
+      await this.supabaseService.client.from('profiles').upsert(
+        {
+          user_id: user.id,
+          current_weight_kg: formValue.weight_kg,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'user_id' },
+      );
 
       this.successMessage.set('Gewichtseintrag gespeichert.');
       this.completeWeightJourney('profile_save');
       await this.refreshAllFromNetwork(true);
     } catch (error) {
       this.failWeightJourney('profile_save_failed');
-      this.errorMessage.set(formatAppError(error, 'Gewichtseintrag konnte nicht gespeichert werden'));
+      this.errorMessage.set(
+        formatAppError(error, 'Gewichtseintrag konnte nicht gespeichert werden'),
+      );
     } finally {
       this.savingWeight.set(false);
     }
@@ -1270,17 +1460,15 @@ export class ProfileComponent implements OnInit {
 
     try {
       const formValue = this.stepForm.getRawValue();
-      const { error } = await this.supabaseService.client
-        .from('step_logs')
-        .upsert(
-          {
-            user_id: user.id,
-            logged_on: formValue.logged_on,
-            steps: formValue.steps,
-            note: null
-          },
-          { onConflict: 'user_id,logged_on' }
-        );
+      const { error } = await this.supabaseService.client.from('step_logs').upsert(
+        {
+          user_id: user.id,
+          logged_on: formValue.logged_on,
+          steps: formValue.steps,
+          note: null,
+        },
+        { onConflict: 'user_id,logged_on' },
+      );
 
       if (error) {
         throw error;
@@ -1290,7 +1478,9 @@ export class ProfileComponent implements OnInit {
       await this.loadStepLogs();
       this.syncProfileCache(user.id);
     } catch (error: unknown) {
-      this.errorMessage.set(formatAppError(error, 'Schritteintrag konnte nicht gespeichert werden'));
+      this.errorMessage.set(
+        formatAppError(error, 'Schritteintrag konnte nicht gespeichert werden'),
+      );
     } finally {
       this.savingSteps.set(false);
     }
@@ -1302,7 +1492,7 @@ export class ProfileComponent implements OnInit {
 
     if (typeof window !== 'undefined') {
       const shouldReset = window.confirm(
-        'Onboarding neu starten? Profildaten sowie Gewichts- und Schritthistorie werden zurückgesetzt. Zutaten und Mahlzeiten bleiben erhalten.'
+        'Onboarding neu starten? Profildaten sowie Gewichts- und Schritthistorie werden zurückgesetzt. Zutaten und Mahlzeiten bleiben erhalten.',
       );
       if (!shouldReset) {
         return;
@@ -1317,30 +1507,28 @@ export class ProfileComponent implements OnInit {
     this.savingProfile.set(true);
 
     try {
-      const { error: profileError } = await this.supabaseService.client
-        .from('profiles')
-        .upsert(
-          {
-            user_id: user.id,
-            display_name: null,
-            bio: null,
-            avatar_url: null,
-            age: null,
-            height_cm: null,
-            current_weight_kg: null,
-            target_weight_kg: null,
-            weekly_gym_target: 3,
-            activity_level: 'moderate',
-            theme_seed_color: this.themeService.getDefaultSeed(),
-            onboarding_completed: false,
-            track_nutrition: true,
-            track_gym: true,
-            track_steps: false,
-            daily_steps_target: 8000,
-            updated_at: new Date().toISOString()
-          },
-          { onConflict: 'user_id' }
-        );
+      const { error: profileError } = await this.supabaseService.client.from('profiles').upsert(
+        {
+          user_id: user.id,
+          display_name: null,
+          bio: null,
+          avatar_url: null,
+          age: null,
+          height_cm: null,
+          current_weight_kg: null,
+          target_weight_kg: null,
+          weekly_gym_target: 3,
+          activity_level: 'moderate',
+          theme_seed_color: this.themeService.getDefaultSeed(),
+          onboarding_completed: false,
+          track_nutrition: true,
+          track_gym: true,
+          track_steps: false,
+          daily_steps_target: 8000,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'user_id' },
+      );
 
       if (profileError) {
         throw profileError;
@@ -1395,9 +1583,7 @@ export class ProfileComponent implements OnInit {
       throw uploadError;
     }
 
-    const { data } = this.supabaseService.client.storage
-      .from(bucketName)
-      .getPublicUrl(filePath);
+    const { data } = this.supabaseService.client.storage.from(bucketName).getPublicUrl(filePath);
 
     return data.publicUrl;
   }
@@ -1409,8 +1595,8 @@ export class ProfileComponent implements OnInit {
     this.activeWeightJourneyId.set(
       this.telemetry.startJourney('weight_log', {
         source,
-        surface: 'profile'
-      })
+        surface: 'profile',
+      }),
     );
   }
 
@@ -1421,7 +1607,7 @@ export class ProfileComponent implements OnInit {
     }
     this.telemetry.completeJourney(journeyId, 'success', {
       action,
-      surface: 'profile'
+      surface: 'profile',
     });
     this.activeWeightJourneyId.set(null);
   }
@@ -1433,7 +1619,7 @@ export class ProfileComponent implements OnInit {
     }
     this.telemetry.cancelJourney(journeyId, {
       reason,
-      surface: 'profile'
+      surface: 'profile',
     });
     this.activeWeightJourneyId.set(null);
   }
@@ -1445,7 +1631,7 @@ export class ProfileComponent implements OnInit {
     }
     this.telemetry.failJourney(journeyId, {
       reason,
-      surface: 'profile'
+      surface: 'profile',
     });
     this.activeWeightJourneyId.set(null);
   }
@@ -1520,11 +1706,14 @@ export class ProfileComponent implements OnInit {
         current_weight_kg: Number(snapshot.profile.current_weight_kg || 70),
         target_weight_kg: Number(snapshot.profile.target_weight_kg || 70),
         weekly_gym_target: Number(snapshot.profile.weekly_gym_target || 3),
-        activity_level: (snapshot.profile.activity_level || 'moderate') as 'low' | 'moderate' | 'high',
+        activity_level: (snapshot.profile.activity_level || 'moderate') as
+          | 'low'
+          | 'moderate'
+          | 'high',
         track_steps: Boolean(snapshot.profile.track_steps),
         daily_steps_target: Number(snapshot.profile.daily_steps_target || 8000),
         theme_mode: this.themeService.getCurrentMode(),
-        theme_seed_color: snapshot.profile.theme_seed_color || this.themeService.getCurrentSeed()
+        theme_seed_color: snapshot.profile.theme_seed_color || this.themeService.getCurrentSeed(),
       });
     }
 
@@ -1536,7 +1725,7 @@ export class ProfileComponent implements OnInit {
     if (latestWeight) {
       this.weightForm.patchValue({
         logged_on: latestWeight.logged_on,
-        weight_kg: Number(latestWeight.weight_kg)
+        weight_kg: Number(latestWeight.weight_kg),
       });
     }
 
@@ -1544,19 +1733,23 @@ export class ProfileComponent implements OnInit {
     if (latestStep) {
       this.stepForm.patchValue({
         logged_on: latestStep.logged_on,
-        steps: Number(latestStep.steps)
+        steps: Number(latestStep.steps),
       });
     }
   }
 
   private syncProfileCache(userId: string): void {
-    this.queryCache.set(this.profileCacheKey(userId), {
-      profile: this.profile(),
-      weightLogs: this.weightLogs(),
-      stepLogs: this.stepLogs(),
-      gymWeekSessions: this.gymWeekSessions(),
-      fetchedAt: new Date().toISOString()
-    }, this.profileCacheTtlMs);
+    this.queryCache.set(
+      this.profileCacheKey(userId),
+      {
+        profile: this.profile(),
+        weightLogs: this.weightLogs(),
+        stepLogs: this.stepLogs(),
+        gymWeekSessions: this.gymWeekSessions(),
+        fetchedAt: new Date().toISOString(),
+      },
+      this.profileCacheTtlMs,
+    );
   }
 
   private profileCacheKey(userId: string): string {

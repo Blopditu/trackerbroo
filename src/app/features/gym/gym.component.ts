@@ -8,7 +8,7 @@ import {
   computed,
   effect,
   inject,
-  signal
+  signal,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -16,7 +16,15 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { ArrowLeft, BarChart3, Dumbbell, Ellipsis, LucideAngularModule, Timer, User } from 'lucide-angular';
+import {
+  ArrowLeft,
+  BarChart3,
+  Dumbbell,
+  Ellipsis,
+  LucideAngularModule,
+  Timer,
+  User,
+} from 'lucide-angular';
 import { AppChromeService } from '../../core/app-chrome.service';
 import { BottomSheetComponent } from '../../ui/minimal/bottom-sheet.component';
 import { GymFacadeService } from './gym-facade.service';
@@ -49,23 +57,29 @@ import { GymTrackerTabComponent } from './gym-tracker-tab.component';
     GymSessionHubSheetComponent,
     GymPlanBuilderSheetComponent,
     GymGraphDetailSheetComponent,
-    GymSessionShareSheetComponent
+    GymSessionShareSheetComponent,
   ],
   templateUrl: './gym.component.html',
-  styleUrl: './gym.component.css'
+  styleUrl: './gym.component.css',
 })
 export class GymComponent implements OnInit, AfterViewInit, OnDestroy {
   readonly facade = inject(GymFacadeService);
   private readonly chromeService = inject(AppChromeService);
 
   readonly activeTab = this.facade.activeTab;
-  readonly activeSheet = signal<'none' | 'hub' | 'builder' | 'graphs' | 'graph-detail' | 'session-share' | 'session-exit'>('none');
+  readonly activeSheet = signal<
+    'none' | 'hub' | 'builder' | 'graphs' | 'graph-detail' | 'session-share' | 'session-exit'
+  >('none');
   readonly sessionHubTab = signal<'plans' | 'exercises' | 'help'>('plans');
   readonly workoutSurfaceMode = signal<'workout' | 'history'>('workout');
   readonly workoutStartedAt = signal<number | null>(null);
   readonly workoutNow = signal(Date.now());
-  readonly workoutHeaderTitle = computed(() => this.facade.selectedOverview()?.dayName || 'Workout Session');
-  readonly workoutHeaderMeta = computed(() => this.facade.currentExercise()?.name || 'Aktive Session');
+  readonly workoutHeaderTitle = computed(
+    () => this.facade.selectedOverview()?.dayName || 'Workout Session',
+  );
+  readonly workoutHeaderMeta = computed(
+    () => this.facade.currentExercise()?.name || 'Aktive Session',
+  );
   readonly workoutElapsedLabel = computed(() => this.formatElapsedWorkoutTime());
 
   readonly dumbbellIcon = Dumbbell;

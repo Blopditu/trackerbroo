@@ -14,7 +14,7 @@ import {
   TrainingExecutionSet,
   TrainingGraphDataPoint,
   TrainingPlanOverview,
-  TrainingPersonalStats
+  TrainingPersonalStats,
 } from '../../core/training/training-data.service';
 import { SupabaseService } from '../../core/supabase.service';
 import {
@@ -22,9 +22,14 @@ import {
   TrainingGraphConfig,
   TrainingGraphType,
   TrainingMeasurementType,
-  TrainingPlan
+  TrainingPlan,
 } from '../../core/types';
-import { addDays, calculateVolume, startOfIsoWeek, toIsoDate } from '../../core/training/training-utils';
+import {
+  addDays,
+  calculateVolume,
+  startOfIsoWeek,
+  toIsoDate,
+} from '../../core/training/training-utils';
 import { applyPreviousWorkoutPrefill, carryForwardCompletedSet } from './gym-execution-utils';
 import {
   appendBuilderDay,
@@ -34,7 +39,7 @@ import {
   updateBuilderDayMuscles,
   updateBuilderDayName,
   updateBuilderExercise,
-  removeBuilderExerciseAt
+  removeBuilderExerciseAt,
 } from './gym-builder-helpers';
 import { buildWorkoutShareSuggestion } from './gym-community-share';
 import {
@@ -43,36 +48,33 @@ import {
   findSetByClientRef,
   findSetContext,
   replaceExerciseSets,
-  updateSetByClientRef
+  updateSetByClientRef,
 } from './gym-session-state';
 import {
   buildProgressDateRange,
   clearProgressSeries,
   shouldHydrateProgress,
-  sortWidgetsByPosition
+  sortWidgetsByPosition,
 } from './gym-progress-loaders';
 import { selectTrackedWorkoutDay, shouldRefreshWorkoutPreview } from './gym-tracker-loaders';
-import {
-  loadExerciseProgressData,
-  loadProgressHydrationData
-} from './gym-progress-flow';
+import { loadExerciseProgressData, loadProgressHydrationData } from './gym-progress-flow';
 import {
   loadDashboardWeekData,
   loadTrackerBootstrapData,
-  loadWorkoutPreviewData
+  loadWorkoutPreviewData,
 } from './gym-tracker-flow';
 import {
   buildExerciseProgressRows,
   detailChartPoints,
   ExerciseProgressRow,
-  graphTitle
+  graphTitle,
 } from './gym-view-utils';
 
 type DetailSource = 'widget' | 'progress-10rm' | 'progress-volume';
 const initialWorkoutShare = buildWorkoutShareSuggestion(1);
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class GymFacadeService {
   readonly frequencies = [1, 2, 3, 4, 5, 6, 7];
@@ -85,14 +87,16 @@ export class GymFacadeService {
   readonly selectedOverview = signal<TrainingPlanOverview | null>(null);
   readonly activeSession = signal<TrainingExecutionSession | null>(null);
   readonly activeExerciseIndex = signal(0);
-  readonly previousPerformance = signal<Array<{
-    session_date: string;
-    set_number: number;
-    is_warmup: boolean;
-    weight_kg: number | null;
-    reps: number | null;
-    estimated_10rm: number | null;
-  }>>([]);
+  readonly previousPerformance = signal<
+    Array<{
+      session_date: string;
+      set_number: number;
+      is_warmup: boolean;
+      weight_kg: number | null;
+      reps: number | null;
+      estimated_10rm: number | null;
+    }>
+  >([]);
 
   readonly plans = signal<TrainingPlan[]>([]);
   readonly exercises = signal<TrainingExercise[]>([]);
@@ -138,17 +142,24 @@ export class GymFacadeService {
     if (!selectedId) {
       return null;
     }
-    return this.exercises().find(exercise => exercise.id === selectedId) || null;
+    return this.exercises().find((exercise) => exercise.id === selectedId) || null;
   });
 
   readonly exerciseEquipmentOptions = computed(() =>
-    [...new Set(this.exercises().map(exercise => exercise.equipment))].sort((a, b) => a.localeCompare(b))
+    [...new Set(this.exercises().map((exercise) => exercise.equipment))].sort((a, b) =>
+      a.localeCompare(b),
+    ),
   );
 
   readonly exerciseMuscleOptions = computed(() =>
-    [...new Set(this.exercises().flatMap(exercise => [exercise.primary_muscle, ...exercise.secondary_muscles]))].sort(
-      (a, b) => a.localeCompare(b)
-    )
+    [
+      ...new Set(
+        this.exercises().flatMap((exercise) => [
+          exercise.primary_muscle,
+          ...exercise.secondary_muscles,
+        ]),
+      ),
+    ].sort((a, b) => a.localeCompare(b)),
   );
 
   readonly activeExerciseFilterCount = computed(() => {
@@ -166,7 +177,7 @@ export class GymFacadeService {
     const equipment = this.exerciseEquipmentFilter();
     const muscle = this.exerciseMuscleFilter();
 
-    return this.exercises().filter(exercise => {
+    return this.exercises().filter((exercise) => {
       if (equipment && exercise.equipment !== equipment) {
         return false;
       }
@@ -217,12 +228,12 @@ export class GymFacadeService {
       return '--';
     }
 
-    const best = Math.max(...this.tenRmSeries().map(point => Number(point.point_value)));
+    const best = Math.max(...this.tenRmSeries().map((point) => Number(point.point_value)));
     return `${best.toFixed(1)} kg`;
   });
 
   readonly progressSessionRows = computed<ExerciseProgressRow[]>(() =>
-    buildExerciseProgressRows(this.tenRmSeries(), this.exerciseVolumeSeries())
+    buildExerciseProgressRows(this.tenRmSeries(), this.exerciseVolumeSeries()),
   );
 
   readonly progressSessionCountLabel = computed(() => `${this.progressSessionRows().length}`);
@@ -235,10 +246,12 @@ export class GymFacadeService {
     if (!selectedDate) {
       return null;
     }
-    return this.detailChartPoints().find(point => point.date === selectedDate) || null;
+    return this.detailChartPoints().find((point) => point.date === selectedDate) || null;
   });
 
-  readonly hasDetailContext = computed(() => this.detailSource() !== 'widget' || this.selectedDetailWidget() !== null);
+  readonly hasDetailContext = computed(
+    () => this.detailSource() !== 'widget' || this.selectedDetailWidget() !== null,
+  );
 
   readonly detailSheetTitle = computed(() => {
     const source = this.detailSource();
@@ -252,7 +265,8 @@ export class GymFacadeService {
     if (!widget) {
       return 'Erweiterte Analyse';
     }
-    const exerciseName = this.exercises().find(item => item.id === widget.exercise_id)?.name || null;
+    const exerciseName =
+      this.exercises().find((item) => item.id === widget.exercise_id)?.name || null;
     return graphTitle(widget, exerciseName);
   });
 
@@ -279,7 +293,7 @@ export class GymFacadeService {
       return null;
     }
 
-    const states = exercise.sets.map(setRow => this.setSaveState()[setRow.clientRef] || 'idle');
+    const states = exercise.sets.map((setRow) => this.setSaveState()[setRow.clientRef] || 'idle');
     if (states.includes('error')) {
       return 'Einige Eingaben konnten noch nicht gespeichert werden.';
     }
@@ -292,7 +306,7 @@ export class GymFacadeService {
   readonly measurementForm = inject(FormBuilder).nonNullable.group({
     type: 'weight' as TrainingMeasurementType,
     value: 70,
-    measuredOn: toIsoDate(new Date())
+    measuredOn: toIsoDate(new Date()),
   });
 
   readonly planMetaForm = inject(FormBuilder).nonNullable.group({
@@ -300,13 +314,13 @@ export class GymFacadeService {
     daysPerWeek: [4, [Validators.required, Validators.min(1), Validators.max(7)]],
     durationWeeks: [12, [Validators.required, Validators.min(1), Validators.max(52)]],
     startDate: [toIsoDate(new Date()), Validators.required],
-    isActive: [true]
+    isActive: [true],
   });
 
   readonly graphForm = inject(FormBuilder).nonNullable.group({
     graphType: ['workout_count' as TrainingGraphType, Validators.required],
     exerciseId: [''],
-    muscleGroup: ['']
+    muscleGroup: [''],
   });
 
   readonly builderDays = signal<BuilderDayDraft[]>([]);
@@ -319,14 +333,17 @@ export class GymFacadeService {
   private readonly pendingSetStateResets = new Map<string, ReturnType<typeof setTimeout>>();
   private readonly inFlightSetSaves = new Map<string, Promise<void>>();
   private readonly attemptedExercisePrefill = new Set<string>();
-  private readonly previousPerformanceByExerciseId = new Map<string, Array<{
-    session_date: string;
-    set_number: number;
-    is_warmup: boolean;
-    weight_kg: number | null;
-    reps: number | null;
-    estimated_10rm: number | null;
-  }>>();
+  private readonly previousPerformanceByExerciseId = new Map<
+    string,
+    Array<{
+      session_date: string;
+      set_number: number;
+      is_warmup: boolean;
+      weight_kg: number | null;
+      reps: number | null;
+      estimated_10rm: number | null;
+    }>
+  >();
   private trackerBootstrapped = false;
   private trackerLoadPromise: Promise<void> | null = null;
   private progressRequestId = 0;
@@ -413,7 +430,7 @@ export class GymFacadeService {
         const { dashboard, exercises, plans } = await loadTrackerBootstrapData(
           this.trainingData,
           this.selectedDate(),
-          forceRefresh
+          forceRefresh,
         );
 
         this.dashboardWeek.set(dashboard);
@@ -440,7 +457,11 @@ export class GymFacadeService {
     this.errorMessage.set(null);
 
     try {
-      const dashboard = await loadDashboardWeekData(this.trainingData, this.selectedDate(), forceRefresh);
+      const dashboard = await loadDashboardWeekData(
+        this.trainingData,
+        this.selectedDate(),
+        forceRefresh,
+      );
       this.dashboardWeek.set(dashboard);
       await this.syncSelectedWorkoutPreview(dashboard, forceRefresh);
     } catch (error: unknown) {
@@ -458,8 +479,8 @@ export class GymFacadeService {
         this.trainingData,
         {
           forceRefresh,
-          currentExercises: this.exercises()
-        }
+          currentExercises: this.exercises(),
+        },
       );
 
       if (hydrationId !== this.progressHydrationId) {
@@ -486,7 +507,10 @@ export class GymFacadeService {
       this.progressDirty.set(false);
     } catch (error: unknown) {
       if (this.activeGraphJourneyId) {
-        this.telemetry.failJourney(this.activeGraphJourneyId, { surface: 'gym', reason: 'progress_load_failed' });
+        this.telemetry.failJourney(this.activeGraphJourneyId, {
+          surface: 'gym',
+          reason: 'progress_load_failed',
+        });
         this.activeGraphJourneyId = null;
       }
       this.errorMessage.set(formatAppError(error, 'Progress Daten konnten nicht geladen werden'));
@@ -495,7 +519,7 @@ export class GymFacadeService {
 
   async openWorkoutPreview(
     workout: TrainingDashboardDay,
-    options?: { forceSessionRefresh?: boolean }
+    options?: { forceSessionRefresh?: boolean },
   ): Promise<void> {
     this.selectedWorkoutDay.set(workout);
 
@@ -504,7 +528,7 @@ export class GymFacadeService {
         workout,
         currentOverviewDayId: this.selectedOverview()?.dayId || null,
         currentSessionClientRef: this.activeSession()?.sessionClientRef || null,
-        forceSessionRefresh: Boolean(options?.forceSessionRefresh)
+        forceSessionRefresh: Boolean(options?.forceSessionRefresh),
       });
 
       if (preview.overview) {
@@ -580,7 +604,9 @@ export class GymFacadeService {
       return;
     }
 
-    const cached = !forceRefresh ? this.previousPerformanceByExerciseId.get(exercise.exerciseId) : undefined;
+    const cached = !forceRefresh
+      ? this.previousPerformanceByExerciseId.get(exercise.exerciseId)
+      : undefined;
     if (cached) {
       this.previousPerformance.set(cached);
       this.applyCurrentExerciseHistoryPrefill();
@@ -588,7 +614,11 @@ export class GymFacadeService {
     }
 
     try {
-      const previous = await this.trainingData.getPreviousPerformance(exercise.exerciseId, this.selectedDate(), forceRefresh);
+      const previous = await this.trainingData.getPreviousPerformance(
+        exercise.exerciseId,
+        this.selectedDate(),
+        forceRefresh,
+      );
       const currentSession = this.activeSession();
       const currentExercise = this.currentExercise();
       if (!currentSession || currentSession.sessionClientRef !== sessionClientRef) {
@@ -616,7 +646,7 @@ export class GymFacadeService {
   onSetInput(setRow: TrainingExecutionSet, field: 'weight' | 'reps', rawValue: string): void {
     const numericValue = rawValue.trim() === '' ? null : Number(rawValue);
 
-    this.updateSet(setRow.clientRef, draft => {
+    this.updateSet(setRow.clientRef, (draft) => {
       if (field === 'weight') {
         draft.weightKg = numericValue;
       } else {
@@ -637,7 +667,7 @@ export class GymFacadeService {
 
     const nextCompleted = !setRow.isCompleted;
 
-    this.updateSet(setRow.clientRef, draft => {
+    this.updateSet(setRow.clientRef, (draft) => {
       draft.isCompleted = nextCompleted;
       draft.volume = calculateVolume(draft.weightKg, draft.reps);
     });
@@ -663,7 +693,7 @@ export class GymFacadeService {
       return;
     }
 
-    if (!updatedExercise.sets.every(item => item.isCompleted)) {
+    if (!updatedExercise.sets.every((item) => item.isCompleted)) {
       return;
     }
 
@@ -672,17 +702,24 @@ export class GymFacadeService {
       return;
     }
 
-    const nextOpenIndex = findNextIncompleteExerciseIndex(updatedSession, this.activeExerciseIndex() + 1);
+    const nextOpenIndex = findNextIncompleteExerciseIndex(
+      updatedSession,
+      this.activeExerciseIndex() + 1,
+    );
     if (nextOpenIndex >= 0) {
       this.setActiveExercise(nextOpenIndex);
-      this.successMessage.set(`"${updatedExercise.name}" abgeschlossen. Weiter zur nächsten Übung.`);
+      this.successMessage.set(
+        `"${updatedExercise.name}" abgeschlossen. Weiter zur nächsten Übung.`,
+      );
       return;
     }
 
     const fallbackOpenIndex = findNextIncompleteExerciseIndex(updatedSession, 0);
     if (fallbackOpenIndex >= 0 && fallbackOpenIndex !== this.activeExerciseIndex()) {
       this.setActiveExercise(fallbackOpenIndex);
-      this.successMessage.set(`"${updatedExercise.name}" abgeschlossen. Weiter zur nächsten offenen Übung.`);
+      this.successMessage.set(
+        `"${updatedExercise.name}" abgeschlossen. Weiter zur nächsten offenen Übung.`,
+      );
       return;
     }
 
@@ -736,14 +773,14 @@ export class GymFacadeService {
       durationWeeks: Number(value.durationWeeks),
       startDate: value.startDate,
       isActive: Boolean(value.isActive),
-      days: this.builderDays().map(day => ({
+      days: this.builderDays().map((day) => ({
         name: day.name,
         targetMuscles: day.targetMuscles
           .split(',')
-          .map(item => item.trim().toLowerCase())
+          .map((item) => item.trim().toLowerCase())
           .filter(Boolean),
-        exercises: day.exercises
-      }))
+        exercises: day.exercises,
+      })),
     };
 
     try {
@@ -778,7 +815,7 @@ export class GymFacadeService {
       await this.trainingData.upsertMeasurement({
         type: value.type,
         value: Number(value.value),
-        measuredOn: value.measuredOn
+        measuredOn: value.measuredOn,
       });
 
       this.successMessage.set('Measurement gespeichert.');
@@ -801,13 +838,13 @@ export class GymFacadeService {
       muscle_group: string | null;
       position: number;
       settings: Record<string, unknown>;
-    }> = [...this.widgets()].map(item => ({
+    }> = [...this.widgets()].map((item) => ({
       id: item.id.startsWith('local-') ? undefined : item.id,
       graph_type: item.graph_type,
       exercise_id: item.exercise_id,
       muscle_group: item.muscle_group,
       position: item.position,
-      settings: item.settings
+      settings: item.settings,
     }));
 
     configs.push({
@@ -815,7 +852,7 @@ export class GymFacadeService {
       exercise_id: value.graphType === 'exercise_10rm' ? value.exerciseId || null : null,
       muscle_group: value.graphType === 'muscle_volume' ? value.muscleGroup || null : null,
       position: configs.length + 1,
-      settings: {}
+      settings: {},
     });
 
     try {
@@ -867,7 +904,9 @@ export class GymFacadeService {
           this.selectedDetailPointDate.set(null);
           return;
         }
-        series = await this.trainingData.getProgressSeries(this.widgetToSeriesQuery(widget, this.detailFrom(), this.detailTo()));
+        series = await this.trainingData.getProgressSeries(
+          this.widgetToSeriesQuery(widget, this.detailFrom(), this.detailTo()),
+        );
       } else if (source === 'progress-10rm') {
         const exerciseId = this.selectedProgressExerciseId();
         if (!exerciseId) {
@@ -879,7 +918,7 @@ export class GymFacadeService {
           graphType: 'exercise_10rm',
           exerciseId,
           from: this.detailFrom(),
-          to: this.detailTo()
+          to: this.detailTo(),
         });
       } else {
         const exerciseId = this.selectedProgressExerciseId();
@@ -888,7 +927,12 @@ export class GymFacadeService {
           this.selectedDetailPointDate.set(null);
           return;
         }
-        series = await this.trainingData.getExerciseVolumeSeries(exerciseId, this.detailFrom(), this.detailTo(), true);
+        series = await this.trainingData.getExerciseVolumeSeries(
+          exerciseId,
+          this.detailFrom(),
+          this.detailTo(),
+          true,
+        );
       }
 
       this.detailSeries.set(series);
@@ -985,22 +1029,20 @@ export class GymFacadeService {
       }
 
       const postDay = this.lastCompletedSessionDay() || toIsoDate(new Date());
-      const { error } = await this.supabaseService.client
-        .from('community_posts')
-        .upsert(
-          {
-            user_id: user.id,
-            post_type: 'gym_checkin',
-            day: postDay,
-            note: this.workoutShareNote().trim() || this.workoutShareSuggestion(),
-            summary: {
-              session_day: postDay,
-              weekly_progress: this.workoutShareSuggestion()
-            },
-            photo_url: photoPath
+      const { error } = await this.supabaseService.client.from('community_posts').upsert(
+        {
+          user_id: user.id,
+          post_type: 'gym_checkin',
+          day: postDay,
+          note: this.workoutShareNote().trim() || this.workoutShareSuggestion(),
+          summary: {
+            session_day: postDay,
+            weekly_progress: this.workoutShareSuggestion(),
           },
-          { onConflict: 'user_id,day,post_type' }
-        );
+          photo_url: photoPath,
+        },
+        { onConflict: 'user_id,day,post_type' },
+      );
 
       if (error) {
         throw error;
@@ -1033,20 +1075,22 @@ export class GymFacadeService {
   }
 
   setBuilderDayName(dayIndex: number, value: string): void {
-    this.builderDays.update(days => updateBuilderDayName(days, dayIndex, value));
+    this.builderDays.update((days) => updateBuilderDayName(days, dayIndex, value));
   }
 
   setBuilderDayMuscles(dayIndex: number, value: string): void {
-    this.builderDays.update(days => updateBuilderDayMuscles(days, dayIndex, value));
+    this.builderDays.update((days) => updateBuilderDayMuscles(days, dayIndex, value));
   }
 
   setBuilderExercise(
     dayIndex: number,
     exerciseIndex: number,
     field: 'exerciseId' | 'sets' | 'targetReps',
-    value: string
+    value: string,
   ): void {
-    this.builderDays.update(days => updateBuilderExercise(days, dayIndex, exerciseIndex, field, value));
+    this.builderDays.update((days) =>
+      updateBuilderExercise(days, dayIndex, exerciseIndex, field, value),
+    );
   }
 
   addBuilderExercise(dayIndex: number): void {
@@ -1056,11 +1100,11 @@ export class GymFacadeService {
       return;
     }
 
-    this.builderDays.update(days => appendBuilderExercise(days, dayIndex, fallbackExerciseId));
+    this.builderDays.update((days) => appendBuilderExercise(days, dayIndex, fallbackExerciseId));
   }
 
   removeBuilderExercise(dayIndex: number, exerciseIndex: number): void {
-    this.builderDays.update(days => removeBuilderExerciseAt(days, dayIndex, exerciseIndex));
+    this.builderDays.update((days) => removeBuilderExerciseAt(days, dayIndex, exerciseIndex));
   }
 
   addBuilderDay(): void {
@@ -1069,7 +1113,7 @@ export class GymFacadeService {
     }
 
     const fallbackExerciseId = this.exercises()[0]?.id || '';
-    this.builderDays.update(days => appendBuilderDay(days, fallbackExerciseId));
+    this.builderDays.update((days) => appendBuilderDay(days, fallbackExerciseId));
   }
 
   detailPointLabel(pointDate: string, value: number): string {
@@ -1091,7 +1135,7 @@ export class GymFacadeService {
 
   private async syncSelectedWorkoutPreview(
     dashboard: TrainingDashboardWeek,
-    forceSessionRefresh = false
+    forceSessionRefresh = false,
   ): Promise<void> {
     const selectedDayId = this.selectedWorkoutDay()?.dayId || null;
     const nextWorkout = selectTrackedWorkoutDay(dashboard, selectedDayId);
@@ -1107,7 +1151,7 @@ export class GymFacadeService {
       currentOverviewDayId: this.selectedOverview()?.dayId || null,
       nextWorkoutDayId: nextWorkout.dayId,
       currentSessionClientRef: nextWorkout.currentSessionClientRef,
-      forceSessionRefresh
+      forceSessionRefresh,
     });
     if (!shouldRefresh) {
       return;
@@ -1138,7 +1182,7 @@ export class GymFacadeService {
     }
     this.activeGraphJourneyId = this.telemetry.startJourney('graph_check', {
       surface: 'gym',
-      source
+      source,
     });
   }
 
@@ -1148,7 +1192,7 @@ export class GymFacadeService {
     }
     this.telemetry.completeJourney(this.activeGraphJourneyId, 'success', {
       surface: 'gym',
-      action
+      action,
     });
     this.activeGraphJourneyId = null;
   }
@@ -1165,12 +1209,15 @@ export class GymFacadeService {
     const requestId = ++this.progressRequestId;
     const { from, to } = buildProgressDateRange(this.progressRangeDays());
 
-    const { tenRmSeries, exerciseVolumeSeries } = await loadExerciseProgressData(this.trainingData, {
-      exerciseId,
-      from,
-      to,
-      forceRefresh
-    });
+    const { tenRmSeries, exerciseVolumeSeries } = await loadExerciseProgressData(
+      this.trainingData,
+      {
+        exerciseId,
+        from,
+        to,
+        forceRefresh,
+      },
+    );
 
     if (requestId !== this.progressRequestId) {
       return;
@@ -1185,7 +1232,10 @@ export class GymFacadeService {
     const weekStartDate = startOfIsoWeek(sessionDate);
     const weekStart = toIsoDate(weekStartDate);
     const weekEnd = toIsoDate(addDays(weekStartDate, 6));
-    const completedThisWeek = await this.trainingData.getCompletedWorkoutCountForRange(weekStart, weekEnd);
+    const completedThisWeek = await this.trainingData.getCompletedWorkoutCountForRange(
+      weekStart,
+      weekEnd,
+    );
     const share = buildWorkoutShareSuggestion(completedThisWeek);
     this.workoutShareSuggestion.set(share.suggestion);
     this.workoutShareNote.set(share.note);
@@ -1205,13 +1255,17 @@ export class GymFacadeService {
     return path;
   }
 
-  private widgetToSeriesQuery(widget: TrainingGraphConfig, from?: string, to?: string): ProgressSeriesQuery {
+  private widgetToSeriesQuery(
+    widget: TrainingGraphConfig,
+    from?: string,
+    to?: string,
+  ): ProgressSeriesQuery {
     return {
       graphType: widget.graph_type,
       from,
       to,
       exerciseId: widget.exercise_id,
-      muscleGroup: widget.muscle_group
+      muscleGroup: widget.muscle_group,
     };
   }
 
@@ -1222,19 +1276,25 @@ export class GymFacadeService {
       return;
     }
 
-    const prefillKey = this.executionPrefillKey(session.sessionClientRef, exercise.sessionExerciseId);
+    const prefillKey = this.executionPrefillKey(
+      session.sessionClientRef,
+      exercise.sessionExerciseId,
+    );
     if (this.attemptedExercisePrefill.has(prefillKey)) {
       return;
     }
 
-    const { nextSets, changed } = applyPreviousWorkoutPrefill(exercise.sets, this.previousPerformance());
+    const { nextSets, changed } = applyPreviousWorkoutPrefill(
+      exercise.sets,
+      this.previousPerformance(),
+    );
     this.attemptedExercisePrefill.add(prefillKey);
 
     if (!changed) {
       return;
     }
 
-    this.activeSession.update(current => {
+    this.activeSession.update((current) => {
       if (!current) {
         return current;
       }
@@ -1242,10 +1302,10 @@ export class GymFacadeService {
       return replaceExerciseSets(
         current,
         exercise.sessionExerciseId,
-        nextSets.map(setRow => ({
+        nextSets.map((setRow) => ({
           ...setRow,
-          volume: calculateVolume(setRow.weightKg, setRow.reps)
-        }))
+          volume: calculateVolume(setRow.weightKg, setRow.reps),
+        })),
       );
     });
   }
@@ -1256,12 +1316,15 @@ export class GymFacadeService {
       return null;
     }
 
-    const { nextSets, carriedSetClientRef } = carryForwardCompletedSet(exercise.sets, completedClientRef);
+    const { nextSets, carriedSetClientRef } = carryForwardCompletedSet(
+      exercise.sets,
+      completedClientRef,
+    );
     if (!carriedSetClientRef) {
       return null;
     }
 
-    this.activeSession.update(current => {
+    this.activeSession.update((current) => {
       if (!current) {
         return current;
       }
@@ -1269,10 +1332,10 @@ export class GymFacadeService {
       return replaceExerciseSets(
         current,
         exercise.sessionExerciseId,
-        nextSets.map(setRow => ({
+        nextSets.map((setRow) => ({
           ...setRow,
-          volume: calculateVolume(setRow.weightKg, setRow.reps)
-        }))
+          volume: calculateVolume(setRow.weightKg, setRow.reps),
+        })),
       );
     });
 
@@ -1313,7 +1376,7 @@ export class GymFacadeService {
         reps: context.setRow.reps,
         durationSeconds: context.setRow.durationSeconds,
         isCompleted: context.setRow.isCompleted,
-        clientRef: context.setRow.clientRef
+        clientRef: context.setRow.clientRef,
       });
 
       this.markSetSaveState(clientRef, 'saved');
@@ -1359,7 +1422,7 @@ export class GymFacadeService {
   }
 
   private markSetSaveState(clientRef: string, state: 'idle' | 'saving' | 'saved' | 'error'): void {
-    this.setSaveState.update(current => {
+    this.setSaveState.update((current) => {
       if (state === 'idle') {
         const { [clientRef]: removed, ...rest } = current;
         void removed;
@@ -1383,12 +1446,12 @@ export class GymFacadeService {
   }
 
   private updateSet(clientRef: string, updater: (setRow: TrainingExecutionSet) => void): void {
-    this.activeSession.update(current => {
+    this.activeSession.update((current) => {
       if (!current) {
         return current;
       }
 
-      return updateSetByClientRef(current, clientRef, setRow => {
+      return updateSetByClientRef(current, clientRef, (setRow) => {
         const next = { ...setRow };
         updater(next);
         return next;
@@ -1434,19 +1497,19 @@ export class GymFacadeService {
     this.measurementForm.reset({
       type: 'weight',
       value: 70,
-      measuredOn: toIsoDate(new Date())
+      measuredOn: toIsoDate(new Date()),
     });
     this.planMetaForm.reset({
       name: '',
       daysPerWeek: 4,
       durationWeeks: 12,
       startDate: toIsoDate(new Date()),
-      isActive: true
+      isActive: true,
     });
     this.graphForm.reset({
       graphType: 'workout_count',
       exerciseId: '',
-      muscleGroup: ''
+      muscleGroup: '',
     });
     this.builderDays.set([]);
     this.trackerBootstrapped = false;

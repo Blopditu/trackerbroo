@@ -18,42 +18,44 @@ import { CommonModule } from '@angular/common';
       }
     </div>
   `,
-  styles: [`
-    .row {
-      min-height: 44px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 8px 0;
-      border-bottom: 1px solid var(--ui-outline);
-    }
+  styles: [
+    `
+      .row {
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--ui-outline);
+      }
 
-    .left {
-      display: grid;
-      gap: 4px;
-    }
+      .left {
+        display: grid;
+        gap: 4px;
+      }
 
-    strong {
-      font-size: 16px;
-      color: var(--ui-ink);
-      font-weight: 600;
-      line-height: 1.2;
-    }
+      strong {
+        font-size: 16px;
+        color: var(--ui-ink);
+        font-weight: 600;
+        line-height: 1.2;
+      }
 
-    span {
-      font-size: 13px;
-      color: var(--ui-ink-muted);
-      line-height: 1.2;
-    }
+      span {
+        font-size: 13px;
+        color: var(--ui-ink-muted);
+        line-height: 1.2;
+      }
 
-    .meta {
-      font-size: 13px;
-      color: color-mix(in srgb, var(--ui-ink-muted) 72%, transparent);
-      font-weight: 600;
-      white-space: nowrap;
-    }
-  `]
+      .meta {
+        font-size: 13px;
+        color: color-mix(in srgb, var(--ui-ink-muted) 72%, transparent);
+        font-weight: 600;
+        white-space: nowrap;
+      }
+    `,
+  ],
 })
 export class ListRowComponent {
   readonly title = input.required<string>();

@@ -4,7 +4,7 @@ import { SupabaseService } from './supabase.service';
 import { User } from './types';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class AuthService {
   readonly user = signal<User | null>(null);
@@ -25,8 +25,8 @@ export class AuthService {
     const { error } = await this.supabaseService.client.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: callbackUrl
-      }
+        emailRedirectTo: callbackUrl,
+      },
     });
     if (error) throw error;
   }
@@ -36,8 +36,8 @@ export class AuthService {
     const { error } = await this.supabaseService.client.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: callbackUrl
-      }
+        redirectTo: callbackUrl,
+      },
     });
     if (error) throw error;
   }
@@ -106,7 +106,7 @@ export class AuthService {
 
     this.user.set({
       id: session.user.id,
-      email: session.user.email || ''
+      email: session.user.email || '',
     });
 
     this.onboardingCompleted.set(this.readOnboardingFlag(session.user.id));

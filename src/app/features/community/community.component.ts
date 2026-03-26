@@ -9,7 +9,7 @@ import {
   ViewChild,
   inject,
   signal,
-  viewChild
+  viewChild,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -35,16 +35,20 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
     MatButtonModule,
     MatFormFieldModule,
     MatInputModule,
-    BottomSheetComponent
+    BottomSheetComponent,
   ],
   template: `
     <main class="page community-page">
       @if (errorMessage()) {
-        <p class="toast error" role="status" aria-live="polite" aria-atomic="true">{{ errorMessage() }}</p>
+        <p class="toast error" role="status" aria-live="polite" aria-atomic="true">
+          {{ errorMessage() }}
+        </p>
       }
 
       @if (successMessage()) {
-        <p class="toast success" role="status" aria-live="polite" aria-atomic="true">{{ successMessage() }}</p>
+        <p class="toast success" role="status" aria-live="polite" aria-atomic="true">
+          {{ successMessage() }}
+        </p>
       }
 
       <section class="panel community-hero">
@@ -53,7 +57,12 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
           <p class="motto">Kurze Check-ins. Klare Reaktionen.</p>
         </div>
         <div class="hero-cta-row">
-          <button mat-flat-button type="button" class="action-btn hero-cta" (click)="openGymSheet()">
+          <button
+            mat-flat-button
+            type="button"
+            class="action-btn hero-cta"
+            (click)="openGymSheet()"
+          >
             Gym-Check-in teilen
           </button>
           <span class="feed-pill">{{ posts().length }} Einträge</span>
@@ -117,7 +126,7 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
                     class="photo"
                     loading="lazy"
                     decoding="async"
-                  >
+                  />
                 }
 
                 <div class="comment-list">
@@ -130,14 +139,23 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
                 </div>
 
                 <div class="post-inline-actions">
-                  <button mat-flat-button type="button" class="action-btn ghost compact" (click)="toggleCommentComposer(post.id)">
+                  <button
+                    mat-flat-button
+                    type="button"
+                    class="action-btn ghost compact"
+                    (click)="toggleCommentComposer(post.id)"
+                  >
                     {{ expandedCommentPostId() === post.id ? 'Schließen' : 'Kommentieren' }}
                   </button>
                 </div>
 
                 @if (expandedCommentPostId() === post.id) {
                   <div class="compose-row">
-                    <mat-form-field class="m3-field comment-field" appearance="outline" subscriptSizing="dynamic">
+                    <mat-form-field
+                      class="m3-field comment-field"
+                      appearance="outline"
+                      subscriptSizing="dynamic"
+                    >
                       <mat-label>Kommentar</mat-label>
                       <input
                         matInput
@@ -146,9 +164,16 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
                         (ngModelChange)="setCommentInput(post.id, $event)"
                         placeholder="Kommentar"
                         [attr.aria-label]="'Kommentar für Post von ' + displayName(post.user_id)"
-                      >
+                      />
                     </mat-form-field>
-                    <button mat-flat-button type="button" class="action-btn compact" (click)="submitComment(post.id)">Senden</button>
+                    <button
+                      mat-flat-button
+                      type="button"
+                      class="action-btn compact"
+                      (click)="submitComment(post.id)"
+                    >
+                      Senden
+                    </button>
                   </div>
                 }
               </article>
@@ -156,7 +181,10 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
           }
 
           @if (posts().length === 0) {
-            <p class="muted">Noch keine Updates. Starte den ersten Gym-Check-in oder teile heute ein erreichtes Ziel.</p>
+            <p class="muted">
+              Noch keine Updates. Starte den ersten Gym-Check-in oder teile heute ein erreichtes
+              Ziel.
+            </p>
           }
 
           <div #loadMoreAnchor class="load-anchor" aria-hidden="true"></div>
@@ -166,7 +194,13 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
           }
 
           @if (hasMore()) {
-            <button mat-flat-button type="button" class="action-btn ghost load-more" (click)="loadMore()" [disabled]="loadingMore()">
+            <button
+              mat-flat-button
+              type="button"
+              class="action-btn ghost load-more"
+              (click)="loadMore()"
+              [disabled]="loadingMore()"
+            >
               Weitere Einträge laden
             </button>
           } @else if (posts().length > 0) {
@@ -175,30 +209,70 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
         }
       </section>
 
-      <button mat-fab class="app-fab community-fab" type="button" (click)="openGymSheet()" aria-label="Gym-Check-in teilen">
+      <button
+        mat-fab
+        class="app-fab community-fab"
+        type="button"
+        (click)="openGymSheet()"
+        aria-label="Gym-Check-in teilen"
+      >
         <lucide-icon [img]="icons.plus" class="fab-icon" aria-hidden="true"></lucide-icon>
       </button>
     </main>
 
-    <app-bottom-sheet [open]="showGymSheet()" title="Gym-Check-in teilen" (closed)="closeGymSheet()">
+    <app-bottom-sheet
+      [open]="showGymSheet()"
+      title="Gym-Check-in teilen"
+      (closed)="closeGymSheet()"
+    >
       <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
         <mat-label>Notiz (optional)</mat-label>
-        <textarea matInput id="gym-note" rows="2" [(ngModel)]="gymNote" placeholder="Was lief heute gut?"></textarea>
+        <textarea
+          matInput
+          id="gym-note"
+          rows="2"
+          [(ngModel)]="gymNote"
+          placeholder="Was lief heute gut?"
+        ></textarea>
       </mat-form-field>
 
       <p class="file-label">Foto (optional)</p>
       <div class="file-row">
-        <button mat-flat-button type="button" class="action-btn ghost compact" (click)="pickGymPhoto()">Foto auswählen</button>
+        <button
+          mat-flat-button
+          type="button"
+          class="action-btn ghost compact"
+          (click)="pickGymPhoto()"
+        >
+          Foto auswählen
+        </button>
         <span class="file-name">{{ gymPhotoName() || 'Kein Foto ausgewählt' }}</span>
       </div>
-      <input #gymPhotoInput id="gym-photo" class="sr-only" type="file" accept="image/*" (change)="onGymPhotoSelected($event)">
+      <input
+        #gymPhotoInput
+        id="gym-photo"
+        class="sr-only"
+        type="file"
+        accept="image/*"
+        (change)="onGymPhotoSelected($event)"
+      />
 
-      <button mat-flat-button type="button" class="action-btn" [disabled]="savingPost()" (click)="submitGymPost()">
+      <button
+        mat-flat-button
+        type="button"
+        class="action-btn"
+        [disabled]="savingPost()"
+        (click)="submitGymPost()"
+      >
         {{ savingPost() ? 'Wird geteilt …' : 'Gym-Check-in teilen' }}
       </button>
     </app-bottom-sheet>
 
-    <app-bottom-sheet [open]="selectedPostForActions() !== null" title="Beitrag verwalten" (closed)="closePostActions()">
+    <app-bottom-sheet
+      [open]="selectedPostForActions() !== null"
+      title="Beitrag verwalten"
+      (closed)="closePostActions()"
+    >
       @if (selectedPostForActions()) {
         <article class="action-card">
           <p class="action-title">{{ postTypeLabel(selectedPostForActions()!) }}</p>
@@ -207,255 +281,271 @@ type ProfileDirectoryEntry = Pick<Profile, 'user_id' | 'display_name' | 'avatar_
           }
         </article>
         <div class="action-list">
-          <button mat-flat-button type="button" class="action-btn danger" (click)="deleteSelectedPost()">Löschen</button>
-          <button mat-flat-button type="button" class="action-btn ghost" (click)="closePostActions()">Abbrechen</button>
+          <button
+            mat-flat-button
+            type="button"
+            class="action-btn danger"
+            (click)="deleteSelectedPost()"
+          >
+            Löschen
+          </button>
+          <button
+            mat-flat-button
+            type="button"
+            class="action-btn ghost"
+            (click)="closePostActions()"
+          >
+            Abbrechen
+          </button>
         </div>
       }
     </app-bottom-sheet>
   `,
-  styles: [`
-    .community-page {
-      color: var(--ui-ink);
-      gap: var(--layout-gap);
-    }
+  styles: [
+    `
+      .community-page {
+        color: var(--ui-ink);
+        gap: var(--layout-gap);
+      }
 
-    .community-hero {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: end;
-      justify-content: space-between;
-      gap: 12px;
-      background:
-        radial-gradient(circle at top right, rgba(0, 228, 117, 0.08), transparent 28%),
-        linear-gradient(180deg, rgba(30, 32, 31, 0.98), rgba(18, 20, 19, 0.98));
-    }
+      .community-hero {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: end;
+        justify-content: space-between;
+        gap: 12px;
+        background:
+          radial-gradient(circle at top right, rgba(0, 228, 117, 0.08), transparent 28%),
+          linear-gradient(180deg, rgba(30, 32, 31, 0.98), rgba(18, 20, 19, 0.98));
+      }
 
-        .section,
-        .post-card {
-          display: grid;
-          gap: var(--space-3);
-        }
+      .section,
+      .post-card {
+        display: grid;
+        gap: var(--space-3);
+      }
 
-    .post-card {
-      background: linear-gradient(180deg, rgba(28, 30, 29, 0.96), rgba(19, 21, 20, 0.96));
-      border-radius: 24px;
-      padding: 14px;
-      box-shadow: none;
-    }
+      .post-card {
+        background: linear-gradient(180deg, rgba(28, 30, 29, 0.96), rgba(19, 21, 20, 0.96));
+        border-radius: 24px;
+        padding: 14px;
+        box-shadow: none;
+      }
 
-        .section h2 {
-          margin: 0;
-          font-size: clamp(1.6rem, 4vw, 2.1rem);
-          font-weight: 800;
-          letter-spacing: -0.06em;
-        }
+      .section h2 {
+        margin: 0;
+        font-size: clamp(1.6rem, 4vw, 2.1rem);
+        font-weight: 800;
+        letter-spacing: -0.06em;
+      }
 
-        .period,
-        .motto,
-    .muted,
-    .post-meta,
-    .post-type,
-    .post-summary,
-    .post-foods {
-      margin: 0;
-      color: var(--ui-ink-muted);
-      font-size: 13px;
-      font-weight: 700;
-    }
+      .period,
+      .motto,
+      .muted,
+      .post-meta,
+      .post-type,
+      .post-summary,
+      .post-foods {
+        margin: 0;
+        color: var(--ui-ink-muted);
+        font-size: 13px;
+        font-weight: 700;
+      }
 
-    .period {
-      color: var(--shell-accent);
-      letter-spacing: 0.28em;
-      text-transform: uppercase;
-      font-size: 11px;
-      font-weight: 800;
-    }
+      .period {
+        color: var(--shell-accent);
+        letter-spacing: 0.28em;
+        text-transform: uppercase;
+        font-size: 11px;
+        font-weight: 800;
+      }
 
-        .hero-cta {
-          width: fit-content;
-          min-height: 44px;
-        }
+      .hero-cta {
+        width: fit-content;
+        min-height: 44px;
+      }
 
-        .hero-cta-row {
-          display: flex;
-          flex-wrap: wrap;
-          align-items: center;
-          gap: 8px;
-        }
+      .hero-cta-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+      }
 
-        .feed-pill {
-          display: inline-flex;
-          align-items: center;
-          min-height: 32px;
-          padding: 0 12px;
-          border-radius: 999px;
-          background: rgba(20, 22, 21, 0.94);
-          color: var(--ui-ink-muted);
-          font-size: 11px;
-          font-weight: 800;
-          letter-spacing: 0.12em;
-          text-transform: uppercase;
-        }
+      .feed-pill {
+        display: inline-flex;
+        align-items: center;
+        min-height: 32px;
+        padding: 0 12px;
+        border-radius: 999px;
+        background: rgba(20, 22, 21, 0.94);
+        color: var(--ui-ink-muted);
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
 
-    .day-divider {
-      margin-top: 8px;
-      width: fit-content;
-      padding: 8px 12px;
-      border-radius: 999px;
-      background: rgba(20, 22, 21, 0.94);
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--ui-ink-muted);
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-    }
+      .day-divider {
+        margin-top: 8px;
+        width: fit-content;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(20, 22, 21, 0.94);
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--ui-ink-muted);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
 
-    .post-head {
-      display: flex;
-      justify-content: space-between;
-      gap: 8px;
-      align-items: center;
-    }
+      .post-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        align-items: center;
+      }
 
-    .post-actions {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-    }
+      .post-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
 
-        .post-manage-btn {
-          width: 34px;
-          height: 34px;
-          border-radius: 999px;
-          background: rgba(20, 22, 21, 0.94);
-          color: var(--ui-ink-muted);
-        }
+      .post-manage-btn {
+        width: 34px;
+        height: 34px;
+        border-radius: 999px;
+        background: rgba(20, 22, 21, 0.94);
+        color: var(--ui-ink-muted);
+      }
 
-    .post-note,
-    .comment-item {
-      margin: 0;
-      color: var(--ui-ink);
-      font-size: 14px;
-      font-weight: 500;
-    }
+      .post-note,
+      .comment-item {
+        margin: 0;
+        color: var(--ui-ink);
+        font-size: 14px;
+        font-weight: 500;
+      }
 
-    .comment-list {
-      display: grid;
-      gap: 8px;
-    }
+      .comment-list {
+        display: grid;
+        gap: 8px;
+      }
 
-    .compose-row {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 8px;
-      align-items: center;
-    }
+      .compose-row {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 8px;
+        align-items: center;
+      }
 
-    .comment-field .mat-mdc-form-field-subscript-wrapper {
-      display: none;
-    }
+      .comment-field .mat-mdc-form-field-subscript-wrapper {
+        display: none;
+      }
 
-    .post-inline-actions {
-      display: flex;
-      justify-content: flex-start;
-    }
+      .post-inline-actions {
+        display: flex;
+        justify-content: flex-start;
+      }
 
-    .file-label {
-      margin: 0;
-      font-size: 13px;
-      color: var(--ui-ink-muted);
-      font-weight: 600;
-    }
+      .file-label {
+        margin: 0;
+        font-size: 13px;
+        color: var(--ui-ink-muted);
+        font-weight: 600;
+      }
 
-    .file-row {
-      display: grid;
-      grid-template-columns: auto 1fr;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 8px;
-    }
+      .file-row {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
 
-    .file-name {
-      color: var(--ui-ink-muted);
-      font-size: 13px;
-      font-weight: 600;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
+      .file-name {
+        color: var(--ui-ink-muted);
+        font-size: 13px;
+        font-weight: 600;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
 
-    .sr-only {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      padding: 0;
-      margin: -1px;
-      overflow: hidden;
-      clip: rect(0, 0, 0, 0);
-      white-space: nowrap;
-      border: 0;
-    }
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
 
-    .action-card {
-      border-radius: 16px;
-      background: rgba(21, 23, 22, 0.96);
-      padding: 12px;
-      display: grid;
-      gap: 4px;
-    }
+      .action-card {
+        border-radius: 16px;
+        background: rgba(21, 23, 22, 0.96);
+        padding: 12px;
+        display: grid;
+        gap: 4px;
+      }
 
-    .action-title {
-      margin: 0;
-      color: var(--ui-ink);
-      font-size: 15px;
-      font-weight: 700;
-    }
+      .action-title {
+        margin: 0;
+        color: var(--ui-ink);
+        font-size: 15px;
+        font-weight: 700;
+      }
 
-    .action-sub {
-      margin: 0;
-      color: var(--ui-ink-muted);
-      font-size: 13px;
-      font-weight: 600;
-    }
+      .action-sub {
+        margin: 0;
+        color: var(--ui-ink-muted);
+        font-size: 13px;
+        font-weight: 600;
+      }
 
-    .action-list {
-      display: grid;
-      gap: 8px;
-    }
+      .action-list {
+        display: grid;
+        gap: 8px;
+      }
 
-    .load-more {
-      width: 100%;
-      text-align: center;
-      margin-top: 8px;
-    }
+      .load-more {
+        width: 100%;
+        text-align: center;
+        margin-top: 8px;
+      }
 
-    .load-anchor {
-      width: 100%;
-      height: 1px;
-    }
+      .load-anchor {
+        width: 100%;
+        height: 1px;
+      }
 
-    .community-fab {
-      z-index: 31;
-    }
+      .community-fab {
+        z-index: 31;
+      }
 
-    .fab-icon {
-      width: 24px;
-      height: 24px;
-    }
+      .fab-icon {
+        width: 24px;
+        height: 24px;
+      }
 
-    .photo {
-      width: 100%;
-      border-radius: 16px;
-      background: var(--ui-surface-1);
-      min-height: 120px;
-      object-fit: cover;
-    }
-  `]
+      .photo {
+        width: 100%;
+        border-radius: 16px;
+        background: var(--ui-surface-1);
+        min-height: 120px;
+        object-fit: cover;
+      }
+    `,
+  ],
 })
 export class CommunityComponent implements OnInit, AfterViewInit, OnDestroy {
   readonly icons = {
     plus: Plus,
-    more: Ellipsis
+    more: Ellipsis,
   };
 
   readonly facade = inject(CommunityFacadeService);
@@ -600,7 +690,7 @@ export class CommunityComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   toggleCommentComposer(postId: string): void {
-    this.expandedCommentPostId.update(current => (current === postId ? null : postId));
+    this.expandedCommentPostId.update((current) => (current === postId ? null : postId));
   }
 
   async deleteSelectedPost(): Promise<void> {
@@ -637,7 +727,7 @@ export class CommunityComponent implements OnInit, AfterViewInit, OnDestroy {
       weekday: 'long',
       day: '2-digit',
       month: '2-digit',
-      year: 'numeric'
+      year: 'numeric',
     });
   }
 
@@ -655,7 +745,12 @@ export class CommunityComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   proteinSummary(post: CommunityPost): string {
-    const summary = post.summary as { protein?: number; kcal?: number; carbs?: number; fat?: number } | null;
+    const summary = post.summary as {
+      protein?: number;
+      kcal?: number;
+      carbs?: number;
+      fat?: number;
+    } | null;
     const totalProtein = Number(summary?.protein || 0);
     const totalKcal = Number(summary?.kcal || 0);
     const totalCarbs = Number(summary?.carbs || 0);
@@ -689,12 +784,16 @@ export class CommunityComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private setupInfiniteObserver(): void {
-    if (typeof window === 'undefined' || !('IntersectionObserver' in window) || !this.loadMoreAnchor) {
+    if (
+      typeof window === 'undefined' ||
+      !('IntersectionObserver' in window) ||
+      !this.loadMoreAnchor
+    ) {
       return;
     }
 
     this.loadObserver = new IntersectionObserver(
-      entries => {
+      (entries) => {
         for (const entry of entries) {
           if (entry.isIntersecting) {
             void this.loadMore();
@@ -702,7 +801,7 @@ export class CommunityComponent implements OnInit, AfterViewInit, OnDestroy {
           }
         }
       },
-      { root: null, rootMargin: '300px 0px 300px 0px' }
+      { root: null, rootMargin: '300px 0px 300px 0px' },
     );
 
     this.loadObserver.observe(this.loadMoreAnchor.nativeElement);

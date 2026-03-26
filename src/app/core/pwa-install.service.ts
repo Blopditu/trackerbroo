@@ -8,7 +8,7 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class PwaInstallService {
   private readonly deferredPrompt = signal<BeforeInstallPromptEvent | null>(null);
@@ -85,9 +85,10 @@ export class PwaInstallService {
       return false;
     }
 
-    const iosStandalone = typeof (window.navigator as Navigator & { standalone?: boolean }).standalone === 'boolean'
-      ? Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone)
-      : false;
+    const iosStandalone =
+      typeof (window.navigator as Navigator & { standalone?: boolean }).standalone === 'boolean'
+        ? Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone)
+        : false;
 
     return window.matchMedia('(display-mode: standalone)').matches || iosStandalone;
   }

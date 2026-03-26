@@ -1,12 +1,17 @@
-import { TrainingDashboardDay, TrainingDashboardWeek } from '../../core/training/training-data.service';
+import {
+  TrainingDashboardDay,
+  TrainingDashboardWeek,
+} from '../../core/training/training-data.service';
 
 export function selectTrackedWorkoutDay(
   dashboard: TrainingDashboardWeek,
-  selectedDayId: string | null
+  selectedDayId: string | null,
 ): TrainingDashboardDay | null {
-  return dashboard.workoutDays.find(workout => workout.dayId === selectedDayId)
-    || dashboard.workoutDays[0]
-    || null;
+  return (
+    dashboard.workoutDays.find((workout) => workout.dayId === selectedDayId) ||
+    dashboard.workoutDays[0] ||
+    null
+  );
 }
 
 export function shouldRefreshWorkoutPreview(params: {

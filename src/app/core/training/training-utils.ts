@@ -33,12 +33,12 @@ export function suggestNextWeightKg(input: ProgressionInput): number | null {
     return null;
   }
 
-  const workingSets = input.sets.filter(set => !set.isWarmup);
+  const workingSets = input.sets.filter((set) => !set.isWarmup);
   if (workingSets.length === 0) {
     return null;
   }
 
-  const allHitTarget = workingSets.every(set => Number(set.reps || 0) >= input.targetReps!);
+  const allHitTarget = workingSets.every((set) => Number(set.reps || 0) >= input.targetReps!);
   if (!allHitTarget) {
     return null;
   }
@@ -66,8 +66,9 @@ export function addDays(day: Date, count: number): Date {
 }
 
 export function newClientRef(prefix: string): string {
-  const random = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
-    ? crypto.randomUUID()
-    : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  const random =
+    typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
   return `${prefix}-${random}`;
 }

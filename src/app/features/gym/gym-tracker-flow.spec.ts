@@ -2,7 +2,7 @@ import { vi } from 'vitest';
 import {
   loadDashboardWeekData,
   loadTrackerBootstrapData,
-  loadWorkoutPreviewData
+  loadWorkoutPreviewData,
 } from './gym-tracker-flow';
 
 describe('gym-tracker-flow', () => {
@@ -12,7 +12,7 @@ describe('gym-tracker-flow', () => {
       flushPendingSync: vi.fn().mockResolvedValue(undefined),
       getDashboardWeek: vi.fn().mockResolvedValue({ weekStart: '2026-03-16' }),
       getExercises: vi.fn().mockResolvedValue([{ id: 'exercise-1' }]),
-      getPlans: vi.fn().mockResolvedValue([{ id: 'plan-1' }])
+      getPlans: vi.fn().mockResolvedValue([{ id: 'plan-1' }]),
     };
 
     const result = await loadTrackerBootstrapData(trainingData as never, '2026-03-19', true);
@@ -28,17 +28,17 @@ describe('gym-tracker-flow', () => {
       hasPendingSync: vi.fn().mockReturnValue(false),
       flushPendingSync: vi.fn(),
       getPlanOverview: vi.fn().mockResolvedValue({ dayId: 'day-2' }),
-      getSessionByClientRef: vi.fn()
+      getSessionByClientRef: vi.fn(),
     };
 
     const withoutSession = await loadWorkoutPreviewData(trainingData as never, {
       workout: {
         dayId: 'day-2',
-        currentSessionClientRef: null
+        currentSessionClientRef: null,
       } as never,
       currentOverviewDayId: 'day-1',
       currentSessionClientRef: 'session-1',
-      forceSessionRefresh: false
+      forceSessionRefresh: false,
     });
 
     expect(withoutSession.overview).toEqual({ dayId: 'day-2' });
@@ -46,29 +46,29 @@ describe('gym-tracker-flow', () => {
 
     trainingData.getSessionByClientRef.mockResolvedValue({
       sessionClientRef: 'session-2',
-      status: 'in_progress'
+      status: 'in_progress',
     });
 
     const withSession = await loadWorkoutPreviewData(trainingData as never, {
       workout: {
         dayId: 'day-2',
-        currentSessionClientRef: 'session-2'
+        currentSessionClientRef: 'session-2',
       } as never,
       currentOverviewDayId: 'day-2',
       currentSessionClientRef: null,
-      forceSessionRefresh: false
+      forceSessionRefresh: false,
     });
 
     expect(withSession.overview).toBeUndefined();
     expect(withSession.activeSession).toEqual({
       sessionClientRef: 'session-2',
-      status: 'in_progress'
+      status: 'in_progress',
     });
   });
 
   it('loads dashboard week without touching plans or exercises', async () => {
     const trainingData = {
-      getDashboardWeek: vi.fn().mockResolvedValue({ weekStart: '2026-03-16' })
+      getDashboardWeek: vi.fn().mockResolvedValue({ weekStart: '2026-03-16' }),
     };
 
     const dashboard = await loadDashboardWeekData(trainingData as never, '2026-03-19', false);

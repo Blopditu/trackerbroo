@@ -1,0 +1,87 @@
+@mixin semantic-light() {
+  --surface-page: #f3f4ee;
+  --surface-shell: #fbfcf8;
+  --surface-panel: #ffffff;
+  --surface-panel-strong: #f2f4ed;
+  --surface-muted: #ebede6;
+
+  --text-primary: #161b17;
+  --text-secondary: #5f675f;
+  --text-muted: color-mix(in srgb, #5f675f 76%, transparent);
+  --text-on-accent: #f3fff7;
+
+  --border-subtle: rgba(22, 27, 23, 0.06);
+  --border-default: rgba(22, 27, 23, 0.1);
+  --border-strong: rgba(22, 27, 23, 0.14);
+
+  --accent: #00c96b;
+  --accent-strong: #00a857;
+  --accent-muted: rgba(0, 201, 107, 0.12);
+
+  --success: #6ed39e;
+  --warning: #d8a460;
+  --error: #c86d67;
+  --error-muted: color-mix(in srgb, #c86d67 16%, #ffffff);
+  --error-text: #4a1715;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 28px;
+  --radius-pill: 999px;
+
+  --touch-target: 48px;
+  --touch-target-compact: 44px;
+
+  --shadow-soft: 0 1px 2px 0 color-mix(in srgb, #161b17 10%, transparent);
+}
+
+@mixin semantic-dark() {
+  --surface-page: #070807;
+  --surface-shell: #0f1110;
+  --surface-panel: #1a1c1b;
+  --surface-panel-strong: #212422;
+  --surface-muted: #131514;
+
+  --text-primary: #eceae5;
+  --text-secondary: #8e948f;
+  --text-muted: color-mix(in srgb, #8e948f 76%, transparent);
+  --text-on-accent: #04140b;
+
+  --border-subtle: rgba(255, 255, 255, 0.02);
+  --border-default: rgba(255, 255, 255, 0.04);
+  --border-strong: rgba(255, 255, 255, 0.08);
+
+  --accent: #19f28a;
+  --accent-strong: #03d66d;
+  --accent-muted: rgba(25, 242, 138, 0.1);
+
+  --success: #03d66d;
+  --warning: #d7a867;
+  --error: #ee7d77;
+  --error-muted: color-mix(in srgb, #ee7d77 16%, #1a1c1b);
+  --error-text: #ffd8d5;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 28px;
+  --radius-pill: 999px;
+
+  --touch-target: 48px;
+  --touch-target-compact: 44px;
+
+  --shadow-soft: 0 1px 2px 0 color-mix(in srgb, #000 28%, transparent);
+}

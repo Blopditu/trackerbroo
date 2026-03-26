@@ -2,7 +2,7 @@ import { Injectable, computed, signal } from '@angular/core';
 import { Group } from './types';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class ActiveGroupService {
   readonly activeGroup = signal<Group | null>(null);

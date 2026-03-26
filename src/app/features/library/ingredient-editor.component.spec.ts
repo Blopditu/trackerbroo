@@ -9,7 +9,7 @@ describe('IngredientEditorComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [IngredientEditorComponent]
+      imports: [IngredientEditorComponent],
     }).compileComponents();
 
     fixture = TestBed.createComponent(IngredientEditorComponent);

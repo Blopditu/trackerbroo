@@ -14,17 +14,36 @@ import { formatAppError } from '../../core/error-format';
 @Component({
   selector: 'app-onboarding',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, ReactiveFormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatSelectModule],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    MatButtonModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+  ],
   template: `
     <main class="px-4 py-4 sm:px-6 lg:px-8">
       @if (errorMessage()) {
-        <p class="toast error" role="status" aria-live="polite" aria-atomic="true">{{ errorMessage() }}</p>
+        <p class="toast error" role="status" aria-live="polite" aria-atomic="true">
+          {{ errorMessage() }}
+        </p>
       }
 
-      <section class="mx-auto grid max-w-5xl gap-3 lg:grid-cols-[minmax(15rem,18rem)_minmax(0,1fr)]">
-        <aside class="rounded-[1.45rem] bg-[radial-gradient(circle_at_top_right,rgba(0,228,117,0.08),transparent_34%),linear-gradient(180deg,rgba(31,34,32,0.98),rgba(18,20,19,0.98))] p-5 shadow-[0_14px_34px_rgba(0,0,0,0.28)] sm:p-6">
-          <p class="text-[0.68rem] font-extrabold uppercase tracking-[0.28em] text-shell-accent">Tracker Broo</p>
-          <h1 class="mt-3 text-[2rem] font-extrabold tracking-[-0.06em] text-shell-ink sm:text-[2.15rem]">Dein Start in mehr Konsistenz</h1>
+      <section
+        class="mx-auto grid max-w-5xl gap-3 lg:grid-cols-[minmax(15rem,18rem)_minmax(0,1fr)]"
+      >
+        <aside
+          class="rounded-[1.45rem] bg-[radial-gradient(circle_at_top_right,rgba(0,228,117,0.08),transparent_34%),linear-gradient(180deg,rgba(31,34,32,0.98),rgba(18,20,19,0.98))] p-5 shadow-[0_14px_34px_rgba(0,0,0,0.28)] sm:p-6"
+        >
+          <p class="text-[0.68rem] font-extrabold uppercase tracking-[0.28em] text-shell-accent">
+            Tracker Broo
+          </p>
+          <h1
+            class="mt-3 text-[2rem] font-extrabold tracking-[-0.06em] text-shell-ink sm:text-[2.15rem]"
+          >
+            Dein Start in mehr Konsistenz
+          </h1>
           <p class="mt-2 text-sm leading-6 text-shell-ink-muted">
             Ein kurzes Setup, dann direkt ins Tracking.
           </p>
@@ -36,10 +55,18 @@ import { formatAppError } from '../../core/error-format';
                 [class.bg-shell-accent-muted]="index === step()"
                 [class.bg-shell-card-strong]="index !== step()"
               >
-                <p class="text-[0.68rem] font-extrabold uppercase tracking-[0.24em]" [class.text-shell-accent]="index === step()" [class.text-shell-ink-muted]="index !== step()">
+                <p
+                  class="text-[0.68rem] font-extrabold uppercase tracking-[0.24em]"
+                  [class.text-shell-accent]="index === step()"
+                  [class.text-shell-ink-muted]="index !== step()"
+                >
                   Schritt {{ index + 1 }}
                 </p>
-                <p class="mt-1.5 text-[0.98rem] font-bold" [class.text-shell-ink]="index === step()" [class.text-shell-ink-muted]="index !== step()">
+                <p
+                  class="mt-1.5 text-[0.98rem] font-bold"
+                  [class.text-shell-ink]="index === step()"
+                  [class.text-shell-ink-muted]="index !== step()"
+                >
                   {{ stepTitle(index) }}
                 </p>
               </div>
@@ -48,17 +75,31 @@ import { formatAppError } from '../../core/error-format';
         </aside>
 
         @if (loading()) {
-          <section class="rounded-[1.45rem] bg-[linear-gradient(180deg,rgba(30,32,31,0.98),rgba(18,20,19,0.98))] p-5 shadow-[0_14px_34px_rgba(0,0,0,0.28)] sm:p-6">
+          <section
+            class="rounded-[1.45rem] bg-[linear-gradient(180deg,rgba(30,32,31,0.98),rgba(18,20,19,0.98))] p-5 shadow-[0_14px_34px_rgba(0,0,0,0.28)] sm:p-6"
+          >
             <div class="skeleton card"></div>
           </section>
         } @else {
-          <section class="rounded-[1.45rem] bg-[linear-gradient(180deg,rgba(30,32,31,0.98),rgba(18,20,19,0.98))] p-5 shadow-[0_14px_34px_rgba(0,0,0,0.28)] sm:p-6">
+          <section
+            class="rounded-[1.45rem] bg-[linear-gradient(180deg,rgba(30,32,31,0.98),rgba(18,20,19,0.98))] p-5 shadow-[0_14px_34px_rgba(0,0,0,0.28)] sm:p-6"
+          >
             <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
               <div>
-                <p class="text-[0.68rem] font-extrabold uppercase tracking-[0.28em] text-shell-accent">Setup</p>
-                <h2 class="mt-1 text-[1.65rem] font-extrabold tracking-[-0.05em] text-shell-ink sm:text-[1.95rem]">{{ stepTitle(step()) }}</h2>
+                <p
+                  class="text-[0.68rem] font-extrabold uppercase tracking-[0.28em] text-shell-accent"
+                >
+                  Setup
+                </p>
+                <h2
+                  class="mt-1 text-[1.65rem] font-extrabold tracking-[-0.05em] text-shell-ink sm:text-[1.95rem]"
+                >
+                  {{ stepTitle(step()) }}
+                </h2>
               </div>
-              <div class="rounded-full border border-shell-border bg-shell-card-strong px-3.5 py-1.5 text-[0.68rem] font-extrabold uppercase tracking-[0.18em] text-shell-ink-muted">
+              <div
+                class="rounded-full border border-shell-border bg-shell-card-strong px-3.5 py-1.5 text-[0.68rem] font-extrabold uppercase tracking-[0.18em] text-shell-ink-muted"
+              >
                 Schritt {{ step() + 1 }} / {{ totalSteps }}
               </div>
             </div>
@@ -67,20 +108,39 @@ import { formatAppError } from '../../core/error-format';
               @if (step() === 0) {
                 <section class="grid gap-4">
                   <p class="max-w-2xl text-sm leading-7 text-shell-ink-muted">
-                    Nicht Perfektion, sondern Wiederholbarkeit. Tracking soll schnell, klar und alltagstauglich sein.
+                    Nicht Perfektion, sondern Wiederholbarkeit. Tracking soll schnell, klar und
+                    alltagstauglich sein.
                   </p>
                   <div class="grid gap-3 md:grid-cols-3">
                     <article class="rounded-[1rem] bg-shell-card-strong p-4">
-                      <p class="text-[0.68rem] font-extrabold uppercase tracking-[0.24em] text-shell-accent">Heute</p>
-                      <p class="mt-2 text-lg font-extrabold tracking-[-0.04em] text-shell-ink">Schnell loggen</p>
+                      <p
+                        class="text-[0.68rem] font-extrabold uppercase tracking-[0.24em] text-shell-accent"
+                      >
+                        Heute
+                      </p>
+                      <p class="mt-2 text-lg font-extrabold tracking-[-0.04em] text-shell-ink">
+                        Schnell loggen
+                      </p>
                     </article>
                     <article class="rounded-[1rem] bg-shell-card-strong p-4">
-                      <p class="text-[0.68rem] font-extrabold uppercase tracking-[0.24em] text-shell-accent">Gym</p>
-                      <p class="mt-2 text-lg font-extrabold tracking-[-0.04em] text-shell-ink">Aktive Session</p>
+                      <p
+                        class="text-[0.68rem] font-extrabold uppercase tracking-[0.24em] text-shell-accent"
+                      >
+                        Gym
+                      </p>
+                      <p class="mt-2 text-lg font-extrabold tracking-[-0.04em] text-shell-ink">
+                        Aktive Session
+                      </p>
                     </article>
                     <article class="rounded-[1rem] bg-shell-card-strong p-4">
-                      <p class="text-[0.68rem] font-extrabold uppercase tracking-[0.24em] text-shell-accent">Insights</p>
-                      <p class="mt-2 text-lg font-extrabold tracking-[-0.04em] text-shell-ink">Klare Verläufe</p>
+                      <p
+                        class="text-[0.68rem] font-extrabold uppercase tracking-[0.24em] text-shell-accent"
+                      >
+                        Insights
+                      </p>
+                      <p class="mt-2 text-lg font-extrabold tracking-[-0.04em] text-shell-ink">
+                        Klare Verläufe
+                      </p>
                     </article>
                   </div>
                 </section>
@@ -88,24 +148,59 @@ import { formatAppError } from '../../core/error-format';
 
               @if (step() === 1) {
                 <section class="grid gap-4 md:grid-cols-2">
-                  <mat-form-field class="m3-field md:col-span-2" appearance="outline" subscriptSizing="dynamic">
+                  <mat-form-field
+                    class="m3-field md:col-span-2"
+                    appearance="outline"
+                    subscriptSizing="dynamic"
+                  >
                     <mat-label>Name</mat-label>
-                    <input matInput id="display_name" type="text" formControlName="display_name" placeholder="Dein Name">
+                    <input
+                      matInput
+                      id="display_name"
+                      type="text"
+                      formControlName="display_name"
+                      placeholder="Dein Name"
+                    />
                   </mat-form-field>
 
                   <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
                     <mat-label>Alter</mat-label>
-                    <input matInput id="age" type="number" min="10" max="120" formControlName="age">
+                    <input
+                      matInput
+                      id="age"
+                      type="number"
+                      min="10"
+                      max="120"
+                      formControlName="age"
+                    />
                   </mat-form-field>
 
                   <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
                     <mat-label>Größe (cm)</mat-label>
-                    <input matInput id="height_cm" type="number" min="80" max="260" formControlName="height_cm">
+                    <input
+                      matInput
+                      id="height_cm"
+                      type="number"
+                      min="80"
+                      max="260"
+                      formControlName="height_cm"
+                    />
                   </mat-form-field>
 
-                  <mat-form-field class="m3-field md:col-span-2" appearance="outline" subscriptSizing="dynamic">
+                  <mat-form-field
+                    class="m3-field md:col-span-2"
+                    appearance="outline"
+                    subscriptSizing="dynamic"
+                  >
                     <mat-label>Aktuelles Gewicht (kg)</mat-label>
-                    <input matInput id="current_weight_kg" type="number" min="20" step="0.1" formControlName="current_weight_kg">
+                    <input
+                      matInput
+                      id="current_weight_kg"
+                      type="number"
+                      min="20"
+                      step="0.1"
+                      formControlName="current_weight_kg"
+                    />
                   </mat-form-field>
                 </section>
               }
@@ -114,7 +209,14 @@ import { formatAppError } from '../../core/error-format';
                 <section class="grid gap-4 md:grid-cols-2">
                   <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
                     <mat-label>Gym pro Woche</mat-label>
-                    <input matInput id="weekly_gym_target" type="number" min="1" max="14" formControlName="weekly_gym_target">
+                    <input
+                      matInput
+                      id="weekly_gym_target"
+                      type="number"
+                      min="1"
+                      max="14"
+                      formControlName="weekly_gym_target"
+                    />
                   </mat-form-field>
 
                   <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
@@ -157,7 +259,14 @@ import { formatAppError } from '../../core/error-format';
                   @if (onboardingForm.controls.track_steps.value) {
                     <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
                       <mat-label>Schrittziel pro Tag</mat-label>
-                      <input matInput id="daily_steps_target" type="number" min="1000" max="50000" formControlName="daily_steps_target">
+                      <input
+                        matInput
+                        id="daily_steps_target"
+                        type="number"
+                        min="1000"
+                        max="50000"
+                        formControlName="daily_steps_target"
+                      />
                     </mat-form-field>
                   }
                 </section>
@@ -166,13 +275,17 @@ import { formatAppError } from '../../core/error-format';
               @if (step() === 4) {
                 <section class="grid gap-4">
                   <p class="max-w-2xl text-sm leading-7 text-shell-ink-muted">
-                    Installiert fühlt sich Tracker Broo wie eine richtige App an und bleibt schneller erreichbar.
+                    Installiert fühlt sich Tracker Broo wie eine richtige App an und bleibt
+                    schneller erreichbar.
                   </p>
 
                   <div class="grid gap-3 md:grid-cols-3">
                     @for (guide of installGuides; track guide.platform) {
                       <article class="rounded-[1rem] bg-shell-card-strong p-4">
-                        <strong class="text-sm font-extrabold uppercase tracking-[0.18em] text-shell-accent">{{ guide.platform }}</strong>
+                        <strong
+                          class="text-sm font-extrabold uppercase tracking-[0.18em] text-shell-accent"
+                          >{{ guide.platform }}</strong
+                        >
                         <p class="mt-3 text-sm leading-6 text-shell-ink-muted">{{ guide.steps }}</p>
                       </article>
                     }
@@ -187,15 +300,33 @@ import { formatAppError } from '../../core/error-format';
 
                 <div class="flex flex-wrap gap-3">
                   @if (step() > 0) {
-                    <button mat-flat-button type="button" class="action-btn ghost" (click)="prevStep()">Zurück</button>
+                    <button
+                      mat-flat-button
+                      type="button"
+                      class="action-btn ghost"
+                      (click)="prevStep()"
+                    >
+                      Zurück
+                    </button>
                   }
 
                   @if (step() < totalSteps - 1) {
-                    <button mat-flat-button type="button" class="action-btn" (click)="nextStep()" [disabled]="!canGoNext()">
+                    <button
+                      mat-flat-button
+                      type="button"
+                      class="action-btn"
+                      (click)="nextStep()"
+                      [disabled]="!canGoNext()"
+                    >
                       Weiter
                     </button>
                   } @else {
-                    <button mat-flat-button type="submit" class="action-btn" [disabled]="saving() || !canFinish()">
+                    <button
+                      mat-flat-button
+                      type="submit"
+                      class="action-btn"
+                      [disabled]="saving() || !canFinish()"
+                    >
                       {{ saving() ? 'Wird eingerichtet …' : 'Loslegen' }}
                     </button>
                   }
@@ -207,11 +338,13 @@ import { formatAppError } from '../../core/error-format';
       </section>
     </main>
   `,
-  styles: [`
-    :host {
-      display: block;
-    }
-  `]
+  styles: [
+    `
+      :host {
+        display: block;
+      }
+    `,
+  ],
 })
 export class OnboardingComponent implements OnInit {
   private readonly supabaseService = inject(SupabaseService);
@@ -228,16 +361,18 @@ export class OnboardingComponent implements OnInit {
   readonly installGuides = [
     {
       platform: 'macOS Safari',
-      steps: 'Seite öffnen, Teilen wählen und dann Zum Dock hinzufügen.'
+      steps: 'Seite öffnen, Teilen wählen und dann Zum Dock hinzufügen.',
     },
     {
       platform: 'iPhone Safari',
-      steps: 'Seite öffnen, Teilen tippen und dann Zum Home-Bildschirm. Falls angeboten, Als Web-App öffnen aktivieren.'
+      steps:
+        'Seite öffnen, Teilen tippen und dann Zum Home-Bildschirm. Falls angeboten, Als Web-App öffnen aktivieren.',
     },
     {
       platform: 'Android Chrome',
-      steps: 'Seite öffnen und im Browser-Menü Install app oder Zum Startbildschirm hinzufügen wählen.'
-    }
+      steps:
+        'Seite öffnen und im Browser-Menü Install app oder Zum Startbildschirm hinzufügen wählen.',
+    },
   ];
 
   private existingProfile = signal<Profile | null>(null);
@@ -246,16 +381,19 @@ export class OnboardingComponent implements OnInit {
     {
       display_name: ['', [Validators.required, Validators.minLength(2)]],
       age: [null as number | null, [Validators.required, Validators.min(10), Validators.max(120)]],
-      height_cm: [null as number | null, [Validators.required, Validators.min(80), Validators.max(260)]],
+      height_cm: [
+        null as number | null,
+        [Validators.required, Validators.min(80), Validators.max(260)],
+      ],
       current_weight_kg: [null as number | null, [Validators.required, Validators.min(20)]],
       weekly_gym_target: [3, [Validators.required, Validators.min(1), Validators.max(14)]],
       activity_level: ['moderate' as 'low' | 'moderate' | 'high', [Validators.required]],
       track_nutrition: [true, [Validators.required]],
       track_gym: [true, [Validators.required]],
       track_steps: [false, [Validators.required]],
-      daily_steps_target: [8000, [Validators.min(1000), Validators.max(50000)]]
+      daily_steps_target: [8000, [Validators.min(1000), Validators.max(50000)]],
     },
-    { updateOn: 'change' }
+    { updateOn: 'change' },
   );
 
   stepTitle(index: number): string {
@@ -320,7 +458,7 @@ export class OnboardingComponent implements OnInit {
       track_nutrition: profile?.track_nutrition ?? true,
       track_gym: profile?.track_gym ?? true,
       track_steps: profile?.track_steps ?? false,
-      daily_steps_target: Number(profile?.daily_steps_target || 8000)
+      daily_steps_target: Number(profile?.daily_steps_target || 8000),
     });
 
     this.loading.set(false);
@@ -334,11 +472,11 @@ export class OnboardingComponent implements OnInit {
       this.errorMessage.set('Bitte prüfe deine Eingaben in diesem Schritt.');
       return;
     }
-    this.step.update(value => Math.min(value + 1, this.totalSteps - 1));
+    this.step.update((value) => Math.min(value + 1, this.totalSteps - 1));
   }
 
   prevStep(): void {
-    this.step.update(value => Math.max(value - 1, 0));
+    this.step.update((value) => Math.max(value - 1, 0));
   }
 
   async finish(): Promise<void> {
@@ -368,7 +506,7 @@ export class OnboardingComponent implements OnInit {
         track_steps: formValue.track_steps,
         daily_steps_target: formValue.track_steps ? formValue.daily_steps_target : 8000,
         onboarding_completed: true,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       };
 
       const { error } = await this.supabaseService.client
@@ -387,7 +525,10 @@ export class OnboardingComponent implements OnInit {
   }
 
   private isValid(controlNames: string[]): boolean {
-    return controlNames.every(name => this.onboardingForm.controls[name as keyof typeof this.onboardingForm.controls].valid);
+    return controlNames.every(
+      (name) =>
+        this.onboardingForm.controls[name as keyof typeof this.onboardingForm.controls].valid,
+    );
   }
 
   canGoNext(): boolean {
@@ -399,8 +540,10 @@ export class OnboardingComponent implements OnInit {
       return this.isValid(['weekly_gym_target', 'activity_level']);
     }
     if (this.step() === 3) {
-      return this.isValid(['track_nutrition', 'track_gym', 'track_steps'])
-        && (!this.onboardingForm.controls.track_steps.value || this.isValid(['daily_steps_target']));
+      return (
+        this.isValid(['track_nutrition', 'track_gym', 'track_steps']) &&
+        (!this.onboardingForm.controls.track_steps.value || this.isValid(['daily_steps_target']))
+      );
     }
     return true;
   }

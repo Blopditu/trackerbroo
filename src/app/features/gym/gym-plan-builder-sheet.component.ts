@@ -24,24 +24,30 @@ export interface BuilderExerciseChange {
     MatButtonModule,
     MatFormFieldModule,
     MatInputModule,
-    MatSelectModule
+    MatSelectModule,
   ],
-  styles: [`
-    .builder-day h3 {
-      margin: 0;
-      font-size: 16px;
-    }
-  `],
+  styles: [
+    `
+      .builder-day h3 {
+        margin: 0;
+        font-size: 16px;
+      }
+    `,
+  ],
   template: `
     <form class="sheet-stack" [formGroup]="planMetaForm()" (ngSubmit)="savePlan.emit()">
       <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
         <mat-label>Plan Name</mat-label>
-        <input matInput id="plan-name" type="text" formControlName="name">
+        <input matInput id="plan-name" type="text" formControlName="name" />
       </mat-form-field>
 
       <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
         <mat-label>Frequenz</mat-label>
-        <mat-select id="plan-days" formControlName="daysPerWeek" (valueChange)="syncDayCount.emit()">
+        <mat-select
+          id="plan-days"
+          formControlName="daysPerWeek"
+          (valueChange)="syncDayCount.emit()"
+        >
           @for (freq of frequencies(); track freq) {
             <mat-option [value]="freq">{{ freq }}x pro Woche</mat-option>
           }
@@ -50,35 +56,54 @@ export interface BuilderExerciseChange {
 
       <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
         <mat-label>Dauer (Wochen)</mat-label>
-        <input matInput id="plan-weeks" type="number" min="1" max="52" formControlName="durationWeeks">
+        <input
+          matInput
+          id="plan-weeks"
+          type="number"
+          min="1"
+          max="52"
+          formControlName="durationWeeks"
+        />
       </mat-form-field>
 
       <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
         <mat-label>Startdatum</mat-label>
-        <input matInput id="plan-start" type="date" formControlName="startDate">
+        <input matInput id="plan-start" type="date" formControlName="startDate" />
       </mat-form-field>
 
       <label class="switch-row plan-active-toggle">
-        <input type="checkbox" formControlName="isActive">
+        <input type="checkbox" formControlName="isActive" />
         <span>Als aktiven Plan setzen</span>
       </label>
 
       @for (day of builderDays(); track $index; let dayIndex = $index) {
         <section class="list-card builder-day">
           <h3>Day {{ dayIndex + 1 }}</h3>
-          <input type="text" [value]="day.name" (input)="dayNameChange.emit({ dayIndex, value: valueOf($event) })" placeholder="Day Name">
+          <input
+            type="text"
+            [value]="day.name"
+            (input)="dayNameChange.emit({ dayIndex, value: valueOf($event) })"
+            placeholder="Day Name"
+          />
           <input
             type="text"
             [value]="day.targetMuscles"
             (input)="dayMusclesChange.emit({ dayIndex, value: valueOf($event) })"
             placeholder="Zielmuskeln (Komma-getrennt)"
-          >
+          />
 
           @for (exercise of day.exercises; track $index; let exerciseIndex = $index) {
             <div class="sheet-stack builder-exercise">
               <select
                 [value]="exercise.exerciseId"
-                (change)="exerciseChange.emit({ dayIndex, exerciseIndex, field: 'exerciseId', value: valueOf($event) })"
+                (change)="
+                  exerciseChange.emit({
+                    dayIndex,
+                    exerciseIndex,
+                    field: 'exerciseId',
+                    value: valueOf($event),
+                  })
+                "
               >
                 @for (option of exercises(); track option.id) {
                   <option [value]="option.id">{{ option.name }}</option>
@@ -88,33 +113,70 @@ export interface BuilderExerciseChange {
                 type="number"
                 min="1"
                 [value]="exercise.sets"
-                (input)="exerciseChange.emit({ dayIndex, exerciseIndex, field: 'sets', value: valueOf($event) })"
-              >
+                (input)="
+                  exerciseChange.emit({
+                    dayIndex,
+                    exerciseIndex,
+                    field: 'sets',
+                    value: valueOf($event),
+                  })
+                "
+              />
               <input
                 type="number"
                 min="1"
                 [value]="exercise.targetReps ?? ''"
-                (input)="exerciseChange.emit({ dayIndex, exerciseIndex, field: 'targetReps', value: valueOf($event) })"
+                (input)="
+                  exerciseChange.emit({
+                    dayIndex,
+                    exerciseIndex,
+                    field: 'targetReps',
+                    value: valueOf($event),
+                  })
+                "
                 placeholder="Wdh"
+              />
+              <button
+                mat-flat-button
+                type="button"
+                class="action-btn ghost"
+                (click)="removeExercise.emit({ dayIndex, exerciseIndex })"
               >
-              <button mat-flat-button type="button" class="action-btn ghost" (click)="removeExercise.emit({ dayIndex, exerciseIndex })">
                 Entfernen
               </button>
             </div>
           }
 
-          <button mat-flat-button type="button" class="action-btn ghost" (click)="addExercise.emit(dayIndex)">Übung hinzufügen</button>
+          <button
+            mat-flat-button
+            type="button"
+            class="action-btn ghost"
+            (click)="addExercise.emit(dayIndex)"
+          >
+            Übung hinzufügen
+          </button>
         </section>
       }
 
-      <button mat-flat-button type="button" class="action-btn ghost" [disabled]="builderDays().length >= 7" (click)="addDay.emit()">
+      <button
+        mat-flat-button
+        type="button"
+        class="action-btn ghost"
+        [disabled]="builderDays().length >= 7"
+        (click)="addDay.emit()"
+      >
         Tag hinzufuegen
       </button>
-      <button mat-flat-button type="submit" class="action-btn" [disabled]="planMetaForm().invalid || builderDays().length === 0">
+      <button
+        mat-flat-button
+        type="submit"
+        class="action-btn"
+        [disabled]="planMetaForm().invalid || builderDays().length === 0"
+      >
         Plan speichern
       </button>
     </form>
-  `
+  `,
 })
 export class GymPlanBuilderSheetComponent {
   readonly planMetaForm = input.required<FormGroup>();

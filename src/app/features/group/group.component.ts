@@ -18,7 +18,9 @@ import { formatAppError } from '../../core/error-format';
   template: `
     <main class="page group-page">
       @if (errorMessage()) {
-        <p class="toast error" role="status" aria-live="polite" aria-atomic="true">{{ errorMessage() }}</p>
+        <p class="toast error" role="status" aria-live="polite" aria-atomic="true">
+          {{ errorMessage() }}
+        </p>
       }
 
       <header class="panel halftone">
@@ -63,9 +65,14 @@ import { formatAppError } from '../../core/error-format';
               name="groupName"
               placeholder="z. B. Team Alpen"
               required
-            >
+            />
           </mat-form-field>
-          <button mat-flat-button type="submit" class="action-btn" [disabled]="!groupForm.valid || loading">
+          <button
+            mat-flat-button
+            type="submit"
+            class="action-btn"
+            [disabled]="!groupForm.valid || loading"
+          >
             {{ loading ? 'Wird erstellt...' : 'Gruppe erstellen' }}
           </button>
         </form>
@@ -84,53 +91,59 @@ import { formatAppError } from '../../core/error-format';
               name="inviteCode"
               placeholder="Einladungscode einfügen"
               required
-            >
+            />
           </mat-form-field>
-          <button mat-flat-button type="submit" class="action-btn alt" [disabled]="!joinForm.valid || loading">
+          <button
+            mat-flat-button
+            type="submit"
+            class="action-btn alt"
+            [disabled]="!joinForm.valid || loading"
+          >
             {{ loading ? 'Wird beigetreten...' : 'Gruppe beitreten' }}
           </button>
         </form>
       </section>
     </main>
   `,
-  styles: [`
-    .group-page {
-      display: grid;
-      gap: 0.75rem;
-    }
+  styles: [
+    `
+      .group-page {
+        display: grid;
+        gap: 0.75rem;
+      }
 
-    h1 {
-      font-size: 1.7rem;
-      margin-top: 0.2rem;
-    }
+      h1 {
+        font-size: 1.7rem;
+        margin-top: 0.2rem;
+      }
 
-    .lead {
-      margin: 0.35rem 0 0;
-      color: var(--ink-500);
-      font-size: var(--text-sm);
-      font-weight: 600;
-    }
+      .lead {
+        margin: 0.35rem 0 0;
+        color: var(--ink-500);
+        font-size: var(--text-sm);
+        font-weight: 600;
+      }
 
-    .section-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 0.65rem;
-    }
+      .section-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.65rem;
+      }
 
-    .group-list,
-    .stack-form {
-      display: grid;
-      gap: 0.55rem;
-    }
+      .group-list,
+      .stack-form {
+        display: grid;
+        gap: 0.55rem;
+      }
 
-    .group-card {
-      width: 100%;
-      text-align: left;
-      min-height: 56px;
-    }
-
-  `]
+      .group-card {
+        width: 100%;
+        text-align: left;
+        min-height: 56px;
+      }
+    `,
+  ],
 })
 export class GroupComponent implements OnInit {
   groups = signal<Group[]>([]);
@@ -168,7 +181,7 @@ export class GroupComponent implements OnInit {
     }
 
     const resolvedGroups = (data ?? [])
-      .map(item => (Array.isArray(item.groups) ? item.groups[0] : item.groups))
+      .map((item) => (Array.isArray(item.groups) ? item.groups[0] : item.groups))
       .filter((group): group is Group => Boolean(group));
 
     this.groups.set(resolvedGroups);
@@ -186,20 +199,18 @@ export class GroupComponent implements OnInit {
         .from('groups')
         .insert({
           name: this.groupName,
-          created_by: user.id
+          created_by: user.id,
         })
         .select()
         .single();
 
       if (error) throw error;
 
-      await this.supabaseService.client
-        .from('group_members')
-        .insert({
-          group_id: data.id,
-          user_id: user.id,
-          role: 'owner'
-        });
+      await this.supabaseService.client.from('group_members').insert({
+        group_id: data.id,
+        user_id: user.id,
+        role: 'owner',
+      });
 
       this.selectGroup(data);
     } catch (error) {
@@ -217,13 +228,11 @@ export class GroupComponent implements OnInit {
     this.errorMessage.set(null);
 
     try {
-      const { error } = await this.supabaseService.client
-        .from('group_members')
-        .insert({
-          group_id: this.inviteCode,
-          user_id: user.id,
-          role: 'member'
-        });
+      const { error } = await this.supabaseService.client.from('group_members').insert({
+        group_id: this.inviteCode,
+        user_id: user.id,
+        role: 'member',
+      });
 
       if (error) throw error;
 

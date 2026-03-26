@@ -16,18 +16,18 @@ function defaultExercise(fallbackExerciseId: string): BuilderExerciseDraft {
     exerciseId: fallbackExerciseId,
     sets: 3,
     targetReps: 8,
-    targetSeconds: null
+    targetSeconds: null,
   };
 }
 
 export function syncBuilderDays(
   currentDays: BuilderDayDraft[],
   targetDays: number,
-  fallbackExerciseId: string
+  fallbackExerciseId: string,
 ): BuilderDayDraft[] {
-  const next = currentDays.map(day => ({
+  const next = currentDays.map((day) => ({
     ...day,
-    exercises: [...day.exercises]
+    exercises: [...day.exercises],
   }));
 
   if (next.length < targetDays) {
@@ -35,7 +35,7 @@ export function syncBuilderDays(
       next.push({
         name: `Day ${index + 1}`,
         targetMuscles: '',
-        exercises: fallbackExerciseId ? [defaultExercise(fallbackExerciseId)] : []
+        exercises: fallbackExerciseId ? [defaultExercise(fallbackExerciseId)] : [],
       });
     }
   } else if (next.length > targetDays) {
@@ -45,13 +45,21 @@ export function syncBuilderDays(
   return next;
 }
 
-export function updateBuilderDayName(days: BuilderDayDraft[], dayIndex: number, value: string): BuilderDayDraft[] {
+export function updateBuilderDayName(
+  days: BuilderDayDraft[],
+  dayIndex: number,
+  value: string,
+): BuilderDayDraft[] {
   const next = [...days];
   next[dayIndex] = { ...next[dayIndex], name: value };
   return next;
 }
 
-export function updateBuilderDayMuscles(days: BuilderDayDraft[], dayIndex: number, value: string): BuilderDayDraft[] {
+export function updateBuilderDayMuscles(
+  days: BuilderDayDraft[],
+  dayIndex: number,
+  value: string,
+): BuilderDayDraft[] {
   const next = [...days];
   next[dayIndex] = { ...next[dayIndex], targetMuscles: value };
   return next;
@@ -62,7 +70,7 @@ export function updateBuilderExercise(
   dayIndex: number,
   exerciseIndex: number,
   field: 'exerciseId' | 'sets' | 'targetReps',
-  value: string
+  value: string,
 ): BuilderDayDraft[] {
   const next = [...days];
   const day = { ...next[dayIndex] };
@@ -86,15 +94,12 @@ export function updateBuilderExercise(
 export function appendBuilderExercise(
   days: BuilderDayDraft[],
   dayIndex: number,
-  fallbackExerciseId: string
+  fallbackExerciseId: string,
 ): BuilderDayDraft[] {
   const next = [...days];
   next[dayIndex] = {
     ...next[dayIndex],
-    exercises: [
-      ...next[dayIndex].exercises,
-      defaultExercise(fallbackExerciseId)
-    ]
+    exercises: [...next[dayIndex].exercises, defaultExercise(fallbackExerciseId)],
   };
   return next;
 }
@@ -102,24 +107,27 @@ export function appendBuilderExercise(
 export function removeBuilderExerciseAt(
   days: BuilderDayDraft[],
   dayIndex: number,
-  exerciseIndex: number
+  exerciseIndex: number,
 ): BuilderDayDraft[] {
   const next = [...days];
   const day = next[dayIndex];
   next[dayIndex] = {
     ...day,
-    exercises: day.exercises.filter((_, index) => index !== exerciseIndex)
+    exercises: day.exercises.filter((_, index) => index !== exerciseIndex),
   };
   return next;
 }
 
-export function appendBuilderDay(days: BuilderDayDraft[], fallbackExerciseId: string): BuilderDayDraft[] {
+export function appendBuilderDay(
+  days: BuilderDayDraft[],
+  fallbackExerciseId: string,
+): BuilderDayDraft[] {
   return [
     ...days,
     {
       name: `Day ${days.length + 1}`,
       targetMuscles: '',
-      exercises: fallbackExerciseId ? [defaultExercise(fallbackExerciseId)] : []
-    }
+      exercises: fallbackExerciseId ? [defaultExercise(fallbackExerciseId)] : [],
+    },
   ];
 }

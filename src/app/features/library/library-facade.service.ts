@@ -9,9 +9,12 @@ import {
   formatCurrency,
   LibraryMealListRow,
   roundKcal,
-  sourceTypeLabel
+  sourceTypeLabel,
 } from './library-view-utils';
-import { deriveLibraryMetrics, syncLibraryCaches as syncLibraryCachesToStore } from './library-cache-sync';
+import {
+  deriveLibraryMetrics,
+  syncLibraryCaches as syncLibraryCachesToStore,
+} from './library-cache-sync';
 import {
   createIngredientForm,
   createMealForm,
@@ -19,11 +22,10 @@ import {
   IngredientFormGroup,
   MealFormGroup,
   MealItemFormGroup,
-  replaceMealItems,
   resetIngredientFormForCreate,
   resetIngredientFormForEdit,
   resetMealFormForCreate,
-  resetMealFormForEdit
+  resetMealFormForEdit,
 } from './library-editor-form-factory';
 import { parseMacroInput, roundOneDecimal } from './library-macro-parser';
 import {
@@ -32,11 +34,11 @@ import {
   createRollbackState,
   finalizeMealItems,
   LibraryRollbackState,
-  remapMealItems
+  remapMealItems,
 } from './library-optimistic-updates';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class LibraryFacadeService {
   private readonly ingredientChunkSize = 40;
@@ -49,7 +51,9 @@ export class LibraryFacadeService {
   readonly ingredients = signal<Ingredient[]>([]);
   readonly meals = signal<Meal[]>([]);
   readonly mealCosts = signal<Record<string, number>>({});
-  readonly mealMacros = signal<Record<string, { kcal: number; protein: number; carbs: number; fat: number }>>({});
+  readonly mealMacros = signal<
+    Record<string, { kcal: number; protein: number; carbs: number; fat: number }>
+  >({});
   readonly loadingIngredients = signal(false);
   readonly loadingMeals = signal(false);
   readonly ingredientsLoaded = signal(false);
@@ -71,8 +75,8 @@ export class LibraryFacadeService {
 
   readonly marketSuggestions = computed(() => {
     const markets = this.ingredients()
-      .map(ingredient => ingredient.market_name?.trim() || '')
-      .filter(market => market.length > 0);
+      .map((ingredient) => ingredient.market_name?.trim() || '')
+      .filter((market) => market.length > 0);
 
     return Array.from(new Set(markets)).sort((a, b) => a.localeCompare(b));
   });
@@ -81,7 +85,7 @@ export class LibraryFacadeService {
     const query = this.ingredientSearch().trim().toLowerCase();
     const market = this.marketFilter().trim().toLowerCase();
 
-    return this.ingredients().filter(item => {
+    return this.ingredients().filter((item) => {
       const matchesQuery = !query || item.name.toLowerCase().includes(query);
       const matchesMarket = !market || (item.market_name || '').toLowerCase() === market;
       return matchesQuery && matchesMarket;
@@ -89,41 +93,39 @@ export class LibraryFacadeService {
   });
 
   readonly visibleFilteredIngredients = computed(() =>
-    this.filteredIngredients().slice(0, this.ingredientVisibleCount())
+    this.filteredIngredients().slice(0, this.ingredientVisibleCount()),
   );
 
-  readonly hasMoreFilteredIngredients = computed(() =>
-    this.filteredIngredients().length > this.ingredientVisibleCount()
+  readonly hasMoreFilteredIngredients = computed(
+    () => this.filteredIngredients().length > this.ingredientVisibleCount(),
   );
 
   readonly baseIngredientOptions = computed(() =>
     this.ingredients()
-      .filter(ingredient => ingredient.source_type === 'blv_generic')
-      .sort((a, b) => a.name.localeCompare(b.name))
+      .filter((ingredient) => ingredient.source_type === 'blv_generic')
+      .sort((a, b) => a.name.localeCompare(b.name)),
   );
 
   readonly mealListRows = computed<LibraryMealListRow[]>(() =>
-    this.meals().map(meal => ({
+    this.meals().map((meal) => ({
       id: meal.id,
       name: meal.name,
       costLabel: formatCurrency(this.mealCosts()[meal.id] || 0),
-      macros: this.mealMacros()[meal.id] || null
-    }))
+      macros: this.mealMacros()[meal.id] || null,
+    })),
   );
 
   readonly visibleMealListRows = computed(() =>
-    this.mealListRows().slice(0, this.mealVisibleCount())
+    this.mealListRows().slice(0, this.mealVisibleCount()),
   );
 
-  readonly hasMoreMeals = computed(() =>
-    this.mealListRows().length > this.mealVisibleCount()
-  );
+  readonly hasMoreMeals = computed(() => this.mealListRows().length > this.mealVisibleCount());
 
   readonly draftMealCostLabel = computed(() => {
     const cost = this.mealItemsArray.controls.reduce((total, itemGroup) => {
       const ingredientId = itemGroup.controls.ingredient_id.value;
       const grams = Number(itemGroup.controls.grams.value || 0);
-      const ingredient = this.ingredients().find(entry => entry.id === ingredientId);
+      const ingredient = this.ingredients().find((entry) => entry.id === ingredientId);
       const costPer100 = Number(ingredient?.cost_per_100 || 0);
       return total + (grams / 100) * costPer100;
     }, 0);
@@ -192,7 +194,7 @@ export class LibraryFacadeService {
     try {
       const snapshot = await this.libraryDataService.loadIngredients(user.id, {
         forceRefresh,
-        allowStaleOnError: true
+        allowStaleOnError: true,
       });
 
       if (requestId !== this.ingredientsRequestId) {
@@ -231,7 +233,7 @@ export class LibraryFacadeService {
     try {
       const snapshot = await this.libraryDataService.loadMeals(user.id, {
         forceRefresh,
-        allowStaleOnError: true
+        allowStaleOnError: true,
       });
 
       if (requestId !== this.mealsRequestId) {
@@ -278,11 +280,11 @@ export class LibraryFacadeService {
   }
 
   showMoreIngredients(): void {
-    this.ingredientVisibleCount.update(count => count + this.ingredientChunkSize);
+    this.ingredientVisibleCount.update((count) => count + this.ingredientChunkSize);
   }
 
   showMoreMeals(): void {
-    this.mealVisibleCount.update(count => count + this.mealChunkSize);
+    this.mealVisibleCount.update((count) => count + this.mealChunkSize);
   }
 
   openCreateIngredient(): void {
@@ -295,7 +297,9 @@ export class LibraryFacadeService {
 
   openEditIngredient(ingredient: Ingredient): void {
     this.editingIngredient.set(ingredient);
-    this.ingredientDetailsExpanded.set(Boolean(ingredient.cost_per_100 || ingredient.market_name || ingredient.brand));
+    this.ingredientDetailsExpanded.set(
+      Boolean(ingredient.cost_per_100 || ingredient.market_name || ingredient.brand),
+    );
     this.macroPasteText.set('');
     this.macroPasteMessage.set(null);
     resetIngredientFormForEdit(this.ingredientForm, ingredient);
@@ -313,13 +317,19 @@ export class LibraryFacadeService {
     await this.ensureMealsLoaded();
     this.editingMeal.set(meal);
     const existingItems = this.allMealItems()
-      .filter(item => item.meal_id === meal.id)
-      .map(item => ({ meal_id: item.meal_id, ingredient_id: item.ingredient_id, grams: Number(item.grams) }));
+      .filter((item) => item.meal_id === meal.id)
+      .map((item) => ({
+        meal_id: item.meal_id,
+        ingredient_id: item.ingredient_id,
+        grams: Number(item.grams),
+      }));
     resetMealFormForEdit(this.formBuilder, this.mealForm, meal.name, existingItems);
   }
 
   addMealItem(): void {
-    this.mealItemsArray.push(createMealItemGroup(this.formBuilder, { ingredient_id: '', grams: 0 }));
+    this.mealItemsArray.push(
+      createMealItemGroup(this.formBuilder, { ingredient_id: '', grams: 0 }),
+    );
   }
 
   removeMealItem(index: number): void {
@@ -330,7 +340,7 @@ export class LibraryFacadeService {
   }
 
   toggleIngredientDetails(): void {
-    this.ingredientDetailsExpanded.update(value => !value);
+    this.ingredientDetailsExpanded.update((value) => !value);
   }
 
   onIngredientSourceTypeChange(): void {
@@ -345,7 +355,9 @@ export class LibraryFacadeService {
       return;
     }
 
-    const baseIngredient = this.ingredients().find(ingredient => ingredient.id === baseIngredientId);
+    const baseIngredient = this.ingredients().find(
+      (ingredient) => ingredient.id === baseIngredientId,
+    );
     if (!baseIngredient) {
       return;
     }
@@ -354,7 +366,7 @@ export class LibraryFacadeService {
       kcal_per_100: Number(baseIngredient.kcal_per_100),
       protein_per_100: Number(baseIngredient.protein_per_100),
       carbs_per_100: Number(baseIngredient.carbs_per_100),
-      fat_per_100: Number(baseIngredient.fat_per_100)
+      fat_per_100: Number(baseIngredient.fat_per_100),
     });
   }
 
@@ -385,11 +397,13 @@ export class LibraryFacadeService {
       const protein = Number(this.ingredientForm.controls.protein_per_100.value || 0);
       const carbs = Number(this.ingredientForm.controls.carbs_per_100.value || 0);
       const fat = Number(this.ingredientForm.controls.fat_per_100.value || 0);
-      this.ingredientForm.controls.kcal_per_100.setValue(roundKcal(protein * 4 + carbs * 4 + fat * 9));
+      this.ingredientForm.controls.kcal_per_100.setValue(
+        roundKcal(protein * 4 + carbs * 4 + fat * 9),
+      );
     }
 
     this.macroPasteMessage.set(
-      `Übernommen: ${this.ingredientForm.controls.kcal_per_100.value} kcal · P ${this.ingredientForm.controls.protein_per_100.value.toFixed(1)} · KH ${this.ingredientForm.controls.carbs_per_100.value.toFixed(1)} · F ${this.ingredientForm.controls.fat_per_100.value.toFixed(1)}`
+      `Übernommen: ${this.ingredientForm.controls.kcal_per_100.value} kcal · P ${this.ingredientForm.controls.protein_per_100.value.toFixed(1)} · KH ${this.ingredientForm.controls.carbs_per_100.value.toFixed(1)} · F ${this.ingredientForm.controls.fat_per_100.value.toFixed(1)}`,
     );
   }
 
@@ -465,7 +479,7 @@ export class LibraryFacadeService {
       user.id,
       editingIngredient,
       this.ingredientForm,
-      this.ingredients()
+      this.ingredients(),
     );
 
     this.applyLocalLibraryState(nextIngredients, this.meals(), this.allMealItems());
@@ -477,14 +491,18 @@ export class LibraryFacadeService {
           .update(payload)
           .eq('id', editingIngredient.id)
           .eq('owner_id', user.id)
-          .select('id,owner_id,name,source_type,blv_food_id,swissfir_id,category,reference_unit,source_dataset,base_ingredient_id,kcal_per_100,cost_per_100,market_name,protein_per_100,carbs_per_100,fat_per_100,brand,created_at')
+          .select(
+            'id,owner_id,name,source_type,blv_food_id,swissfir_id,category,reference_unit,source_dataset,base_ingredient_id,kcal_per_100,cost_per_100,market_name,protein_per_100,carbs_per_100,fat_per_100,brand,created_at',
+          )
           .single();
 
         if (error || !data) {
           throw error || new Error('Zutat konnte nicht gespeichert werden');
         }
 
-        const confirmedIngredients = this.ingredients().map(item => (item.id === editingIngredient.id ? data as Ingredient : item));
+        const confirmedIngredients = this.ingredients().map((item) =>
+          item.id === editingIngredient.id ? (data as Ingredient) : item,
+        );
         this.applyLocalLibraryState(confirmedIngredients, this.meals(), this.allMealItems());
       } else {
         const data = await this.libraryDataService.createIngredient(user.id, {
@@ -493,11 +511,11 @@ export class LibraryFacadeService {
           protein_per_100: Number(payload.protein_per_100),
           carbs_per_100: Number(payload.carbs_per_100),
           fat_per_100: Number(payload.fat_per_100),
-          source_type: payload.source_type as Ingredient['source_type']
+          source_type: payload.source_type as Ingredient['source_type'],
         });
 
-        const confirmedIngredients = this.ingredients().map(item =>
-          item.id === optimisticIngredient.id ? data : item
+        const confirmedIngredients = this.ingredients().map((item) =>
+          item.id === optimisticIngredient.id ? data : item,
         );
         this.applyLocalLibraryState(confirmedIngredients, this.meals(), this.allMealItems());
       }
@@ -519,7 +537,7 @@ export class LibraryFacadeService {
     }
 
     const previousState = this.createRollbackState();
-    const nextIngredients = this.ingredients().filter(item => item.id !== ingredient.id);
+    const nextIngredients = this.ingredients().filter((item) => item.id !== ingredient.id);
     this.applyLocalLibraryState(nextIngredients, this.meals(), this.allMealItems());
 
     try {
@@ -551,12 +569,18 @@ export class LibraryFacadeService {
     await this.ensureMealsLoaded();
     const previousState = this.createRollbackState();
     const editingMeal = this.editingMeal();
-    const { optimisticMealId, optimisticMeal, optimisticMeals, optimisticMealItems, filteredItems } = buildMealMutationDraft(
+    const {
+      optimisticMealId,
+      optimisticMeal,
+      optimisticMeals,
+      optimisticMealItems,
+      filteredItems,
+    } = buildMealMutationDraft(
       user.id,
       editingMeal,
       this.mealForm,
       this.meals(),
-      this.allMealItems()
+      this.allMealItems(),
     );
 
     this.applyLocalLibraryState(this.ingredients(), optimisticMeals, optimisticMealItems);
@@ -586,8 +610,14 @@ export class LibraryFacadeService {
         }
 
         confirmedMealId = data.id;
-        const confirmedMeals = this.meals().map(item => (item.id === optimisticMealId ? data as Meal : item));
-        const remappedItems = remapMealItems(this.allMealItems(), optimisticMealId, confirmedMealId);
+        const confirmedMeals = this.meals().map((item) =>
+          item.id === optimisticMealId ? (data as Meal) : item,
+        );
+        const remappedItems = remapMealItems(
+          this.allMealItems(),
+          optimisticMealId,
+          confirmedMealId,
+        );
         this.applyLocalLibraryState(this.ingredients(), confirmedMeals, remappedItems);
       }
 
@@ -603,7 +633,13 @@ export class LibraryFacadeService {
       if (filteredItems.length > 0) {
         const { error: insertMealItemsError } = await this.supabaseService.client
           .from('meal_items')
-          .insert(filteredItems.map(item => ({ meal_id: confirmedMealId, ingredient_id: item.ingredient_id, grams: item.grams })));
+          .insert(
+            filteredItems.map((item) => ({
+              meal_id: confirmedMealId,
+              ingredient_id: item.ingredient_id,
+              grams: item.grams,
+            })),
+          );
 
         if (insertMealItemsError) {
           throw insertMealItemsError;
@@ -630,8 +666,8 @@ export class LibraryFacadeService {
     }
 
     const previousState = this.createRollbackState();
-    const nextMeals = this.meals().filter(item => item.id !== meal.id);
-    const nextMealItems = this.allMealItems().filter(item => item.meal_id !== meal.id);
+    const nextMeals = this.meals().filter((item) => item.id !== meal.id);
+    const nextMealItems = this.allMealItems().filter((item) => item.meal_id !== meal.id);
     this.applyLocalLibraryState(this.ingredients(), nextMeals, nextMealItems);
 
     try {
@@ -677,7 +713,11 @@ export class LibraryFacadeService {
     this.editingMeal.set(null);
   }
 
-  private applyLocalLibraryState(ingredients: Ingredient[], meals: Meal[], mealItems: MealItem[]): void {
+  private applyLocalLibraryState(
+    ingredients: Ingredient[],
+    meals: Meal[],
+    mealItems: MealItem[],
+  ): void {
     this.ingredients.set(ingredients);
     this.meals.set(meals);
     this.allMealItems.set(mealItems);
@@ -699,7 +739,7 @@ export class LibraryFacadeService {
       mealsLoaded: this.mealsLoaded(),
       ingredients: this.ingredients(),
       meals: this.meals(),
-      mealItems: this.allMealItems()
+      mealItems: this.allMealItems(),
     });
   }
 
@@ -709,7 +749,7 @@ export class LibraryFacadeService {
       meals: this.meals(),
       mealItems: this.allMealItems(),
       ingredientsLoaded: this.ingredientsLoaded(),
-      mealsLoaded: this.mealsLoaded()
+      mealsLoaded: this.mealsLoaded(),
     });
   }
 

@@ -6,7 +6,7 @@ import { SupabaseService } from './supabase.service';
 import { formatAppError } from './error-format';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class PushNotificationService {
   private readonly swPush = inject(SwPush);
@@ -16,8 +16,7 @@ export class PushNotificationService {
     typeof window !== 'undefined' && typeof Notification !== 'undefined';
   private readonly hasServiceWorkerApi =
     typeof navigator !== 'undefined' && 'serviceWorker' in navigator;
-  private readonly hasPushManagerApi =
-    typeof window !== 'undefined' && 'PushManager' in window;
+  private readonly hasPushManagerApi = typeof window !== 'undefined' && 'PushManager' in window;
   private readonly hasVapidKey = Boolean(environment.pushVapidPublicKey);
   private readonly browserSupported =
     this.hasNotificationApi && this.hasServiceWorkerApi && this.hasPushManagerApi;
@@ -25,36 +24,36 @@ export class PushNotificationService {
   readonly busy = signal(false);
   readonly subscribed = signal(false);
   readonly permission = signal<NotificationPermission | 'unsupported'>(
-    this.browserSupported ? Notification.permission : 'unsupported'
+    this.browserSupported ? Notification.permission : 'unsupported',
   );
   readonly lastError = signal<string | null>(null);
-  readonly supported = computed(() =>
-    this.browserSupported && this.swPush.isEnabled && this.hasVapidKey
+  readonly supported = computed(
+    () => this.browserSupported && this.swPush.isEnabled && this.hasVapidKey,
   );
   readonly diagnostics = computed(() => [
     {
       label: 'Notification API',
-      ok: this.hasNotificationApi
+      ok: this.hasNotificationApi,
     },
     {
       label: 'Service Worker API',
-      ok: this.hasServiceWorkerApi
+      ok: this.hasServiceWorkerApi,
     },
     {
       label: 'PushManager API',
-      ok: this.hasPushManagerApi
+      ok: this.hasPushManagerApi,
     },
     {
       label: 'Angular Service Worker aktiv',
-      ok: this.swPush.isEnabled
+      ok: this.swPush.isEnabled,
     },
     {
       label: 'VAPID Public Key gesetzt',
-      ok: this.hasVapidKey
-    }
+      ok: this.hasVapidKey,
+    },
   ]);
   readonly unavailableReason = computed(() => {
-    const failingCheck = this.diagnostics().find(check => !check.ok);
+    const failingCheck = this.diagnostics().find((check) => !check.ok);
     if (!failingCheck) {
       return null;
     }
@@ -114,7 +113,7 @@ export class PushNotificationService {
 
     try {
       const subscription = await this.swPush.requestSubscription({
-        serverPublicKey: environment.pushVapidPublicKey
+        serverPublicKey: environment.pushVapidPublicKey,
       });
 
       await this.persistSubscription(subscription);
@@ -172,25 +171,30 @@ export class PushNotificationService {
 
     try {
       const {
-        data: { session }
+        data: { session },
       } = await this.supabaseService.client.auth.getSession();
       const accessToken = session?.access_token;
       if (!accessToken) {
         throw new Error('Deine Anmeldung ist abgelaufen. Bitte melde dich erneut an.');
       }
 
-      const { error } = await this.supabaseService.client.functions.invoke('send-push-notifications', {
-        body: { kind: 'test' },
-        headers: {
-          Authorization: `Bearer ${accessToken}`
-        }
-      });
+      const { error } = await this.supabaseService.client.functions.invoke(
+        'send-push-notifications',
+        {
+          body: { kind: 'test' },
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        },
+      );
 
       if (error) {
         throw error;
       }
     } catch (error: unknown) {
-      this.lastError.set(await this.formatFunctionError(error, 'Test-Push konnte nicht gesendet werden'));
+      this.lastError.set(
+        await this.formatFunctionError(error, 'Test-Push konnte nicht gesendet werden'),
+      );
     } finally {
       this.busy.set(false);
     }
@@ -218,19 +222,17 @@ export class PushNotificationService {
       throw new Error('Push-Subscription ist unvollständig.');
     }
 
-    const { error } = await this.supabaseService.client
-      .from('push_subscriptions')
-      .upsert(
-        {
-          user_id: user.id,
-          endpoint: payload.endpoint,
-          p256dh,
-          auth,
-          user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
-          updated_at: new Date().toISOString()
-        },
-        { onConflict: 'endpoint' }
-      );
+    const { error } = await this.supabaseService.client.from('push_subscriptions').upsert(
+      {
+        user_id: user.id,
+        endpoint: payload.endpoint,
+        p256dh,
+        auth,
+        user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'endpoint' },
+    );
 
     if (error) {
       throw error;
@@ -256,7 +258,11 @@ export class PushNotificationService {
       if (typeof response.json === 'function') {
         const payload = await response.json();
         if (payload && typeof payload === 'object') {
-          const message = this.firstString(payload as Record<string, unknown>, ['error', 'message', 'details']);
+          const message = this.firstString(payload as Record<string, unknown>, [
+            'error',
+            'message',
+            'details',
+          ]);
           if (message) {
             return message;
           }
@@ -295,7 +301,8 @@ export class PushNotificationService {
     };
 
     const hasReadableContext =
-      typeof candidate.context?.json === 'function' || typeof candidate.context?.text === 'function';
+      typeof candidate.context?.json === 'function' ||
+      typeof candidate.context?.text === 'function';
 
     return hasReadableContext || candidate.name === 'FunctionsHttpError';
   }

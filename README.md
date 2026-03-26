@@ -46,6 +46,7 @@ npm run import:wger
 ```
 
 Notes:
+
 - The script upserts into `training_exercises` and can be re-run safely.
 - It maps wger equipment/muscles to the app's existing enum and muscle keys.
 

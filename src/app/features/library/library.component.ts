@@ -8,7 +8,7 @@ import {
   ViewEncapsulation,
   inject,
   signal,
-  viewChild
+  viewChild,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -26,7 +26,7 @@ import { LibraryActionSheetComponent } from './library-action-sheet.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
-    '(document:keydown)': 'onDocumentKeydown($event)'
+    '(document:keydown)': 'onDocumentKeydown($event)',
   },
   imports: [
     CommonModule,
@@ -38,10 +38,10 @@ import { LibraryActionSheetComponent } from './library-action-sheet.component';
     LibraryMealsTabComponent,
     IngredientEditorComponent,
     MealEditorComponent,
-    LibraryActionSheetComponent
+    LibraryActionSheetComponent,
   ],
   templateUrl: './library.component.html',
-  styleUrl: './library.component.css'
+  styleUrl: './library.component.css',
 })
 export class LibraryComponent implements OnInit, AfterViewInit, OnDestroy {
   readonly facade = inject(LibraryFacadeService);
@@ -90,7 +90,7 @@ export class LibraryComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   openMealActions(mealId: string): void {
-    const meal = this.facade.meals().find(entry => entry.id === mealId);
+    const meal = this.facade.meals().find((entry) => entry.id === mealId);
     if (!meal) {
       return;
     }
@@ -150,7 +150,7 @@ export class LibraryComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.facade.mealItemsArray.controls;
   }
 
-  onModalBackdropClick(event: MouseEvent, modal: 'ingredient' | 'meal'): void {
+  onModalBackdropPointerDown(event: PointerEvent, modal: 'ingredient' | 'meal'): void {
     if (event.target !== event.currentTarget) {
       return;
     }
@@ -257,11 +257,13 @@ export class LibraryComponent implements OnInit, AfterViewInit, OnDestroy {
       'input:not([disabled])',
       'select:not([disabled])',
       'textarea:not([disabled])',
-      '[tabindex]:not([tabindex="-1"])'
+      '[tabindex]:not([tabindex="-1"])',
     ];
 
-    return Array.from(root.querySelectorAll<HTMLElement>(selectors.join(',')))
-      .filter(element => !element.hasAttribute('hidden') && element.getAttribute('aria-hidden') !== 'true');
+    return Array.from(root.querySelectorAll<HTMLElement>(selectors.join(','))).filter(
+      (element) =>
+        !element.hasAttribute('hidden') && element.getAttribute('aria-hidden') !== 'true',
+    );
   }
 
   private scheduleScrollRestore(): void {

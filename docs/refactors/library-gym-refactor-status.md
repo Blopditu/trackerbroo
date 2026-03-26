@@ -1,10 +1,12 @@
 # Library and Gym Refactor Status
 
 ## Current architecture
+
 - `library` has a route shell, facade, tab components, editors, and split cache loaders.
 - `gym` has a route shell, facade, extracted child components, and targeted specs.
 
 ## Completed
+
 - Library slice loading exists in `LibraryDataService` via `loadIngredients()`, `loadMeals()`, and compatibility `loadLibrary()`.
 - Library UI is split into route shell, ingredients tab, meals tab, ingredient editor, meal editor, and action sheet.
 - Library shell now uses external template/style files.
@@ -16,9 +18,11 @@
 - Gym loader orchestration now uses dedicated async helper modules for tracker bootstrap/preview and progress hydration.
 
 ## In progress
+
 - Further reduce gym facade size only if a concrete maintenance or render-boundary issue remains.
 
 ## Current slice
+
 - Feature: `gym`
 - Files in scope:
   - `src/app/features/gym/gym.component.*`
@@ -29,11 +33,13 @@
   - existing gym specs
 
 ## Next exact slice
+
 1. Only extract more from `gym-facade.service.ts` if a new hot spot is identified.
 2. Prefer targeted cleanup of one concern at a time: detail-graph flow, community share upload flow, or set-save persistence flow.
 3. Continue future refactor turns with a 2-4 file maximum plus this status doc.
 
 ## Verification
+
 - `npx tsc -p tsconfig.app.json --noEmit`
 - `npx tsc -p tsconfig.spec.json --noEmit`
 - targeted library specs

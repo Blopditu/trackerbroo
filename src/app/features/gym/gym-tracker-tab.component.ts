@@ -1,8 +1,18 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
-import { LucideAngularModule, ChevronLeft, ChevronRight, Play, ChevronRight as ChevronRightSmall } from 'lucide-angular';
-import { TrainingDashboardDay, TrainingDashboardWeek, TrainingPlanOverview } from '../../core/training/training-data.service';
+import {
+  LucideAngularModule,
+  ChevronLeft,
+  ChevronRight,
+  Play,
+  ChevronRight as ChevronRightSmall,
+} from 'lucide-angular';
+import {
+  TrainingDashboardDay,
+  TrainingDashboardWeek,
+  TrainingPlanOverview,
+} from '../../core/training/training-data.service';
 import { equipmentLabel } from './gym-view-utils';
 
 @Component({
@@ -18,7 +28,13 @@ import { equipmentLabel } from './gym-view-utils';
       </div>
 
       <div class="tracker-week-nav">
-        <button mat-icon-button type="button" class="week-btn" (click)="prevWeek.emit()" aria-label="Vorherige Woche">
+        <button
+          mat-icon-button
+          type="button"
+          class="week-btn"
+          (click)="prevWeek.emit()"
+          aria-label="Vorherige Woche"
+        >
           <lucide-icon [img]="chevronLeftIcon" aria-hidden="true"></lucide-icon>
         </button>
 
@@ -41,7 +57,13 @@ import { equipmentLabel } from './gym-view-utils';
           }
         </div>
 
-        <button mat-icon-button type="button" class="week-btn" (click)="nextWeek.emit()" aria-label="Nächste Woche">
+        <button
+          mat-icon-button
+          type="button"
+          class="week-btn"
+          (click)="nextWeek.emit()"
+          aria-label="Nächste Woche"
+        >
           <lucide-icon [img]="chevronRightIcon" aria-hidden="true"></lucide-icon>
         </button>
       </div>
@@ -52,7 +74,9 @@ import { equipmentLabel } from './gym-view-utils';
         <div class="tracker-plan-copy">
           <p class="eyebrow">Aktiver Plan</p>
           <h2>{{ dashboardWeek()!.activePlan!.name }}</h2>
-          <p class="muted">{{ selectedOverview()!.dayName }} • Woche {{ dashboardWeek()!.activePlan!.weekNumber }}</p>
+          <p class="muted">
+            {{ selectedOverview()!.dayName }} • Woche {{ dashboardWeek()!.activePlan!.weekNumber }}
+          </p>
         </div>
 
         <div class="tracker-plan-stats" aria-label="Workout Überblick">
@@ -66,7 +90,12 @@ import { equipmentLabel } from './gym-view-utils';
           </article>
         </div>
 
-        <button mat-flat-button type="button" class="action-btn tracker-start-btn" (click)="startWorkout.emit()">
+        <button
+          mat-flat-button
+          type="button"
+          class="action-btn tracker-start-btn"
+          (click)="startWorkout.emit()"
+        >
           <span>Start Session</span>
           <lucide-icon [img]="playIcon" class="icon" aria-hidden="true"></lucide-icon>
         </button>
@@ -75,8 +104,18 @@ import { equipmentLabel } from './gym-view-utils';
       <section class="panel tracker-empty-card">
         <p class="eyebrow">Kein aktiver Plan</p>
         <h2>Gym zuerst strukturieren</h2>
-        <p class="muted">Lege einen Plan an oder aktiviere einen bestehenden Split, damit der Workout-Flow direkt startklar ist.</p>
-        <button mat-flat-button type="button" class="action-btn" (click)="openSessionHub.emit('plans')">Pläne öffnen</button>
+        <p class="muted">
+          Lege einen Plan an oder aktiviere einen bestehenden Split, damit der Workout-Flow direkt
+          startklar ist.
+        </p>
+        <button
+          mat-flat-button
+          type="button"
+          class="action-btn"
+          (click)="openSessionHub.emit('plans')"
+        >
+          Pläne öffnen
+        </button>
       </section>
     }
 
@@ -87,7 +126,14 @@ import { equipmentLabel } from './gym-view-utils';
             <h2>Vorschau: {{ selectedOverview()!.dayName }}</h2>
             <p class="muted">{{ selectedOverview()!.planName }} • {{ musclePreviewLabel() }}</p>
           </div>
-          <button mat-flat-button type="button" class="tracker-edit-btn" (click)="openSessionHub.emit('plans')">Bearbeiten</button>
+          <button
+            mat-flat-button
+            type="button"
+            class="tracker-edit-btn"
+            (click)="openSessionHub.emit('plans')"
+          >
+            Bearbeiten
+          </button>
         </div>
 
         <div class="exercise-list">
@@ -95,22 +141,29 @@ import { equipmentLabel } from './gym-view-utils';
             <article class="exercise-row">
               <div class="exercise-thumb" aria-hidden="true">
                 @if (exercise.images.length > 0 && exercise.images[0]) {
-                  <img [src]="exercise.images[0]" alt="" loading="lazy">
+                  <img [src]="exercise.images[0]" alt="" loading="lazy" />
                 } @else {
                   <span>{{ exerciseInitial(exercise.name) }}</span>
                 }
               </div>
               <div class="exercise-copy">
                 <strong>{{ exercise.name }}</strong>
-                <p class="muted">{{ equipmentLabel(exercise.equipment) }} • {{ exercise.sets }} Sätze • {{ targetSummary(exercise) }}</p>
+                <p class="muted">
+                  {{ equipmentLabel(exercise.equipment) }} • {{ exercise.sets }} Sätze •
+                  {{ targetSummary(exercise) }}
+                </p>
               </div>
-              <lucide-icon [img]="chevronRightSmallIcon" class="exercise-row-chevron" aria-hidden="true"></lucide-icon>
+              <lucide-icon
+                [img]="chevronRightSmallIcon"
+                class="exercise-row-chevron"
+                aria-hidden="true"
+              ></lucide-icon>
             </article>
           }
         </div>
       </section>
     }
-  `
+  `,
 })
 export class GymTrackerTabComponent {
   readonly dashboardWeek = input<TrainingDashboardWeek | null>(null);
@@ -140,7 +193,7 @@ export class GymTrackerTabComponent {
       return 'Kein Split aktiv';
     }
 
-    const completed = workoutDays.filter(day => day.completed).length;
+    const completed = workoutDays.filter((day) => day.completed).length;
     return `${Math.round((completed / workoutDays.length) * 100)}% abgeschlossen`;
   }
 

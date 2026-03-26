@@ -1,4 +1,14 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, computed, inject, OnInit, signal, viewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  ElementRef,
+  computed,
+  inject,
+  OnInit,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -23,12 +33,25 @@ import {
   Star,
   Trash2,
   Utensils,
-  Weight
+  Weight,
 } from 'lucide-angular';
 import { SupabaseService } from '../../core/supabase.service';
 import { AuthService } from '../../core/auth.service';
-import { CommunityPost, DailySummary, Ingredient, LogEntry, Meal, Profile, StepLog, WeightLog } from '../../core/types';
-import { AmountPickerSheetComponent, AmountPickResult, MacroTotals } from '../../ui/amount-picker-sheet.component';
+import {
+  CommunityPost,
+  DailySummary,
+  Ingredient,
+  LogEntry,
+  Meal,
+  Profile,
+  StepLog,
+  WeightLog,
+} from '../../core/types';
+import {
+  AmountPickerSheetComponent,
+  AmountPickResult,
+  MacroTotals,
+} from '../../ui/amount-picker-sheet.component';
 import { HeroRingComponent } from '../../ui/minimal/hero-ring.component';
 import { MacroBarComponent } from '../../ui/minimal/macro-bar.component';
 import { HabitGridComponent, HabitState } from '../../ui/minimal/habit-grid.component';
@@ -37,7 +60,10 @@ import { formatAppError } from '../../core/error-format';
 import { LibraryDataService } from '../../core/library-data.service';
 import { QueryCacheService } from '../../core/query-cache.service';
 import { InteractionTelemetryService } from '../../core/interaction-telemetry.service';
-import { CommunityFeedService, CommunityProfileDirectoryEntry } from '../../core/community-feed.service';
+import {
+  CommunityFeedService,
+  CommunityProfileDirectoryEntry,
+} from '../../core/community-feed.service';
 
 type QuickItem = Ingredient | Meal;
 type TodaySectionId = 'logs' | 'habits' | 'trends';
@@ -102,16 +128,20 @@ interface BrooBoardPost {
     HeroRingComponent,
     MacroBarComponent,
     HabitGridComponent,
-    BottomSheetComponent
+    BottomSheetComponent,
   ],
   template: `
     <main class="page today-page">
       @if (errorMessage()) {
-        <p class="toast error" role="status" aria-live="polite" aria-atomic="true">{{ errorMessage() }}</p>
+        <p class="toast error" role="status" aria-live="polite" aria-atomic="true">
+          {{ errorMessage() }}
+        </p>
       }
 
       @if (successMessage()) {
-        <p class="toast success" role="status" aria-live="polite" aria-atomic="true">{{ successMessage() }}</p>
+        <p class="toast success" role="status" aria-live="polite" aria-atomic="true">
+          {{ successMessage() }}
+        </p>
       }
 
       <section class="broo-board-strip" aria-labelledby="broo-board-title">
@@ -126,7 +156,13 @@ interface BrooBoardPost {
             @for (item of brooBoardPosts(); track item.post.id) {
               <article class="board-strip-card">
                 @if (item.avatarUrl) {
-                  <img [src]="item.avatarUrl" alt="" class="board-strip-avatar" loading="lazy" decoding="async">
+                  <img
+                    [src]="item.avatarUrl"
+                    alt=""
+                    class="board-strip-avatar"
+                    loading="lazy"
+                    decoding="async"
+                  />
                 } @else {
                   <div class="board-strip-avatar board-strip-avatar-fallback" aria-hidden="true">
                     {{ brooAvatarLabel(item.displayName) }}
@@ -156,7 +192,12 @@ interface BrooBoardPost {
         </div>
 
         <div class="day-nav day-nav-compact day-control-row">
-          <button type="button" class="nav-btn" (click)="goPreviousDay()" aria-label="Vorheriger Tag">
+          <button
+            type="button"
+            class="nav-btn"
+            (click)="goPreviousDay()"
+            aria-label="Vorheriger Tag"
+          >
             <lucide-icon [img]="icons.chevronLeft" aria-hidden="true"></lucide-icon>
           </button>
 
@@ -167,14 +208,29 @@ interface BrooBoardPost {
               class="day-input-native"
               [ngModel]="today()"
               (ngModelChange)="onDayPicked($event)"
+            />
+            <button
+              type="button"
+              class="day-display-btn"
+              (click)="openDayPicker()"
+              aria-label="Tag wählen"
             >
-            <button type="button" class="day-display-btn" (click)="openDayPicker()" aria-label="Tag wählen">
               <span class="day-display-value">{{ selectedDayDisplay() }}</span>
-              <lucide-icon [img]="icons.calendar" class="day-control-icon" aria-hidden="true"></lucide-icon>
+              <lucide-icon
+                [img]="icons.calendar"
+                class="day-control-icon"
+                aria-hidden="true"
+              ></lucide-icon>
             </button>
           </div>
 
-          <button type="button" class="nav-btn" (click)="goNextDay()" [disabled]="!canGoNextDay()" aria-label="Nächster Tag">
+          <button
+            type="button"
+            class="nav-btn"
+            (click)="goNextDay()"
+            [disabled]="!canGoNextDay()"
+            aria-label="Nächster Tag"
+          >
             <lucide-icon [img]="icons.chevronRight" aria-hidden="true"></lucide-icon>
           </button>
         </div>
@@ -182,7 +238,12 @@ interface BrooBoardPost {
         <article class="day-summary-card">
           <div class="day-summary-top">
             <div class="day-ring-slot day-ring-slot-centered">
-              <app-hero-ring [value]="proteinToday()" [target]="proteinGoal" [showLeftText]="false" accentColor="var(--ui-primary)" />
+              <app-hero-ring
+                [value]="proteinToday()"
+                [target]="proteinGoal"
+                [showLeftText]="false"
+                accentColor="var(--ui-primary)"
+              />
             </div>
 
             <div class="day-summary-copy">
@@ -198,9 +259,24 @@ interface BrooBoardPost {
           </div>
 
           <div class="bars summary-bars">
-            <app-macro-bar label="Protein" [value]="proteinToday()" [target]="proteinGoal" color="var(--ui-primary)" />
-            <app-macro-bar label="Fett" [value]="fatToday()" [target]="fatGoal" color="var(--warning-500)" />
-            <app-macro-bar label="Kohlenhydrate" [value]="carbsToday()" [target]="carbGoal" color="var(--success-500)" />
+            <app-macro-bar
+              label="Protein"
+              [value]="proteinToday()"
+              [target]="proteinGoal"
+              color="var(--ui-primary)"
+            />
+            <app-macro-bar
+              label="Fett"
+              [value]="fatToday()"
+              [target]="fatGoal"
+              color="var(--warning-500)"
+            />
+            <app-macro-bar
+              label="Kohlenhydrate"
+              [value]="carbsToday()"
+              [target]="carbGoal"
+              color="var(--success-500)"
+            />
           </div>
 
           <div class="kcal-row summary-kcal-row">
@@ -211,14 +287,20 @@ interface BrooBoardPost {
 
         <div class="today-stat-grid" [class.single]="!trackStepsEnabled()">
           <article class="today-stat-card">
-            <span class="today-stat-label"><lucide-icon [img]="icons.weight" class="icon" aria-hidden="true"></lucide-icon> Gewicht</span>
+            <span class="today-stat-label"
+              ><lucide-icon [img]="icons.weight" class="icon" aria-hidden="true"></lucide-icon>
+              Gewicht</span
+            >
             <strong>{{ weightValueLabel() }}</strong>
             <small>{{ weightDeltaLabel() }}</small>
           </article>
 
           @if (trackStepsEnabled()) {
             <article class="today-stat-card">
-              <span class="today-stat-label"><lucide-icon [img]="icons.footsteps" class="icon" aria-hidden="true"></lucide-icon> Schritte</span>
+              <span class="today-stat-label"
+                ><lucide-icon [img]="icons.footsteps" class="icon" aria-hidden="true"></lucide-icon>
+                Schritte</span
+              >
               <strong>{{ stepsValueLabel() }}</strong>
               <small>{{ stepsGoalLabel() }}</small>
             </article>
@@ -228,12 +310,22 @@ interface BrooBoardPost {
         @if (canShareProteinMilestone() || canShareStepsMilestone()) {
           <div class="today-milestone-actions" role="group" aria-label="Erfolge teilen">
             @if (canShareProteinMilestone()) {
-              <button mat-flat-button type="button" class="today-milestone-btn" (click)="shareProteinMilestone()">
+              <button
+                mat-flat-button
+                type="button"
+                class="today-milestone-btn"
+                (click)="shareProteinMilestone()"
+              >
                 Protein-Ziel im Board teilen
               </button>
             }
             @if (canShareStepsMilestone()) {
-              <button mat-flat-button type="button" class="today-milestone-btn" (click)="shareStepsMilestone()">
+              <button
+                mat-flat-button
+                type="button"
+                class="today-milestone-btn"
+                (click)="shareStepsMilestone()"
+              >
                 Schrittziel im Board teilen
               </button>
             }
@@ -242,7 +334,9 @@ interface BrooBoardPost {
       </section>
 
       <div class="today-layout-row">
-        <button type="button" class="today-layout-btn" (click)="openLayoutSheet()">Heute anpassen</button>
+        <button type="button" class="today-layout-btn" (click)="openLayoutSheet()">
+          Heute anpassen
+        </button>
       </div>
 
       <div class="today-lower-sections">
@@ -251,32 +345,58 @@ interface BrooBoardPost {
             @case ('logs') {
               <section class="section today-section">
                 <div class="m3-section-head">
-                  <h2><lucide-icon [img]="icons.clock3" class="icon" aria-hidden="true"></lucide-icon> Log</h2>
+                  <h2>
+                    <lucide-icon [img]="icons.clock3" class="icon" aria-hidden="true"></lucide-icon>
+                    Log
+                  </h2>
                   <span class="m3-section-meta">{{ todayEntries().length }} Einträge</span>
                 </div>
 
                 @for (entry of todayEntries(); track entry.id) {
                   <article class="entry-card">
                     <div class="entry-main">
-                      <strong class="entry-title">{{ entry.entry_type === 'ingredient' ? getIngredientName(entry.ref_id) : getMealName(entry.ref_id) }}</strong>
+                      <strong class="entry-title">{{
+                        entry.entry_type === 'ingredient'
+                          ? getIngredientName(entry.ref_id)
+                          : getMealName(entry.ref_id)
+                      }}</strong>
                       <p class="entry-sub">
                         {{
-                          entry.quantity + (entry.entry_type === 'ingredient' ? 'g' : ' Portionen')
-                          + ' · P ' + entry.protein.toFixed(1) + 'g'
-                          + ' · KH ' + entry.carbs.toFixed(1) + 'g'
-                          + ' · F ' + entry.fat.toFixed(1) + 'g'
-                          + ' · ' + entry.kcal.toFixed(0) + ' kcal'
+                          entry.quantity +
+                            (entry.entry_type === 'ingredient' ? 'g' : ' Portionen') +
+                            ' · P ' +
+                            entry.protein.toFixed(1) +
+                            'g' +
+                            ' · KH ' +
+                            entry.carbs.toFixed(1) +
+                            'g' +
+                            ' · F ' +
+                            entry.fat.toFixed(1) +
+                            'g' +
+                            ' · ' +
+                            entry.kcal.toFixed(0) +
+                            ' kcal'
                         }}
                       </p>
                     </div>
                     <div class="entry-actions">
-                      <button mat-flat-button type="button" class="entry-btn" (click)="openEntryActions(entry)">Verwalten</button>
+                      <button
+                        mat-flat-button
+                        type="button"
+                        class="entry-btn"
+                        (click)="openEntryActions(entry)"
+                      >
+                        Verwalten
+                      </button>
                     </div>
                   </article>
                 }
 
                 @if (todayEntries().length === 0) {
-                  <p class="muted">Für heute ist noch nichts geloggt. Nutze das Plus oder starte direkt über eine Mahlzeit.</p>
+                  <p class="muted">
+                    Für heute ist noch nichts geloggt. Nutze das Plus oder starte direkt über eine
+                    Mahlzeit.
+                  </p>
                 }
               </section>
             }
@@ -284,12 +404,31 @@ interface BrooBoardPost {
             @case ('habits') {
               <section class="section today-section">
                 <div class="m3-section-head">
-                  <h2><lucide-icon [img]="icons.listChecks" class="icon" aria-hidden="true"></lucide-icon> Gewohnheiten</h2>
+                  <h2>
+                    <lucide-icon
+                      [img]="icons.listChecks"
+                      class="icon"
+                      aria-hidden="true"
+                    ></lucide-icon>
+                    Gewohnheiten
+                  </h2>
                   <span class="m3-section-meta">Diese Woche</span>
                 </div>
                 <div class="habit-heatmap-grid">
-                  <app-habit-grid label="Gym" windowLabel="Letzte 30 Tage" [states]="gymHabitStates()" [targetPerWeek]="3" accentColor="var(--ui-primary)" />
-                  <app-habit-grid label="Protein" windowLabel="Letzte 30 Tage" [states]="proteinHabitStates()" [targetPerWeek]="7" accentColor="color-mix(in srgb, var(--ui-primary) 84%, white)" />
+                  <app-habit-grid
+                    label="Gym"
+                    windowLabel="Letzte 30 Tage"
+                    [states]="gymHabitStates()"
+                    [targetPerWeek]="3"
+                    accentColor="var(--ui-primary)"
+                  />
+                  <app-habit-grid
+                    label="Protein"
+                    windowLabel="Letzte 30 Tage"
+                    [states]="proteinHabitStates()"
+                    [targetPerWeek]="7"
+                    accentColor="color-mix(in srgb, var(--ui-primary) 84%, white)"
+                  />
                 </div>
               </section>
             }
@@ -297,7 +436,14 @@ interface BrooBoardPost {
             @case ('trends') {
               <section class="section today-section trend-compact-section">
                 <div class="m3-section-head">
-                  <h2><lucide-icon [img]="icons.chartLine" class="icon" aria-hidden="true"></lucide-icon> Fortschritt</h2>
+                  <h2>
+                    <lucide-icon
+                      [img]="icons.chartLine"
+                      class="icon"
+                      aria-hidden="true"
+                    ></lucide-icon>
+                    Fortschritt
+                  </h2>
                   <span class="m3-section-meta">7 Tage</span>
                 </div>
 
@@ -305,7 +451,9 @@ interface BrooBoardPost {
                   <svg viewBox="0 0 100 28" preserveAspectRatio="none" class="sparkline">
                     <polyline [attr.points]="weightSparklinePoints()" />
                   </svg>
-                  <div class="trend-note">Gewicht {{ weeklyTrendLabel() }} in den letzten 7 Tagen.</div>
+                  <div class="trend-note">
+                    Gewicht {{ weeklyTrendLabel() }} in den letzten 7 Tagen.
+                  </div>
                 </div>
 
                 <div class="trend-inline-list">
@@ -327,7 +475,6 @@ interface BrooBoardPost {
           }
         }
       </div>
-
     </main>
 
     <app-bottom-sheet [open]="showActionSheet()" [title]="sheetTitle()" (closed)="closeActions()">
@@ -339,12 +486,16 @@ interface BrooBoardPost {
               <strong>Essen hinzufügen</strong>
               <small>Suche, Recents und Builder öffnen.</small>
             </span>
-            <span class="quick-add-icon food"><lucide-icon [img]="icons.utensils" aria-hidden="true"></lucide-icon></span>
+            <span class="quick-add-icon food"
+              ><lucide-icon [img]="icons.utensils" aria-hidden="true"></lucide-icon
+            ></span>
           </button>
 
           <div class="quick-add-utility-list" role="group" aria-label="Weitere Schnelllog-Aktionen">
             <button type="button" class="quick-add-utility" (click)="setSheetMode('gym')">
-              <span class="quick-add-icon gym"><lucide-icon [img]="icons.dumbbell" aria-hidden="true"></lucide-icon></span>
+              <span class="quick-add-icon gym"
+                ><lucide-icon [img]="icons.dumbbell" aria-hidden="true"></lucide-icon
+              ></span>
               <span class="quick-add-copy">
                 <strong>Gym-Session loggen</strong>
                 <small>Training schnell eintragen.</small>
@@ -352,7 +503,9 @@ interface BrooBoardPost {
             </button>
 
             <button type="button" class="quick-add-utility" (click)="setSheetMode('weight')">
-              <span class="quick-add-icon weight"><lucide-icon [img]="icons.weight" aria-hidden="true"></lucide-icon></span>
+              <span class="quick-add-icon weight"
+                ><lucide-icon [img]="icons.weight" aria-hidden="true"></lucide-icon
+              ></span>
               <span class="quick-add-copy">
                 <strong>Gewicht loggen</strong>
                 <small>Heutigen Messwert sichern.</small>
@@ -361,7 +514,9 @@ interface BrooBoardPost {
 
             @if (trackStepsEnabled()) {
               <button type="button" class="quick-add-utility" (click)="setSheetMode('steps')">
-                <span class="quick-add-icon steps"><lucide-icon [img]="icons.footsteps" aria-hidden="true"></lucide-icon></span>
+                <span class="quick-add-icon steps"
+                  ><lucide-icon [img]="icons.footsteps" aria-hidden="true"></lucide-icon
+                ></span>
                 <span class="quick-add-copy">
                   <strong>Schritte hinzufügen</strong>
                   <small>Aktivität ergänzen.</small>
@@ -369,7 +524,9 @@ interface BrooBoardPost {
               </button>
             } @else {
               <button type="button" class="quick-add-utility" (click)="setSheetMode('copy')">
-                <span class="quick-add-icon copy"><lucide-icon [img]="icons.clock3" aria-hidden="true"></lucide-icon></span>
+                <span class="quick-add-icon copy"
+                  ><lucide-icon [img]="icons.clock3" aria-hidden="true"></lucide-icon
+                ></span>
                 <span class="quick-add-copy">
                   <strong>Von gestern kopieren</strong>
                   <small>Einträge direkt übernehmen.</small>
@@ -382,10 +539,17 @@ interface BrooBoardPost {
 
       @if (sheetMode() === 'layout') {
         <section class="layout-sheet">
-          <p class="sheet-caption">Ordne die unteren Heute-Abschnitte so, wie du sie am liebsten siehst.</p>
+          <p class="sheet-caption">
+            Ordne die unteren Heute-Abschnitte so, wie du sie am liebsten siehst.
+          </p>
 
           <div class="layout-list">
-            @for (section of layoutSectionRows(); track section.id; let first = $first; let last = $last) {
+            @for (
+              section of layoutSectionRows();
+              track section.id;
+              let first = $first;
+              let last = $last
+            ) {
               <article class="layout-row">
                 <div class="layout-copy">
                   <strong>{{ section.title }}</strong>
@@ -393,10 +557,24 @@ interface BrooBoardPost {
                 </div>
 
                 <div class="layout-controls">
-                  <button mat-icon-button type="button" class="round-icon-btn" [disabled]="first" (click)="moveTodaySection(section.id, 'up')" [attr.aria-label]="section.title + ' nach oben'">
+                  <button
+                    mat-icon-button
+                    type="button"
+                    class="round-icon-btn"
+                    [disabled]="first"
+                    (click)="moveTodaySection(section.id, 'up')"
+                    [attr.aria-label]="section.title + ' nach oben'"
+                  >
                     <lucide-icon [img]="icons.chevronUp" aria-hidden="true"></lucide-icon>
                   </button>
-                  <button mat-icon-button type="button" class="round-icon-btn" [disabled]="last" (click)="moveTodaySection(section.id, 'down')" [attr.aria-label]="section.title + ' nach unten'">
+                  <button
+                    mat-icon-button
+                    type="button"
+                    class="round-icon-btn"
+                    [disabled]="last"
+                    (click)="moveTodaySection(section.id, 'down')"
+                    [attr.aria-label]="section.title + ' nach unten'"
+                  >
                     <lucide-icon [img]="icons.chevronDown" aria-hidden="true"></lucide-icon>
                   </button>
                 </div>
@@ -404,7 +582,13 @@ interface BrooBoardPost {
             }
           </div>
 
-          <button mat-flat-button type="button" class="menu-btn apply-log-btn" [disabled]="savingTodayLayout()" (click)="saveTodaySectionOrder()">
+          <button
+            mat-flat-button
+            type="button"
+            class="menu-btn apply-log-btn"
+            [disabled]="savingTodayLayout()"
+            (click)="saveTodaySectionOrder()"
+          >
             {{ savingTodayLayout() ? 'Wird gespeichert …' : 'Reihenfolge speichern' }}
           </button>
         </section>
@@ -421,7 +605,7 @@ interface BrooBoardPost {
               (ngModelChange)="onFoodSearchInput($event)"
               placeholder="Lebensmittel suchen"
               aria-label="Lebensmittel suchen"
-            >
+            />
           </label>
 
           @if (!foodSearch().trim()) {
@@ -440,38 +624,82 @@ interface BrooBoardPost {
           @if (canOfferIngredientQuickCreate()) {
             <div class="quick-create-block">
               @if (!showIngredientQuickCreate()) {
-                <button type="button" class="quick-create-cta" (click)="openIngredientQuickCreate()">
+                <button
+                  type="button"
+                  class="quick-create-cta"
+                  (click)="openIngredientQuickCreate()"
+                >
                   Neue Zutat „{{ foodSearch().trim() }}“ anlegen
                 </button>
               } @else {
-                <form class="quick-create-form" [formGroup]="ingredientQuickCreateForm" (ngSubmit)="saveQuickCreateIngredient()">
+                <form
+                  class="quick-create-form"
+                  [formGroup]="ingredientQuickCreateForm"
+                  (ngSubmit)="saveQuickCreateIngredient()"
+                >
                   <label class="quick-create-field quick-create-field-full">
                     <span>Name</span>
-                    <input type="text" formControlName="name" placeholder="Name der Zutat">
+                    <input type="text" formControlName="name" placeholder="Name der Zutat" />
                   </label>
 
                   <div class="quick-create-grid">
                     <label class="quick-create-field">
                       <span>Kcal</span>
-                      <input type="number" min="0" step="0.1" formControlName="kcal_per_100" placeholder="0">
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.1"
+                        formControlName="kcal_per_100"
+                        placeholder="0"
+                      />
                     </label>
                     <label class="quick-create-field">
                       <span>Protein</span>
-                      <input type="number" min="0" step="0.1" formControlName="protein_per_100" placeholder="0">
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.1"
+                        formControlName="protein_per_100"
+                        placeholder="0"
+                      />
                     </label>
                     <label class="quick-create-field">
                       <span>KH</span>
-                      <input type="number" min="0" step="0.1" formControlName="carbs_per_100" placeholder="0">
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.1"
+                        formControlName="carbs_per_100"
+                        placeholder="0"
+                      />
                     </label>
                     <label class="quick-create-field">
                       <span>Fett</span>
-                      <input type="number" min="0" step="0.1" formControlName="fat_per_100" placeholder="0">
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.1"
+                        formControlName="fat_per_100"
+                        placeholder="0"
+                      />
                     </label>
                   </div>
 
                   <div class="quick-create-actions">
-                    <button type="button" class="food-tool-btn" (click)="resetIngredientQuickCreate()">Abbrechen</button>
-                    <button type="submit" class="quick-create-cta quick-create-cta-primary" [disabled]="ingredientQuickCreateForm.invalid || savingIngredientQuickCreate()">
+                    <button
+                      type="button"
+                      class="food-tool-btn"
+                      (click)="resetIngredientQuickCreate()"
+                    >
+                      Abbrechen
+                    </button>
+                    <button
+                      type="submit"
+                      class="quick-create-cta quick-create-cta-primary"
+                      [disabled]="
+                        ingredientQuickCreateForm.invalid || savingIngredientQuickCreate()
+                      "
+                    >
                       {{ savingIngredientQuickCreate() ? 'Wird erstellt …' : 'Zutat anlegen' }}
                     </button>
                   </div>
@@ -484,25 +712,42 @@ interface BrooBoardPost {
             <div>
               <p class="sheet-kicker">{{ foodSearch().trim() ? 'Treffer' : 'Zuletzt genutzt' }}</p>
             </div>
-            <button type="button" class="sheet-link-btn" (click)="openFoodBuilder('all')">Alle Lebensmittel</button>
+            <button type="button" class="sheet-link-btn" (click)="openFoodBuilder('all')">
+              Alle Lebensmittel
+            </button>
           </div>
 
           <div class="food-list hub-food-list">
             @for (item of foodHubItems(); track item.id) {
               <article class="food-row">
-                <button type="button" class="food-open-btn" (click)="openAmountPicker(item, 'queue')">
+                <button
+                  type="button"
+                  class="food-open-btn"
+                  (click)="openAmountPicker(item, 'queue')"
+                >
                   <span class="food-name">{{ item.name }}</span>
                   <small class="food-macros">{{ quickItemMacroLine(item) }}</small>
                 </button>
                 <div class="food-row-actions">
-                  <button type="button" class="round-icon-btn primary" (click)="addDefaultToQueue(item)" aria-label="Zur Log-Liste hinzufügen">
+                  <button
+                    type="button"
+                    class="round-icon-btn primary"
+                    (click)="addDefaultToQueue(item)"
+                    aria-label="Zur Log-Liste hinzufügen"
+                  >
                     <lucide-icon [img]="icons.plus" aria-hidden="true"></lucide-icon>
                   </button>
                 </div>
               </article>
             }
             @if (foodHubItems().length === 0) {
-              <p class="muted">{{ foodSearch().trim() ? 'Keine Treffer für deine Suche.' : 'Noch keine zuletzt genutzten Lebensmittel.' }}</p>
+              <p class="muted">
+                {{
+                  foodSearch().trim()
+                    ? 'Keine Treffer für deine Suche.'
+                    : 'Noch keine zuletzt genutzten Lebensmittel.'
+                }}
+              </p>
             }
           </div>
 
@@ -511,11 +756,19 @@ interface BrooBoardPost {
               <div>
                 <p class="sheet-kicker">Log-Liste</p>
                 <strong>{{ foodQueueCount() }} Einträge bereit</strong>
-                <small>P {{ queueTotals().protein.toFixed(0) }} · KH {{ queueTotals().carbs.toFixed(0) }} · F {{ queueTotals().fat.toFixed(0) }} · {{ queueTotals().kcal.toFixed(0) }} kcal</small>
+                <small
+                  >P {{ queueTotals().protein.toFixed(0) }} · KH
+                  {{ queueTotals().carbs.toFixed(0) }} · F {{ queueTotals().fat.toFixed(0) }} ·
+                  {{ queueTotals().kcal.toFixed(0) }} kcal</small
+                >
               </div>
               <div class="queue-preview-actions">
-                <button type="button" class="food-tool-btn" (click)="openFoodBuilder()">Bearbeiten</button>
-                <button type="button" class="menu-btn apply-log-btn" (click)="applyFoodQueue()">Loggen</button>
+                <button type="button" class="food-tool-btn" (click)="openFoodBuilder()">
+                  Bearbeiten
+                </button>
+                <button type="button" class="menu-btn apply-log-btn" (click)="applyFoodQueue()">
+                  Loggen
+                </button>
               </div>
             </article>
           }
@@ -525,8 +778,12 @@ interface BrooBoardPost {
       @if (sheetMode() === 'builder') {
         <section class="food-sheet meal-builder-sheet">
           <div class="utility-row">
-            <button type="button" class="food-tool-btn" (click)="setSheetMode('food')">Zurück zum Hub</button>
-            <button type="button" class="food-tool-btn" (click)="setSheetMode('mealprep')">Meal Prep</button>
+            <button type="button" class="food-tool-btn" (click)="setSheetMode('food')">
+              Zurück zum Hub
+            </button>
+            <button type="button" class="food-tool-btn" (click)="setSheetMode('mealprep')">
+              Meal Prep
+            </button>
           </div>
 
           <label class="food-search-shell" aria-label="Lebensmittel suchen">
@@ -537,7 +794,7 @@ interface BrooBoardPost {
               (ngModelChange)="onFoodSearchInput($event)"
               placeholder="Lebensmittel suchen"
               aria-label="Lebensmittel suchen"
-            >
+            />
           </label>
 
           <div class="builder-macro-grid" aria-label="Meal Builder Makros">
@@ -589,38 +846,82 @@ interface BrooBoardPost {
           @if (canOfferIngredientQuickCreate()) {
             <div class="quick-create-block">
               @if (!showIngredientQuickCreate()) {
-                <button type="button" class="quick-create-cta" (click)="openIngredientQuickCreate()">
+                <button
+                  type="button"
+                  class="quick-create-cta"
+                  (click)="openIngredientQuickCreate()"
+                >
                   Neue Zutat „{{ foodSearch().trim() }}“ anlegen
                 </button>
               } @else {
-                <form class="quick-create-form" [formGroup]="ingredientQuickCreateForm" (ngSubmit)="saveQuickCreateIngredient()">
+                <form
+                  class="quick-create-form"
+                  [formGroup]="ingredientQuickCreateForm"
+                  (ngSubmit)="saveQuickCreateIngredient()"
+                >
                   <label class="quick-create-field quick-create-field-full">
                     <span>Name</span>
-                    <input type="text" formControlName="name" placeholder="Name der Zutat">
+                    <input type="text" formControlName="name" placeholder="Name der Zutat" />
                   </label>
 
                   <div class="quick-create-grid">
                     <label class="quick-create-field">
                       <span>Kcal</span>
-                      <input type="number" min="0" step="0.1" formControlName="kcal_per_100" placeholder="0">
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.1"
+                        formControlName="kcal_per_100"
+                        placeholder="0"
+                      />
                     </label>
                     <label class="quick-create-field">
                       <span>Protein</span>
-                      <input type="number" min="0" step="0.1" formControlName="protein_per_100" placeholder="0">
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.1"
+                        formControlName="protein_per_100"
+                        placeholder="0"
+                      />
                     </label>
                     <label class="quick-create-field">
                       <span>KH</span>
-                      <input type="number" min="0" step="0.1" formControlName="carbs_per_100" placeholder="0">
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.1"
+                        formControlName="carbs_per_100"
+                        placeholder="0"
+                      />
                     </label>
                     <label class="quick-create-field">
                       <span>Fett</span>
-                      <input type="number" min="0" step="0.1" formControlName="fat_per_100" placeholder="0">
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.1"
+                        formControlName="fat_per_100"
+                        placeholder="0"
+                      />
                     </label>
                   </div>
 
                   <div class="quick-create-actions">
-                    <button type="button" class="food-tool-btn" (click)="resetIngredientQuickCreate()">Abbrechen</button>
-                    <button type="submit" class="quick-create-cta quick-create-cta-primary" [disabled]="ingredientQuickCreateForm.invalid || savingIngredientQuickCreate()">
+                    <button
+                      type="button"
+                      class="food-tool-btn"
+                      (click)="resetIngredientQuickCreate()"
+                    >
+                      Abbrechen
+                    </button>
+                    <button
+                      type="submit"
+                      class="quick-create-cta quick-create-cta-primary"
+                      [disabled]="
+                        ingredientQuickCreateForm.invalid || savingIngredientQuickCreate()
+                      "
+                    >
                       {{ savingIngredientQuickCreate() ? 'Wird erstellt …' : 'Zutat anlegen' }}
                     </button>
                   </div>
@@ -632,22 +933,48 @@ interface BrooBoardPost {
           <div class="food-list">
             @for (item of quickFoodItems(); track item.id) {
               <article class="food-row">
-                <button type="button" class="food-open-btn" (click)="openAmountPicker(item, 'queue')">
+                <button
+                  type="button"
+                  class="food-open-btn"
+                  (click)="openAmountPicker(item, 'queue')"
+                >
                   <span class="food-name">{{ item.name }}</span>
                   <small class="food-macros">{{ quickItemMacroLine(item) }}</small>
                 </button>
                 <div class="food-row-actions">
-                  <button type="button" class="round-icon-btn" (click)="toggleFavoriteFood(item.id)" [attr.aria-label]="isFavoriteFood(item.id) ? 'Favorit entfernen' : 'Als Favorit speichern'">
-                    <lucide-icon [img]="icons.star" [class.is-favorite]="isFavoriteFood(item.id)" aria-hidden="true"></lucide-icon>
+                  <button
+                    type="button"
+                    class="round-icon-btn"
+                    (click)="toggleFavoriteFood(item.id)"
+                    [attr.aria-label]="
+                      isFavoriteFood(item.id) ? 'Favorit entfernen' : 'Als Favorit speichern'
+                    "
+                  >
+                    <lucide-icon
+                      [img]="icons.star"
+                      [class.is-favorite]="isFavoriteFood(item.id)"
+                      aria-hidden="true"
+                    ></lucide-icon>
                   </button>
-                  <button type="button" class="round-icon-btn primary" (click)="addDefaultToQueue(item)" aria-label="Zur Log-Liste hinzufügen">
+                  <button
+                    type="button"
+                    class="round-icon-btn primary"
+                    (click)="addDefaultToQueue(item)"
+                    aria-label="Zur Log-Liste hinzufügen"
+                  >
                     <lucide-icon [img]="icons.plus" aria-hidden="true"></lucide-icon>
                   </button>
                 </div>
               </article>
             }
             @if (quickFoodItems().length === 0) {
-              <p class="muted">{{ foodSearch().trim() ? 'Keine Treffer für deine Suche.' : 'Keine Lebensmittel für diesen Filter.' }}</p>
+              <p class="muted">
+                {{
+                  foodSearch().trim()
+                    ? 'Keine Treffer für deine Suche.'
+                    : 'Keine Lebensmittel für diesen Filter.'
+                }}
+              </p>
             }
           </div>
 
@@ -655,21 +982,47 @@ interface BrooBoardPost {
             @if (foodQueueCount() > 0) {
               <div class="queue-head-row">
                 <p class="queue-head">Log-Liste ({{ foodQueueCount() }})</p>
-                <button type="button" class="food-tool-btn queue-clear-btn" (click)="clearFoodQueue()">Leeren</button>
+                <button
+                  type="button"
+                  class="food-tool-btn queue-clear-btn"
+                  (click)="clearFoodQueue()"
+                >
+                  Leeren
+                </button>
               </div>
             }
             @for (item of foodQueue(); track item.id) {
               <article class="queue-item">
                 <div class="queue-main">
                   <strong>{{ item.name }}</strong>
-                  <small>P {{ item.totals.protein.toFixed(1) }} · KH {{ item.totals.carbs.toFixed(1) }} · F {{ item.totals.fat.toFixed(1) }} · {{ item.totals.kcal.toFixed(0) }} kcal</small>
+                  <small
+                    >P {{ item.totals.protein.toFixed(1) }} · KH
+                    {{ item.totals.carbs.toFixed(1) }} · F {{ item.totals.fat.toFixed(1) }} ·
+                    {{ item.totals.kcal.toFixed(0) }} kcal</small
+                  >
                 </div>
                 <div class="queue-controls">
-                  <mat-form-field class="m3-field queue-amount-field" appearance="outline" subscriptSizing="dynamic">
+                  <mat-form-field
+                    class="m3-field queue-amount-field"
+                    appearance="outline"
+                    subscriptSizing="dynamic"
+                  >
                     <mat-label>{{ queueUnitLabel(item) }}</mat-label>
-                    <input matInput type="number" min="0.1" step="0.1" [ngModel]="item.amount" (ngModelChange)="onQueueAmountChange(item.id, $event)">
+                    <input
+                      matInput
+                      type="number"
+                      min="0.1"
+                      step="0.1"
+                      [ngModel]="item.amount"
+                      (ngModelChange)="onQueueAmountChange(item.id, $event)"
+                    />
                   </mat-form-field>
-                  <button type="button" class="round-icon-btn" (click)="removeFoodQueueItem(item.id)" aria-label="Aus Log-Liste entfernen">
+                  <button
+                    type="button"
+                    class="round-icon-btn"
+                    (click)="removeFoodQueueItem(item.id)"
+                    aria-label="Aus Log-Liste entfernen"
+                  >
                     <lucide-icon [img]="icons.trash" aria-hidden="true"></lucide-icon>
                   </button>
                 </div>
@@ -677,17 +1030,27 @@ interface BrooBoardPost {
             }
 
             @if (foodQueueCount() === 0) {
-              <p class="muted">Suche ein Lebensmittel und tippe auf +, um es zur Log-Liste hinzuzufügen.</p>
+              <p class="muted">
+                Suche ein Lebensmittel und tippe auf +, um es zur Log-Liste hinzuzufügen.
+              </p>
             }
           </div>
 
           @if (foodQueueCount() > 0) {
             <div class="food-footer">
               <div class="queue-total">
-                <small>P {{ queueTotals().protein.toFixed(0) }} · KH {{ queueTotals().carbs.toFixed(0) }} · F {{ queueTotals().fat.toFixed(0) }}</small>
+                <small
+                  >P {{ queueTotals().protein.toFixed(0) }} · KH
+                  {{ queueTotals().carbs.toFixed(0) }} · F {{ queueTotals().fat.toFixed(0) }}</small
+                >
                 <strong>{{ queueTotals().kcal.toFixed(0) }} kcal</strong>
               </div>
-              <button mat-flat-button type="button" class="menu-btn apply-log-btn" (click)="applyFoodQueue()">
+              <button
+                mat-flat-button
+                type="button"
+                class="menu-btn apply-log-btn"
+                (click)="applyFoodQueue()"
+              >
                 Loggen ({{ foodQueueCount() }})
               </button>
             </div>
@@ -699,7 +1062,12 @@ interface BrooBoardPost {
         <section class="copy-sheet">
           <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
             <mat-label>Quelldatum</mat-label>
-            <input matInput type="date" [ngModel]="copySourceDay()" (ngModelChange)="onCopySourceDayChange($event)">
+            <input
+              matInput
+              type="date"
+              [ngModel]="copySourceDay()"
+              (ngModelChange)="onCopySourceDayChange($event)"
+            />
           </mat-form-field>
 
           @if (loadingCopySourceEntries()) {
@@ -712,10 +1080,14 @@ interface BrooBoardPost {
                     type="checkbox"
                     [checked]="copySelectedEntryIds().includes(entry.id)"
                     (change)="toggleCopyEntrySelection(entry.id)"
-                  >
+                  />
                   <span class="selection-copy">
                     <strong>{{ entryName(entry) }}</strong>
-                    <small>{{ entry.quantity }}{{ entry.entry_type === 'ingredient' ? 'g' : ' Portionen' }} · {{ entryMacroSummary(entry) }}</small>
+                    <small
+                      >{{ entry.quantity
+                      }}{{ entry.entry_type === 'ingredient' ? 'g' : ' Portionen' }} ·
+                      {{ entryMacroSummary(entry) }}</small
+                    >
                   </span>
                 </label>
               }
@@ -724,7 +1096,13 @@ interface BrooBoardPost {
             <p class="muted">An diesem Tag gibt es keine Einträge zum Übernehmen.</p>
           }
 
-          <button mat-flat-button type="button" class="menu-btn apply-log-btn" [disabled]="copySelectedEntryIds().length === 0" (click)="applyCopiedEntries()">
+          <button
+            mat-flat-button
+            type="button"
+            class="menu-btn apply-log-btn"
+            [disabled]="copySelectedEntryIds().length === 0"
+            (click)="applyCopiedEntries()"
+          >
             In {{ today() }} übernehmen
           </button>
         </section>
@@ -735,17 +1113,32 @@ interface BrooBoardPost {
           <div class="grid-two">
             <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
               <mat-label>Von</mat-label>
-              <input matInput type="date" [ngModel]="mealPrepStartDay()" (ngModelChange)="mealPrepStartDay.set($event)">
+              <input
+                matInput
+                type="date"
+                [ngModel]="mealPrepStartDay()"
+                (ngModelChange)="mealPrepStartDay.set($event)"
+              />
             </mat-form-field>
 
             <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
               <mat-label>Bis</mat-label>
-              <input matInput type="date" [ngModel]="mealPrepEndDay()" (ngModelChange)="mealPrepEndDay.set($event)">
+              <input
+                matInput
+                type="date"
+                [ngModel]="mealPrepEndDay()"
+                (ngModelChange)="mealPrepEndDay.set($event)"
+              />
             </mat-form-field>
           </div>
 
-          <p class="range-copy">Aufteilen in {{ mealPrepRangeCount() }} Tage ({{ mealPrepStartDay() }} - {{ mealPrepEndDay() }})</p>
-          <p class="warning-copy">Aufgeteilte Einträge können nicht wieder zusammengeführt werden.</p>
+          <p class="range-copy">
+            Aufteilen in {{ mealPrepRangeCount() }} Tage ({{ mealPrepStartDay() }} -
+            {{ mealPrepEndDay() }})
+          </p>
+          <p class="warning-copy">
+            Aufgeteilte Einträge können nicht wieder zusammengeführt werden.
+          </p>
 
           @if (todayEntries().length > 0) {
             <div class="selection-list">
@@ -755,10 +1148,14 @@ interface BrooBoardPost {
                     type="checkbox"
                     [checked]="mealPrepSelectedEntryIds().includes(entry.id)"
                     (change)="toggleMealPrepEntrySelection(entry.id)"
-                  >
+                  />
                   <span class="selection-copy">
                     <strong>{{ entryName(entry) }}</strong>
-                    <small>{{ entry.quantity }}{{ entry.entry_type === 'ingredient' ? 'g' : ' Portionen' }} · {{ entryMacroSummary(entry) }}</small>
+                    <small
+                      >{{ entry.quantity
+                      }}{{ entry.entry_type === 'ingredient' ? 'g' : ' Portionen' }} ·
+                      {{ entryMacroSummary(entry) }}</small
+                    >
                   </span>
                 </label>
               }
@@ -767,7 +1164,13 @@ interface BrooBoardPost {
             <p class="muted">Am aktuell gewählten Tag gibt es keine Einträge zum Aufteilen.</p>
           }
 
-          <button mat-flat-button type="button" class="menu-btn apply-log-btn" [disabled]="mealPrepSelectedEntryIds().length === 0 || mealPrepRangeCount() <= 0" (click)="applyMealPrepDistribution()">
+          <button
+            mat-flat-button
+            type="button"
+            class="menu-btn apply-log-btn"
+            [disabled]="mealPrepSelectedEntryIds().length === 0 || mealPrepRangeCount() <= 0"
+            (click)="applyMealPrepDistribution()"
+          >
             Aufteilen
           </button>
         </section>
@@ -776,59 +1179,122 @@ interface BrooBoardPost {
       @if (sheetMode() === 'weight') {
         <section class="weight-sheet">
           <div class="weight-actions">
-            <button mat-flat-button type="button" class="day-chip" (click)="setWeightDateToToday()">Heute</button>
-            <button mat-flat-button type="button" class="day-chip" (click)="setSheetMode('menu')">Anderes loggen</button>
+            <button mat-flat-button type="button" class="day-chip" (click)="setWeightDateToToday()">
+              Heute
+            </button>
+            <button mat-flat-button type="button" class="day-chip" (click)="setSheetMode('menu')">
+              Anderes loggen
+            </button>
           </div>
 
           <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
             <mat-label>Datum</mat-label>
-            <input matInput id="weight-day-input" type="date" [attr.max]="realToday" [(ngModel)]="weightDateInput">
+            <input
+              matInput
+              id="weight-day-input"
+              type="date"
+              [attr.max]="realToday"
+              [(ngModel)]="weightDateInput"
+            />
           </mat-form-field>
 
           <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
             <mat-label>Gewicht (kg)</mat-label>
-            <input matInput id="weight-input" type="number" min="20" step="0.1" [(ngModel)]="weightInput">
+            <input
+              matInput
+              id="weight-input"
+              type="number"
+              min="20"
+              step="0.1"
+              [(ngModel)]="weightInput"
+            />
           </mat-form-field>
 
-          <button mat-flat-button type="button" class="menu-btn apply-log-btn" (click)="saveWeight()">Gewicht speichern</button>
+          <button
+            mat-flat-button
+            type="button"
+            class="menu-btn apply-log-btn"
+            (click)="saveWeight()"
+          >
+            Gewicht speichern
+          </button>
         </section>
       }
 
       @if (sheetMode() === 'steps') {
         <section class="weight-sheet">
           <div class="weight-actions">
-            <button mat-flat-button type="button" class="day-chip" (click)="setStepsDateToToday()">Heute</button>
-            <button mat-flat-button type="button" class="day-chip" (click)="setSheetMode('menu')">Anderes loggen</button>
+            <button mat-flat-button type="button" class="day-chip" (click)="setStepsDateToToday()">
+              Heute
+            </button>
+            <button mat-flat-button type="button" class="day-chip" (click)="setSheetMode('menu')">
+              Anderes loggen
+            </button>
           </div>
 
           <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
             <mat-label>Datum</mat-label>
-            <input matInput id="steps-day-input" type="date" [(ngModel)]="stepsDateInput">
+            <input matInput id="steps-day-input" type="date" [(ngModel)]="stepsDateInput" />
           </mat-form-field>
 
           <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
             <mat-label>Schritte</mat-label>
-            <input matInput id="steps-input" type="number" min="0" step="1" [(ngModel)]="stepsInput">
+            <input
+              matInput
+              id="steps-input"
+              type="number"
+              min="0"
+              step="1"
+              [(ngModel)]="stepsInput"
+            />
           </mat-form-field>
 
-          <button mat-flat-button type="button" class="menu-btn apply-log-btn" (click)="saveSteps()">Schritte speichern</button>
+          <button
+            mat-flat-button
+            type="button"
+            class="menu-btn apply-log-btn"
+            (click)="saveSteps()"
+          >
+            Schritte speichern
+          </button>
         </section>
       }
 
       @if (sheetMode() === 'gym') {
         <mat-form-field class="m3-field" appearance="outline" subscriptSizing="dynamic">
           <mat-label>Notiz (optional)</mat-label>
-          <textarea matInput id="gym-note-input" rows="3" [(ngModel)]="gymNote" placeholder="Was lief heute gut?"></textarea>
+          <textarea
+            matInput
+            id="gym-note-input"
+            rows="3"
+            [(ngModel)]="gymNote"
+            placeholder="Was lief heute gut?"
+          ></textarea>
         </mat-form-field>
 
         <p class="file-label">Foto (optional)</p>
         <div class="file-row">
-          <button mat-flat-button type="button" class="menu-btn compact" (click)="pickGymPhoto()">Foto auswählen</button>
+          <button mat-flat-button type="button" class="menu-btn compact" (click)="pickGymPhoto()">
+            Foto auswählen
+          </button>
           <span class="file-name">{{ gymPhotoName() || 'Kein Foto ausgewählt' }}</span>
         </div>
-        <input #gymPhotoInput id="gym-photo-input" class="sr-only" type="file" accept="image/*" (change)="onGymPhotoSelected($event)">
+        <input
+          #gymPhotoInput
+          id="gym-photo-input"
+          class="sr-only"
+          type="file"
+          accept="image/*"
+          (change)="onGymPhotoSelected($event)"
+        />
 
-        <button mat-flat-button type="button" class="menu-btn" [disabled]="savingGymPost()" (click)="submitGymPost()">
+        <button
+          mat-flat-button
+          type="button"
+          class="menu-btn"
+          [disabled]="savingGymPost()"
+          (click)="submitGymPost()"
+        >
           {{ savingGymPost() ? 'Wird geteilt …' : 'Gym-Check-in teilen' }}
         </button>
       }
@@ -837,11 +1303,24 @@ interface BrooBoardPost {
         @if (selectedEntryForActions()) {
           <article class="entry-action-card">
             <p class="entry-action-title">{{ entryName(selectedEntryForActions()!) }}</p>
-            <p class="entry-action-sub">{{ selectedEntryForActions()!.quantity }}{{ selectedEntryForActions()!.entry_type === 'ingredient' ? 'g' : ' Portionen' }} • {{ selectedEntryForActions()!.kcal.toFixed(0) }} kcal</p>
+            <p class="entry-action-sub">
+              {{ selectedEntryForActions()!.quantity
+              }}{{ selectedEntryForActions()!.entry_type === 'ingredient' ? 'g' : ' Portionen' }} •
+              {{ selectedEntryForActions()!.kcal.toFixed(0) }} kcal
+            </p>
           </article>
           <div class="action-list">
-            <button mat-flat-button type="button" class="menu-btn" (click)="editSelectedEntry()">Bearbeiten</button>
-            <button mat-flat-button type="button" class="menu-btn danger-outline" (click)="deleteSelectedEntry()">Löschen</button>
+            <button mat-flat-button type="button" class="menu-btn" (click)="editSelectedEntry()">
+              Bearbeiten
+            </button>
+            <button
+              mat-flat-button
+              type="button"
+              class="menu-btn danger-outline"
+              (click)="deleteSelectedEntry()"
+            >
+              Löschen
+            </button>
           </div>
         }
       }
@@ -860,7 +1339,7 @@ interface BrooBoardPost {
       />
     }
   `,
-  styles: []
+  styles: [],
 })
 export class TodayComponent implements OnInit {
   readonly icons = {
@@ -878,7 +1357,7 @@ export class TodayComponent implements OnInit {
     dumbbell: Dumbbell,
     footsteps: Footprints,
     star: Star,
-    trash: Trash2
+    trash: Trash2,
   };
 
   readonly proteinGoal = 100;
@@ -909,7 +1388,18 @@ export class TodayComponent implements OnInit {
   readonly savingTodayLayout = signal(false);
 
   readonly showActionSheet = signal(false);
-  readonly sheetMode = signal<'menu' | 'food' | 'builder' | 'copy' | 'mealprep' | 'weight' | 'steps' | 'gym' | 'entry' | 'layout'>('menu');
+  readonly sheetMode = signal<
+    | 'menu'
+    | 'food'
+    | 'builder'
+    | 'copy'
+    | 'mealprep'
+    | 'weight'
+    | 'steps'
+    | 'gym'
+    | 'entry'
+    | 'layout'
+  >('menu');
   readonly foodSearch = signal('');
   readonly recentFoodRefs = signal<FoodRecentRef[]>([]);
   readonly savingGymPost = signal(false);
@@ -924,7 +1414,11 @@ export class TodayComponent implements OnInit {
   readonly realToday = this.formatDate(new Date());
   readonly today = signal(this.realToday);
   readonly selectedDayDisplay = computed(() =>
-    this.parseIsoDate(this.today()).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
+    this.parseIsoDate(this.today()).toLocaleDateString('de-DE', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    }),
   );
   readonly foodFilter = signal<FoodFilter>('recent');
   readonly foodQueue = signal<FoodQueueItem[]>([]);
@@ -959,7 +1453,7 @@ export class TodayComponent implements OnInit {
     kcal_per_100: [0, [Validators.required]],
     protein_per_100: [0, [Validators.required]],
     carbs_per_100: [0, [Validators.required]],
-    fat_per_100: [0, [Validators.required]]
+    fat_per_100: [0, [Validators.required]],
   });
 
   readonly proteinToday = computed(() => Math.round(Number(this.summary()?.protein || 0)));
@@ -974,38 +1468,38 @@ export class TodayComponent implements OnInit {
   readonly recentWeightEntries = computed(() => this.weightLogs().slice(0, 7));
   readonly trendWeightEntries = computed(() => this.weightLogs().slice(0, this.weightTrendDays()));
   readonly brooBoardPosts = computed<BrooBoardPost[]>(() =>
-    this.brooPosts().map(post => ({
+    this.brooPosts().map((post) => ({
       post,
       displayName: this.brooProfiles()[post.user_id]?.display_name || 'Broo',
       avatarUrl: this.brooProfiles()[post.user_id]?.avatar_url || null,
-      photoUrl: this.brooPhotoSrcMap()[post.id] || null
-    }))
+      photoUrl: this.brooPhotoSrcMap()[post.id] || null,
+    })),
   );
 
   readonly orderedTodaySections = computed<TodaySectionId[]>(() =>
-    this.normalizeTodaySectionOrder(this.profile()?.today_section_order)
+    this.normalizeTodaySectionOrder(this.profile()?.today_section_order),
   );
 
   readonly layoutSectionRows = computed(() =>
-    this.todaySectionOrderDraft().map(sectionId => ({
+    this.todaySectionOrderDraft().map((sectionId) => ({
       id: sectionId,
       title: this.todaySectionTitle(sectionId),
-      description: this.todaySectionDescription(sectionId)
-    }))
+      description: this.todaySectionDescription(sectionId),
+    })),
   );
 
-  readonly selectedDayWeight = computed(() =>
-    this.weightLogs().find(entry => entry.logged_on === this.today()) || null
+  readonly selectedDayWeight = computed(
+    () => this.weightLogs().find((entry) => entry.logged_on === this.today()) || null,
   );
-  readonly selectedDaySteps = computed(() =>
-    this.stepLogs().find(entry => entry.logged_on === this.today()) || null
+  readonly selectedDaySteps = computed(
+    () => this.stepLogs().find((entry) => entry.logged_on === this.today()) || null,
   );
   readonly trackStepsEnabled = computed(() => Boolean(this.profile()?.track_steps));
   readonly stepsGoal = computed(() => Number(this.profile()?.daily_steps_target || 8000));
 
   readonly previousWeightForDay = computed(() => {
     const day = this.today();
-    return this.weightLogs().find(entry => entry.logged_on < day) || null;
+    return this.weightLogs().find((entry) => entry.logged_on < day) || null;
   });
 
   readonly weightSparklinePoints = computed(() => {
@@ -1014,7 +1508,7 @@ export class TodayComponent implements OnInit {
       return '0,24 100,24';
     }
 
-    const values = points.map(entry => Number(entry.weight_kg));
+    const values = points.map((entry) => Number(entry.weight_kg));
     const min = Math.min(...values);
     const max = Math.max(...values);
     const range = Math.max(max - min, 1);
@@ -1029,26 +1523,28 @@ export class TodayComponent implements OnInit {
   });
 
   readonly allFoodItems = computed(() =>
-    Array.from(new Map(
-      [...this.ingredients(), ...this.meals()].map(item => [this.foodKeyForItem(item), item])
-    ).values())
+    Array.from(
+      new Map(
+        [...this.ingredients(), ...this.meals()].map((item) => [this.foodKeyForItem(item), item]),
+      ).values(),
+    ),
   );
 
   readonly recentFoodKeyOrder = computed(() =>
-    this.recentFoodRefs().map(item => this.foodKey(item.itemType, item.itemId))
+    this.recentFoodRefs().map((item) => this.foodKey(item.itemType, item.itemId)),
   );
 
   readonly recentFoodKeyIndex = computed(() =>
     this.recentFoodRefs().reduce<Map<string, number>>((index, item, position) => {
       index.set(this.foodKey(item.itemType, item.itemId), position);
       return index;
-    }, new Map<string, number>())
+    }, new Map<string, number>()),
   );
 
   readonly recentFoodItems = computed(() => {
-    const itemMap = new Map(this.allFoodItems().map(item => [this.foodKeyForItem(item), item]));
+    const itemMap = new Map(this.allFoodItems().map((item) => [this.foodKeyForItem(item), item]));
     return this.recentFoodRefs()
-      .map(item => itemMap.get(this.foodKey(item.itemType, item.itemId)) || null)
+      .map((item) => itemMap.get(this.foodKey(item.itemType, item.itemId)) || null)
       .filter((item): item is QuickItem => Boolean(item));
   });
 
@@ -1062,7 +1558,7 @@ export class TodayComponent implements OnInit {
     const recentIndex = this.recentFoodKeyIndex();
 
     return this.allFoodItems()
-      .filter(item => item.name.toLowerCase().includes(query))
+      .filter((item) => item.name.toLowerCase().includes(query))
       .sort((a, b) => {
         const aName = a.name.toLowerCase();
         const bName = b.name.toLowerCase();
@@ -1106,11 +1602,13 @@ export class TodayComponent implements OnInit {
     const recentKeys = new Set(this.recentFoodKeyOrder());
     const filter: FoodFilter =
       requestedFilter === 'recent' && recentKeys.size === 0
-        ? (favorites.size > 0 ? 'favorites' : 'all')
+        ? favorites.size > 0
+          ? 'favorites'
+          : 'all'
         : requestedFilter;
 
     return this.allFoodItems()
-      .filter(item => {
+      .filter((item) => {
         const key = this.foodKeyForItem(item);
         if (filter === 'favorites' && !favorites.has(item.id)) {
           return false;
@@ -1127,8 +1625,10 @@ export class TodayComponent implements OnInit {
           return bFavorite - aFavorite;
         }
 
-        const aRecentIndex = this.recentFoodKeyIndex().get(this.foodKeyForItem(a)) ?? Number.MAX_SAFE_INTEGER;
-        const bRecentIndex = this.recentFoodKeyIndex().get(this.foodKeyForItem(b)) ?? Number.MAX_SAFE_INTEGER;
+        const aRecentIndex =
+          this.recentFoodKeyIndex().get(this.foodKeyForItem(a)) ?? Number.MAX_SAFE_INTEGER;
+        const bRecentIndex =
+          this.recentFoodKeyIndex().get(this.foodKeyForItem(b)) ?? Number.MAX_SAFE_INTEGER;
         if (aRecentIndex !== bRecentIndex) {
           return aRecentIndex - bRecentIndex;
         }
@@ -1140,11 +1640,16 @@ export class TodayComponent implements OnInit {
 
   readonly favoriteQuickItems = computed(() => {
     const favorites = new Set(this.favoriteFoodIds());
-    return this.allFoodItems().filter(item => favorites.has(item.id)).slice(0, 8);
+    return this.allFoodItems()
+      .filter((item) => favorites.has(item.id))
+      .slice(0, 8);
   });
 
   readonly foodHubItems = computed(() =>
-    (this.foodSearch().trim().length > 0 ? this.foodSearchResults() : this.recentFoodItems()).slice(0, 12)
+    (this.foodSearch().trim().length > 0 ? this.foodSearchResults() : this.recentFoodItems()).slice(
+      0,
+      12,
+    ),
   );
 
   readonly canOfferIngredientQuickCreate = computed(() => {
@@ -1154,7 +1659,9 @@ export class TodayComponent implements OnInit {
     }
 
     const normalizedQuery = this.normalizeFoodName(query);
-    return !this.allFoodItems().some(item => this.normalizeFoodName(item.name) === normalizedQuery);
+    return !this.allFoodItems().some(
+      (item) => this.normalizeFoodName(item.name) === normalizedQuery,
+    );
   });
 
   readonly queueTotals = computed<MacroTotals>(() => {
@@ -1163,9 +1670,9 @@ export class TodayComponent implements OnInit {
         kcal: acc.kcal + item.totals.kcal,
         protein: acc.protein + item.totals.protein,
         carbs: acc.carbs + item.totals.carbs,
-        fat: acc.fat + item.totals.fat
+        fat: acc.fat + item.totals.fat,
       }),
-      { kcal: 0, protein: 0, carbs: 0, fat: 0 }
+      { kcal: 0, protein: 0, carbs: 0, fat: 0 },
     );
   });
 
@@ -1188,13 +1695,14 @@ export class TodayComponent implements OnInit {
   });
   readonly canGoNextDay = computed(() => this.today() !== this.realToday);
   readonly foodQueueCount = computed(() => this.foodQueue().length);
-  readonly canShareProteinMilestone = computed(() =>
-    this.proteinToday() >= this.proteinGoal && !this.proteinMilestonePosted()
+  readonly canShareProteinMilestone = computed(
+    () => this.proteinToday() >= this.proteinGoal && !this.proteinMilestonePosted(),
   );
-  readonly canShareStepsMilestone = computed(() =>
-    this.trackStepsEnabled()
-    && Number(this.selectedDaySteps()?.steps || 0) >= this.stepsGoal()
-    && !this.stepsMilestonePosted()
+  readonly canShareStepsMilestone = computed(
+    () =>
+      this.trackStepsEnabled() &&
+      Number(this.selectedDaySteps()?.steps || 0) >= this.stepsGoal() &&
+      !this.stepsMilestonePosted(),
   );
   readonly copySourceDay = signal(this.realToday);
   readonly copySourceEntries = signal<LogEntry[]>([]);
@@ -1204,7 +1712,7 @@ export class TodayComponent implements OnInit {
   readonly mealPrepEndDay = signal(this.realToday);
   readonly mealPrepSelectedEntryIds = signal<string[]>([]);
   readonly selectedMealPrepEntries = computed(() =>
-    this.todayEntries().filter(entry => this.mealPrepSelectedEntryIds().includes(entry.id))
+    this.todayEntries().filter((entry) => this.mealPrepSelectedEntryIds().includes(entry.id)),
   );
   readonly mealPrepRangeCount = computed(() => {
     const start = this.normalizeDateInput(this.mealPrepStartDay());
@@ -1223,34 +1731,29 @@ export class TodayComponent implements OnInit {
 
   ngOnInit(): void {
     this.favoriteFoodIds.set(this.readFavoriteFoodIds());
-    this.route.queryParamMap
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(params => {
-        const quickMode = params.get('quick');
-        if (!quickMode) {
-          return;
-        }
-        if (quickMode === 'food') {
-          this.openFoodQuickLog();
-        } else {
-          this.openActions();
-        }
-        void this.router.navigate([], {
-          relativeTo: this.route,
-          queryParams: { quick: null },
-          queryParamsHandling: 'merge',
-          replaceUrl: true
-        });
+    this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
+      const quickMode = params.get('quick');
+      if (!quickMode) {
+        return;
+      }
+      if (quickMode === 'food') {
+        this.openFoodQuickLog();
+      } else {
+        this.openActions();
+      }
+      void this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: { quick: null },
+        queryParamsHandling: 'merge',
+        replaceUrl: true,
       });
+    });
     void this.loadInitialData();
   }
 
   async loadInitialData(forceRefresh = false): Promise<void> {
     await this.ensureLibraryLoaded();
-    await Promise.all([
-      this.loadTodaySnapshot(forceRefresh),
-      this.loadBrooBoard()
-    ]);
+    await Promise.all([this.loadTodaySnapshot(forceRefresh), this.loadBrooBoard()]);
   }
 
   async loadTodaySnapshot(forceRefresh = false): Promise<void> {
@@ -1272,7 +1775,7 @@ export class TodayComponent implements OnInit {
         ttlMs: this.dayDataTtlMs,
         forceRefresh,
         allowStaleOnError: true,
-        loader: () => this.fetchDaySnapshot(user.id, day, weekRange.start, weekRange.end)
+        loader: () => this.fetchDaySnapshot(user.id, day, weekRange.start, weekRange.end),
       });
 
       this.entries.set(dayResult.value.entries);
@@ -1288,10 +1791,10 @@ export class TodayComponent implements OnInit {
       this.stepsMilestonePosted.set(dayResult.value.stepsMilestonePosted);
       this.recentFoodRefs.set(dayResult.value.recentFoodRefs);
 
-      const selectedWeight = this.weightLogs().find(entry => entry.logged_on === day);
+      const selectedWeight = this.weightLogs().find((entry) => entry.logged_on === day);
       this.weightInput = Number(selectedWeight?.weight_kg || this.weightInput);
       this.weightDateInput = day;
-      const selectedSteps = this.stepLogs().find(entry => entry.logged_on === day);
+      const selectedSteps = this.stepLogs().find((entry) => entry.logged_on === day);
       this.stepsInput = Number(selectedSteps?.steps || this.stepsGoal());
       this.stepsDateInput = day;
     } catch (error: unknown) {
@@ -1451,7 +1954,19 @@ export class TodayComponent implements OnInit {
     }
   }
 
-  setSheetMode(mode: 'menu' | 'food' | 'builder' | 'copy' | 'mealprep' | 'weight' | 'steps' | 'gym' | 'entry' | 'layout'): void {
+  setSheetMode(
+    mode:
+      | 'menu'
+      | 'food'
+      | 'builder'
+      | 'copy'
+      | 'mealprep'
+      | 'weight'
+      | 'steps'
+      | 'gym'
+      | 'entry'
+      | 'layout',
+  ): void {
     const currentMode = this.sheetMode();
     const leavingFood = currentMode === 'food' || currentMode === 'builder';
     const enteringFood = mode === 'food' || mode === 'builder';
@@ -1478,21 +1993,21 @@ export class TodayComponent implements OnInit {
       void this.loadCopySourceEntries(defaultSourceDay);
     }
     if (mode === 'mealprep') {
-      this.mealPrepSelectedEntryIds.set(this.todayEntries().map(entry => entry.id));
+      this.mealPrepSelectedEntryIds.set(this.todayEntries().map((entry) => entry.id));
       this.mealPrepStartDay.set(this.today());
       this.mealPrepEndDay.set(this.shiftIsoDay(this.today(), 2));
     }
     if (mode === 'weight') {
       this.startWeightJourney('sheet_mode');
       this.weightDateInput = this.today();
-      const selected = this.weightLogs().find(entry => entry.logged_on === this.today());
+      const selected = this.weightLogs().find((entry) => entry.logged_on === this.today());
       if (selected) {
         this.weightInput = Number(selected.weight_kg);
       }
     }
     if (mode === 'steps') {
       this.stepsDateInput = this.today();
-      const selected = this.stepLogs().find(entry => entry.logged_on === this.today());
+      const selected = this.stepLogs().find((entry) => entry.logged_on === this.today());
       this.stepsInput = Number(selected?.steps || this.stepsGoal());
     }
     if (mode === 'layout') {
@@ -1553,7 +2068,7 @@ export class TodayComponent implements OnInit {
       kcal_per_100: 0,
       protein_per_100: 0,
       carbs_per_100: 0,
-      fat_per_100: 0
+      fat_per_100: 0,
     });
     this.showIngredientQuickCreate.set(true);
   }
@@ -1566,7 +2081,7 @@ export class TodayComponent implements OnInit {
       kcal_per_100: 0,
       protein_per_100: 0,
       carbs_per_100: 0,
-      fat_per_100: 0
+      fat_per_100: 0,
     });
   }
 
@@ -1592,10 +2107,13 @@ export class TodayComponent implements OnInit {
         kcal_per_100: Number(raw.kcal_per_100),
         protein_per_100: Number(raw.protein_per_100),
         carbs_per_100: Number(raw.carbs_per_100),
-        fat_per_100: Number(raw.fat_per_100)
+        fat_per_100: Number(raw.fat_per_100),
       });
 
-      this.ingredients.update(current => [ingredient, ...current.filter(item => item.id !== ingredient.id)]);
+      this.ingredients.update((current) => [
+        ingredient,
+        ...current.filter((item) => item.id !== ingredient.id),
+      ]);
       this.foodSearch.set(ingredient.name);
       this.resetIngredientQuickCreate();
       this.successMessage.set('Zutat erstellt.');
@@ -1608,7 +2126,7 @@ export class TodayComponent implements OnInit {
   }
 
   moveTodaySection(sectionId: TodaySectionId, direction: 'up' | 'down'): void {
-    this.todaySectionOrderDraft.update(current => {
+    this.todaySectionOrderDraft.update((current) => {
       const index = current.indexOf(sectionId);
       if (index < 0) {
         return current;
@@ -1637,22 +2155,22 @@ export class TodayComponent implements OnInit {
 
     try {
       const nextOrder = this.normalizeTodaySectionOrder(this.todaySectionOrderDraft());
-      const { error } = await this.supabaseService.client
-        .from('profiles')
-        .upsert(
-          {
-            user_id: user.id,
-            today_section_order: nextOrder,
-            updated_at: new Date().toISOString()
-          },
-          { onConflict: 'user_id' }
-        );
+      const { error } = await this.supabaseService.client.from('profiles').upsert(
+        {
+          user_id: user.id,
+          today_section_order: nextOrder,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'user_id' },
+      );
 
       if (error) {
         throw error;
       }
 
-      this.profile.update(current => current ? { ...current, today_section_order: nextOrder } : current);
+      this.profile.update((current) =>
+        current ? { ...current, today_section_order: nextOrder } : current,
+      );
       this.queryCache.invalidatePrefix(`today:${user.id}:`);
       this.successMessage.set('Heute-Layout gespeichert.');
       this.closeActions();
@@ -1669,9 +2187,9 @@ export class TodayComponent implements OnInit {
   }
 
   toggleFavoriteFood(itemId: string): void {
-    this.favoriteFoodIds.update(current => {
+    this.favoriteFoodIds.update((current) => {
       const next = current.includes(itemId)
-        ? current.filter(id => id !== itemId)
+        ? current.filter((id) => id !== itemId)
         : [...current, itemId];
       this.writeFavoriteFoodIds(next);
       return next;
@@ -1684,7 +2202,7 @@ export class TodayComponent implements OnInit {
   }
 
   removeFoodQueueItem(queueId: string): void {
-    this.foodQueue.update(current => current.filter(item => item.id !== queueId));
+    this.foodQueue.update((current) => current.filter((item) => item.id !== queueId));
   }
 
   clearFoodQueue(): void {
@@ -1697,13 +2215,13 @@ export class TodayComponent implements OnInit {
       return;
     }
 
-    this.foodQueue.update(current =>
-      current.map(item => {
+    this.foodQueue.update((current) =>
+      current.map((item) => {
         if (item.id !== queueId) {
           return item;
         }
 
-        const source = this.allFoodItems().find(entry => entry.id === item.itemId);
+        const source = this.allFoodItems().find((entry) => entry.id === item.itemId);
         if (!source) {
           return item;
         }
@@ -1711,9 +2229,9 @@ export class TodayComponent implements OnInit {
         return {
           ...item,
           amount,
-          totals: this.scaledMacros(source, amount)
+          totals: this.scaledMacros(source, amount),
         };
-      })
+      }),
     );
   }
 
@@ -1740,7 +2258,7 @@ export class TodayComponent implements OnInit {
       protein: Number(item.totals.protein.toFixed(2)),
       carbs: Number(item.totals.carbs.toFixed(2)),
       fat: Number(item.totals.fat.toFixed(2)),
-      created_at: this.buildFoodLogTimestamp(targetDay, index * 5)
+      created_at: this.buildFoodLogTimestamp(targetDay, index * 5),
     }));
 
     const { error } = await this.supabaseService.client.from('log_entries').insert(payload);
@@ -1790,7 +2308,12 @@ export class TodayComponent implements OnInit {
     }
 
     try {
-      await this.communityFeed.createStepsMilestonePost(user.id, this.today(), steps, this.stepsGoal());
+      await this.communityFeed.createStepsMilestonePost(
+        user.id,
+        this.today(),
+        steps,
+        this.stepsGoal(),
+      );
       this.stepsMilestonePosted.set(true);
       this.successMessage.set('Schrittziel im Board geteilt.');
       if (this.showActionSheet()) {
@@ -1813,8 +2336,8 @@ export class TodayComponent implements OnInit {
   }
 
   toggleCopyEntrySelection(entryId: string): void {
-    this.copySelectedEntryIds.update(current =>
-      current.includes(entryId) ? current.filter(id => id !== entryId) : [...current, entryId]
+    this.copySelectedEntryIds.update((current) =>
+      current.includes(entryId) ? current.filter((id) => id !== entryId) : [...current, entryId],
     );
   }
 
@@ -1822,7 +2345,9 @@ export class TodayComponent implements OnInit {
     const user = this.authService.user();
     const targetDay = this.today();
     const sourceDay = this.copySourceDay();
-    const selectedEntries = this.copySourceEntries().filter(entry => this.copySelectedEntryIds().includes(entry.id));
+    const selectedEntries = this.copySourceEntries().filter((entry) =>
+      this.copySelectedEntryIds().includes(entry.id),
+    );
 
     if (!user || selectedEntries.length === 0) {
       this.errorMessage.set('Wähle mindestens einen Eintrag zum Übernehmen.');
@@ -1834,7 +2359,7 @@ export class TodayComponent implements OnInit {
     }
 
     const payload = selectedEntries.map((entry, index) =>
-      this.buildCopiedEntryPayload(entry, user.id, targetDay, index * 5)
+      this.buildCopiedEntryPayload(entry, user.id, targetDay, index * 5),
     );
 
     const { error } = await this.supabaseService.client.from('log_entries').insert(payload);
@@ -1850,8 +2375,8 @@ export class TodayComponent implements OnInit {
   }
 
   toggleMealPrepEntrySelection(entryId: string): void {
-    this.mealPrepSelectedEntryIds.update(current =>
-      current.includes(entryId) ? current.filter(id => id !== entryId) : [...current, entryId]
+    this.mealPrepSelectedEntryIds.update((current) =>
+      current.includes(entryId) ? current.filter((id) => id !== entryId) : [...current, entryId],
     );
   }
 
@@ -1880,23 +2405,19 @@ export class TodayComponent implements OnInit {
       const fatParts = this.splitAmount(entry.fat, dayCount);
 
       return rangeDays.map((day, dayIndex) =>
-        this.buildCopiedEntryPayload(
-          entry,
-          user.id,
-          day,
-          entryIndex * 60 + dayIndex * 5,
-          {
-            quantity: quantityParts[dayIndex],
-            kcal: kcalParts[dayIndex],
-            protein: proteinParts[dayIndex],
-            carbs: carbsParts[dayIndex],
-            fat: fatParts[dayIndex]
-          }
-        )
+        this.buildCopiedEntryPayload(entry, user.id, day, entryIndex * 60 + dayIndex * 5, {
+          quantity: quantityParts[dayIndex],
+          kcal: kcalParts[dayIndex],
+          protein: proteinParts[dayIndex],
+          carbs: carbsParts[dayIndex],
+          fat: fatParts[dayIndex],
+        }),
       );
     });
 
-    const { error: insertError } = await this.supabaseService.client.from('log_entries').insert(payload);
+    const { error: insertError } = await this.supabaseService.client
+      .from('log_entries')
+      .insert(payload);
     if (insertError) {
       this.errorMessage.set(this.formatWriteError(insertError));
       return;
@@ -1905,11 +2426,16 @@ export class TodayComponent implements OnInit {
     const { error: deleteError } = await this.supabaseService.client
       .from('log_entries')
       .delete()
-      .in('id', selectedEntries.map(entry => entry.id))
+      .in(
+        'id',
+        selectedEntries.map((entry) => entry.id),
+      )
       .eq('owner_id', user.id);
 
     if (deleteError) {
-      this.errorMessage.set('Meal Prep wurde angelegt, aber die Originaleinträge konnten nicht entfernt werden. Bitte kurz prüfen.');
+      this.errorMessage.set(
+        'Meal Prep wurde angelegt, aber die Originaleinträge konnten nicht entfernt werden. Bitte kurz prüfen.',
+      );
       this.invalidateFoodCaches(user.id, [this.today(), ...rangeDays]);
       await this.loadTodaySnapshot(true);
       return;
@@ -1954,7 +2480,7 @@ export class TodayComponent implements OnInit {
       kcal: Number(result.totals.kcal.toFixed(2)),
       protein: Number(result.totals.protein.toFixed(2)),
       carbs: Number(result.totals.carbs.toFixed(2)),
-      fat: Number(result.totals.fat.toFixed(2))
+      fat: Number(result.totals.fat.toFixed(2)),
     };
 
     const { error } = editingId
@@ -1984,9 +2510,10 @@ export class TodayComponent implements OnInit {
   }
 
   editEntry(entry: LogEntry): void {
-    const item = entry.entry_type === 'ingredient'
-      ? this.ingredients().find(ingredient => ingredient.id === entry.ref_id)
-      : this.meals().find(meal => meal.id === entry.ref_id);
+    const item =
+      entry.entry_type === 'ingredient'
+        ? this.ingredients().find((ingredient) => ingredient.id === entry.ref_id)
+        : this.meals().find((meal) => meal.id === entry.ref_id);
 
     if (!item) {
       this.errorMessage.set('Eintrag kann nicht bearbeitet werden, Basisdaten fehlen.');
@@ -2075,17 +2602,15 @@ export class TodayComponent implements OnInit {
       return;
     }
 
-    const { error } = await this.supabaseService.client
-      .from('step_logs')
-      .upsert(
-        {
-          user_id: user.id,
-          logged_on: this.stepsDateInput,
-          steps: Math.round(steps),
-          note: null
-        },
-        { onConflict: 'user_id,logged_on' }
-      );
+    const { error } = await this.supabaseService.client.from('step_logs').upsert(
+      {
+        user_id: user.id,
+        logged_on: this.stepsDateInput,
+        steps: Math.round(steps),
+        note: null,
+      },
+      { onConflict: 'user_id,logged_on' },
+    );
 
     if (error) {
       this.errorMessage.set(formatAppError(error, 'Schritte konnten nicht gespeichert werden'));
@@ -2107,17 +2632,15 @@ export class TodayComponent implements OnInit {
   }
 
   private async upsertWeight(userId: string, day: string, weightKg: number): Promise<boolean> {
-    const { error } = await this.supabaseService.client
-      .from('weight_logs')
-      .upsert(
-        {
-          user_id: userId,
-          logged_on: day,
-          weight_kg: Number(weightKg.toFixed(1)),
-          note: null
-        },
-        { onConflict: 'user_id,logged_on' }
-      );
+    const { error } = await this.supabaseService.client.from('weight_logs').upsert(
+      {
+        user_id: userId,
+        logged_on: day,
+        weight_kg: Number(weightKg.toFixed(1)),
+        note: null,
+      },
+      { onConflict: 'user_id,logged_on' },
+    );
 
     if (error) {
       this.failWeightJourney('persist_error');
@@ -2149,7 +2672,12 @@ export class TodayComponent implements OnInit {
 
     this.savingGymPost.set(true);
     try {
-      await this.communityFeed.createGymCheckinPost(user.id, this.today(), this.gymNote, this.gymPhoto);
+      await this.communityFeed.createGymCheckinPost(
+        user.id,
+        this.today(),
+        this.gymNote,
+        this.gymPhoto,
+      );
 
       this.gymNote = '';
       this.gymPhoto = null;
@@ -2157,10 +2685,7 @@ export class TodayComponent implements OnInit {
       this.successMessage.set('Dein Gym-Check-in ist im Board.');
       this.closeActions();
       this.invalidateGymCaches(user.id, this.today());
-      await Promise.all([
-        this.loadTodaySnapshot(true),
-        this.loadBrooBoard()
-      ]);
+      await Promise.all([this.loadTodaySnapshot(true), this.loadBrooBoard()]);
     } catch (error: unknown) {
       this.errorMessage.set(formatAppError(error, 'Gym-Check-in konnte nicht gepostet werden'));
     } finally {
@@ -2169,15 +2694,17 @@ export class TodayComponent implements OnInit {
   }
 
   getIngredientName(id: string): string {
-    return this.ingredients().find(item => item.id === id)?.name || 'Unbekannt';
+    return this.ingredients().find((item) => item.id === id)?.name || 'Unbekannt';
   }
 
   getMealName(id: string): string {
-    return this.meals().find(item => item.id === id)?.name || 'Unbekannt';
+    return this.meals().find((item) => item.id === id)?.name || 'Unbekannt';
   }
 
   entryName(entry: LogEntry): string {
-    return entry.entry_type === 'ingredient' ? this.getIngredientName(entry.ref_id) : this.getMealName(entry.ref_id);
+    return entry.entry_type === 'ingredient'
+      ? this.getIngredientName(entry.ref_id)
+      : this.getMealName(entry.ref_id);
   }
 
   brooAvatarLabel(displayName: string): string {
@@ -2236,14 +2763,15 @@ export class TodayComponent implements OnInit {
 
     return {
       ...profile,
-      today_section_order: this.normalizeTodaySectionOrder(profile.today_section_order)
+      today_section_order: this.normalizeTodaySectionOrder(profile.today_section_order),
     };
   }
 
   private normalizeTodaySectionOrder(order: string[] | null | undefined): TodaySectionId[] {
     const values = Array.isArray(order)
-      ? order.filter((value): value is TodaySectionId =>
-          value === 'logs' || value === 'habits' || value === 'trends'
+      ? order.filter(
+          (value): value is TodaySectionId =>
+            value === 'logs' || value === 'habits' || value === 'trends',
         )
       : [];
 
@@ -2279,7 +2807,9 @@ export class TodayComponent implements OnInit {
       this.brooProfiles.set(page.profiles);
       this.brooPhotoSrcMap.set(page.photoSrcMap);
     } catch (error: unknown) {
-      this.errorMessage.set(formatAppError(error, 'Die letzten Gruppen-Updates konnten nicht geladen werden'));
+      this.errorMessage.set(
+        formatAppError(error, 'Die letzten Gruppen-Updates konnten nicht geladen werden'),
+      );
     } finally {
       this.loadingBrooBoard.set(false);
     }
@@ -2296,7 +2826,7 @@ export class TodayComponent implements OnInit {
     }
 
     const library = await this.libraryDataService.loadLibrary(user.id, {
-      allowStaleOnError: true
+      allowStaleOnError: true,
     });
 
     this.ingredients.set(library.ingredients);
@@ -2314,7 +2844,9 @@ export class TodayComponent implements OnInit {
     try {
       this.copySourceEntries.set(await this.fetchLogEntriesForDay(user.id, day));
     } catch (error: unknown) {
-      this.errorMessage.set(formatAppError(error, 'Einträge vom gewählten Tag konnten nicht geladen werden'));
+      this.errorMessage.set(
+        formatAppError(error, 'Einträge vom gewählten Tag konnten nicht geladen werden'),
+      );
       this.copySourceEntries.set([]);
     } finally {
       this.loadingCopySourceEntries.set(false);
@@ -2324,7 +2856,9 @@ export class TodayComponent implements OnInit {
   private async fetchLogEntriesForDay(userId: string, day: string): Promise<LogEntry[]> {
     const { data, error } = await this.supabaseService.client
       .from('log_entries')
-      .select('id,owner_id,group_id,day,entry_type,ref_id,quantity,kcal,protein,carbs,fat,created_at')
+      .select(
+        'id,owner_id,group_id,day,entry_type,ref_id,quantity,kcal,protein,carbs,fat,created_at',
+      )
       .eq('owner_id', userId)
       .is('group_id', null)
       .eq('day', day)
@@ -2342,7 +2876,7 @@ export class TodayComponent implements OnInit {
     userId: string,
     targetDay: string,
     offsetSeconds = 0,
-    overrides?: Partial<Pick<LogEntry, 'quantity' | 'kcal' | 'protein' | 'carbs' | 'fat'>>
+    overrides?: Partial<Pick<LogEntry, 'quantity' | 'kcal' | 'protein' | 'carbs' | 'fat'>>,
   ): Omit<LogEntry, 'id'> {
     return {
       owner_id: userId,
@@ -2355,7 +2889,7 @@ export class TodayComponent implements OnInit {
       protein: Number((overrides?.protein ?? entry.protein).toFixed(2)),
       carbs: Number((overrides?.carbs ?? entry.carbs).toFixed(2)),
       fat: Number((overrides?.fat ?? entry.fat).toFixed(2)),
-      created_at: this.copyEntryTimestamp(entry, targetDay, offsetSeconds)
+      created_at: this.copyEntryTimestamp(entry, targetDay, offsetSeconds),
     };
   }
 
@@ -2393,12 +2927,8 @@ export class TodayComponent implements OnInit {
     return values;
   }
 
-  private addToFoodQueue(
-    item: QuickItem,
-    amount: number,
-    totals: MacroTotals
-  ): void {
-    this.foodQueue.update(current => [
+  private addToFoodQueue(item: QuickItem, amount: number, totals: MacroTotals): void {
+    this.foodQueue.update((current) => [
       ...current,
       {
         id: this.makeLocalId(),
@@ -2406,8 +2936,8 @@ export class TodayComponent implements OnInit {
         itemType: this.isIngredient(item) ? 'ingredient' : 'meal',
         name: item.name,
         amount,
-        totals
-      }
+        totals,
+      },
     ]);
   }
 
@@ -2419,7 +2949,7 @@ export class TodayComponent implements OnInit {
       kcal: Number(base.kcal) * factor,
       protein: Number(base.protein) * factor,
       carbs: Number(base.carbs) * factor,
-      fat: Number(base.fat) * factor
+      fat: Number(base.fat) * factor,
     };
   }
 
@@ -2471,7 +3001,9 @@ export class TodayComponent implements OnInit {
     return value.trim().toLocaleLowerCase('de-DE').replace(/\s+/g, ' ');
   }
 
-  private buildHistoricalRecentFoodRefs(entries: Pick<LogEntry, 'entry_type' | 'ref_id' | 'created_at'>[]): FoodRecentRef[] {
+  private buildHistoricalRecentFoodRefs(
+    entries: Pick<LogEntry, 'entry_type' | 'ref_id' | 'created_at'>[],
+  ): FoodRecentRef[] {
     const seen = new Set<string>();
     const refs: FoodRecentRef[] = [];
 
@@ -2485,7 +3017,7 @@ export class TodayComponent implements OnInit {
       refs.push({
         itemId: entry.ref_id,
         itemType: entry.entry_type,
-        lastLoggedAt: entry.created_at
+        lastLoggedAt: entry.created_at,
       });
     }
 
@@ -2505,7 +3037,11 @@ export class TodayComponent implements OnInit {
   private invalidateFoodCaches(userId: string, days: string[]): void {
     this.invalidateSnapshotWeeksForDays(userId, days);
 
-    for (const day of new Set(days.map(value => this.normalizeDateInput(value)).filter((value): value is string => Boolean(value)))) {
+    for (const day of new Set(
+      days
+        .map((value) => this.normalizeDateInput(value))
+        .filter((value): value is string => Boolean(value)),
+    )) {
       this.queryCache.invalidate(this.getProteinMilestoneCacheKey(userId, day));
     }
   }
@@ -2515,21 +3051,30 @@ export class TodayComponent implements OnInit {
   }
 
   private invalidateSnapshotWeeksForDays(userId: string, days: string[]): void {
-    const normalizedDays = [...new Set(
-      days
-        .map(value => this.normalizeDateInput(value))
-        .filter((value): value is string => Boolean(value))
-    )];
+    const normalizedDays = [
+      ...new Set(
+        days
+          .map((value) => this.normalizeDateInput(value))
+          .filter((value): value is string => Boolean(value)),
+      ),
+    ];
 
     for (const day of normalizedDays) {
       const weekRange = this.getWeekRangeForDay(day);
       for (const snapshotDay of this.getIsoDayRange(weekRange.start, weekRange.end)) {
-        this.queryCache.invalidate(this.getTodayCacheKey(userId, snapshotDay, weekRange.start, weekRange.end));
+        this.queryCache.invalidate(
+          this.getTodayCacheKey(userId, snapshotDay, weekRange.start, weekRange.end),
+        );
       }
     }
   }
 
-  private getTodayCacheKey(userId: string, day: string, weekStart: string, weekEnd: string): string {
+  private getTodayCacheKey(
+    userId: string,
+    day: string,
+    weekStart: string,
+    weekEnd: string,
+  ): string {
     return `today:${userId}:${day}:${weekStart}:${weekEnd}`;
   }
 
@@ -2541,7 +3086,12 @@ export class TodayComponent implements OnInit {
     return `steps-posted:${userId}:${day}`;
   }
 
-  private async fetchDaySnapshot(userId: string, day: string, weekStart: string, weekEnd: string): Promise<TodaySnapshot> {
+  private async fetchDaySnapshot(
+    userId: string,
+    day: string,
+    weekStart: string,
+    weekEnd: string,
+  ): Promise<TodaySnapshot> {
     const habitWindowStart = this.shiftIsoDay(day, -29);
     const [
       { data: entryData, error: entryError },
@@ -2555,11 +3105,13 @@ export class TodayComponent implements OnInit {
       { data: recentFoodData, error: recentFoodError },
       { data: proteinPostData, error: proteinPostError },
       { data: stepsPostData, error: stepsPostError },
-      { data: profileData, error: profileError }
+      { data: profileData, error: profileError },
     ] = await Promise.all([
       this.supabaseService.client
         .from('log_entries')
-        .select('id,owner_id,group_id,day,entry_type,ref_id,quantity,kcal,protein,carbs,fat,created_at')
+        .select(
+          'id,owner_id,group_id,day,entry_type,ref_id,quantity,kcal,protein,carbs,fat,created_at',
+        )
         .eq('owner_id', userId)
         .is('group_id', null)
         .eq('day', day)
@@ -2634,15 +3186,37 @@ export class TodayComponent implements OnInit {
         .eq('day', day)
         .limit(1)
         .maybeSingle(),
-      this.supabaseService.client
-        .from('profiles')
-        .select('*')
-        .eq('user_id', userId)
-        .maybeSingle()
+      this.supabaseService.client.from('profiles').select('*').eq('user_id', userId).maybeSingle(),
     ]);
 
-    if (entryError || summaryError || weightError || stepError || gymPostsError || proteinSummaryError || gymWindowError || proteinWindowError || recentFoodError || proteinPostError || stepsPostError || profileError) {
-      throw entryError || summaryError || weightError || stepError || gymPostsError || proteinSummaryError || gymWindowError || proteinWindowError || recentFoodError || proteinPostError || stepsPostError || profileError;
+    if (
+      entryError ||
+      summaryError ||
+      weightError ||
+      stepError ||
+      gymPostsError ||
+      proteinSummaryError ||
+      gymWindowError ||
+      proteinWindowError ||
+      recentFoodError ||
+      proteinPostError ||
+      stepsPostError ||
+      profileError
+    ) {
+      throw (
+        entryError ||
+        summaryError ||
+        weightError ||
+        stepError ||
+        gymPostsError ||
+        proteinSummaryError ||
+        gymWindowError ||
+        proteinWindowError ||
+        recentFoodError ||
+        proteinPostError ||
+        stepsPostError ||
+        profileError
+      );
     }
 
     return {
@@ -2650,18 +3224,20 @@ export class TodayComponent implements OnInit {
       summary: (summaryData as DailySummary | null) || null,
       weightLogs: (weightData || []) as WeightLog[],
       stepLogs: (stepData || []) as StepLog[],
-      gymDaysThisWeek: (gymPostsData || []).map(row => String(row.day)),
+      gymDaysThisWeek: (gymPostsData || []).map((row) => String(row.day)),
       proteinDaysThisWeek: (proteinSummaryData || [])
-        .filter(row => Number(row.protein) >= this.proteinGoal)
-        .map(row => String(row.day)),
-      gymDaysWindow: (gymWindowData || []).map(row => String(row.day)),
+        .filter((row) => Number(row.protein) >= this.proteinGoal)
+        .map((row) => String(row.day)),
+      gymDaysWindow: (gymWindowData || []).map((row) => String(row.day)),
       proteinDaysWindow: (proteinWindowData || [])
-        .filter(row => Number(row.protein) >= this.proteinGoal)
-        .map(row => String(row.day)),
-      recentFoodRefs: this.buildHistoricalRecentFoodRefs((recentFoodData || []) as Pick<LogEntry, 'entry_type' | 'ref_id' | 'created_at'>[]),
+        .filter((row) => Number(row.protein) >= this.proteinGoal)
+        .map((row) => String(row.day)),
+      recentFoodRefs: this.buildHistoricalRecentFoodRefs(
+        (recentFoodData || []) as Pick<LogEntry, 'entry_type' | 'ref_id' | 'created_at'>[],
+      ),
       proteinMilestonePosted: Boolean(proteinPostData?.id),
       stepsMilestonePosted: Boolean(stepsPostData?.id),
-      profile: (profileData as Profile | null) || null
+      profile: (profileData as Profile | null) || null,
     };
   }
 
@@ -2679,7 +3255,7 @@ export class TodayComponent implements OnInit {
     endDate.setDate(startDate.getDate() + 6);
     return {
       start: this.formatDate(startDate),
-      end: this.formatDate(endDate)
+      end: this.formatDate(endDate),
     };
   }
 
@@ -2702,7 +3278,7 @@ export class TodayComponent implements OnInit {
         kcal: Number(item.kcal_per_100),
         protein: Number(item.protein_per_100),
         carbs: Number(item.carbs_per_100),
-        fat: Number(item.fat_per_100)
+        fat: Number(item.fat_per_100),
       };
     }
 
@@ -2721,7 +3297,7 @@ export class TodayComponent implements OnInit {
     if (!normalized) {
       return new Date();
     }
-    const [year, month, day] = normalized.split('-').map(part => Number(part));
+    const [year, month, day] = normalized.split('-').map((part) => Number(part));
     return new Date(year, month - 1, day);
   }
 
@@ -2743,10 +3319,10 @@ export class TodayComponent implements OnInit {
     const date = new Date(year, month - 1, day);
 
     if (
-      Number.isNaN(date.getTime())
-      || date.getFullYear() !== year
-      || date.getMonth() + 1 !== month
-      || date.getDate() !== day
+      Number.isNaN(date.getTime()) ||
+      date.getFullYear() !== year ||
+      date.getMonth() + 1 !== month ||
+      date.getDate() !== day
     ) {
       return null;
     }
@@ -2773,8 +3349,8 @@ export class TodayComponent implements OnInit {
   private combineDayTimeToIso(day: string, time: string, offsetSeconds = 0): string {
     const normalizedDay = this.normalizeDateInput(day) || this.realToday;
     const normalizedTime = this.normalizeTimeInput(time) || '12:00';
-    const [year, month, date] = normalizedDay.split('-').map(part => Number(part));
-    const [hours, minutes] = normalizedTime.split(':').map(part => Number(part));
+    const [year, month, date] = normalizedDay.split('-').map((part) => Number(part));
+    const [hours, minutes] = normalizedTime.split(':').map((part) => Number(part));
     const stamp = new Date(year, month - 1, date, hours, minutes, 0);
     if (offsetSeconds > 0) {
       stamp.setSeconds(stamp.getSeconds() + offsetSeconds);
@@ -2817,8 +3393,8 @@ export class TodayComponent implements OnInit {
     this.activeFoodJourneyId.set(
       this.telemetry.startJourney('food_log', {
         source,
-        selected_day: this.today()
-      })
+        selected_day: this.today(),
+      }),
     );
   }
 
@@ -2829,7 +3405,7 @@ export class TodayComponent implements OnInit {
     }
     this.telemetry.completeJourney(current, 'success', {
       action,
-      ...context
+      ...context,
     });
     this.activeFoodJourneyId.set(null);
   }
@@ -2860,8 +3436,8 @@ export class TodayComponent implements OnInit {
     this.activeWeightJourneyId.set(
       this.telemetry.startJourney('weight_log', {
         source,
-        selected_day: this.today()
-      })
+        selected_day: this.today(),
+      }),
     );
   }
 

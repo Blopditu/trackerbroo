@@ -14,10 +14,14 @@ import { MatButtonModule } from '@angular/material/button';
       </article>
     }
     <div class="action-sheet-list">
-      <button mat-flat-button type="button" class="action-btn tonal" (click)="edit.emit()">Bearbeiten</button>
-      <button mat-flat-button type="button" class="action-btn danger" (click)="remove.emit()">Löschen</button>
+      <button mat-flat-button type="button" class="action-btn tonal" (click)="edit.emit()">
+        Bearbeiten
+      </button>
+      <button mat-flat-button type="button" class="action-btn danger" (click)="remove.emit()">
+        Löschen
+      </button>
     </div>
-  `
+  `,
 })
 export class LibraryActionSheetComponent {
   readonly label = input.required<string>();

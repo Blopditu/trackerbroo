@@ -11,9 +11,9 @@ export interface LibraryMealListRow {
 export function buildMealMacros(
   meals: Meal[],
   mealItems: MealItem[],
-  ingredients: Ingredient[]
+  ingredients: Ingredient[],
 ): Record<string, MealMacroTotals> {
-  const ingredientMap = new Map(ingredients.map(item => [item.id, item]));
+  const ingredientMap = new Map(ingredients.map((item) => [item.id, item]));
   const mealMacros: Record<string, MealMacroTotals> = {};
 
   for (const meal of meals) {
@@ -40,9 +40,11 @@ export function buildMealMacros(
 export function buildMealCosts(
   meals: Meal[],
   mealItems: MealItem[],
-  ingredients: Ingredient[]
+  ingredients: Ingredient[],
 ): Record<string, number> {
-  const ingredientCostMap = new Map(ingredients.map(ingredient => [ingredient.id, Number(ingredient.cost_per_100 || 0)]));
+  const ingredientCostMap = new Map(
+    ingredients.map((ingredient) => [ingredient.id, Number(ingredient.cost_per_100 || 0)]),
+  );
   const costs: Record<string, number> = {};
 
   for (const meal of meals) {

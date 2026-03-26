@@ -7,6 +7,6 @@ export function buildWorkoutShareSuggestion(completedThisWeek: number): {
 
   return {
     suggestion: `${progressLabel} Workouts diese Woche`,
-    note: `Gym erledigt ${progressLabel} diese Woche 💪`
+    note: `Gym erledigt ${progressLabel} diese Woche 💪`,
   };
 }

@@ -1,11 +1,19 @@
-import { ChangeDetectionStrategy, Component, computed, effect, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { LucideAngularModule, Check, ChevronDown, Info, Pencil } from 'lucide-angular';
 import {
   TrainingExecutionExercise,
   TrainingExecutionSession,
-  TrainingExecutionSet
+  TrainingExecutionSet,
 } from '../../core/training/training-data.service';
 import { equipmentLabel, targetLabel } from './gym-view-utils';
 
@@ -42,7 +50,11 @@ interface QuickRepOption {
     @if (session()) {
       <section class="execution-shell" [class.history-mode]="mode() === 'history'">
         <div class="execution-rail" role="tablist" aria-label="Übungen">
-          @for (exercise of session()!.exercises; track exercise.sessionExerciseId; let index = $index) {
+          @for (
+            exercise of session()!.exercises;
+            track exercise.sessionExerciseId;
+            let index = $index
+          ) {
             <button
               type="button"
               role="tab"
@@ -70,7 +82,9 @@ interface QuickRepOption {
                   <p class="context-kicker">Active Exercise</p>
                   <h3>{{ currentExercise()!.name }}</h3>
                 </div>
-                <p class="execution-context-meta">Übung {{ activeExerciseIndex() + 1 }} / {{ session()!.exercises.length }}</p>
+                <p class="execution-context-meta">
+                  Übung {{ activeExerciseIndex() + 1 }} / {{ session()!.exercises.length }}
+                </p>
               </div>
 
               <button
@@ -82,7 +96,11 @@ interface QuickRepOption {
               >
                 <lucide-icon [img]="infoIcon" aria-hidden="true"></lucide-icon>
                 <span>Info</span>
-                <lucide-icon [img]="chevronDownIcon" class="context-info-chevron" aria-hidden="true"></lucide-icon>
+                <lucide-icon
+                  [img]="chevronDownIcon"
+                  class="context-info-chevron"
+                  aria-hidden="true"
+                ></lucide-icon>
               </button>
             </div>
 
@@ -99,9 +117,18 @@ interface QuickRepOption {
                   </article>
                 </div>
 
-                <article class="context-info-ref" [class.empty]="workingPreviousPerformance().length === 0">
+                <article
+                  class="context-info-ref"
+                  [class.empty]="workingPreviousPerformance().length === 0"
+                >
                   <span>Previous Session Ref</span>
-                  <p>{{ workingPreviousPerformance().length > 0 ? previousSessionSummary() : 'Noch keine Referenz für diese Übung.' }}</p>
+                  <p>
+                    {{
+                      workingPreviousPerformance().length > 0
+                        ? previousSessionSummary()
+                        : 'Noch keine Referenz für diese Übung.'
+                    }}
+                  </p>
                 </article>
               </section>
             }
@@ -115,7 +142,10 @@ interface QuickRepOption {
                         <span class="active-set-label">Set {{ activeSet()!.setNumber }}</span>
                         <p>Jetzt eintragen</p>
                       </div>
-                      <span class="active-set-progress">{{ completedSets().length }} / {{ currentExercise()!.sets.length }} erledigt</span>
+                      <span class="active-set-progress"
+                        >{{ completedSets().length }} /
+                        {{ currentExercise()!.sets.length }} erledigt</span
+                      >
                     </div>
 
                     <div class="active-set-fields">
@@ -131,7 +161,7 @@ interface QuickRepOption {
                             placeholder="0"
                             [value]="activeSet()!.weightKg ?? ''"
                             (input)="emitSetInput(activeSet()!, 'weight', $event)"
-                          >
+                          />
                           <small>kg</small>
                         </div>
                       </label>
@@ -147,16 +177,27 @@ interface QuickRepOption {
                             placeholder="0"
                             [value]="activeSet()!.reps ?? ''"
                             (input)="emitSetInput(activeSet()!, 'reps', $event)"
-                          >
+                          />
                           <small>reps</small>
                         </div>
                       </label>
                     </div>
 
                     @if (quickWeightOptions(activeSet()!).length > 0) {
-                      <div class="quick-adjust-row" role="group" aria-label="Gewicht schnell anpassen">
-                        @for (option of quickWeightOptions(activeSet()!); track option.label + '-' + option.value) {
-                          <button type="button" class="quick-adjust-chip" (click)="applyQuickWeight(activeSet()!, option.value)">
+                      <div
+                        class="quick-adjust-row"
+                        role="group"
+                        aria-label="Gewicht schnell anpassen"
+                      >
+                        @for (
+                          option of quickWeightOptions(activeSet()!);
+                          track option.label + '-' + option.value
+                        ) {
+                          <button
+                            type="button"
+                            class="quick-adjust-chip"
+                            (click)="applyQuickWeight(activeSet()!, option.value)"
+                          >
                             {{ option.label }}
                           </button>
                         }
@@ -164,9 +205,20 @@ interface QuickRepOption {
                     }
 
                     @if (quickRepOptions(currentExercise()!).length > 0) {
-                      <div class="quick-adjust-row reps" role="group" aria-label="Wiederholungen schnell anpassen">
-                        @for (option of quickRepOptions(currentExercise()!); track option.label + '-' + option.value) {
-                          <button type="button" class="quick-adjust-chip rep" (click)="applyQuickReps(activeSet()!, option.value)">
+                      <div
+                        class="quick-adjust-row reps"
+                        role="group"
+                        aria-label="Wiederholungen schnell anpassen"
+                      >
+                        @for (
+                          option of quickRepOptions(currentExercise()!);
+                          track option.label + '-' + option.value
+                        ) {
+                          <button
+                            type="button"
+                            class="quick-adjust-chip rep"
+                            (click)="applyQuickReps(activeSet()!, option.value)"
+                          >
                             {{ option.label }}
                           </button>
                         }
@@ -204,7 +256,10 @@ interface QuickRepOption {
                         </div>
                         <div class="set-row-copy">
                           <span class="set-row-label">Set {{ setRow.setNumber }}</span>
-                          <strong>{{ formatSetValue(setRow.weightKg, 'kg') }} <span>/</span> {{ formatSetValue(setRow.reps, 'reps') }}</strong>
+                          <strong
+                            >{{ formatSetValue(setRow.weightKg, 'kg') }} <span>/</span>
+                            {{ formatSetValue(setRow.reps, 'reps') }}</strong
+                          >
                         </div>
                         <button
                           type="button"
@@ -227,13 +282,15 @@ interface QuickRepOption {
                         <div class="set-row-leading upcoming">{{ setRow.setNumber }}</div>
                         <div class="set-row-copy">
                           <span class="set-row-label">Upcoming</span>
-                          <strong>{{ formatSetValue(setRow.weightKg, 'kg') }} <span>/</span> {{ formatSetValue(setRow.reps, 'reps') }}</strong>
+                          <strong
+                            >{{ formatSetValue(setRow.weightKg, 'kg') }} <span>/</span>
+                            {{ formatSetValue(setRow.reps, 'reps') }}</strong
+                          >
                         </div>
                       </article>
                     }
                   </div>
                 }
-
               </section>
 
               @if (currentExerciseSaveHint()) {
@@ -246,15 +303,24 @@ interface QuickRepOption {
                     <p class="context-kicker">History</p>
                     <h4>{{ currentExercise()!.name }}</h4>
                   </div>
-                  <span class="history-count">{{ completedSetCount(currentExercise()!) }} / {{ currentExercise()!.sets.length }} Sets</span>
+                  <span class="history-count"
+                    >{{ completedSetCount(currentExercise()!) }} /
+                    {{ currentExercise()!.sets.length }} Sets</span
+                  >
                 </header>
 
                 @if (workingPreviousPerformance().length > 0) {
                   <div class="history-list">
-                    @for (prev of workingPreviousPerformance(); track prev.set_number + '-' + prev.is_warmup) {
+                    @for (
+                      prev of workingPreviousPerformance();
+                      track prev.set_number + '-' + prev.is_warmup
+                    ) {
                       <article class="history-row">
                         <span>Satz {{ prev.set_number }}</span>
-                        <strong>{{ formatSetValue(prev.weight_kg, 'kg') }} <span>/</span> {{ formatSetValue(prev.reps, 'reps') }}</strong>
+                        <strong
+                          >{{ formatSetValue(prev.weight_kg, 'kg') }} <span>/</span>
+                          {{ formatSetValue(prev.reps, 'reps') }}</strong
+                        >
                         <small>{{ prev.session_date }}</small>
                       </article>
                     }
@@ -267,9 +333,16 @@ interface QuickRepOption {
 
                 <div class="history-list current">
                   @for (setRow of currentExercise()!.sets; track setRow.clientRef) {
-                    <article class="history-row" [class.complete]="setRow.isCompleted" [class.current]="isFocusSet(setRow)">
+                    <article
+                      class="history-row"
+                      [class.complete]="setRow.isCompleted"
+                      [class.current]="isFocusSet(setRow)"
+                    >
                       <span>Satz {{ setRow.setNumber }}</span>
-                      <strong>{{ formatSetValue(setRow.weightKg, 'kg') }} <span>/</span> {{ formatSetValue(setRow.reps, 'reps') }}</strong>
+                      <strong
+                        >{{ formatSetValue(setRow.weightKg, 'kg') }} <span>/</span>
+                        {{ formatSetValue(setRow.reps, 'reps') }}</strong
+                      >
                       <small>{{ setStateLabel(setRow) }}</small>
                     </article>
                   }
@@ -280,7 +353,7 @@ interface QuickRepOption {
         }
       </section>
     }
-  `
+  `,
 })
 export class GymExecutionPanelComponent {
   readonly session = input.required<TrainingExecutionSession | null>();
@@ -304,7 +377,9 @@ export class GymExecutionPanelComponent {
   readonly equipmentLabel = equipmentLabel;
   readonly targetLabel = targetLabel;
   readonly infoExpanded = signal(false);
-  readonly completedSets = computed(() => this.currentExercise()?.sets.filter(setRow => setRow.isCompleted) ?? []);
+  readonly completedSets = computed(
+    () => this.currentExercise()?.sets.filter((setRow) => setRow.isCompleted) ?? [],
+  );
   readonly activeSet = computed(() => this.currentFocusSet());
   readonly upcomingSets = computed(() => {
     const currentSet = this.currentFocusSet();
@@ -312,7 +387,9 @@ export class GymExecutionPanelComponent {
     if (!exercise || !currentSet) {
       return [];
     }
-    return exercise.sets.filter(setRow => !setRow.isCompleted && setRow.clientRef !== currentSet.clientRef);
+    return exercise.sets.filter(
+      (setRow) => !setRow.isCompleted && setRow.clientRef !== currentSet.clientRef,
+    );
   });
 
   private lastExerciseSessionId: string | null = null;
@@ -334,15 +411,19 @@ export class GymExecutionPanelComponent {
   }
 
   completedSetCount(exercise: TrainingExecutionExercise): number {
-    return exercise.sets.filter(setRow => setRow.isCompleted).length;
+    return exercise.sets.filter((setRow) => setRow.isCompleted).length;
   }
 
   isExerciseComplete(exercise: TrainingExecutionExercise): boolean {
-    return exercise.sets.every(setRow => setRow.isCompleted);
+    return exercise.sets.every((setRow) => setRow.isCompleted);
   }
 
   currentFocusSet(): TrainingExecutionSet | null {
-    return this.currentExercise()?.sets.find(setRow => !setRow.isCompleted) ?? this.currentExercise()?.sets.at(-1) ?? null;
+    return (
+      this.currentExercise()?.sets.find((setRow) => !setRow.isCompleted) ??
+      this.currentExercise()?.sets.at(-1) ??
+      null
+    );
   }
 
   isFocusSet(setRow: TrainingExecutionSet): boolean {
@@ -360,7 +441,7 @@ export class GymExecutionPanelComponent {
   }
 
   workingPreviousPerformance(): PreviousPerformanceRow[] {
-    return this.previousPerformance().filter(row => !row.is_warmup);
+    return this.previousPerformance().filter((row) => !row.is_warmup);
   }
 
   previousSessionSummary(): string {
@@ -373,7 +454,7 @@ export class GymExecutionPanelComponent {
   }
 
   toggleInfo(): void {
-    this.infoExpanded.update(value => !value);
+    this.infoExpanded.update((value) => !value);
   }
 
   hasNextExercise(): boolean {
@@ -410,21 +491,21 @@ export class GymExecutionPanelComponent {
       return [];
     }
 
-    const values = [seed - 5, seed - 2.5, seed + 2.5, seed + 5].filter(value => value > 0);
+    const values = [seed - 5, seed - 2.5, seed + 2.5, seed + 5].filter((value) => value > 0);
     const seen = new Set<number>();
 
     return values
-      .map(value => Number(value.toFixed(1)))
-      .filter(value => {
+      .map((value) => Number(value.toFixed(1)))
+      .filter((value) => {
         if (seen.has(value)) {
           return false;
         }
         seen.add(value);
         return true;
       })
-      .map(value => ({
+      .map((value) => ({
         label: `${value > seed ? '+' : ''}${this.formatWeight(value - seed)}`,
-        value
+        value,
       }));
   }
 
@@ -438,20 +519,20 @@ export class GymExecutionPanelComponent {
       return [];
     }
 
-    const values = [target - 1, target, target + 1, target + 2].filter(value => value > 0);
+    const values = [target - 1, target, target + 1, target + 2].filter((value) => value > 0);
     const seen = new Set<number>();
 
     return values
-      .filter(value => {
+      .filter((value) => {
         if (seen.has(value)) {
           return false;
         }
         seen.add(value);
         return true;
       })
-      .map(value => ({
+      .map((value) => ({
         label: `${value}`,
-        value
+        value,
       }));
   }
 
@@ -460,7 +541,10 @@ export class GymExecutionPanelComponent {
   }
 
   private previousWeightForSet(setNumber: number): number | null {
-    return this.workingPreviousPerformance().find(row => row.set_number === setNumber)?.weight_kg ?? null;
+    return (
+      this.workingPreviousPerformance().find((row) => row.set_number === setNumber)?.weight_kg ??
+      null
+    );
   }
 
   private formatWeight(value: number): string {

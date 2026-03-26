@@ -11,42 +11,48 @@ import { CommonModule } from '@angular/common';
       <strong>{{ value() }} / {{ target() }}{{ unit() }}</strong>
     </div>
     <div class="bar">
-      <div class="fill" [style.transform]="'scaleX(' + (progress() / 100) + ')'" [style.background]="color()"></div>
+      <div
+        class="fill"
+        [style.transform]="'scaleX(' + progress() / 100 + ')'"
+        [style.background]="color()"
+      ></div>
     </div>
   `,
-  styles: [`
-    .label-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 8px;
-      font-size: 13px;
-      color: var(--ui-ink-muted);
-      font-weight: 600;
-      margin-bottom: 4px;
-    }
+  styles: [
+    `
+      .label-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        color: var(--ui-ink-muted);
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
 
-    .label-row strong {
-      color: var(--ui-ink);
-      font-size: 13px;
-      font-weight: 600;
-    }
+      .label-row strong {
+        color: var(--ui-ink);
+        font-size: 13px;
+        font-weight: 600;
+      }
 
-    .bar {
-      height: 8px;
-      background: var(--ui-surface-3);
-      overflow: hidden;
-      border-radius: 999px;
-    }
+      .bar {
+        height: 8px;
+        background: var(--ui-surface-3);
+        overflow: hidden;
+        border-radius: 999px;
+      }
 
-    .fill {
-      width: 100%;
-      height: 100%;
-      border-radius: 999px;
-      transform-origin: left center;
-      transition: transform var(--motion-duration-medium) var(--motion-easing-decelerate);
-    }
-  `]
+      .fill {
+        width: 100%;
+        height: 100%;
+        border-radius: 999px;
+        transform-origin: left center;
+        transition: transform var(--motion-duration-medium) var(--motion-easing-decelerate);
+      }
+    `,
+  ],
 })
 export class MacroBarComponent {
   readonly label = input.required<string>();
@@ -55,5 +61,7 @@ export class MacroBarComponent {
   readonly unit = input('g');
   readonly color = input('var(--ui-primary)');
 
-  readonly progress = computed(() => Math.max(0, Math.min((this.value() / Math.max(this.target(), 1)) * 100, 100)));
+  readonly progress = computed(() =>
+    Math.max(0, Math.min((this.value() / Math.max(this.target(), 1)) * 100, 100)),
+  );
 }

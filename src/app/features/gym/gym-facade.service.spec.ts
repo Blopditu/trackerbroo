@@ -1,7 +1,10 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { GymFacadeService } from './gym-facade.service';
-import { TrainingDataService, TrainingExecutionSession } from '../../core/training/training-data.service';
+import {
+  TrainingDataService,
+  TrainingExecutionSession,
+} from '../../core/training/training-data.service';
 import { AuthService } from '../../core/auth.service';
 import { SupabaseService } from '../../core/supabase.service';
 import { InteractionTelemetryService } from '../../core/interaction-telemetry.service';
@@ -9,7 +12,7 @@ import { vi } from 'vitest';
 
 function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void } {
   let resolve!: (value: T) => void;
-  const promise = new Promise<T>(resolver => {
+  const promise = new Promise<T>((resolver) => {
     resolve = resolver;
   });
   return { promise, resolve };
@@ -50,7 +53,7 @@ describe('GymFacadeService', () => {
       name: 'Push Pull',
       durationWeeks: 12,
       startDate: '2026-03-01',
-      weekNumber: 2
+      weekNumber: 2,
     },
     workoutDays: [
       {
@@ -60,9 +63,9 @@ describe('GymFacadeService', () => {
         exerciseCount: 2,
         thumbnails: [],
         completed: false,
-        currentSessionClientRef: null
-      }
-    ]
+        currentSessionClientRef: null,
+      },
+    ],
   };
 
   const planOverview = {
@@ -86,9 +89,9 @@ describe('GymFacadeService', () => {
         targetSeconds: null,
         sortOrder: 1,
         primaryMuscle: 'chest',
-        secondaryMuscles: ['triceps']
-      }
-    ]
+        secondaryMuscles: ['triceps'],
+      },
+    ],
   };
 
   const exercises = [
@@ -103,7 +106,7 @@ describe('GymFacadeService', () => {
       type: 'barbell' as const,
       is_system: true,
       created_at: '',
-      updated_at: ''
+      updated_at: '',
     },
     {
       id: 'exercise-2',
@@ -116,8 +119,8 @@ describe('GymFacadeService', () => {
       type: 'machine' as const,
       is_system: true,
       created_at: '',
-      updated_at: ''
-    }
+      updated_at: '',
+    },
   ];
 
   const session = (): TrainingExecutionSession => ({
@@ -150,9 +153,9 @@ describe('GymFacadeService', () => {
             estimated10Rm: null,
             volume: 160,
             isCompleted: true,
-            clientRef: 'set-client-1'
-          }
-        ]
+            clientRef: 'set-client-1',
+          },
+        ],
       },
       {
         sessionExerciseId: 'session-ex-2',
@@ -177,11 +180,11 @@ describe('GymFacadeService', () => {
             estimated10Rm: null,
             volume: 0,
             isCompleted: false,
-            clientRef: 'set-client-2'
-          }
-        ]
-      }
-    ]
+            clientRef: 'set-client-2',
+          },
+        ],
+      },
+    ],
   });
 
   beforeEach(() => {
@@ -207,7 +210,7 @@ describe('GymFacadeService', () => {
       upsertMeasurement: vi.fn(),
       saveProgressWidgets: vi.fn(),
       activatePlan: vi.fn(),
-      savePlan: vi.fn()
+      savePlan: vi.fn(),
     };
 
     trainingData.hasPendingSync.mockReturnValue(false);
@@ -225,8 +228,8 @@ describe('GymFacadeService', () => {
         is_warmup: false,
         weight_kg: exerciseId === 'exercise-1' ? 25 : 40,
         reps: exerciseId === 'exercise-1' ? 8 : 10,
-        estimated_10rm: null
-      }
+        estimated_10rm: null,
+      },
     ]);
     trainingData.upsertSetLog.mockResolvedValue(undefined);
     trainingData.completeSession.mockResolvedValue(undefined);
@@ -236,10 +239,14 @@ describe('GymFacadeService', () => {
       totalWorkouts: 12,
       currentStreakWeeks: 3,
       gymName: 'Gym',
-      latestBodyweight: 82
+      latestBodyweight: 82,
     });
-    trainingData.getProgressSeries.mockResolvedValue([{ point_date: '2026-03-12', point_value: 80 }]);
-    trainingData.getExerciseVolumeSeries.mockResolvedValue([{ point_date: '2026-03-12', point_value: 640 }]);
+    trainingData.getProgressSeries.mockResolvedValue([
+      { point_date: '2026-03-12', point_value: 80 },
+    ]);
+    trainingData.getExerciseVolumeSeries.mockResolvedValue([
+      { point_date: '2026-03-12', point_value: 640 },
+    ]);
     trainingData.upsertMeasurement.mockResolvedValue(undefined);
     trainingData.saveProgressWidgets.mockResolvedValue(undefined);
     trainingData.activatePlan.mockResolvedValue(undefined);
@@ -250,16 +257,19 @@ describe('GymFacadeService', () => {
         GymFacadeService,
         { provide: TrainingDataService, useValue: trainingData as unknown as TrainingDataService },
         { provide: AuthService, useValue: { user: authUser } },
-        { provide: SupabaseService, useValue: { client: { from: () => ({ upsert: async () => ({ error: null }) }) } } },
+        {
+          provide: SupabaseService,
+          useValue: { client: { from: () => ({ upsert: async () => ({ error: null }) }) } },
+        },
         {
           provide: InteractionTelemetryService,
           useValue: {
             startJourney: () => 'journey-1',
             completeJourney: () => undefined,
-            failJourney: () => undefined
-          }
-        }
-      ]
+            failJourney: () => undefined,
+          },
+        },
+      ],
     });
 
     facade = TestBed.inject(GymFacadeService);
@@ -384,12 +394,14 @@ describe('GymFacadeService', () => {
     const exerciseTwoTenRm = deferred<Array<{ point_date: string; point_value: number }>>();
     const exerciseTwoVolume = deferred<Array<{ point_date: string; point_value: number }>>();
 
-    trainingData.getProgressSeries.mockImplementation(async (query: { exerciseId?: string | null }) => {
-      if (query.exerciseId === 'exercise-1') {
-        return exerciseOneTenRm.promise;
-      }
-      return exerciseTwoTenRm.promise;
-    });
+    trainingData.getProgressSeries.mockImplementation(
+      async (query: { exerciseId?: string | null }) => {
+        if (query.exerciseId === 'exercise-1') {
+          return exerciseOneTenRm.promise;
+        }
+        return exerciseTwoTenRm.promise;
+      },
+    );
     trainingData.getExerciseVolumeSeries.mockImplementation(async (exerciseId: string) => {
       if (exerciseId === 'exercise-1') {
         return exerciseOneVolume.promise;
@@ -402,11 +414,11 @@ describe('GymFacadeService', () => {
 
     exerciseTwoTenRm.resolve([{ point_date: '2026-03-13', point_value: 90 }]);
     exerciseTwoVolume.resolve([{ point_date: '2026-03-13', point_value: 900 }]);
-    await new Promise(resolve => setTimeout(resolve, 0));
+    await new Promise((resolve) => setTimeout(resolve, 0));
 
     exerciseOneTenRm.resolve([{ point_date: '2026-03-12', point_value: 70 }]);
     exerciseOneVolume.resolve([{ point_date: '2026-03-12', point_value: 700 }]);
-    await new Promise(resolve => setTimeout(resolve, 0));
+    await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(facade.tenRmSeries()).toEqual([{ point_date: '2026-03-13', point_value: 90 }]);
     expect(facade.exerciseVolumeSeries()).toEqual([{ point_date: '2026-03-13', point_value: 900 }]);

@@ -1,10 +1,14 @@
 <main class="page library-page">
   @if (facade.errorMessage()) {
-    <p class="toast error" role="status" aria-live="polite" aria-atomic="true">{{ facade.errorMessage() }}</p>
+    <p class="toast error" role="status" aria-live="polite" aria-atomic="true">
+      {{ facade.errorMessage() }}
+    </p>
   }
 
   @if (facade.successMessage()) {
-    <p class="toast success" role="status" aria-live="polite" aria-atomic="true">{{ facade.successMessage() }}</p>
+    <p class="toast success" role="status" aria-live="polite" aria-atomic="true">
+      {{ facade.successMessage() }}
+    </p>
   }
 
   <header class="panel library-hero">
@@ -59,7 +63,14 @@
           {{ facade.mealListRows().length }} Mahlzeiten
         }
       </span>
-      <button mat-flat-button type="button" class="action-btn tonal compact" (click)="openCreateModal()">Neu</button>
+      <button
+        mat-flat-button
+        type="button"
+        class="action-btn tonal compact"
+        (click)="openCreateModal()"
+      >
+        Neu
+      </button>
     </div>
 
     @if (activeTab() === 'ingredients') {
@@ -101,7 +112,11 @@
   </button>
 </main>
 
-<app-bottom-sheet [open]="actionSheetOpen()" title="Eintrag verwalten" (closed)="closeActionSheet()">
+<app-bottom-sheet
+  [open]="actionSheetOpen()"
+  title="Eintrag verwalten"
+  (closed)="closeActionSheet()"
+>
   <app-library-action-sheet
     [label]="facade.actionSheetItemLabel()"
     [subLabel]="facade.actionSheetItemSubLabel()"
@@ -111,7 +126,11 @@
 </app-bottom-sheet>
 
 @if (showIngredientModal()) {
-  <div class="modal" role="presentation" (click)="onModalBackdropClick($event, 'ingredient')">
+  <div
+    class="modal"
+    role="presentation"
+    (pointerdown)="onModalBackdropPointerDown($event, 'ingredient')"
+  >
     <div
       #ingredientDialog
       class="modal-card library-modal-card"
@@ -119,7 +138,7 @@
       aria-modal="true"
       aria-labelledby="ingredient-modal-title"
       tabindex="-1"
-      (click)="$event.stopPropagation()"
+      (pointerdown)="$event.stopPropagation()"
     >
       <app-ingredient-editor
         [form]="facade.ingredientForm"
@@ -142,7 +161,7 @@
 }
 
 @if (showMealModal()) {
-  <div class="modal" role="presentation" (click)="onModalBackdropClick($event, 'meal')">
+  <div class="modal" role="presentation" (pointerdown)="onModalBackdropPointerDown($event, 'meal')">
     <div
       #mealDialog
       class="modal-card library-modal-card"
@@ -150,7 +169,7 @@
       aria-modal="true"
       aria-labelledby="meal-modal-title"
       tabindex="-1"
-      (click)="$event.stopPropagation()"
+      (pointerdown)="$event.stopPropagation()"
     >
       <app-meal-editor
         [form]="facade.mealForm"

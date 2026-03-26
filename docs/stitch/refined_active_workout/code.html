@@ -1,209 +1,342 @@
-<!DOCTYPE html>
+<!doctype html>
 
-<html class="dark" lang="en"><head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Tracker Broo - Active Workout</title>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<script id="tailwind-config">
+<html class="dark" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Tracker Broo - Active Workout</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+      rel="stylesheet"
+    />
+    <script id="tailwind-config">
       tailwind.config = {
-        darkMode: "class",
+        darkMode: 'class',
         theme: {
           extend: {
             colors: {
-              "primary": "#00FF85", // Mint
-              "on-primary": "#000000",
-              "surface": "#000000", // Obsidian
-              "surface-container": "#121212",
-              "surface-container-high": "#1E1E1E",
-              "surface-container-highest": "#282828",
-              "on-surface": "#FFFFFF",
-              "on-surface-variant": "#A0A0A0",
-              "outline": "#333333",
-              "success": "#00FF85"
+              primary: '#00FF85', // Mint
+              'on-primary': '#000000',
+              surface: '#000000', // Obsidian
+              'surface-container': '#121212',
+              'surface-container-high': '#1E1E1E',
+              'surface-container-highest': '#282828',
+              'on-surface': '#FFFFFF',
+              'on-surface-variant': '#A0A0A0',
+              outline: '#333333',
+              success: '#00FF85',
             },
             fontFamily: {
-              "manrope": ["Manrope", "sans-serif"],
-              "headline": ["Manrope"],
-              "body": ["Manrope"],
-              "label": ["Manrope"]
+              manrope: ['Manrope', 'sans-serif'],
+              headline: ['Manrope'],
+              body: ['Manrope'],
+              label: ['Manrope'],
             },
-            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem", "full": "9999px"},
+            borderRadius: {
+              DEFAULT: '0.25rem',
+              lg: '0.5rem',
+              xl: '0.75rem',
+              '2xl': '1rem',
+              full: '9999px',
+            },
           },
         },
-      }
+      };
     </script>
-<style>
-        body { font-family: 'Manrope', sans-serif; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        .material-symbols-outlined {
-            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-        }
-        .filled-icon {
-            font-variation-settings: 'FILL' 1;
-        }
+    <style>
+      body {
+        font-family: 'Manrope', sans-serif;
+      }
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+      .material-symbols-outlined {
+        font-variation-settings:
+          'FILL' 0,
+          'wght' 400,
+          'GRAD' 0,
+          'opsz' 24;
+      }
+      .filled-icon {
+        font-variation-settings: 'FILL' 1;
+      }
     </style>
-</head>
-<body class="bg-surface text-on-surface antialiased font-manrope">
-<!-- TopAppBar -->
-<nav class="fixed top-0 w-full z-50 flex items-center justify-between px-6 h-16 bg-surface/80 backdrop-blur-md border-b border-outline">
-<div class="flex items-center gap-4">
-<span class="material-symbols-outlined text-primary cursor-pointer">arrow_back</span>
-<h1 class="uppercase tracking-[0.2em] text-[10px] font-extrabold text-primary">Leg Day - Session 42</h1>
-</div>
-<div class="flex items-center">
-<span class="material-symbols-outlined text-on-surface-variant">more_vert</span>
-</div>
-</nav>
-<main class="pt-16 pb-36 min-h-screen flex flex-col">
-<!-- Progress Rail -->
-<section class="bg-surface sticky top-16 z-40 overflow-x-auto no-scrollbar flex items-center gap-8 px-6 py-5 border-b border-outline">
-<div class="flex flex-col items-center gap-1.5 shrink-0">
-<div class="w-2 h-2 rounded-full bg-primary/40 flex items-center justify-center">
-<div class="w-1 h-1 bg-primary rounded-full"></div>
-</div>
-<span class="text-[9px] font-black uppercase tracking-widest text-primary">Squats</span>
-</div>
-<div class="flex flex-col items-center gap-1.5 shrink-0 opacity-40">
-<div class="w-1.5 h-1.5 rounded-full bg-on-surface-variant"></div>
-<span class="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant">Leg Press</span>
-</div>
-<div class="flex flex-col items-center gap-1.5 shrink-0 opacity-40">
-<div class="w-1.5 h-1.5 rounded-full bg-on-surface-variant"></div>
-<span class="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant">Extension</span>
-</div>
-<div class="flex flex-col items-center gap-1.5 shrink-0 opacity-40">
-<div class="w-1.5 h-1.5 rounded-full bg-on-surface-variant"></div>
-<span class="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant">Calf Raise</span>
-</div>
-</section>
-<!-- Active Exercise Header -->
-<section class="px-6 mt-8">
-<div class="flex justify-between items-end mb-1">
-<span class="text-[10px] font-black uppercase tracking-[0.15em] text-primary">Active Exercise</span>
-<span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Exercise 1/4</span>
-</div>
-<h2 class="text-4xl font-extrabold tracking-tight text-on-surface">Barbell Back Squats</h2>
-<div class="grid grid-cols-2 gap-3 mt-6">
-<div class="bg-surface-container-high p-4 rounded-2xl border border-outline/50">
-<span class="text-[9px] font-black uppercase tracking-widest text-on-surface-variant mb-1 block">Target Goal</span>
-<p class="text-2xl font-extrabold text-on-surface">3 <span class="text-primary font-medium text-lg">x</span> 8-10</p>
-</div>
-<div class="bg-surface-container-high p-4 rounded-2xl border border-outline/50">
-<span class="text-[9px] font-black uppercase tracking-widest text-on-surface-variant mb-1 block">Equipment</span>
-<p class="text-2xl font-extrabold text-on-surface">Barbell</p>
-</div>
-</div>
-<!-- Previous Session - High Contrast -->
-<div class="mt-3 bg-primary/5 border border-primary/20 p-4 rounded-2xl flex items-center justify-between">
-<div class="flex items-center gap-3">
-<div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-<span class="material-symbols-outlined text-primary text-lg filled-icon">history</span>
-</div>
-<div>
-<span class="text-[9px] font-black uppercase tracking-widest text-primary/70">Previous Best</span>
-<p class="text-lg font-bold text-on-surface">100<span class="text-xs text-on-surface-variant font-medium ml-1">KG</span> <span class="mx-1 text-primary/30">×</span> 9 <span class="text-xs text-on-surface-variant font-medium ml-1">REPS</span></p>
-</div>
-</div>
-<span class="text-[10px] font-bold text-on-surface-variant bg-surface px-2 py-1 rounded">MAY 12</span>
-</div>
-</section>
-<!-- Logging Area -->
-<section class="px-6 mt-10 space-y-4">
-<!-- Set 1: Done -->
-<div class="bg-surface-container rounded-2xl p-4 flex items-center justify-between border border-outline/30">
-<div class="flex items-center gap-4">
-<div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center border border-primary/40">
-<span class="material-symbols-outlined text-primary filled-icon">check_circle</span>
-</div>
-<div>
-<span class="text-[9px] font-black uppercase tracking-widest text-on-surface-variant">Set 01</span>
-<p class="text-xl font-bold tracking-tight text-on-surface">100<span class="text-xs text-on-surface-variant ml-0.5">KG</span> <span class="mx-2 text-outline">/</span> 8 <span class="text-xs text-on-surface-variant ml-0.5">REPS</span></p>
-</div>
-</div>
-<span class="material-symbols-outlined text-on-surface-variant bg-surface-container-high p-2 rounded-lg">edit</span>
-</div>
-<!-- Set 2: ACTIVE -->
-<div class="bg-surface-container-highest rounded-3xl p-6 border-2 border-primary shadow-[0_0_40px_rgba(0,255,133,0.1)]">
-<div class="flex items-center justify-between mb-8">
-<div class="flex items-center gap-2">
-<div class="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
-<span class="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Current Set 02</span>
-</div>
-<div class="flex items-center gap-2 bg-primary/10 px-3 py-1.5 rounded-full border border-primary/20">
-<span class="material-symbols-outlined text-primary text-base filled-icon">timer</span>
-<span class="font-mono text-sm font-black tracking-wider text-primary">01:42</span>
-</div>
-</div>
-<div class="grid grid-cols-2 gap-4">
-<div class="space-y-2">
-<label class="text-[10px] font-black uppercase tracking-widest text-on-surface-variant flex justify-center">Weight (KG)</label>
-<input class="w-full bg-surface border-2 border-outline focus:border-primary rounded-2xl py-5 text-4xl font-black text-center text-on-surface transition-all outline-none" type="number" value="100"/>
-</div>
-<div class="space-y-2">
-<label class="text-[10px] font-black uppercase tracking-widest text-on-surface-variant flex justify-center">Reps</label>
-<input class="w-full bg-surface border-2 border-outline focus:border-primary rounded-2xl py-5 text-4xl font-black text-center text-on-surface transition-all outline-none" placeholder="--" type="number"/>
-</div>
-</div>
-<!-- Weight Chips: High Contrast & Large Hit Targets -->
-<div class="grid grid-cols-4 gap-2 mt-6">
-<button class="py-3.5 bg-surface-container-high border border-outline rounded-xl text-sm font-black text-on-surface-variant active:bg-primary active:text-on-primary transition-all">-5</button>
-<button class="py-3.5 bg-surface-container-high border border-outline rounded-xl text-sm font-black text-on-surface-variant active:bg-primary active:text-on-primary transition-all">-2.5</button>
-<button class="py-3.5 bg-surface-container-high border border-primary/30 rounded-xl text-sm font-black text-primary active:bg-primary active:text-on-primary transition-all">+2.5</button>
-<button class="py-3.5 bg-surface-container-high border border-primary/30 rounded-xl text-sm font-black text-primary active:bg-primary active:text-on-primary transition-all">+5</button>
-</div>
-<!-- Tap to Complete: Satisfying Action -->
-<button class="w-full mt-8 py-5 bg-primary text-on-primary rounded-2xl font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 shadow-lg shadow-primary/20 active:scale-95 transition-transform">
-<span class="material-symbols-outlined font-black">check</span>
-<span>Complete Set</span>
-</button>
-</div>
-<!-- Set 3: Upcoming -->
-<div class="bg-surface-container-low/30 rounded-2xl p-5 flex items-center justify-between opacity-30 border border-dashed border-outline">
-<div class="flex items-center gap-4">
-<div class="w-10 h-10 rounded-full border-2 border-dashed border-outline flex items-center justify-center">
-<span class="text-xs font-black text-on-surface-variant">03</span>
-</div>
-<div>
-<span class="text-[9px] font-black uppercase tracking-widest text-on-surface-variant">Upcoming</span>
-<p class="text-xl font-bold tracking-tight text-on-surface-variant">-- <span class="text-xs ml-0.5">KG</span> <span class="mx-2">/</span> -- <span class="text-xs ml-0.5">REPS</span></p>
-</div>
-</div>
-</div>
-</section>
-<!-- Primary Global Actions: One-Handed Optimized -->
-<section class="mt-auto px-6 py-8 space-y-3">
-<button class="w-full py-5 bg-surface-container-highest border border-outline text-on-surface font-black uppercase tracking-[0.1em] rounded-2xl flex items-center justify-center gap-3 active:scale-95 transition-transform shadow-xl">
-<span class="material-symbols-outlined">fast_forward</span>
-<span>Next Exercise</span>
-</button>
-<button class="w-full py-4 bg-transparent text-on-surface-variant/60 font-bold uppercase tracking-[0.15em] text-xs rounded-2xl flex items-center justify-center gap-2 active:opacity-50 transition-all">
-<span>Finish Workout</span>
-</button>
-</section>
-</main>
-<!-- BottomNavBar -->
-<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-10 pb-8 pt-4 bg-surface/90 backdrop-blur-2xl border-t border-outline">
-<div class="flex flex-col items-center justify-center text-primary group cursor-pointer">
-<div class="bg-primary/10 p-3 rounded-2xl mb-1">
-<span class="material-symbols-outlined filled-icon">fitness_center</span>
-</div>
-<span class="text-[9px] font-black uppercase tracking-widest">Active</span>
-</div>
-<div class="flex flex-col items-center justify-center text-on-surface-variant group cursor-pointer">
-<div class="p-3 rounded-2xl mb-1">
-<span class="material-symbols-outlined">calendar_today</span>
-</div>
-<span class="text-[9px] font-black uppercase tracking-widest">History</span>
-</div>
-<div class="flex flex-col items-center justify-center text-on-surface-variant group cursor-pointer">
-<div class="p-3 rounded-2xl mb-1">
-<span class="material-symbols-outlined">analytics</span>
-</div>
-<span class="text-[9px] font-black uppercase tracking-widest">Insights</span>
-</div>
-</nav>
-</body></html>
+  </head>
+  <body class="bg-surface text-on-surface antialiased font-manrope">
+    <!-- TopAppBar -->
+    <nav
+      class="fixed top-0 w-full z-50 flex items-center justify-between px-6 h-16 bg-surface/80 backdrop-blur-md border-b border-outline"
+    >
+      <div class="flex items-center gap-4">
+        <span class="material-symbols-outlined text-primary cursor-pointer">arrow_back</span>
+        <h1 class="uppercase tracking-[0.2em] text-[10px] font-extrabold text-primary">
+          Leg Day - Session 42
+        </h1>
+      </div>
+      <div class="flex items-center">
+        <span class="material-symbols-outlined text-on-surface-variant">more_vert</span>
+      </div>
+    </nav>
+    <main class="pt-16 pb-36 min-h-screen flex flex-col">
+      <!-- Progress Rail -->
+      <section
+        class="bg-surface sticky top-16 z-40 overflow-x-auto no-scrollbar flex items-center gap-8 px-6 py-5 border-b border-outline"
+      >
+        <div class="flex flex-col items-center gap-1.5 shrink-0">
+          <div class="w-2 h-2 rounded-full bg-primary/40 flex items-center justify-center">
+            <div class="w-1 h-1 bg-primary rounded-full"></div>
+          </div>
+          <span class="text-[9px] font-black uppercase tracking-widest text-primary">Squats</span>
+        </div>
+        <div class="flex flex-col items-center gap-1.5 shrink-0 opacity-40">
+          <div class="w-1.5 h-1.5 rounded-full bg-on-surface-variant"></div>
+          <span class="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant"
+            >Leg Press</span
+          >
+        </div>
+        <div class="flex flex-col items-center gap-1.5 shrink-0 opacity-40">
+          <div class="w-1.5 h-1.5 rounded-full bg-on-surface-variant"></div>
+          <span class="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant"
+            >Extension</span
+          >
+        </div>
+        <div class="flex flex-col items-center gap-1.5 shrink-0 opacity-40">
+          <div class="w-1.5 h-1.5 rounded-full bg-on-surface-variant"></div>
+          <span class="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant"
+            >Calf Raise</span
+          >
+        </div>
+      </section>
+      <!-- Active Exercise Header -->
+      <section class="px-6 mt-8">
+        <div class="flex justify-between items-end mb-1">
+          <span class="text-[10px] font-black uppercase tracking-[0.15em] text-primary"
+            >Active Exercise</span
+          >
+          <span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest"
+            >Exercise 1/4</span
+          >
+        </div>
+        <h2 class="text-4xl font-extrabold tracking-tight text-on-surface">Barbell Back Squats</h2>
+        <div class="grid grid-cols-2 gap-3 mt-6">
+          <div class="bg-surface-container-high p-4 rounded-2xl border border-outline/50">
+            <span
+              class="text-[9px] font-black uppercase tracking-widest text-on-surface-variant mb-1 block"
+              >Target Goal</span
+            >
+            <p class="text-2xl font-extrabold text-on-surface">
+              3 <span class="text-primary font-medium text-lg">x</span> 8-10
+            </p>
+          </div>
+          <div class="bg-surface-container-high p-4 rounded-2xl border border-outline/50">
+            <span
+              class="text-[9px] font-black uppercase tracking-widest text-on-surface-variant mb-1 block"
+              >Equipment</span
+            >
+            <p class="text-2xl font-extrabold text-on-surface">Barbell</p>
+          </div>
+        </div>
+        <!-- Previous Session - High Contrast -->
+        <div
+          class="mt-3 bg-primary/5 border border-primary/20 p-4 rounded-2xl flex items-center justify-between"
+        >
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+              <span class="material-symbols-outlined text-primary text-lg filled-icon"
+                >history</span
+              >
+            </div>
+            <div>
+              <span class="text-[9px] font-black uppercase tracking-widest text-primary/70"
+                >Previous Best</span
+              >
+              <p class="text-lg font-bold text-on-surface">
+                100<span class="text-xs text-on-surface-variant font-medium ml-1">KG</span>
+                <span class="mx-1 text-primary/30">×</span> 9
+                <span class="text-xs text-on-surface-variant font-medium ml-1">REPS</span>
+              </p>
+            </div>
+          </div>
+          <span class="text-[10px] font-bold text-on-surface-variant bg-surface px-2 py-1 rounded"
+            >MAY 12</span
+          >
+        </div>
+      </section>
+      <!-- Logging Area -->
+      <section class="px-6 mt-10 space-y-4">
+        <!-- Set 1: Done -->
+        <div
+          class="bg-surface-container rounded-2xl p-4 flex items-center justify-between border border-outline/30"
+        >
+          <div class="flex items-center gap-4">
+            <div
+              class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center border border-primary/40"
+            >
+              <span class="material-symbols-outlined text-primary filled-icon">check_circle</span>
+            </div>
+            <div>
+              <span class="text-[9px] font-black uppercase tracking-widest text-on-surface-variant"
+                >Set 01</span
+              >
+              <p class="text-xl font-bold tracking-tight text-on-surface">
+                100<span class="text-xs text-on-surface-variant ml-0.5">KG</span>
+                <span class="mx-2 text-outline">/</span> 8
+                <span class="text-xs text-on-surface-variant ml-0.5">REPS</span>
+              </p>
+            </div>
+          </div>
+          <span
+            class="material-symbols-outlined text-on-surface-variant bg-surface-container-high p-2 rounded-lg"
+            >edit</span
+          >
+        </div>
+        <!-- Set 2: ACTIVE -->
+        <div
+          class="bg-surface-container-highest rounded-3xl p-6 border-2 border-primary shadow-[0_0_40px_rgba(0,255,133,0.1)]"
+        >
+          <div class="flex items-center justify-between mb-8">
+            <div class="flex items-center gap-2">
+              <div class="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
+              <span class="text-[10px] font-black uppercase tracking-[0.2em] text-primary"
+                >Current Set 02</span
+              >
+            </div>
+            <div
+              class="flex items-center gap-2 bg-primary/10 px-3 py-1.5 rounded-full border border-primary/20"
+            >
+              <span class="material-symbols-outlined text-primary text-base filled-icon"
+                >timer</span
+              >
+              <span class="font-mono text-sm font-black tracking-wider text-primary">01:42</span>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="space-y-2">
+              <label
+                class="text-[10px] font-black uppercase tracking-widest text-on-surface-variant flex justify-center"
+                >Weight (KG)</label
+              >
+              <input
+                class="w-full bg-surface border-2 border-outline focus:border-primary rounded-2xl py-5 text-4xl font-black text-center text-on-surface transition-all outline-none"
+                type="number"
+                value="100"
+              />
+            </div>
+            <div class="space-y-2">
+              <label
+                class="text-[10px] font-black uppercase tracking-widest text-on-surface-variant flex justify-center"
+                >Reps</label
+              >
+              <input
+                class="w-full bg-surface border-2 border-outline focus:border-primary rounded-2xl py-5 text-4xl font-black text-center text-on-surface transition-all outline-none"
+                placeholder="--"
+                type="number"
+              />
+            </div>
+          </div>
+          <!-- Weight Chips: High Contrast & Large Hit Targets -->
+          <div class="grid grid-cols-4 gap-2 mt-6">
+            <button
+              class="py-3.5 bg-surface-container-high border border-outline rounded-xl text-sm font-black text-on-surface-variant active:bg-primary active:text-on-primary transition-all"
+            >
+              -5
+            </button>
+            <button
+              class="py-3.5 bg-surface-container-high border border-outline rounded-xl text-sm font-black text-on-surface-variant active:bg-primary active:text-on-primary transition-all"
+            >
+              -2.5
+            </button>
+            <button
+              class="py-3.5 bg-surface-container-high border border-primary/30 rounded-xl text-sm font-black text-primary active:bg-primary active:text-on-primary transition-all"
+            >
+              +2.5
+            </button>
+            <button
+              class="py-3.5 bg-surface-container-high border border-primary/30 rounded-xl text-sm font-black text-primary active:bg-primary active:text-on-primary transition-all"
+            >
+              +5
+            </button>
+          </div>
+          <!-- Tap to Complete: Satisfying Action -->
+          <button
+            class="w-full mt-8 py-5 bg-primary text-on-primary rounded-2xl font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 shadow-lg shadow-primary/20 active:scale-95 transition-transform"
+          >
+            <span class="material-symbols-outlined font-black">check</span>
+            <span>Complete Set</span>
+          </button>
+        </div>
+        <!-- Set 3: Upcoming -->
+        <div
+          class="bg-surface-container-low/30 rounded-2xl p-5 flex items-center justify-between opacity-30 border border-dashed border-outline"
+        >
+          <div class="flex items-center gap-4">
+            <div
+              class="w-10 h-10 rounded-full border-2 border-dashed border-outline flex items-center justify-center"
+            >
+              <span class="text-xs font-black text-on-surface-variant">03</span>
+            </div>
+            <div>
+              <span class="text-[9px] font-black uppercase tracking-widest text-on-surface-variant"
+                >Upcoming</span
+              >
+              <p class="text-xl font-bold tracking-tight text-on-surface-variant">
+                -- <span class="text-xs ml-0.5">KG</span> <span class="mx-2">/</span> --
+                <span class="text-xs ml-0.5">REPS</span>
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+      <!-- Primary Global Actions: One-Handed Optimized -->
+      <section class="mt-auto px-6 py-8 space-y-3">
+        <button
+          class="w-full py-5 bg-surface-container-highest border border-outline text-on-surface font-black uppercase tracking-[0.1em] rounded-2xl flex items-center justify-center gap-3 active:scale-95 transition-transform shadow-xl"
+        >
+          <span class="material-symbols-outlined">fast_forward</span>
+          <span>Next Exercise</span>
+        </button>
+        <button
+          class="w-full py-4 bg-transparent text-on-surface-variant/60 font-bold uppercase tracking-[0.15em] text-xs rounded-2xl flex items-center justify-center gap-2 active:opacity-50 transition-all"
+        >
+          <span>Finish Workout</span>
+        </button>
+      </section>
+    </main>
+    <!-- BottomNavBar -->
+    <nav
+      class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-10 pb-8 pt-4 bg-surface/90 backdrop-blur-2xl border-t border-outline"
+    >
+      <div class="flex flex-col items-center justify-center text-primary group cursor-pointer">
+        <div class="bg-primary/10 p-3 rounded-2xl mb-1">
+          <span class="material-symbols-outlined filled-icon">fitness_center</span>
+        </div>
+        <span class="text-[9px] font-black uppercase tracking-widest">Active</span>
+      </div>
+      <div
+        class="flex flex-col items-center justify-center text-on-surface-variant group cursor-pointer"
+      >
+        <div class="p-3 rounded-2xl mb-1">
+          <span class="material-symbols-outlined">calendar_today</span>
+        </div>
+        <span class="text-[9px] font-black uppercase tracking-widest">History</span>
+      </div>
+      <div
+        class="flex flex-col items-center justify-center text-on-surface-variant group cursor-pointer"
+      >
+        <div class="p-3 rounded-2xl mb-1">
+          <span class="material-symbols-outlined">analytics</span>
+        </div>
+        <span class="text-[9px] font-black uppercase tracking-widest">Insights</span>
+      </div>
+    </nav>
+  </body>
+</html>

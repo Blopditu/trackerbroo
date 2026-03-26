@@ -29,7 +29,7 @@ export interface JourneyMetric {
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class InteractionTelemetryService {
   private readonly storageKey = 'trackerbroo:telemetry:v1';
@@ -45,7 +45,7 @@ export class InteractionTelemetryService {
       id,
       key,
       startedAtMs: Date.now(),
-      context
+      context,
     } satisfies ActiveJourney;
 
     this.activeJourneys.set(id, start);
@@ -54,14 +54,14 @@ export class InteractionTelemetryService {
       key,
       type: 'start',
       timestamp: new Date(start.startedAtMs).toISOString(),
-      context
+      context,
     });
 
     return id;
   }
 
   startJourneyIfMissing(key: JourneyKey, context?: Record<string, unknown>): string {
-    const existing = [...this.activeJourneys.values()].find(item => item.key === key);
+    const existing = [...this.activeJourneys.values()].find((item) => item.key === key);
     if (existing) {
       return existing.id;
     }
@@ -71,7 +71,7 @@ export class InteractionTelemetryService {
   completeJourney(
     id: string,
     outcome: JourneyOutcome = 'success',
-    context?: Record<string, unknown>
+    context?: Record<string, unknown>,
   ): void {
     const journey = this.activeJourneys.get(id);
     if (!journey) {
@@ -89,7 +89,7 @@ export class InteractionTelemetryService {
       timestamp: new Date(finishedAt).toISOString(),
       duration_ms: durationMs,
       outcome,
-      context: { ...(journey.context || {}), ...(context || {}) }
+      context: { ...(journey.context || {}), ...(context || {}) },
     });
   }
 
@@ -103,22 +103,22 @@ export class InteractionTelemetryService {
 
   getJourneyMetrics(days = 30): JourneyMetric[] {
     const sinceMs = Date.now() - days * 24 * 60 * 60 * 1000;
-    const events = this.readEvents().filter(event => Date.parse(event.timestamp) >= sinceMs);
+    const events = this.readEvents().filter((event) => Date.parse(event.timestamp) >= sinceMs);
 
     const keys: JourneyKey[] = ['food_log', 'weight_log', 'graph_check'];
-    return keys.map(key => {
-      const starts = events.filter(event => event.key === key && event.type === 'start').length;
-      const completes = events.filter(event => event.key === key && event.type === 'complete');
+    return keys.map((key) => {
+      const starts = events.filter((event) => event.key === key && event.type === 'start').length;
+      const completes = events.filter((event) => event.key === key && event.type === 'complete');
       const successDurations = completes
-        .filter(event => event.outcome === 'success' && Number.isFinite(event.duration_ms))
-        .map(event => Number(event.duration_ms || 0));
+        .filter((event) => event.outcome === 'success' && Number.isFinite(event.duration_ms))
+        .map((event) => Number(event.duration_ms || 0));
 
       return {
         key,
         samples: successDurations.length,
         medianMs: this.percentile(successDurations, 50),
         p75Ms: this.percentile(successDurations, 75),
-        completionRate: starts === 0 ? 0 : Number((completes.length / starts).toFixed(2))
+        completionRate: starts === 0 ? 0 : Number((completes.length / starts).toFixed(2)),
       } satisfies JourneyMetric;
     });
   }
@@ -134,7 +134,10 @@ export class InteractionTelemetryService {
     }
 
     const sorted = [...values].sort((a, b) => a - b);
-    const rank = Math.max(0, Math.min(sorted.length - 1, Math.round(((pct / 100) * (sorted.length - 1)))));
+    const rank = Math.max(
+      0,
+      Math.min(sorted.length - 1, Math.round((pct / 100) * (sorted.length - 1))),
+    );
     return Math.round(sorted[rank]);
   }
 
@@ -171,7 +174,7 @@ export class InteractionTelemetryService {
     }
 
     window.localStorage.setItem(this.storageKey, JSON.stringify(events));
-    this.revision.update(value => value + 1);
+    this.revision.update((value) => value + 1);
   }
 
   private isJourneyEvent(value: unknown): value is JourneyEvent {
@@ -180,9 +183,11 @@ export class InteractionTelemetryService {
     }
 
     const item = value as Partial<JourneyEvent>;
-    return typeof item.id === 'string'
-      && typeof item.key === 'string'
-      && (item.type === 'start' || item.type === 'complete')
-      && typeof item.timestamp === 'string';
+    return (
+      typeof item.id === 'string' &&
+      typeof item.key === 'string' &&
+      (item.type === 'start' || item.type === 'complete') &&
+      typeof item.timestamp === 'string'
+    );
   }
 }

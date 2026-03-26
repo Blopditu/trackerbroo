@@ -5,7 +5,15 @@ import { resolve } from 'node:path';
 
 const WGER_START_URL = 'https://wger.de/api/v2/exerciseinfo/?language=2&limit=200';
 
-const EQUIPMENT_PRIORITY = ['dumbbell', 'barbell', 'cable', 'bands', 'bodyweight', 'machine', 'other'];
+const EQUIPMENT_PRIORITY = [
+  'dumbbell',
+  'barbell',
+  'cable',
+  'bands',
+  'bodyweight',
+  'machine',
+  'other',
+];
 
 const EQUIPMENT_TOKENS = {
   dumbbell: ['dumbbell', 'kettlebell'],
@@ -14,7 +22,7 @@ const EQUIPMENT_TOKENS = {
   bands: ['band', 'trx', 'suspension'],
   bodyweight: ['bodyweight', 'none (bodyweight exercise)', 'pull-up bar'],
   machine: ['machine', 'smith', 'lever'],
-  other: []
+  other: [],
 };
 
 const MUSCLE_ALIASES = new Map([
@@ -63,7 +71,7 @@ const MUSCLE_ALIASES = new Map([
   ['teres major', 'teres_major'],
   ['neck', 'neck'],
   ['adductors', 'adductors'],
-  ['abductors', 'abductors']
+  ['abductors', 'abductors'],
 ]);
 
 function toAsciiLower(value) {
@@ -75,7 +83,9 @@ function toAsciiLower(value) {
 }
 
 function slugifyMuscle(value) {
-  const normalized = toAsciiLower(value).replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+  const normalized = toAsciiLower(value)
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
   return normalized || 'core';
 }
 
@@ -94,11 +104,11 @@ function canonicalMuscle(rawName) {
 }
 
 function mapEquipment(equipmentItems) {
-  const names = (equipmentItems || []).map(item => toAsciiLower(item?.name));
+  const names = (equipmentItems || []).map((item) => toAsciiLower(item?.name));
 
   for (const key of EQUIPMENT_PRIORITY) {
     const tokens = EQUIPMENT_TOKENS[key];
-    if (tokens.some(token => names.some(name => name.includes(token)))) {
+    if (tokens.some((token) => names.some((name) => name.includes(token)))) {
       return key;
     }
   }
@@ -112,12 +122,14 @@ function mapEquipment(equipmentItems) {
 
 function pickExerciseName(exercise) {
   const translations = Array.isArray(exercise.translations) ? exercise.translations : [];
-  const english = translations.find(item => item?.language === 2 && String(item?.name || '').trim().length > 0);
+  const english = translations.find(
+    (item) => item?.language === 2 && String(item?.name || '').trim().length > 0,
+  );
   if (english) {
     return String(english.name).trim();
   }
 
-  const withName = translations.find(item => String(item?.name || '').trim().length > 0);
+  const withName = translations.find((item) => String(item?.name || '').trim().length > 0);
   return withName ? String(withName.name).trim() : null;
 }
 
@@ -129,8 +141,8 @@ async function fetchJson(url) {
   const response = await fetch(url, {
     headers: {
       Accept: 'application/json',
-      'User-Agent': 'trackerbroo-wger-import/1.0'
-    }
+      'User-Agent': 'trackerbroo-wger-import/1.0',
+    },
   });
 
   if (!response.ok) {
@@ -163,14 +175,16 @@ function mapWgerExercise(exercise) {
   const equipment = mapEquipment(exercise.equipment);
 
   const primaryAndSupport = [...(exercise.muscles || []), ...(exercise.muscles_secondary || [])]
-    .map(item => canonicalMuscle(item?.name_en || item?.name))
+    .map((item) => canonicalMuscle(item?.name_en || item?.name))
     .filter(Boolean);
 
   const uniqueMuscles = [...new Set(primaryAndSupport)];
   const primaryMuscle = uniqueMuscles[0] || 'core';
   const secondaryMuscles = uniqueMuscles.slice(1, 6);
 
-  const images = [...new Set((exercise.images || []).map(item => item?.image).filter(Boolean))].slice(0, 8);
+  const images = [
+    ...new Set((exercise.images || []).map((item) => item?.image).filter(Boolean)),
+  ].slice(0, 8);
 
   return {
     externalUuid: String(exercise.uuid || '').trim(),
@@ -179,7 +193,7 @@ function mapWgerExercise(exercise) {
     primary_muscle: primaryMuscle,
     secondary_muscles: secondaryMuscles,
     images,
-    type: equipment
+    type: equipment,
   };
 }
 
@@ -217,15 +231,15 @@ async function loadExistingSystemExerciseIds(client) {
 async function upsertInChunks(client, rows, chunkSize = 200) {
   for (let index = 0; index < rows.length; index += chunkSize) {
     const chunk = rows.slice(index, index + chunkSize);
-    const { error } = await client
-      .from('training_exercises')
-      .upsert(chunk, { onConflict: 'id' });
+    const { error } = await client.from('training_exercises').upsert(chunk, { onConflict: 'id' });
 
     if (error) {
       throw error;
     }
 
-    process.stdout.write(`\rUpserted ${Math.min(index + chunk.length, rows.length)}/${rows.length}`);
+    process.stdout.write(
+      `\rUpserted ${Math.min(index + chunk.length, rows.length)}/${rows.length}`,
+    );
   }
 
   process.stdout.write('\n');
@@ -251,27 +265,29 @@ async function main() {
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!supabaseUrl) {
-    throw new Error('Missing SUPABASE_URL. Set env var or add supabaseUrl to src/environments/environment.ts.');
+    throw new Error(
+      'Missing SUPABASE_URL. Set env var or add supabaseUrl to src/environments/environment.ts.',
+    );
   }
 
   if (!serviceRoleKey) {
     if (fallbackAnon) {
-      throw new Error('Missing SUPABASE_SERVICE_ROLE_KEY. Found only publishable anon key in environment.ts, which cannot bypass RLS for system imports.');
+      throw new Error(
+        'Missing SUPABASE_SERVICE_ROLE_KEY. Found only publishable anon key in environment.ts, which cannot bypass RLS for system imports.',
+      );
     }
     throw new Error('Missing SUPABASE_SERVICE_ROLE_KEY. Set env var before running this script.');
   }
 
   const client = createClient(supabaseUrl, serviceRoleKey, {
-    auth: { persistSession: false, autoRefreshToken: false }
+    auth: { persistSession: false, autoRefreshToken: false },
   });
 
   console.log('Fetching exercises from wger...');
   const sourceRows = await fetchAllWgerExercises();
   console.log(`Fetched ${sourceRows.length} rows from wger.`);
 
-  const mapped = sourceRows
-    .map(mapWgerExercise)
-    .filter(Boolean);
+  const mapped = sourceRows.map(mapWgerExercise).filter(Boolean);
 
   const byKey = new Map();
   for (const row of mapped) {
@@ -293,10 +309,10 @@ async function main() {
   const existingIdMap = await loadExistingSystemExerciseIds(client);
 
   const nowIso = new Date().toISOString();
-  const payload = deduped.map(row => {
+  const payload = deduped.map((row) => {
     const key = normalizeSourceKey(row.name, row.equipment);
     const existingId = existingIdMap.get(key);
-    const stableId = existingId || (row.externalUuid || randomUUID());
+    const stableId = existingId || row.externalUuid || randomUUID();
 
     return {
       id: stableId,
@@ -308,7 +324,7 @@ async function main() {
       images: row.images,
       type: row.type,
       is_system: true,
-      updated_at: nowIso
+      updated_at: nowIso,
     };
   });
 
@@ -318,7 +334,7 @@ async function main() {
   console.log(`System exercises upserted: ${payload.length}`);
 }
 
-main().catch(error => {
+main().catch((error) => {
   console.error(error);
   process.exit(1);
 });

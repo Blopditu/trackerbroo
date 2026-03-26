@@ -20,7 +20,7 @@ type PushSubscriptionRow = {
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type'
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
 const GYM_BODIES = [
@@ -73,7 +73,7 @@ const GYM_BODIES = [
   'Broo trainiert, als haette Sanji heute Beintraining angeordnet.',
   'Broo macht heute ernst wie ein Captain vor dem Bankai.',
   'Broo hebt, als waere das nur das Ende vom Warm-up.',
-  'Broo trainiert, als wuerde Guy-sensei sagen: Das reicht noch lange nicht.'
+  'Broo trainiert, als wuerde Guy-sensei sagen: Das reicht noch lange nicht.',
 ] as const;
 
 const FOOD_BODIES = [
@@ -126,7 +126,7 @@ const FOOD_BODIES = [
   'Broo macht Makros, als muesste Chakra dringend aufgefuellt werden.',
   'Broo laedt Protein nach, als haette Kakashi wieder das Fruehstueck verpasst.',
   'Broo isst, als waere Ramen heute ausnahmsweise vernuenftig geworden.',
-  'Broo macht heute so saubere Makros, dass sogar Snorlax klatschen wuerde.'
+  'Broo macht heute so saubere Makros, dass sogar Snorlax klatschen wuerde.',
 ] as const;
 
 const STEPS_BODIES = [
@@ -179,7 +179,7 @@ const STEPS_BODIES = [
   'Broo laeuft, als wuerde Dobby sagen, selber gehen ist besser.',
   'Broo macht Schritte, als haette Hermine den Lift verzaubert und verschwinden lassen.',
   'Broo bewegt sich, als waere jeder Flur heute ein eigener Bossrun.',
-  'Broo laeuft, als haetten die Fussgewichte wirklich endgueltig den Boden beruehrt.'
+  'Broo laeuft, als haetten die Fussgewichte wirklich endgueltig den Boden beruehrt.',
 ] as const;
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
@@ -195,7 +195,7 @@ if (vapidPublicKey && vapidPrivateKey) {
   webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
 }
 
-Deno.serve(async req => {
+Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
@@ -204,7 +204,7 @@ Deno.serve(async req => {
     console.error('Push function missing env vars', {
       hasSupabaseUrl: Boolean(supabaseUrl),
       hasPublishableKey: Boolean(supabasePublishableKey),
-      hasServiceRoleKey: Boolean(supabaseServiceRoleKey)
+      hasServiceRoleKey: Boolean(supabaseServiceRoleKey),
     });
     return json({ error: 'Supabase env vars are missing.' }, 500);
   }
@@ -216,10 +216,10 @@ Deno.serve(async req => {
   const authHeader = req.headers.get('Authorization') ?? '';
   const accessToken = authHeader.replace(/^Bearer\s+/i, '').trim();
   const userClient = createClient(supabaseUrl, supabasePublishableKey, {
-    auth: { persistSession: false, autoRefreshToken: false }
+    auth: { persistSession: false, autoRefreshToken: false },
   });
   const serviceClient = createClient(supabaseUrl, supabaseServiceRoleKey, {
-    auth: { persistSession: false, autoRefreshToken: false }
+    auth: { persistSession: false, autoRefreshToken: false },
   });
 
   if (!accessToken) {
@@ -227,17 +227,14 @@ Deno.serve(async req => {
     return json({ error: 'Missing bearer token' }, 401);
   }
 
-  const {
-    data: claimsData,
-    error: claimsError
-  } = await userClient.auth.getClaims(accessToken);
+  const { data: claimsData, error: claimsError } = await userClient.auth.getClaims(accessToken);
   const userId = typeof claimsData?.claims?.sub === 'string' ? claimsData.claims.sub : null;
   if (!userId) {
     console.error('Push auth getClaims failed', {
       claimsError,
       tokenPrefix: accessToken.slice(0, 16),
       authHeaderPresent: Boolean(authHeader),
-      hasPublishableKey: Boolean(supabasePublishableKey)
+      hasPublishableKey: Boolean(supabasePublishableKey),
     });
     return json({ error: claimsError?.message || 'Unauthorized' }, 401);
   }
@@ -281,7 +278,7 @@ Deno.serve(async req => {
       return json({ error: subscriberError.message }, 500);
     }
 
-    targetUserIds = Array.from(new Set((subscriberRows || []).map(row => String(row.user_id))));
+    targetUserIds = Array.from(new Set((subscriberRows || []).map((row) => String(row.user_id))));
 
     if (body.postType === 'gym_checkin') {
       title = `${actorName} war im Gym`;
@@ -322,11 +319,11 @@ Deno.serve(async req => {
         onActionClick: {
           default: {
             operation: 'openWindow',
-            url
-          }
-        }
-      }
-    }
+            url,
+          },
+        },
+      },
+    },
   });
 
   let sent = 0;
@@ -339,11 +336,11 @@ Deno.serve(async req => {
           endpoint: subscription.endpoint,
           keys: {
             p256dh: subscription.p256dh,
-            auth: subscription.auth
-          }
+            auth: subscription.auth,
+          },
         },
         payload,
-        { TTL: 60 }
+        { TTL: 60 },
       );
       sent += 1;
     } catch (error) {
@@ -357,10 +354,7 @@ Deno.serve(async req => {
   }
 
   if (staleSubscriptionIds.length > 0) {
-    await serviceClient
-      .from('push_subscriptions')
-      .delete()
-      .in('id', staleSubscriptionIds);
+    await serviceClient.from('push_subscriptions').delete().in('id', staleSubscriptionIds);
   }
 
   return json({ sent, removed: staleSubscriptionIds.length }, 200);
@@ -371,8 +365,8 @@ function json(payload: Record<string, unknown>, status: number): Response {
     status,
     headers: {
       ...corsHeaders,
-      'Content-Type': 'application/json'
-    }
+      'Content-Type': 'application/json',
+    },
   });
 }
 

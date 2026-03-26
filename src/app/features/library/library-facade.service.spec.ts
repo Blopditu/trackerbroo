@@ -9,7 +9,7 @@ import { LibraryFacadeService } from './library-facade.service';
 
 function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void } {
   let resolve!: (value: T) => void;
-  const promise = new Promise<T>(resolver => {
+  const promise = new Promise<T>((resolver) => {
     resolve = resolver;
   });
   return { promise, resolve };
@@ -31,23 +31,23 @@ function createSupabaseClientStub() {
         return {
           insert: vi.fn(() => ({
             select: vi.fn(() => ({
-              single: ingredientsInsertSingle
-            }))
+              single: ingredientsInsertSingle,
+            })),
           })),
           update: vi.fn(() => ({
             eq: vi.fn(() => ({
               eq: vi.fn(() => ({
                 select: vi.fn(() => ({
-                  single: ingredientsUpdateSingle
-                }))
-              }))
-            }))
+                  single: ingredientsUpdateSingle,
+                })),
+              })),
+            })),
           })),
           delete: vi.fn(() => ({
             eq: vi.fn(() => ({
-              eq: ingredientsDeleteEq
-            }))
-          }))
+              eq: ingredientsDeleteEq,
+            })),
+          })),
         };
       }
 
@@ -55,33 +55,33 @@ function createSupabaseClientStub() {
         return {
           insert: vi.fn(() => ({
             select: vi.fn(() => ({
-              single: mealsInsertSingle
-            }))
+              single: mealsInsertSingle,
+            })),
           })),
           update: vi.fn(() => ({
             eq: vi.fn(() => ({
-              eq: mealsUpdateEq
-            }))
+              eq: mealsUpdateEq,
+            })),
           })),
           delete: vi.fn(() => ({
             eq: vi.fn(() => ({
-              eq: mealsDeleteEq
-            }))
-          }))
+              eq: mealsDeleteEq,
+            })),
+          })),
         };
       }
 
       if (table === 'meal_items') {
         return {
           delete: vi.fn(() => ({
-            eq: mealItemsDeleteEq
+            eq: mealItemsDeleteEq,
           })),
-          insert: mealItemsInsert
+          insert: mealItemsInsert,
         };
       }
 
       throw new Error(`Unexpected table ${table}`);
-    })
+    }),
   };
 
   return {
@@ -93,7 +93,7 @@ function createSupabaseClientStub() {
     mealsUpdateEq,
     mealsDeleteEq,
     mealItemsDeleteEq,
-    mealItemsInsert
+    mealItemsInsert,
   };
 }
 
@@ -112,7 +112,7 @@ describe('LibraryFacadeService', () => {
     protein_per_100: 11,
     carbs_per_100: 4,
     fat_per_100: 0,
-    created_at: '2026-03-19T00:00:00Z'
+    created_at: '2026-03-19T00:00:00Z',
   };
   const ingredientTwo: Ingredient = {
     ...ingredient,
@@ -121,19 +121,21 @@ describe('LibraryFacadeService', () => {
     kcal_per_100: 89,
     protein_per_100: 1.1,
     carbs_per_100: 23,
-    fat_per_100: 0.3
+    fat_per_100: 0.3,
   };
   const meal: Meal = {
     id: 'meal-1',
     owner_id: 'user-1',
     name: 'Skyr Bowl',
-    created_at: '2026-03-19T00:00:00Z'
+    created_at: '2026-03-19T00:00:00Z',
   };
-  const mealItems: MealItem[] = [{
-    meal_id: 'meal-1',
-    ingredient_id: 'ingredient-1',
-    grams: 200
-  }];
+  const mealItems: MealItem[] = [
+    {
+      meal_id: 'meal-1',
+      ingredient_id: 'ingredient-1',
+      grams: 200,
+    },
+  ];
 
   let facade: LibraryFacadeService;
   let authUser: ReturnType<typeof signal<{ id: string } | null>>;
@@ -152,32 +154,32 @@ describe('LibraryFacadeService', () => {
       loadIngredients: vi.fn(),
       loadMeals: vi.fn(),
       setIngredientsSnapshot: vi.fn(),
-      setMealsSnapshot: vi.fn()
+      setMealsSnapshot: vi.fn(),
     };
 
     supabase = createSupabaseClientStub();
 
     libraryData.loadIngredients.mockResolvedValue({
       ingredients: [ingredient, ingredientTwo],
-      fetchedAt: '2026-03-19T00:00:00Z'
+      fetchedAt: '2026-03-19T00:00:00Z',
     });
     libraryData.loadMeals.mockResolvedValue({
       meals: [meal],
       mealItems,
       mealMacros: {
-        'meal-1': { kcal: 120, protein: 22, carbs: 8, fat: 0 }
+        'meal-1': { kcal: 120, protein: 22, carbs: 8, fat: 0 },
       },
-      fetchedAt: '2026-03-19T00:00:00Z'
+      fetchedAt: '2026-03-19T00:00:00Z',
     });
 
     supabase.ingredientsInsertSingle.mockResolvedValue({
       data: { ...ingredient, id: 'ingredient-confirmed' },
-      error: null
+      error: null,
     });
     supabase.ingredientsDeleteEq.mockResolvedValue({ error: null });
     supabase.mealsInsertSingle.mockResolvedValue({
       data: { ...meal, id: 'meal-confirmed' },
-      error: null
+      error: null,
     });
     supabase.mealsDeleteEq.mockResolvedValue({ error: null });
     supabase.mealItemsDeleteEq.mockResolvedValue({ error: null });
@@ -188,8 +190,8 @@ describe('LibraryFacadeService', () => {
         LibraryFacadeService,
         { provide: AuthService, useValue: { user: authUser } },
         { provide: LibraryDataService, useValue: libraryData as unknown as LibraryDataService },
-        { provide: SupabaseService, useValue: { client: supabase.client } }
-      ]
+        { provide: SupabaseService, useValue: { client: supabase.client } },
+      ],
     });
 
     facade = TestBed.inject(LibraryFacadeService);
@@ -217,7 +219,7 @@ describe('LibraryFacadeService', () => {
     const manyIngredients = Array.from({ length: 55 }, (_, index) => ({
       ...ingredient,
       id: `ingredient-${index + 1}`,
-      name: `Ingredient ${index + 1}`
+      name: `Ingredient ${index + 1}`,
     }));
 
     facade.ingredients.set(manyIngredients);
@@ -241,7 +243,7 @@ describe('LibraryFacadeService', () => {
     const manyMeals = Array.from({ length: 30 }, (_, index) => ({
       ...meal,
       id: `meal-${index + 1}`,
-      name: `Meal ${index + 1}`
+      name: `Meal ${index + 1}`,
     }));
 
     facade.meals.set(manyMeals);
@@ -302,13 +304,13 @@ describe('LibraryFacadeService', () => {
       meals: [{ ...meal, id: 'meal-new', name: 'Newest' }],
       mealItems: [],
       mealMacros: { 'meal-new': { kcal: 0, protein: 0, carbs: 0, fat: 0 } },
-      fetchedAt: '2026-03-19T01:00:00Z'
+      fetchedAt: '2026-03-19T01:00:00Z',
     });
     first.resolve({
       meals: [{ ...meal, id: 'meal-old', name: 'Older' }],
       mealItems: [],
       mealMacros: { 'meal-old': { kcal: 0, protein: 0, carbs: 0, fat: 0 } },
-      fetchedAt: '2026-03-19T00:00:00Z'
+      fetchedAt: '2026-03-19T00:00:00Z',
     });
 
     await Promise.all([loadOne, loadTwo]);
@@ -325,7 +327,7 @@ describe('LibraryFacadeService', () => {
       kcal_per_100: 400,
       protein_per_100: 80,
       carbs_per_100: 8,
-      fat_per_100: 6
+      fat_per_100: 6,
     });
 
     const save = facade.saveIngredient();
@@ -343,7 +345,9 @@ describe('LibraryFacadeService', () => {
     facade.ingredientsLoaded.set(true);
     facade.meals.set([meal]);
     facade.mealsLoaded.set(true);
-    (facade as unknown as { allMealItems: { set: (items: MealItem[]) => void } }).allMealItems.set(mealItems);
+    (facade as unknown as { allMealItems: { set: (items: MealItem[]) => void } }).allMealItems.set(
+      mealItems,
+    );
 
     facade.editingMeal.set(null);
     facade.mealForm.controls.name.setValue('Protein Bowl');
@@ -368,11 +372,11 @@ describe('LibraryFacadeService', () => {
       kcal_per_100: 400,
       protein_per_100: 80,
       carbs_per_100: 8,
-      fat_per_100: 6
+      fat_per_100: 6,
     });
     supabase.ingredientsInsertSingle.mockResolvedValueOnce({
       data: null,
-      error: new Error('write failed')
+      error: new Error('write failed'),
     });
 
     const saved = await facade.saveIngredient();

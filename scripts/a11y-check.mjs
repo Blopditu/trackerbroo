@@ -46,7 +46,7 @@ async function runAxeOnHtml(filePath) {
   html = html.replace(/<html(?![^>]*\blang=)([^>]*)>/i, '<html lang=\"de\"$1>');
   const dom = new JSDOM(html, {
     url: 'https://trackerbroo.local/',
-    runScripts: 'dangerously'
+    runScripts: 'dangerously',
   });
 
   const { window } = dom;
@@ -56,9 +56,9 @@ async function runAxeOnHtml(filePath) {
   const results = await window.axe.run(window.document, {
     runOnly: {
       type: 'tag',
-      values: ['wcag2a', 'wcag2aa']
+      values: ['wcag2a', 'wcag2aa'],
     },
-    resultTypes: ['violations']
+    resultTypes: ['violations'],
   });
 
   window.close();
@@ -84,7 +84,9 @@ async function main() {
   for (const file of files) {
     const route = routeFromFile(file);
     const violations = await runAxeOnHtml(file);
-    const severe = violations.filter(item => item.impact === 'critical' || item.impact === 'serious');
+    const severe = violations.filter(
+      (item) => item.impact === 'critical' || item.impact === 'serious',
+    );
 
     if (severe.length === 0) {
       console.log(`PASS ${route}`);

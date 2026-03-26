@@ -15,17 +15,17 @@ export interface PreviousExercisePerformanceSet {
 
 export function applyPreviousWorkoutPrefill<T extends GymExecutionSetLike>(
   sets: readonly T[],
-  previousPerformance: readonly PreviousExercisePerformanceSet[]
+  previousPerformance: readonly PreviousExercisePerformanceSet[],
 ): { nextSets: T[]; changed: boolean } {
   const previousBySetNumber = new Map(
     previousPerformance
-      .filter(setRow => !setRow.is_warmup)
-      .map(setRow => [setRow.set_number, setRow] as const)
+      .filter((setRow) => !setRow.is_warmup)
+      .map((setRow) => [setRow.set_number, setRow] as const),
   );
 
   let changed = false;
 
-  const nextSets = sets.map(setRow => {
+  const nextSets = sets.map((setRow) => {
     if (setRow.isWarmup) {
       return setRow;
     }
@@ -46,7 +46,7 @@ export function applyPreviousWorkoutPrefill<T extends GymExecutionSetLike>(
     return {
       ...setRow,
       weightKg: nextWeight,
-      reps: nextReps
+      reps: nextReps,
     };
   });
 
@@ -55,9 +55,9 @@ export function applyPreviousWorkoutPrefill<T extends GymExecutionSetLike>(
 
 export function carryForwardCompletedSet<T extends GymExecutionSetLike>(
   sets: readonly T[],
-  completedClientRef: string
+  completedClientRef: string,
 ): { nextSets: T[]; carriedSetClientRef: string | null } {
-  const completedIndex = sets.findIndex(setRow => setRow.clientRef === completedClientRef);
+  const completedIndex = sets.findIndex((setRow) => setRow.clientRef === completedClientRef);
   if (completedIndex < 0) {
     return { nextSets: [...sets], carriedSetClientRef: null };
   }
@@ -67,9 +67,7 @@ export function carryForwardCompletedSet<T extends GymExecutionSetLike>(
     return { nextSets: [...sets], carriedSetClientRef: null };
   }
 
-  const nextIndex = sets.findIndex(
-    (setRow, index) => index > completedIndex && !setRow.isWarmup
-  );
+  const nextIndex = sets.findIndex((setRow, index) => index > completedIndex && !setRow.isWarmup);
   if (nextIndex < 0) {
     return { nextSets: [...sets], carriedSetClientRef: null };
   }
@@ -84,13 +82,13 @@ export function carryForwardCompletedSet<T extends GymExecutionSetLike>(
       ? {
           ...setRow,
           weightKg: completedSet.weightKg,
-          reps: completedSet.reps
+          reps: completedSet.reps,
         }
-      : setRow
+      : setRow,
   );
 
   return {
     nextSets,
-    carriedSetClientRef: nextSet.clientRef
+    carriedSetClientRef: nextSet.clientRef,
   };
 }

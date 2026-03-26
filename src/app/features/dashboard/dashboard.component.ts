@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal, OnInit } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  signal,
+  OnInit,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SupabaseService } from '../../core/supabase.service';
 import { AuthService } from '../../core/auth.service';
@@ -13,7 +20,9 @@ import { formatAppError } from '../../core/error-format';
   template: `
     <main class="page dashboard-page">
       @if (errorMessage()) {
-        <p class="toast error" role="status" aria-live="polite" aria-atomic="true">{{ errorMessage() }}</p>
+        <p class="toast error" role="status" aria-live="polite" aria-atomic="true">
+          {{ errorMessage() }}
+        </p>
       }
 
       <header class="panel halftone">
@@ -77,107 +86,109 @@ import { formatAppError } from '../../core/error-format';
       </section>
     </main>
   `,
-  styles: [`
-    .dashboard-page {
-      display: grid;
-      gap: 0.75rem;
-    }
+  styles: [
+    `
+      .dashboard-page {
+        display: grid;
+        gap: 0.75rem;
+      }
 
-    h1 {
-      margin-top: 0.2rem;
-      font-size: 1.7rem;
-    }
+      h1 {
+        margin-top: 0.2rem;
+        font-size: 1.7rem;
+      }
 
-    .lead {
-      margin: 0.35rem 0 0;
-      color: var(--ink-500);
-      font-size: var(--text-sm);
-      font-weight: 600;
-    }
+      .lead {
+        margin: 0.35rem 0 0;
+        color: var(--ink-500);
+        font-size: var(--text-sm);
+        font-weight: 600;
+      }
 
-    .section-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 0.45rem;
-      margin-bottom: 0.65rem;
-    }
+      .section-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.45rem;
+        margin-bottom: 0.65rem;
+      }
 
-    .manga-badge {
-      border: 1px solid var(--border-strong);
-      border-radius: 999px;
-      background: var(--bg-muted);
-      color: var(--ink-700);
-      padding: 0.2rem 0.55rem;
-      font-size: var(--text-xs);
-      font-weight: 800;
-      letter-spacing: 0.05em;
-    }
+      .manga-badge {
+        border: 1px solid var(--border-strong);
+        border-radius: 999px;
+        background: var(--bg-muted);
+        color: var(--ink-700);
+        padding: 0.2rem 0.55rem;
+        font-size: var(--text-xs);
+        font-weight: 800;
+        letter-spacing: 0.05em;
+      }
 
-    .today-cards {
-      display: grid;
-      gap: 0.5rem;
-    }
+      .today-cards {
+        display: grid;
+        gap: 0.5rem;
+      }
 
-    .summary-card {
-      align-items: flex-start;
-      flex-direction: column;
-    }
+      .summary-card {
+        align-items: flex-start;
+        flex-direction: column;
+      }
 
-    .sub {
-      margin-top: 0.2rem;
-      color: var(--ink-500);
-      font-weight: 700;
-      font-size: var(--text-sm);
-    }
+      .sub {
+        margin-top: 0.2rem;
+        color: var(--ink-500);
+        font-weight: 700;
+        font-size: var(--text-sm);
+      }
 
-    .macro-line {
-      margin-top: 0.45rem;
-      display: flex;
-      gap: 0.35rem;
-      flex-wrap: wrap;
-    }
+      .macro-line {
+        margin-top: 0.45rem;
+        display: flex;
+        gap: 0.35rem;
+        flex-wrap: wrap;
+      }
 
-    .week-chart {
-      display: grid;
-      grid-template-columns: repeat(7, minmax(0, 1fr));
-      gap: 0.4rem;
-      min-height: 196px;
-      align-items: end;
-    }
+      .week-chart {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 0.4rem;
+        min-height: 196px;
+        align-items: end;
+      }
 
-    .bar-col {
-      display: grid;
-      gap: 0.22rem;
-      justify-items: center;
-    }
+      .bar-col {
+        display: grid;
+        gap: 0.22rem;
+        justify-items: center;
+      }
 
-    .bar-wrap {
-      width: 100%;
-      height: 132px;
-      border: 1px solid var(--border-strong);
-      border-radius: 10px;
-      background: #111a27;
-      display: flex;
-      align-items: end;
-      padding: 0.18rem;
-    }
+      .bar-wrap {
+        width: 100%;
+        height: 132px;
+        border: 1px solid var(--border-strong);
+        border-radius: 10px;
+        background: #111a27;
+        display: flex;
+        align-items: end;
+        padding: 0.18rem;
+      }
 
-    .bar {
-      width: 100%;
-      border-radius: 7px;
-      min-height: 10px;
-      background: var(--accent-500);
-      border: 1px solid var(--accent-600);
-    }
+      .bar {
+        width: 100%;
+        border-radius: 7px;
+        min-height: 10px;
+        background: var(--accent-500);
+        border: 1px solid var(--accent-600);
+      }
 
-    .day,
-    .val {
-      font-size: var(--text-xs);
-      font-weight: 700;
-      color: var(--ink-500);
-    }
-  `]
+      .day,
+      .val {
+        font-size: var(--text-xs);
+        font-weight: 700;
+        color: var(--ink-500);
+      }
+    `,
+  ],
 })
 export class DashboardComponent implements OnInit {
   todaySummaries = signal<DailySummary[]>([]);
@@ -189,8 +200,8 @@ export class DashboardComponent implements OnInit {
   proteinHitDays = computed(() => {
     const uniqueDays = new Set(
       this.weekSummaries()
-        .filter(item => Number(item.protein) >= 100)
-        .map(item => item.day)
+        .filter((item) => Number(item.protein) >= 100)
+        .map((item) => item.day),
     );
     return uniqueDays.size;
   });
@@ -211,7 +222,7 @@ export class DashboardComponent implements OnInit {
       date.setDate(today.getDate() - i);
       this.weekDays.push({
         date: date.toISOString().split('T')[0],
-        label: date.toLocaleDateString('de-DE', { weekday: 'short' })
+        label: date.toLocaleDateString('de-DE', { weekday: 'short' }),
       });
     }
   }
@@ -241,7 +252,9 @@ export class DashboardComponent implements OnInit {
     const { data: todayData, error: todayError } = await todayQuery;
 
     if (todayError) {
-      this.errorMessage.set(formatAppError(todayError, 'Heute-Zusammenfassungen konnten nicht geladen werden'));
+      this.errorMessage.set(
+        formatAppError(todayError, 'Heute-Zusammenfassungen konnten nicht geladen werden'),
+      );
       this.loading.set(false);
       return;
     }
@@ -261,7 +274,9 @@ export class DashboardComponent implements OnInit {
     const { data: weekData, error: weekError } = await weekQuery;
 
     if (weekError) {
-      this.errorMessage.set(formatAppError(weekError, 'Wochen-Zusammenfassungen konnten nicht geladen werden'));
+      this.errorMessage.set(
+        formatAppError(weekError, 'Wochen-Zusammenfassungen konnten nicht geladen werden'),
+      );
       this.loading.set(false);
       return;
     }
@@ -273,13 +288,13 @@ export class DashboardComponent implements OnInit {
   dayTotal(date: string) {
     return Math.round(
       this.weekSummaries()
-        .filter(item => item.day === date)
-        .reduce((sum, item) => sum + Number(item.kcal), 0)
+        .filter((item) => item.day === date)
+        .reduce((sum, item) => sum + Number(item.kcal), 0),
     );
   }
 
   barHeight(date: string) {
-    const maxKcal = Math.max(...this.weekDays.map(day => this.dayTotal(day.date)), 1);
+    const maxKcal = Math.max(...this.weekDays.map((day) => this.dayTotal(day.date)), 1);
     return Math.min((this.dayTotal(date) / maxKcal) * 100, 100);
   }
 

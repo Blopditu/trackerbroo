@@ -1,4 +1,4 @@
-import { TrainingDashboardDay, TrainingGraphDataPoint } from '../../core/training/training-data.service';
+import { TrainingGraphDataPoint } from '../../core/training/training-data.service';
 import { TrainingGraphConfig } from '../../core/types';
 import { addDays, toIsoDate } from '../../core/training/training-utils';
 
@@ -16,9 +16,12 @@ export function sortWidgetsByPosition(widgets: TrainingGraphConfig[]): TrainingG
   return [...widgets].sort((a, b) => a.position - b.position);
 }
 
-export function clearProgressSeries(): { tenRmSeries: TrainingGraphDataPoint[]; exerciseVolumeSeries: TrainingGraphDataPoint[] } {
+export function clearProgressSeries(): {
+  tenRmSeries: TrainingGraphDataPoint[];
+  exerciseVolumeSeries: TrainingGraphDataPoint[];
+} {
   return {
     tenRmSeries: [],
-    exerciseVolumeSeries: []
+    exerciseVolumeSeries: [],
   };
 }

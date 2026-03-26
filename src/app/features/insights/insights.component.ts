@@ -1,11 +1,21 @@
-import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { LucideAngularModule, Activity, ChartLine, Dumbbell, Flame } from 'lucide-angular';
 import { AuthService } from '../../core/auth.service';
 import { SupabaseService } from '../../core/supabase.service';
 import { formatAppError } from '../../core/error-format';
-import { TrainingDataService, TrainingGraphDataPoint } from '../../core/training/training-data.service';
+import {
+  TrainingDataService,
+  TrainingGraphDataPoint,
+} from '../../core/training/training-data.service';
 import { InteractionTelemetryService } from '../../core/interaction-telemetry.service';
 import { BottomSheetComponent } from '../../ui/minimal/bottom-sheet.component';
 
@@ -23,7 +33,9 @@ type DetailKind = 'nutrition' | 'weight' | 'workouts' | 'volume';
   template: `
     <main class="page insights-page">
       @if (errorMessage()) {
-        <p class="toast error" role="status" aria-live="polite" aria-atomic="true">{{ errorMessage() }}</p>
+        <p class="toast error" role="status" aria-live="polite" aria-atomic="true">
+          {{ errorMessage() }}
+        </p>
       }
 
       <section class="panel hero insights-hero">
@@ -32,25 +44,50 @@ type DetailKind = 'nutrition' | 'weight' | 'workouts' | 'volume';
         <p class="subtle">Ernährung, Gewicht und Training in einer ruhigeren Analysefläche.</p>
 
         <div class="range-toggle" role="group" aria-label="Zeitraum für Insights">
-          <button mat-flat-button type="button" class="range-btn" [class.active]="rangeDays() === 7" (click)="setRangeDays(7)">
+          <button
+            mat-flat-button
+            type="button"
+            class="range-btn"
+            [class.active]="rangeDays() === 7"
+            (click)="setRangeDays(7)"
+          >
             7 Tage
           </button>
-          <button mat-flat-button type="button" class="range-btn" [class.active]="rangeDays() === 30" (click)="setRangeDays(30)">
+          <button
+            mat-flat-button
+            type="button"
+            class="range-btn"
+            [class.active]="rangeDays() === 30"
+            (click)="setRangeDays(30)"
+          >
             30 Tage
           </button>
         </div>
       </section>
 
       <section class="insights-grid" aria-label="Trendkarten">
-        <button type="button" class="panel trend-card featured" (click)="openDetail('nutrition')" aria-label="Ernährungsverlauf ansehen">
+        <button
+          type="button"
+          class="panel trend-card featured"
+          (click)="openDetail('nutrition')"
+          aria-label="Ernährungsverlauf ansehen"
+        >
           <div class="card-head">
-            <h2><lucide-icon [img]="icons.flame" class="icon" aria-hidden="true"></lucide-icon> Ernährung</h2>
+            <h2>
+              <lucide-icon [img]="icons.flame" class="icon" aria-hidden="true"></lucide-icon>
+              Ernährung
+            </h2>
             <span class="badge">{{ rangeDays() }}d</span>
           </div>
           <p class="headline">{{ latestLabel(nutritionSeries(), 'kcal', 0) }}</p>
           <p class="meta">Veränderung {{ deltaLabel(nutritionSeries(), 'kcal', 0) }}</p>
           @if (nutritionSeries().length > 0) {
-            <svg class="mini-graph" viewBox="0 0 100 26" preserveAspectRatio="none" aria-hidden="true">
+            <svg
+              class="mini-graph"
+              viewBox="0 0 100 26"
+              preserveAspectRatio="none"
+              aria-hidden="true"
+            >
               <polyline [attr.points]="toLinePoints(nutritionSeries())"></polyline>
             </svg>
           } @else {
@@ -58,15 +95,28 @@ type DetailKind = 'nutrition' | 'weight' | 'workouts' | 'volume';
           }
         </button>
 
-        <button type="button" class="panel trend-card" (click)="openDetail('weight')" aria-label="Gewichtstrend ansehen">
+        <button
+          type="button"
+          class="panel trend-card"
+          (click)="openDetail('weight')"
+          aria-label="Gewichtstrend ansehen"
+        >
           <div class="card-head">
-            <h2><lucide-icon [img]="icons.chartLine" class="icon" aria-hidden="true"></lucide-icon> Gewicht</h2>
+            <h2>
+              <lucide-icon [img]="icons.chartLine" class="icon" aria-hidden="true"></lucide-icon>
+              Gewicht
+            </h2>
             <span class="badge">{{ rangeDays() }}d</span>
           </div>
           <p class="headline">{{ latestLabel(weightSeries(), 'kg', 1) }}</p>
           <p class="meta">Veränderung {{ deltaLabel(weightSeries(), 'kg', 1) }}</p>
           @if (weightSeries().length > 0) {
-            <svg class="mini-graph" viewBox="0 0 100 26" preserveAspectRatio="none" aria-hidden="true">
+            <svg
+              class="mini-graph"
+              viewBox="0 0 100 26"
+              preserveAspectRatio="none"
+              aria-hidden="true"
+            >
               <polyline [attr.points]="toLinePoints(weightSeries())"></polyline>
             </svg>
           } @else {
@@ -74,33 +124,63 @@ type DetailKind = 'nutrition' | 'weight' | 'workouts' | 'volume';
           }
         </button>
 
-        <button type="button" class="panel trend-card" (click)="openDetail('workouts')" aria-label="Workouttrend ansehen">
+        <button
+          type="button"
+          class="panel trend-card"
+          (click)="openDetail('workouts')"
+          aria-label="Workouttrend ansehen"
+        >
           <div class="card-head">
-            <h2><lucide-icon [img]="icons.dumbbell" class="icon" aria-hidden="true"></lucide-icon> Training</h2>
+            <h2>
+              <lucide-icon [img]="icons.dumbbell" class="icon" aria-hidden="true"></lucide-icon>
+              Training
+            </h2>
             <span class="badge">{{ rangeDays() }}d</span>
           </div>
           <p class="headline">{{ sumLabel(workoutSeries(), 'Sessions') }}</p>
           <p class="meta">Zuletzt {{ latestLabel(workoutSeries(), '', 0) }}</p>
-          <svg class="mini-graph" viewBox="0 0 100 26" preserveAspectRatio="none" aria-hidden="true">
+          <svg
+            class="mini-graph"
+            viewBox="0 0 100 26"
+            preserveAspectRatio="none"
+            aria-hidden="true"
+          >
             <polyline [attr.points]="toLinePoints(workoutSeries())"></polyline>
           </svg>
         </button>
 
-        <button type="button" class="panel trend-card" (click)="openDetail('volume')" aria-label="Volumentrend ansehen">
+        <button
+          type="button"
+          class="panel trend-card"
+          (click)="openDetail('volume')"
+          aria-label="Volumentrend ansehen"
+        >
           <div class="card-head">
-            <h2><lucide-icon [img]="icons.activity" class="icon" aria-hidden="true"></lucide-icon> Volumen</h2>
+            <h2>
+              <lucide-icon [img]="icons.activity" class="icon" aria-hidden="true"></lucide-icon>
+              Volumen
+            </h2>
             <span class="badge">{{ rangeDays() }}d</span>
           </div>
           <p class="headline">{{ sumLabel(volumeSeries(), 'kg') }}</p>
           <p class="meta">Veränderung {{ deltaLabel(volumeSeries(), 'kg', 0) }}</p>
-          <svg class="mini-graph" viewBox="0 0 100 26" preserveAspectRatio="none" aria-hidden="true">
+          <svg
+            class="mini-graph"
+            viewBox="0 0 100 26"
+            preserveAspectRatio="none"
+            aria-hidden="true"
+          >
             <polyline [attr.points]="toLinePoints(volumeSeries())"></polyline>
           </svg>
         </button>
       </section>
     </main>
 
-    <app-bottom-sheet [open]="activeDetail() !== null" [title]="detailTitle()" (closed)="closeDetail()">
+    <app-bottom-sheet
+      [open]="activeDetail() !== null"
+      [title]="detailTitle()"
+      (closed)="closeDetail()"
+    >
       <div class="sheet-stack">
         <div class="detail-head">
           <strong>{{ detailPrimaryValue() }}</strong>
@@ -108,12 +188,33 @@ type DetailKind = 'nutrition' | 'weight' | 'workouts' | 'volume';
         </div>
 
         <div class="range-toggle" role="group" aria-label="Zeitraum für die Detailansicht">
-          <button mat-flat-button type="button" class="range-btn" [class.active]="rangeDays() === 7" (click)="setRangeDays(7)">7 Tage</button>
-          <button mat-flat-button type="button" class="range-btn" [class.active]="rangeDays() === 30" (click)="setRangeDays(30)">30 Tage</button>
+          <button
+            mat-flat-button
+            type="button"
+            class="range-btn"
+            [class.active]="rangeDays() === 7"
+            (click)="setRangeDays(7)"
+          >
+            7 Tage
+          </button>
+          <button
+            mat-flat-button
+            type="button"
+            class="range-btn"
+            [class.active]="rangeDays() === 30"
+            (click)="setRangeDays(30)"
+          >
+            30 Tage
+          </button>
         </div>
 
         @if (detailSeries().length > 0) {
-          <svg class="detail-graph" viewBox="0 0 100 40" preserveAspectRatio="none" aria-label="Detailgraph">
+          <svg
+            class="detail-graph"
+            viewBox="0 0 100 40"
+            preserveAspectRatio="none"
+            aria-label="Detailgraph"
+          >
             <polyline [attr.points]="toDetailLinePoints()"></polyline>
             @for (point of detailChartPoints(); track point.date) {
               <circle
@@ -138,202 +239,204 @@ type DetailKind = 'nutrition' | 'weight' | 'workouts' | 'volume';
       </div>
     </app-bottom-sheet>
   `,
-  styles: [`
-    .insights-page {
-      display: grid;
-      gap: var(--layout-gap);
-    }
-
-    .insights-hero {
-      gap: 14px;
-      background:
-        radial-gradient(circle at top right, rgba(0, 228, 117, 0.09), transparent 30%),
-        linear-gradient(180deg, rgba(30, 32, 31, 0.98), rgba(18, 20, 19, 0.98));
-    }
-
-    .hero-kicker {
-      color: var(--shell-accent);
-      letter-spacing: 0.28em;
-      font-size: 11px;
-      font-weight: 800;
-    }
-
-    .hero h1 {
-      margin: 0;
-      font-size: clamp(2rem, 4vw, 2.9rem);
-      line-height: 0.96;
-      letter-spacing: -0.06em;
-    }
-
-    .subtle {
-      margin: 0;
-      color: var(--shell-ink-muted);
-      font-size: 0.96rem;
-      font-weight: 600;
-    }
-
-    .range-toggle {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 8px;
-    }
-
-    .range-btn {
-      min-height: var(--touch-target-compact);
-      border-radius: 999px;
-      background: rgba(20, 22, 21, 0.96);
-      color: var(--ui-ink-muted);
-      font-size: 12px;
-      font-weight: 800;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      justify-content: center;
-      width: 100%;
-    }
-
-    .range-btn.active {
-      background: linear-gradient(180deg, rgba(28, 40, 33, 0.98), rgba(20, 28, 24, 0.98));
-      color: var(--ui-primary);
-    }
-
-    .insights-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: var(--layout-gap);
-    }
-
-    .trend-card {
-      display: grid;
-      gap: 10px;
-      text-align: left;
-      width: 100%;
-      border-radius: 28px;
-      background: linear-gradient(180deg, rgba(28, 30, 29, 0.98), rgba(19, 21, 20, 0.98));
-      color: var(--ui-ink);
-      padding: var(--panel-padding);
-    }
-
-    .trend-card.featured {
-      grid-column: 1 / -1;
-      min-height: 15rem;
-      background:
-        radial-gradient(circle at top right, rgba(0, 228, 117, 0.08), transparent 34%),
-        linear-gradient(180deg, rgba(30, 34, 31, 0.98), rgba(20, 22, 21, 0.98));
-    }
-
-    .card-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .card-head h2 {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 16px;
-    }
-
-    .badge {
-      border-radius: 999px;
-      padding: 3px 8px;
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--shell-accent);
-      background: rgba(22, 25, 23, 0.94);
-    }
-
-    .headline {
-      margin: 0;
-      font-size: clamp(1.2rem, 3.4vw, 1.5rem);
-      font-weight: 700;
-      color: var(--ui-ink);
-    }
-
-    .meta {
-      margin: 0;
-      font-size: 12px;
-      color: var(--ui-ink-muted);
-      font-weight: 600;
-    }
-
-    .mini-graph,
-    .detail-graph {
-      width: 100%;
-      border-radius: 14px;
-      background: rgba(16, 18, 17, 0.96);
-    }
-
-    .mini-graph {
-      height: 56px;
-    }
-
-    .detail-graph {
-      height: 164px;
-    }
-
-    .mini-graph polyline,
-    .detail-graph polyline {
-      fill: none;
-      stroke: var(--ui-primary);
-      stroke-width: 2;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
-
-    .detail-dot {
-      fill: var(--ui-surface-3);
-      stroke: var(--ui-primary);
-      stroke-width: 0.8;
-      cursor: pointer;
-      transition: transform var(--motion-duration-short) var(--motion-easing-standard);
-      transform-origin: center;
-    }
-
-    .detail-dot.active {
-      fill: var(--ui-primary);
-      transform: scale(1.2);
-    }
-
-    .detail-dot:focus-visible {
-      outline: 2px solid var(--ui-primary);
-      outline-offset: 2px;
-    }
-
-    .detail-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      gap: 8px;
-    }
-
-    .detail-head strong {
-      font-size: 22px;
-      color: var(--ui-ink);
-    }
-
-    .detail-note,
-    .empty-note {
-      margin: 0;
-      color: var(--ui-ink-muted);
-      font-size: 12px;
-      font-weight: 600;
-    }
-
-    @media (max-width: 700px) {
-      .insights-grid {
-        grid-template-columns: 1fr;
+  styles: [
+    `
+      .insights-page {
+        display: grid;
+        gap: var(--layout-gap);
       }
-    }
-  `]
+
+      .insights-hero {
+        gap: 14px;
+        background:
+          radial-gradient(circle at top right, rgba(0, 228, 117, 0.09), transparent 30%),
+          linear-gradient(180deg, rgba(30, 32, 31, 0.98), rgba(18, 20, 19, 0.98));
+      }
+
+      .hero-kicker {
+        color: var(--shell-accent);
+        letter-spacing: 0.28em;
+        font-size: 11px;
+        font-weight: 800;
+      }
+
+      .hero h1 {
+        margin: 0;
+        font-size: clamp(2rem, 4vw, 2.9rem);
+        line-height: 0.96;
+        letter-spacing: -0.06em;
+      }
+
+      .subtle {
+        margin: 0;
+        color: var(--shell-ink-muted);
+        font-size: 0.96rem;
+        font-weight: 600;
+      }
+
+      .range-toggle {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .range-btn {
+        min-height: var(--touch-target-compact);
+        border-radius: 999px;
+        background: rgba(20, 22, 21, 0.96);
+        color: var(--ui-ink-muted);
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        justify-content: center;
+        width: 100%;
+      }
+
+      .range-btn.active {
+        background: linear-gradient(180deg, rgba(28, 40, 33, 0.98), rgba(20, 28, 24, 0.98));
+        color: var(--ui-primary);
+      }
+
+      .insights-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--layout-gap);
+      }
+
+      .trend-card {
+        display: grid;
+        gap: 10px;
+        text-align: left;
+        width: 100%;
+        border-radius: 28px;
+        background: linear-gradient(180deg, rgba(28, 30, 29, 0.98), rgba(19, 21, 20, 0.98));
+        color: var(--ui-ink);
+        padding: var(--panel-padding);
+      }
+
+      .trend-card.featured {
+        grid-column: 1 / -1;
+        min-height: 15rem;
+        background:
+          radial-gradient(circle at top right, rgba(0, 228, 117, 0.08), transparent 34%),
+          linear-gradient(180deg, rgba(30, 34, 31, 0.98), rgba(20, 22, 21, 0.98));
+      }
+
+      .card-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .card-head h2 {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 16px;
+      }
+
+      .badge {
+        border-radius: 999px;
+        padding: 3px 8px;
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--shell-accent);
+        background: rgba(22, 25, 23, 0.94);
+      }
+
+      .headline {
+        margin: 0;
+        font-size: clamp(1.2rem, 3.4vw, 1.5rem);
+        font-weight: 700;
+        color: var(--ui-ink);
+      }
+
+      .meta {
+        margin: 0;
+        font-size: 12px;
+        color: var(--ui-ink-muted);
+        font-weight: 600;
+      }
+
+      .mini-graph,
+      .detail-graph {
+        width: 100%;
+        border-radius: 14px;
+        background: rgba(16, 18, 17, 0.96);
+      }
+
+      .mini-graph {
+        height: 56px;
+      }
+
+      .detail-graph {
+        height: 164px;
+      }
+
+      .mini-graph polyline,
+      .detail-graph polyline {
+        fill: none;
+        stroke: var(--ui-primary);
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .detail-dot {
+        fill: var(--ui-surface-3);
+        stroke: var(--ui-primary);
+        stroke-width: 0.8;
+        cursor: pointer;
+        transition: transform var(--motion-duration-short) var(--motion-easing-standard);
+        transform-origin: center;
+      }
+
+      .detail-dot.active {
+        fill: var(--ui-primary);
+        transform: scale(1.2);
+      }
+
+      .detail-dot:focus-visible {
+        outline: 2px solid var(--ui-primary);
+        outline-offset: 2px;
+      }
+
+      .detail-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 8px;
+      }
+
+      .detail-head strong {
+        font-size: 22px;
+        color: var(--ui-ink);
+      }
+
+      .detail-note,
+      .empty-note {
+        margin: 0;
+        color: var(--ui-ink-muted);
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      @media (max-width: 700px) {
+        .insights-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    `,
+  ],
 })
 export class InsightsComponent implements OnInit {
   readonly icons = {
     flame: Flame,
     chartLine: ChartLine,
     dumbbell: Dumbbell,
-    activity: Activity
+    activity: Activity,
   };
 
   readonly rangeDays = signal<7 | 30>(30);
@@ -392,7 +495,7 @@ export class InsightsComponent implements OnInit {
       this.telemetry.completeJourney(this.graphJourneyId, 'success', {
         surface: 'insights',
         detail_kind: kind,
-        range_days: this.rangeDays()
+        range_days: this.rangeDays(),
       });
       this.graphJourneyId = null;
     }
@@ -463,20 +566,34 @@ export class InsightsComponent implements OnInit {
       return 'Tippe auf einen Punkt für Details.';
     }
 
-    const point = series.find(item => item.date === selectedDate);
+    const point = series.find((item) => item.date === selectedDate);
     if (!point) {
       return 'Tippe auf einen Punkt für Details.';
     }
 
     const detail = this.activeDetail();
-    const unit = detail === 'weight' ? 'kg' : detail === 'nutrition' ? 'kcal' : detail === 'workouts' ? 'Einheiten' : 'kg';
+    const unit =
+      detail === 'weight'
+        ? 'kg'
+        : detail === 'nutrition'
+          ? 'kcal'
+          : detail === 'workouts'
+            ? 'Einheiten'
+            : 'kg';
     const precision = detail === 'weight' ? 1 : 0;
     return `${point.date}: ${this.formatNumber(point.value, precision)} ${unit}`.trim();
   }
 
   detailPointAriaLabel(date: string, value: number): string {
     const detail = this.activeDetail();
-    const unit = detail === 'weight' ? 'Kilogramm' : detail === 'nutrition' ? 'Kilokalorien' : detail === 'workouts' ? 'Workouts' : 'Kilogramm Volumen';
+    const unit =
+      detail === 'weight'
+        ? 'Kilogramm'
+        : detail === 'nutrition'
+          ? 'Kilokalorien'
+          : detail === 'workouts'
+            ? 'Workouts'
+            : 'Kilogramm Volumen';
     const precision = detail === 'weight' ? 1 : 0;
     return `${date}, ${this.formatNumber(value, precision)} ${unit}`;
   }
@@ -487,7 +604,7 @@ export class InsightsComponent implements OnInit {
       return [];
     }
 
-    const values = series.map(item => item.value);
+    const values = series.map((item) => item.value);
     const min = Math.min(...values);
     const max = Math.max(...values);
     const range = Math.max(max - min, 1);
@@ -498,7 +615,7 @@ export class InsightsComponent implements OnInit {
       return {
         ...point,
         x: Number(x.toFixed(2)),
-        y: Number(y.toFixed(2))
+        y: Number(y.toFixed(2)),
       };
     });
   }
@@ -508,7 +625,7 @@ export class InsightsComponent implements OnInit {
     if (points.length === 0) {
       return '0,36 100,36';
     }
-    return points.map(point => `${point.x},${point.y}`).join(' ');
+    return points.map((point) => `${point.x},${point.y}`).join(' ');
   }
 
   toLinePoints(series: TrendPoint[]): string {
@@ -516,7 +633,7 @@ export class InsightsComponent implements OnInit {
       return '0,22 100,22';
     }
 
-    const values = series.map(point => point.value);
+    const values = series.map((point) => point.value);
     const min = Math.min(...values);
     const max = Math.max(...values);
     const range = Math.max(max - min, 1);
@@ -573,7 +690,7 @@ export class InsightsComponent implements OnInit {
 
     this.graphJourneyId = this.telemetry.startJourneyIfMissing('graph_check', {
       surface: 'insights',
-      range_days: this.rangeDays()
+      range_days: this.rangeDays(),
     });
 
     try {
@@ -581,7 +698,7 @@ export class InsightsComponent implements OnInit {
         this.fetchNutritionSeries(user.id, from, to),
         this.trainingData.getProgressSeries({ graphType: 'bodyweight', from, to }),
         this.trainingData.getProgressSeries({ graphType: 'workout_count', from, to }),
-        this.trainingData.getProgressSeries({ graphType: 'total_volume', from, to })
+        this.trainingData.getProgressSeries({ graphType: 'total_volume', from, to }),
       ]);
 
       this.nutritionSeries.set(nutritionRows);
@@ -595,7 +712,10 @@ export class InsightsComponent implements OnInit {
     } catch (error: unknown) {
       this.errorMessage.set(formatAppError(error, 'Insights konnten nicht geladen werden'));
       if (this.graphJourneyId) {
-        this.telemetry.failJourney(this.graphJourneyId, { surface: 'insights', reason: 'load_failed' });
+        this.telemetry.failJourney(this.graphJourneyId, {
+          surface: 'insights',
+          reason: 'load_failed',
+        });
         this.graphJourneyId = null;
       }
     }
@@ -616,13 +736,17 @@ export class InsightsComponent implements OnInit {
       .sort((a, b) => (a[0] < b[0] ? -1 : 1))
       .map(([date, value]) => ({
         date,
-        value: clampToZero ? Math.max(0, value) : value
+        value: clampToZero ? Math.max(0, value) : value,
       }));
 
     return ordered;
   }
 
-  private async fetchNutritionSeries(userId: string, from: string, to: string): Promise<TrendPoint[]> {
+  private async fetchNutritionSeries(
+    userId: string,
+    from: string,
+    to: string,
+  ): Promise<TrendPoint[]> {
     const { data, error } = await this.supabaseService.client
       .from('daily_summaries')
       .select('day,kcal')
@@ -643,9 +767,9 @@ export class InsightsComponent implements OnInit {
     }
 
     const days = this.isoRange(from, to);
-    return days.map(day => ({
+    return days.map((day) => ({
       date: day,
-      value: Number((kcalByDay.get(day) || 0).toFixed(0))
+      value: Number((kcalByDay.get(day) || 0).toFixed(0)),
     }));
   }
 
