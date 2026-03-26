@@ -1693,7 +1693,7 @@ export class TodayComponent implements OnInit {
     }
     return states;
   });
-  readonly canGoNextDay = computed(() => this.today() !== this.realToday);
+  readonly canGoNextDay = computed(() => true);
   readonly foodQueueCount = computed(() => this.foodQueue().length);
   readonly canShareProteinMilestone = computed(
     () => this.proteinToday() >= this.proteinGoal && !this.proteinMilestonePosted(),
