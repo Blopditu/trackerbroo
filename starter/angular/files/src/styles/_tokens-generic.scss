@@ -1,0 +1,123 @@
+// Reusable semantic design tokens for starters or product-agnostic apps.
+// Keep runtime-only values such as chart geometry or gesture thresholds in
+// TypeScript constants rather than CSS tokens.
+
+@mixin semantic-light() {
+  --color-bg: #f5f7fb;
+  --color-surface: #ffffff;
+  --color-surface-muted: #eef2f7;
+  --color-surface-raised: #ffffff;
+
+  --color-text: #172033;
+  --color-text-secondary: #4d5b75;
+  --color-text-muted: color-mix(in srgb, #4d5b75 72%, transparent);
+  --color-text-on-primary: #f8fbff;
+
+  --color-border-subtle: rgba(23, 32, 51, 0.08);
+  --color-border: rgba(23, 32, 51, 0.14);
+  --color-border-strong: rgba(23, 32, 51, 0.22);
+
+  --color-primary: #2563eb;
+  --color-primary-strong: #1d4ed8;
+  --color-primary-muted: rgba(37, 99, 235, 0.14);
+  --color-focus-ring: rgba(37, 99, 235, 0.32);
+
+  --color-success: #1f9d68;
+  --color-warning: #b7791f;
+  --color-danger: #c2413a;
+  --color-danger-muted: color-mix(in srgb, #c2413a 14%, #ffffff);
+  --color-danger-text: #5f1d18;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-pill: 999px;
+
+  --shadow-sm: 0 1px 2px 0 color-mix(in srgb, #172033 10%, transparent);
+  --shadow-md: 0 10px 24px -12px color-mix(in srgb, #172033 24%, transparent);
+
+  --font-family-base: 'Inter', 'Segoe UI', sans-serif;
+  --font-family-heading: 'Inter Tight', 'Inter', 'Segoe UI', sans-serif;
+  --font-size-1: 0.875rem;
+  --font-size-2: 1rem;
+  --font-size-3: 1.25rem;
+  --font-size-4: 1.5rem;
+
+  --motion-fast: 120ms;
+  --motion-base: 180ms;
+  --motion-slow: 280ms;
+  --easing-standard: cubic-bezier(0.2, 0, 0, 1);
+
+  --touch-target: 48px;
+  --touch-target-compact: 44px;
+
+  --content-max-width: 72rem;
+}
+
+@mixin semantic-dark() {
+  --color-bg: #0b1220;
+  --color-surface: #111827;
+  --color-surface-muted: #172033;
+  --color-surface-raised: #1b2638;
+
+  --color-text: #e7ecf5;
+  --color-text-secondary: #a5b1c7;
+  --color-text-muted: color-mix(in srgb, #a5b1c7 72%, transparent);
+  --color-text-on-primary: #edf4ff;
+
+  --color-border-subtle: rgba(255, 255, 255, 0.08);
+  --color-border: rgba(255, 255, 255, 0.12);
+  --color-border-strong: rgba(255, 255, 255, 0.2);
+
+  --color-primary: #6ea8fe;
+  --color-primary-strong: #8ab8ff;
+  --color-primary-muted: rgba(110, 168, 254, 0.18);
+  --color-focus-ring: rgba(110, 168, 254, 0.4);
+
+  --color-success: #41c38a;
+  --color-warning: #e3ad55;
+  --color-danger: #f07b72;
+  --color-danger-muted: color-mix(in srgb, #f07b72 16%, #111827);
+  --color-danger-text: #ffd9d6;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-pill: 999px;
+
+  --shadow-sm: 0 1px 2px 0 color-mix(in srgb, #000000 30%, transparent);
+  --shadow-md: 0 10px 24px -12px color-mix(in srgb, #000000 52%, transparent);
+
+  --font-family-base: 'Inter', 'Segoe UI', sans-serif;
+  --font-family-heading: 'Inter Tight', 'Inter', 'Segoe UI', sans-serif;
+  --font-size-1: 0.875rem;
+  --font-size-2: 1rem;
+  --font-size-3: 1.25rem;
+  --font-size-4: 1.5rem;
+
+  --motion-fast: 120ms;
+  --motion-base: 180ms;
+  --motion-slow: 280ms;
+  --easing-standard: cubic-bezier(0.2, 0, 0, 1);
+
+  --touch-target: 48px;
+  --touch-target-compact: 44px;
+
+  --content-max-width: 72rem;
+}

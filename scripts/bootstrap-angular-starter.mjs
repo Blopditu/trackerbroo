@@ -33,7 +33,7 @@ const starterScripts = {
 
 const starterLintStaged = {
   '*.{ts,html}': ['eslint --fix'],
-  '*.{scss,css,md,json}': ['prettier --write'],
+  '*.{scss,md,json}': ['prettier --write'],
 };
 
 const starterPrettier = {
