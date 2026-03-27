@@ -25,45 +25,49 @@ describe('gym-tracker-flow', () => {
 
   it('loads workout preview state with overview reuse and session clearing rules', async () => {
     const trainingData = {
-      hasPendingSync: vi.fn().mockReturnValue(false),
-      flushPendingSync: vi.fn(),
       getPlanOverview: vi.fn().mockResolvedValue({ dayId: 'day-2' }),
-      getSessionByClientRef: vi.fn(),
     };
 
     const withoutSession = await loadWorkoutPreviewData(trainingData as never, {
       workout: {
         dayId: 'day-2',
+        scheduledDate: '2026-03-18',
         currentSessionClientRef: null,
       } as never,
       currentOverviewDayId: 'day-1',
-      currentSessionClientRef: 'session-1',
       forceSessionRefresh: false,
     });
 
     expect(withoutSession.overview).toEqual({ dayId: 'day-2' });
-    expect(withoutSession.clearActiveSession).toBe(true);
+    expect(withoutSession.clearActiveSession).toBe(false);
 
-    trainingData.getSessionByClientRef.mockResolvedValue({
-      sessionClientRef: 'session-2',
-      status: 'in_progress',
-    });
-
-    const withSession = await loadWorkoutPreviewData(trainingData as never, {
+    const reusedOverview = await loadWorkoutPreviewData(trainingData as never, {
       workout: {
         dayId: 'day-2',
+        scheduledDate: '2026-03-18',
         currentSessionClientRef: 'session-2',
       } as never,
       currentOverviewDayId: 'day-2',
-      currentSessionClientRef: null,
       forceSessionRefresh: false,
     });
 
-    expect(withSession.overview).toBeUndefined();
-    expect(withSession.activeSession).toEqual({
-      sessionClientRef: 'session-2',
-      status: 'in_progress',
+    expect(reusedOverview.overview).toBeUndefined();
+    expect(reusedOverview.clearActiveSession).toBe(false);
+  });
+
+  it('returns an empty preview for a rest day', async () => {
+    const trainingData = {
+      getPlanOverview: vi.fn(),
+    };
+
+    const preview = await loadWorkoutPreviewData(trainingData as never, {
+      workout: null,
+      currentOverviewDayId: 'day-1',
+      forceSessionRefresh: false,
     });
+
+    expect(preview).toEqual({ clearActiveSession: false });
+    expect(trainingData.getPlanOverview).not.toHaveBeenCalled();
   });
 
   it('loads dashboard week without touching plans or exercises', async () => {

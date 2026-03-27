@@ -10,6 +10,7 @@
 .tracker-week-card,
 .tracker-plan-card,
 .tracker-empty-card,
+.tracker-rest-card,
 .tracker-preview-block {
   display: grid;
   gap: 0.85rem;
@@ -127,6 +128,12 @@
   gap: 3px;
 }
 
+.tracker-session-note {
+  margin: 0.15rem 0 0;
+  color: var(--shell-ink-muted);
+  font-size: 0.88rem;
+}
+
 .tracker-plan-stats {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -162,6 +169,16 @@
 }
 
 .tracker-empty-card .action-btn {
+  justify-self: start;
+}
+
+.tracker-rest-card {
+  padding: 1.2rem 1.1rem;
+  border-radius: 1.5rem;
+  background: rgba(22, 24, 23, 0.72);
+}
+
+.tracker-rest-card .action-btn {
   justify-self: start;
 }
 

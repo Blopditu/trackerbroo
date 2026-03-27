@@ -11,7 +11,7 @@ import {
   signal,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -19,11 +19,9 @@ import { MatSelectModule } from '@angular/material/select';
 import {
   ArrowLeft,
   BarChart3,
-  Dumbbell,
   Ellipsis,
   LucideAngularModule,
   Timer,
-  User,
 } from 'lucide-angular';
 import { AppChromeService } from '../../core/app-chrome.service';
 import { BottomSheetComponent } from '../../ui/minimal/bottom-sheet.component';
@@ -43,7 +41,6 @@ import { GymTrackerTabComponent } from './gym-tracker-tab.component';
   providers: [GymFacadeService],
   imports: [
     CommonModule,
-    FormsModule,
     ReactiveFormsModule,
     LucideAngularModule,
     MatButtonModule,
@@ -68,23 +65,26 @@ export class GymComponent implements OnInit, AfterViewInit, OnDestroy {
 
   readonly activeTab = this.facade.activeTab;
   readonly activeSheet = signal<
-    'none' | 'hub' | 'builder' | 'graphs' | 'graph-detail' | 'session-share' | 'session-exit'
+    | 'none'
+    | 'hub'
+    | 'builder'
+    | 'graphs'
+    | 'graph-detail'
+    | 'session-summary'
+    | 'session-share'
+    | 'session-exit'
   >('none');
   readonly sessionHubTab = signal<'plans' | 'exercises' | 'help'>('plans');
   readonly workoutSurfaceMode = signal<'workout' | 'history'>('workout');
   readonly workoutStartedAt = signal<number | null>(null);
   readonly workoutNow = signal(Date.now());
-  readonly workoutHeaderTitle = computed(
-    () => this.facade.selectedOverview()?.dayName || 'Workout Session',
-  );
+  readonly workoutHeaderTitle = computed(() => this.facade.selectedOverview()?.dayName || 'Workout');
   readonly workoutHeaderMeta = computed(
     () => this.facade.currentExercise()?.name || 'Aktive Session',
   );
   readonly workoutElapsedLabel = computed(() => this.formatElapsedWorkoutTime());
 
-  readonly dumbbellIcon = Dumbbell;
   readonly barChartIcon = BarChart3;
-  readonly userIcon = User;
   readonly workoutIcon = Timer;
   readonly backIcon = ArrowLeft;
   readonly moreIcon = Ellipsis;
@@ -115,9 +115,10 @@ export class GymComponent implements OnInit, AfterViewInit, OnDestroy {
       }
 
       this.trackedSessionClientRef = sessionClientRef;
-      const now = Date.now();
+      const startedAt = Date.parse(this.facade.activeSession()?.startedAt || '');
+      const now = Number.isNaN(startedAt) ? Date.now() : startedAt;
       this.workoutStartedAt.set(now);
-      this.workoutNow.set(now);
+      this.workoutNow.set(Date.now());
       this.startWorkoutTimer();
     });
   }
@@ -162,11 +163,15 @@ export class GymComponent implements OnInit, AfterViewInit, OnDestroy {
     if (tab === 'exercises') {
       return 'Session-Hub: Übungen';
     }
-    return 'Session Hub: Hilfe';
+    return 'Session-Hub: Hilfe';
   }
 
   closeSheet(): void {
     if (this.activeSheet() === 'session-share') {
+      this.facade.resetWorkoutShareState();
+    }
+    if (this.activeSheet() === 'session-summary') {
+      this.facade.clearWorkoutCompletionSummary();
       this.facade.resetWorkoutShareState();
     }
     if (this.activeSheet() === 'graph-detail') {
@@ -182,7 +187,21 @@ export class GymComponent implements OnInit, AfterViewInit, OnDestroy {
   async onFinishWorkout(): Promise<void> {
     const completed = await this.facade.finishWorkout(false);
     if (completed) {
-      this.activeSheet.set('session-share');
+      this.activeSheet.set('session-summary');
+    }
+  }
+
+  async onResumeLater(): Promise<void> {
+    await this.facade.leaveWorkoutForLater();
+    if (!this.facade.activeSession()) {
+      this.activeSheet.set('none');
+    }
+  }
+
+  async onDiscardWorkout(): Promise<void> {
+    const discarded = await this.facade.discardWorkout();
+    if (discarded) {
+      this.activeSheet.set('none');
     }
   }
 
@@ -219,6 +238,11 @@ export class GymComponent implements OnInit, AfterViewInit, OnDestroy {
     if (shared) {
       this.activeSheet.set('none');
     }
+  }
+
+  openSessionShare(): void {
+    this.facade.clearWorkoutCompletionSummary();
+    this.activeSheet.set('session-share');
   }
 
   skipSessionShare(): void {

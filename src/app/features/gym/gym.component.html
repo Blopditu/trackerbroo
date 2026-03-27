@@ -77,13 +77,15 @@
     <app-gym-tracker-tab
       [dashboardWeek]="facade.dashboardWeek()"
       [selectedDate]="facade.selectedDate()"
+      [selectedWorkoutDay]="facade.selectedWorkoutDay()"
       [selectedOverview]="facade.selectedOverview()"
+      [resumeAvailable]="facade.selectedDayCanResume()"
       (prevWeek)="facade.goPrevWeek()"
       (nextWeek)="facade.goNextWeek()"
       (selectDate)="facade.onSelectDate($event)"
-      (openWorkout)="facade.openWorkoutPreview($event)"
       (openSessionHub)="openSessionHub($event)"
       (startWorkout)="facade.startWorkout()"
+      (resumeWorkout)="facade.resumeWorkout()"
     />
   }
 
@@ -147,7 +149,7 @@
       (click)="setWorkoutSurfaceMode('history')"
     >
       <lucide-icon [img]="barChartIcon" aria-hidden="true"></lucide-icon>
-      <span>History</span>
+      <span>Verlauf</span>
     </button>
   </nav>
 }
@@ -201,6 +203,48 @@
 </app-bottom-sheet>
 
 <app-bottom-sheet
+  [open]="activeSheet() === 'session-summary'"
+  [closeOnBackdrop]="false"
+  title="Workout abgeschlossen"
+  (closed)="closeSheet()"
+>
+  @if (facade.workoutCompletionSummary(); as summary) {
+    <article class="action-card">
+      <p class="action-title">{{ summary.dayName }}</p>
+      <p class="action-sub">{{ summary.sessionDate }}</p>
+    </article>
+
+    <div class="action-summary-grid" aria-label="Workout Zusammenfassung">
+      <article class="action-summary-stat">
+        <span>Übungen erledigt</span>
+        <strong>{{ summary.completedExercises }} / {{ summary.totalExercises }}</strong>
+      </article>
+      <article class="action-summary-stat">
+        <span>Offene Sätze</span>
+        <strong>{{ summary.unfinishedSets }}</strong>
+      </article>
+    </div>
+
+    <p class="muted action-summary-copy">
+      @if (summary.unfinishedExercises > 0) {
+        {{ summary.unfinishedExercises }} Übungen wurden nicht vollständig abgeschlossen.
+      } @else {
+        Das Workout ist vollständig protokolliert.
+      }
+    </p>
+
+    <div class="action-list">
+      <button mat-flat-button type="button" class="action-btn" (click)="openSessionShare()">
+        Teilen
+      </button>
+      <button mat-flat-button type="button" class="action-btn ghost" (click)="closeSheet()">
+        Schließen
+      </button>
+    </div>
+  }
+</app-bottom-sheet>
+
+<app-bottom-sheet
   [open]="activeSheet() === 'session-share'"
   [closeOnBackdrop]="false"
   title="Workout teilen"
@@ -227,12 +271,19 @@
   <article class="action-card">
     <p class="action-title">{{ workoutHeaderTitle() }}</p>
     <p class="action-sub">
-      Die Session läuft noch. Du kannst weitertrainieren oder das Workout jetzt abschließen.
+      Dein Fortschritt bleibt erhalten. Du kannst jetzt weitertrainieren, später fortsetzen,
+      verwerfen oder das Workout abschließen.
     </p>
   </article>
   <div class="action-list">
     <button mat-flat-button type="button" class="action-btn" (click)="onFinishWorkout()">
       Workout abschließen
+    </button>
+    <button mat-flat-button type="button" class="action-btn ghost" (click)="onResumeLater()">
+      Später fortsetzen
+    </button>
+    <button mat-flat-button type="button" class="action-btn ghost danger" (click)="onDiscardWorkout()">
+      Workout verwerfen
     </button>
     <button mat-flat-button type="button" class="action-btn ghost" (click)="closeSheet()">
       Weitertrainieren

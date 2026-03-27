@@ -25,6 +25,10 @@ export interface QueueCompleteSessionPayload {
   sessionClientRef: string;
 }
 
+export interface QueueAbortSessionPayload {
+  sessionClientRef: string;
+}
+
 export interface QueueUpsertMeasurementPayload {
   type: TrainingMeasurementType;
   value: number;
@@ -45,6 +49,7 @@ export interface QueueSaveGraphConfigsPayload {
 type QueueAction =
   | 'start_session'
   | 'upsert_set'
+  | 'abort_session'
   | 'complete_session'
   | 'upsert_measurement'
   | 'save_graph_configs';
@@ -56,6 +61,7 @@ interface QueueItem {
   payload:
     | QueueStartSessionPayload
     | QueueUpsertSetPayload
+    | QueueAbortSessionPayload
     | QueueCompleteSessionPayload
     | QueueUpsertMeasurementPayload
     | QueueSaveGraphConfigsPayload;
@@ -166,6 +172,17 @@ export class TrainingSyncQueueService {
           p_session_client_ref: payload.sessionClientRef,
         },
       );
+      if (error) {
+        throw error;
+      }
+      return;
+    }
+
+    if (item.action === 'abort_session') {
+      const payload = item.payload as QueueAbortSessionPayload;
+      const { error } = await this.supabaseService.client.rpc('training_abort_session_by_client', {
+        p_session_client_ref: payload.sessionClientRef,
+      });
       if (error) {
         throw error;
       }

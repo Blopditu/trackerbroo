@@ -2,7 +2,6 @@ import {
   TrainingDashboardDay,
   TrainingDashboardWeek,
   TrainingDataService,
-  TrainingExecutionSession,
   TrainingPlanOverview,
 } from '../../core/training/training-data.service';
 import { TrainingExercise, TrainingPlan } from '../../core/types';
@@ -15,7 +14,6 @@ export interface TrackerBootstrapData {
 
 export interface WorkoutPreviewData {
   overview?: TrainingPlanOverview;
-  activeSession?: TrainingExecutionSession;
   clearActiveSession: boolean;
 }
 
@@ -51,38 +49,26 @@ export async function loadDashboardWeekData(
 export async function loadWorkoutPreviewData(
   trainingData: Pick<
     TrainingDataService,
-    'hasPendingSync' | 'flushPendingSync' | 'getPlanOverview' | 'getSessionByClientRef'
+    'getPlanOverview'
   >,
   params: {
-    workout: TrainingDashboardDay;
+    workout: TrainingDashboardDay | null;
     currentOverviewDayId: string | null;
-    currentSessionClientRef: string | null;
     forceSessionRefresh: boolean;
   },
 ): Promise<WorkoutPreviewData> {
-  const { workout, currentOverviewDayId, currentSessionClientRef, forceSessionRefresh } = params;
+  const { workout, currentOverviewDayId, forceSessionRefresh } = params;
+  if (!workout) {
+    return {
+      clearActiveSession: false,
+    };
+  }
+
   const reuseOverview = currentOverviewDayId === workout.dayId && !forceSessionRefresh;
   const overview = reuseOverview ? undefined : await trainingData.getPlanOverview(workout.dayId);
 
-  if (workout.currentSessionClientRef) {
-    if (currentSessionClientRef !== workout.currentSessionClientRef || forceSessionRefresh) {
-      if (trainingData.hasPendingSync()) {
-        await trainingData.flushPendingSync();
-      }
-
-      const activeSession = await trainingData.getSessionByClientRef(
-        workout.currentSessionClientRef,
-      );
-      return activeSession && activeSession.status === 'in_progress'
-        ? { overview, activeSession, clearActiveSession: false }
-        : { overview, clearActiveSession: false };
-    }
-
-    return { overview, clearActiveSession: false };
-  }
-
   return {
     overview,
-    clearActiveSession: currentSessionClientRef !== null,
+    clearActiveSession: false,
   };
 }

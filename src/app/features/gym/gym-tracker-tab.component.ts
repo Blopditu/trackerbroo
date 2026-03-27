@@ -6,6 +6,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Play,
+  RotateCcw,
   ChevronRight as ChevronRightSmall,
 } from 'lucide-angular';
 import {
@@ -69,7 +70,24 @@ import { equipmentLabel } from './gym-view-utils';
       </div>
     </section>
 
-    @if (dashboardWeek()?.activePlan && selectedOverview()) {
+    @if (!dashboardWeek()?.activePlan) {
+      <section class="panel tracker-empty-card">
+        <p class="eyebrow">Kein aktiver Plan</p>
+        <h2>Gym zuerst strukturieren</h2>
+        <p class="muted">
+          Lege einen Plan an oder aktiviere einen bestehenden Split, damit der Workout-Flow direkt
+          startklar ist.
+        </p>
+        <button
+          mat-flat-button
+          type="button"
+          class="action-btn"
+          (click)="openSessionHub.emit('plans')"
+        >
+          Pläne öffnen
+        </button>
+      </section>
+    } @else if (selectedWorkoutDay() && selectedOverview()) {
       <section class="panel tracker-plan-card">
         <div class="tracker-plan-copy">
           <p class="eyebrow">Aktiver Plan</p>
@@ -77,6 +95,9 @@ import { equipmentLabel } from './gym-view-utils';
           <p class="muted">
             {{ selectedOverview()!.dayName }} • Woche {{ dashboardWeek()!.activePlan!.weekNumber }}
           </p>
+          @if (resumeAvailable()) {
+            <p class="tracker-session-note">Workout pausiert. Du kannst genau hier weitermachen.</p>
+          }
         </div>
 
         <div class="tracker-plan-stats" aria-label="Workout Überblick">
@@ -94,32 +115,17 @@ import { equipmentLabel } from './gym-view-utils';
           mat-flat-button
           type="button"
           class="action-btn tracker-start-btn"
-          (click)="startWorkout.emit()"
+          (click)="resumeAvailable() ? resumeWorkout.emit() : startWorkout.emit()"
         >
-          <span>Start Session</span>
-          <lucide-icon [img]="playIcon" class="icon" aria-hidden="true"></lucide-icon>
+          <span>{{ resumeAvailable() ? 'Workout fortsetzen' : 'Workout starten' }}</span>
+          <lucide-icon
+            [img]="resumeAvailable() ? resumeIcon : playIcon"
+            class="icon"
+            aria-hidden="true"
+          ></lucide-icon>
         </button>
       </section>
-    } @else {
-      <section class="panel tracker-empty-card">
-        <p class="eyebrow">Kein aktiver Plan</p>
-        <h2>Gym zuerst strukturieren</h2>
-        <p class="muted">
-          Lege einen Plan an oder aktiviere einen bestehenden Split, damit der Workout-Flow direkt
-          startklar ist.
-        </p>
-        <button
-          mat-flat-button
-          type="button"
-          class="action-btn"
-          (click)="openSessionHub.emit('plans')"
-        >
-          Pläne öffnen
-        </button>
-      </section>
-    }
 
-    @if (selectedOverview()) {
       <section class="tracker-preview-block">
         <div class="tracker-preview-head">
           <div>
@@ -132,7 +138,7 @@ import { equipmentLabel } from './gym-view-utils';
             class="tracker-edit-btn"
             (click)="openSessionHub.emit('plans')"
           >
-            Bearbeiten
+            Plan bearbeiten
           </button>
         </div>
 
@@ -162,24 +168,39 @@ import { equipmentLabel } from './gym-view-utils';
           }
         </div>
       </section>
+    } @else {
+      <section class="panel tracker-rest-card">
+        <p class="eyebrow">Ausgewählter Tag</p>
+        <h2>{{ selectedDateLabel() }}</h2>
+        <p class="muted">
+          Für diesen Tag ist kein Workout geplant. Wähle einen anderen Trainingstag oder passe den
+          Split im Plan-Hub an.
+        </p>
+        <button mat-flat-button type="button" class="action-btn ghost" (click)="openSessionHub.emit('plans')">
+          Pläne öffnen
+        </button>
+      </section>
     }
   `,
 })
 export class GymTrackerTabComponent {
   readonly dashboardWeek = input<TrainingDashboardWeek | null>(null);
   readonly selectedDate = input.required<string>();
+  readonly selectedWorkoutDay = input<TrainingDashboardDay | null>(null);
   readonly selectedOverview = input<TrainingPlanOverview | null>(null);
+  readonly resumeAvailable = input(false);
 
   readonly prevWeek = output<void>();
   readonly nextWeek = output<void>();
   readonly selectDate = output<string>();
-  readonly openWorkout = output<TrainingDashboardDay>();
   readonly openSessionHub = output<'plans' | 'exercises' | 'help'>();
   readonly startWorkout = output<void>();
+  readonly resumeWorkout = output<void>();
 
   readonly chevronLeftIcon = ChevronLeft;
   readonly chevronRightIcon = ChevronRight;
   readonly playIcon = Play;
+  readonly resumeIcon = RotateCcw;
   readonly chevronRightSmallIcon = ChevronRightSmall;
   readonly equipmentLabel = equipmentLabel;
 
@@ -201,6 +222,10 @@ export class GymTrackerTabComponent {
     return index + 1;
   }
 
+  selectedDateLabel(): string {
+    return this.dashboardWeek()?.days.find((day) => day.iso === this.selectedDate())?.label || '--';
+  }
+
   musclePreviewLabel(): string {
     const overview = this.selectedOverview();
     if (!overview || overview.targetMuscles.length === 0) {
@@ -211,7 +236,7 @@ export class GymTrackerTabComponent {
   }
 
   targetSummary(exercise: TrainingPlanOverview['exercises'][number]): string {
-    return exercise.targetReps ? `${exercise.targetReps} reps` : `${exercise.targetSeconds ?? 0}s`;
+    return exercise.targetReps ? `${exercise.targetReps} Wdh` : `${exercise.targetSeconds ?? 0}s`;
   }
 
   exerciseInitial(name: string): string {

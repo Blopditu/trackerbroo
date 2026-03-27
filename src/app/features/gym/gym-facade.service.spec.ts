@@ -33,6 +33,7 @@ describe('GymFacadeService', () => {
     getPreviousPerformance: ReturnType<typeof vi.fn>;
     upsertSetLog: ReturnType<typeof vi.fn>;
     completeSession: ReturnType<typeof vi.fn>;
+    abortSession: ReturnType<typeof vi.fn>;
     getCompletedWorkoutCountForRange: ReturnType<typeof vi.fn>;
     getProgressWidgets: ReturnType<typeof vi.fn>;
     getPersonalStats: ReturnType<typeof vi.fn>;
@@ -59,6 +60,7 @@ describe('GymFacadeService', () => {
       {
         dayId: 'day-1',
         dayNumber: 1,
+        scheduledDate: '2026-03-12',
         name: 'Push',
         exerciseCount: 2,
         thumbnails: [],
@@ -127,6 +129,7 @@ describe('GymFacadeService', () => {
     sessionId: 'session-1',
     sessionClientRef: 'session-client-1',
     sessionDate: '2026-03-12',
+    startedAt: '2026-03-12T08:00:00.000Z',
     planDayId: 'day-1',
     status: 'in_progress',
     exercises: [
@@ -202,6 +205,7 @@ describe('GymFacadeService', () => {
       getPreviousPerformance: vi.fn(),
       upsertSetLog: vi.fn(),
       completeSession: vi.fn(),
+      abortSession: vi.fn(),
       getCompletedWorkoutCountForRange: vi.fn(),
       getProgressWidgets: vi.fn(),
       getPersonalStats: vi.fn(),
@@ -231,8 +235,9 @@ describe('GymFacadeService', () => {
         estimated_10rm: null,
       },
     ]);
-    trainingData.upsertSetLog.mockResolvedValue(undefined);
+    trainingData.upsertSetLog.mockResolvedValue('saved');
     trainingData.completeSession.mockResolvedValue(undefined);
+    trainingData.abortSession.mockResolvedValue(undefined);
     trainingData.getCompletedWorkoutCountForRange.mockResolvedValue(2);
     trainingData.getProgressWidgets.mockResolvedValue([]);
     trainingData.getPersonalStats.mockResolvedValue({
@@ -273,6 +278,7 @@ describe('GymFacadeService', () => {
     });
 
     facade = TestBed.inject(GymFacadeService);
+    facade.selectedDate.set('2026-03-12');
   });
 
   it('boots tracker with dashboard, exercises, plans and only flushes when pending sync exists', async () => {
@@ -355,6 +361,15 @@ describe('GymFacadeService', () => {
     expect(facade.previousPerformance()[0]?.weight_kg).toBe(25);
   });
 
+  it('clears the workout preview on a selected rest day', async () => {
+    facade.selectedDate.set('2026-03-13');
+
+    await facade.loadTrackerBootstrap();
+
+    expect(facade.selectedWorkoutDay()).toBeNull();
+    expect(facade.selectedOverview()).toBeNull();
+  });
+
   it('does not eagerly reload progress after finishing a workout while progress is inactive', async () => {
     facade.activeSession.set(session());
 
@@ -364,6 +379,15 @@ describe('GymFacadeService', () => {
     expect(facade.progressDirty()).toBe(true);
     expect(trainingData.getProgressWidgets).not.toHaveBeenCalled();
     expect(trainingData.getPersonalStats).not.toHaveBeenCalled();
+  });
+
+  it('returns an active workout to the tracker without discarding it', async () => {
+    facade.activeSession.set(session());
+
+    await facade.leaveWorkoutForLater();
+
+    expect(facade.activeSession()).toBeNull();
+    expect(trainingData.getDashboardWeek).toHaveBeenCalled();
   });
 
   it('hydrates progress once and reuses it until marked dirty', async () => {

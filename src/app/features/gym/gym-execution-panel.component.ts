@@ -79,7 +79,7 @@ interface QuickRepOption {
             <div class="execution-context-head">
               <div class="execution-context-copy">
                 <div>
-                  <p class="context-kicker">Active Exercise</p>
+                  <p class="context-kicker">Aktive Übung</p>
                   <h3>{{ currentExercise()!.name }}</h3>
                 </div>
                 <p class="execution-context-meta">
@@ -108,11 +108,11 @@ interface QuickRepOption {
               <section class="context-info-panel" aria-label="Übungsinfos">
                 <div class="context-info-grid">
                   <article class="context-info-stat">
-                    <span>Target</span>
+                    <span>Ziel</span>
                     <strong>{{ targetLabel(currentExercise()!) }}</strong>
                   </article>
                   <article class="context-info-stat">
-                    <span>Equipment</span>
+                    <span>Gerät</span>
                     <strong>{{ equipmentLabel(currentExercise()!.equipment) }}</strong>
                   </article>
                 </div>
@@ -121,7 +121,7 @@ interface QuickRepOption {
                   class="context-info-ref"
                   [class.empty]="workingPreviousPerformance().length === 0"
                 >
-                  <span>Previous Session Ref</span>
+                  <span>Letzte Einheit</span>
                   <p>
                     {{
                       workingPreviousPerformance().length > 0
@@ -150,7 +150,7 @@ interface QuickRepOption {
 
                     <div class="active-set-fields">
                       <label class="active-set-field">
-                        <span>Weight (kg)</span>
+                        <span>Gewicht (kg)</span>
                         <div class="active-set-input-shell">
                           <input
                             type="number"
@@ -178,7 +178,7 @@ interface QuickRepOption {
                             [value]="activeSet()!.reps ?? ''"
                             (input)="emitSetInput(activeSet()!, 'reps', $event)"
                           />
-                          <small>reps</small>
+                          <small>Wdh</small>
                         </div>
                       </label>
                     </div>
@@ -240,7 +240,7 @@ interface QuickRepOption {
                         class="action-btn ghost compact"
                         (click)="finishWorkout.emit()"
                       >
-                        Finish Workout
+                        Workout beenden
                       </button>
                     </div>
                   </article>
@@ -258,7 +258,7 @@ interface QuickRepOption {
                           <span class="set-row-label">Set {{ setRow.setNumber }}</span>
                           <strong
                             >{{ formatSetValue(setRow.weightKg, 'kg') }} <span>/</span>
-                            {{ formatSetValue(setRow.reps, 'reps') }}</strong
+                            {{ formatSetValue(setRow.reps, 'Wdh') }}</strong
                           >
                         </div>
                         <button
@@ -281,10 +281,10 @@ interface QuickRepOption {
                       <article class="set-row upcoming">
                         <div class="set-row-leading upcoming">{{ setRow.setNumber }}</div>
                         <div class="set-row-copy">
-                          <span class="set-row-label">Upcoming</span>
+                          <span class="set-row-label">Als Nächstes</span>
                           <strong
                             >{{ formatSetValue(setRow.weightKg, 'kg') }} <span>/</span>
-                            {{ formatSetValue(setRow.reps, 'reps') }}</strong
+                            {{ formatSetValue(setRow.reps, 'Wdh') }}</strong
                           >
                         </div>
                       </article>
@@ -297,10 +297,10 @@ interface QuickRepOption {
                 <p class="save-hint">{{ currentExerciseSaveHint() }}</p>
               }
             } @else {
-              <section class="history-mode-block" aria-label="Workout History">
+              <section class="history-mode-block" aria-label="Workout Verlauf">
                 <header class="history-mode-head">
                   <div>
-                    <p class="context-kicker">History</p>
+                    <p class="context-kicker">Verlauf</p>
                     <h4>{{ currentExercise()!.name }}</h4>
                   </div>
                   <span class="history-count"
@@ -319,7 +319,7 @@ interface QuickRepOption {
                         <span>Satz {{ prev.set_number }}</span>
                         <strong
                           >{{ formatSetValue(prev.weight_kg, 'kg') }} <span>/</span>
-                          {{ formatSetValue(prev.reps, 'reps') }}</strong
+                          {{ formatSetValue(prev.reps, 'Wdh') }}</strong
                         >
                         <small>{{ prev.session_date }}</small>
                       </article>
@@ -341,7 +341,7 @@ interface QuickRepOption {
                       <span>Satz {{ setRow.setNumber }}</span>
                       <strong
                         >{{ formatSetValue(setRow.weightKg, 'kg') }} <span>/</span>
-                        {{ formatSetValue(setRow.reps, 'reps') }}</strong
+                        {{ formatSetValue(setRow.reps, 'Wdh') }}</strong
                       >
                       <small>{{ setStateLabel(setRow) }}</small>
                     </article>
@@ -467,7 +467,7 @@ export class GymExecutionPanelComponent {
     if (focusSet && !focusSet.isCompleted) {
       return 'Satz abschließen';
     }
-    return this.hasNextExercise() ? 'Next Exercise' : 'Finish Workout';
+    return this.hasNextExercise() ? 'Nächste Übung' : 'Workout beenden';
   }
 
   runPrimaryAction(): void {

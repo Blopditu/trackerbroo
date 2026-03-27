@@ -73,7 +73,7 @@ export function muscleLabel(muscle: string): string {
 
 export function targetLabel(exercise: TrainingExecutionExercise): string {
   if (exercise.targetReps) {
-    return `${exercise.targetReps} reps`;
+    return `${exercise.targetReps} Wdh`;
   }
   if (exercise.targetSeconds) {
     return `${exercise.targetSeconds}s`;

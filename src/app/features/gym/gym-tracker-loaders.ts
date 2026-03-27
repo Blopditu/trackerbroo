@@ -5,18 +5,14 @@ import {
 
 export function selectTrackedWorkoutDay(
   dashboard: TrainingDashboardWeek,
-  selectedDayId: string | null,
+  selectedDate: string,
 ): TrainingDashboardDay | null {
-  return (
-    dashboard.workoutDays.find((workout) => workout.dayId === selectedDayId) ||
-    dashboard.workoutDays[0] ||
-    null
-  );
+  return dashboard.workoutDays.find((workout) => workout.scheduledDate === selectedDate) || null;
 }
 
 export function shouldRefreshWorkoutPreview(params: {
   currentOverviewDayId: string | null;
-  nextWorkoutDayId: string;
+  nextWorkoutDayId: string | null;
   currentSessionClientRef: string | null;
   forceSessionRefresh: boolean;
 }): boolean {

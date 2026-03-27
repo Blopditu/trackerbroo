@@ -23,6 +23,7 @@ interface DashboardSnapshotRow {
   week_number: number | null;
   day_id: string;
   day_number: number;
+  scheduled_date: string;
   day_name: string;
   exercise_count: number;
   exercise_thumbnails: string[];
@@ -43,6 +44,7 @@ interface SessionRow {
   id: string;
   plan_day_id: string;
   session_date: string;
+  started_at: string;
   status: string;
   client_ref: string;
 }
@@ -85,6 +87,7 @@ export interface TrainingWeekDay {
 export interface TrainingDashboardDay {
   dayId: string;
   dayNumber: number;
+  scheduledDate: string;
   name: string;
   exerciseCount: number;
   thumbnails: string[];
@@ -164,6 +167,7 @@ export interface TrainingExecutionSession {
   sessionId: string | null;
   sessionClientRef: string;
   sessionDate: string;
+  startedAt: string;
   planDayId: string;
   status: 'in_progress' | 'completed' | 'aborted';
   exercises: TrainingExecutionExercise[];
@@ -181,6 +185,8 @@ export interface ProgressSeriesQuery {
   exerciseId?: string | null;
   muscleGroup?: string | null;
 }
+
+export type TrainingSetSaveResult = 'saved' | 'queued';
 
 export interface TrainingPersonalStats {
   totalWorkouts: number;
@@ -302,6 +308,7 @@ export class TrainingDataService {
       sessionId: null,
       sessionClientRef: clientRef,
       sessionDate: date,
+      startedAt: new Date().toISOString(),
       planDayId,
       status: 'in_progress',
       exercises: overview.exercises.map((exercise) => ({
@@ -340,7 +347,7 @@ export class TrainingDataService {
 
     const { data: sessionData, error: sessionError } = await this.supabaseService.client
       .from('training_sessions')
-      .select('id,plan_day_id,session_date,status,client_ref')
+      .select('id,plan_day_id,session_date,started_at,status,client_ref')
       .eq('user_id', user.id)
       .eq('client_ref', clientRef)
       .maybeSingle();
@@ -380,6 +387,7 @@ export class TrainingDataService {
       sessionId: session.id,
       sessionClientRef: session.client_ref,
       sessionDate: session.session_date,
+      startedAt: session.started_at,
       planDayId: session.plan_day_id,
       status: session.status as 'in_progress' | 'completed' | 'aborted',
       exercises: exerciseRows.map((exercise) => {
@@ -426,7 +434,7 @@ export class TrainingDataService {
     };
   }
 
-  async upsertSetLog(input: UpsertSetLogInput): Promise<void> {
+  async upsertSetLog(input: UpsertSetLogInput): Promise<TrainingSetSaveResult> {
     const payload = {
       sessionClientRef: input.sessionClientRef,
       exerciseSortOrder: input.exerciseSortOrder,
@@ -441,7 +449,7 @@ export class TrainingDataService {
 
     if (!this.isOnline()) {
       this.syncQueue.enqueue('upsert_set', payload);
-      return;
+      return 'queued';
     }
 
     const { error } = await this.supabaseService.client.rpc('training_upsert_set_log_by_client', {
@@ -458,7 +466,10 @@ export class TrainingDataService {
 
     if (error) {
       this.syncQueue.enqueue('upsert_set', payload);
+      return 'queued';
     }
+
+    return 'saved';
   }
 
   async completeSession(sessionClientRef: string): Promise<void> {
@@ -473,6 +484,23 @@ export class TrainingDataService {
 
     if (error) {
       this.syncQueue.enqueue('complete_session', { sessionClientRef });
+    }
+
+    this.invalidateTrainingCaches(this.requireUser().id);
+  }
+
+  async abortSession(sessionClientRef: string): Promise<void> {
+    if (!this.isOnline()) {
+      this.syncQueue.enqueue('abort_session', { sessionClientRef });
+      return;
+    }
+
+    const { error } = await this.supabaseService.client.rpc('training_abort_session_by_client', {
+      p_session_client_ref: sessionClientRef,
+    });
+
+    if (error) {
+      this.syncQueue.enqueue('abort_session', { sessionClientRef });
     }
 
     this.invalidateTrainingCaches(this.requireUser().id);
@@ -1163,6 +1191,7 @@ export class TrainingDataService {
       workoutDays: rows.map((row) => ({
         dayId: row.day_id,
         dayNumber: Number(row.day_number),
+        scheduledDate: row.scheduled_date,
         name: row.day_name,
         exerciseCount: Number(row.exercise_count || 0),
         thumbnails: row.exercise_thumbnails || [],

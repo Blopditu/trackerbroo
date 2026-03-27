@@ -19,6 +19,7 @@ describe('GymExecutionPanelComponent', () => {
       sessionId: 'session-1',
       sessionClientRef: 'session-client-1',
       sessionDate: '2026-03-12',
+      startedAt: '2026-03-12T08:00:00.000Z',
       planDayId: 'day-1',
       status: 'in_progress',
       exercises: [
@@ -79,7 +80,7 @@ describe('GymExecutionPanelComponent', () => {
   it('emits completion toggles for the active set', () => {
     const emitSpy = vi.spyOn(component.toggleSetComplete, 'emit');
 
-    const button = fixture.debugElement.query(By.css('.check-btn'))
+    const button = fixture.debugElement.query(By.css('.active-set-actions .action-btn'))
       .nativeElement as HTMLButtonElement;
     button.click();
 

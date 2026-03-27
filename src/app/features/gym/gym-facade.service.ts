@@ -15,6 +15,7 @@ import {
   TrainingGraphDataPoint,
   TrainingPlanOverview,
   TrainingPersonalStats,
+  TrainingSetSaveResult,
 } from '../../core/training/training-data.service';
 import { SupabaseService } from '../../core/supabase.service';
 import {
@@ -73,6 +74,15 @@ import {
 type DetailSource = 'widget' | 'progress-10rm' | 'progress-volume';
 const initialWorkoutShare = buildWorkoutShareSuggestion(1);
 
+interface WorkoutCompletionSummary {
+  dayName: string;
+  sessionDate: string;
+  completedExercises: number;
+  totalExercises: number;
+  unfinishedExercises: number;
+  unfinishedSets: number;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -124,10 +134,16 @@ export class GymFacadeService {
   readonly workoutShareNote = signal(initialWorkoutShare.note);
   readonly sharingWorkoutPost = signal(false);
   readonly lastCompletedSessionDay = signal<string | null>(null);
+  readonly workoutCompletionSummary = signal<WorkoutCompletionSummary | null>(null);
 
   readonly errorMessage = signal<string | null>(null);
   readonly successMessage = signal<string | null>(null);
-  readonly setSaveState = signal<Record<string, 'idle' | 'saving' | 'saved' | 'error'>>({});
+  readonly setSaveState = signal<Record<string, 'idle' | 'saving' | 'saved' | 'queued' | 'error'>>(
+    {},
+  );
+  readonly selectedDayCanResume = computed(() =>
+    Boolean(this.selectedWorkoutDay()?.currentSessionClientRef),
+  );
 
   readonly currentExercise = computed<TrainingExecutionExercise | null>(() => {
     const session = this.activeSession();
@@ -299,6 +315,9 @@ export class GymFacadeService {
     }
     if (states.includes('saving')) {
       return 'Eingaben werden gespeichert...';
+    }
+    if (states.includes('queued')) {
+      return 'Eingaben sind offline gesichert und werden synchronisiert.';
     }
     return null;
   });
@@ -522,26 +541,19 @@ export class GymFacadeService {
     options?: { forceSessionRefresh?: boolean },
   ): Promise<void> {
     this.selectedWorkoutDay.set(workout);
+    if (this.selectedOverview()?.dayId !== workout.dayId) {
+      this.selectedOverview.set(null);
+    }
 
     try {
       const preview = await loadWorkoutPreviewData(this.trainingData, {
         workout,
         currentOverviewDayId: this.selectedOverview()?.dayId || null,
-        currentSessionClientRef: this.activeSession()?.sessionClientRef || null,
         forceSessionRefresh: Boolean(options?.forceSessionRefresh),
       });
 
       if (preview.overview) {
         this.selectedOverview.set(preview.overview);
-      }
-
-      if (preview.activeSession) {
-        this.applyActiveSession(preview.activeSession);
-      } else if (preview.clearActiveSession) {
-        this.activeSession.set(null);
-        this.previousPerformance.set([]);
-        this.resetExecutionPrefillState();
-        this.resetPreviousPerformanceCache();
       }
     } catch (error: unknown) {
       this.errorMessage.set(formatAppError(error, 'Workout Vorschau konnte nicht geladen werden'));
@@ -549,6 +561,11 @@ export class GymFacadeService {
   }
 
   async startWorkout(): Promise<void> {
+    if (this.selectedDayCanResume()) {
+      await this.resumeWorkout();
+      return;
+    }
+
     const overview = this.selectedOverview();
     if (!overview) {
       return;
@@ -567,6 +584,34 @@ export class GymFacadeService {
       this.successMessage.set('Workout gestartet.');
     } catch (error: unknown) {
       this.errorMessage.set(formatAppError(error, 'Workout konnte nicht gestartet werden'));
+    }
+  }
+
+  async resumeWorkout(): Promise<void> {
+    const sessionClientRef = this.selectedWorkoutDay()?.currentSessionClientRef || null;
+    if (!sessionClientRef) {
+      return;
+    }
+
+    this.errorMessage.set(null);
+    this.successMessage.set(null);
+
+    try {
+      if (this.trainingData.hasPendingSync()) {
+        await this.trainingData.flushPendingSync();
+      }
+
+      const session = await this.trainingData.getSessionByClientRef(sessionClientRef);
+      if (!session || session.status !== 'in_progress') {
+        await this.loadDashboardWeek(true);
+        this.errorMessage.set('Dieses Workout konnte nicht mehr fortgesetzt werden.');
+        return;
+      }
+
+      this.applyActiveSession(session);
+      this.successMessage.set('Workout fortgesetzt.');
+    } catch (error: unknown) {
+      this.errorMessage.set(formatAppError(error, 'Workout konnte nicht fortgesetzt werden'));
     }
   }
 
@@ -738,6 +783,7 @@ export class GymFacadeService {
 
     try {
       await this.flushPendingSetSaves();
+      this.assertNoSetSaveErrors(session);
       await this.trainingData.completeSession(session.sessionClientRef);
       this.lastCompletedSessionDay.set(session.sessionDate);
       try {
@@ -747,16 +793,61 @@ export class GymFacadeService {
         this.workoutShareNote.set(initialWorkoutShare.note);
       }
 
+      this.workoutCompletionSummary.set(this.buildCompletionSummary(session));
       this.successMessage.set('Workout abgeschlossen.');
-      this.activeSession.set(null);
-      this.previousPerformance.set([]);
-      this.resetExecutionPrefillState();
-      this.resetPreviousPerformanceCache();
+      this.clearSessionState();
       await this.loadDashboardWeek(true);
       await this.refreshProgressAfterMutation(progressVisible);
       return true;
     } catch (error: unknown) {
-      this.errorMessage.set(formatAppError(error, 'Workout konnte nicht abgeschlossen werden'));
+      const message =
+        error instanceof Error && error.message === 'set_save_failed'
+          ? 'Einige Eingaben müssen erneut gespeichert werden, bevor du das Workout abschließen kannst.'
+          : formatAppError(error, 'Workout konnte nicht abgeschlossen werden');
+      this.errorMessage.set(message);
+      return false;
+    }
+  }
+
+  async leaveWorkoutForLater(): Promise<void> {
+    const session = this.activeSession();
+    if (!session) {
+      return;
+    }
+
+    this.errorMessage.set(null);
+
+    try {
+      await this.flushPendingSetSaves({ allowQueued: true, blockOnError: true });
+      this.clearSessionState();
+      await this.loadDashboardWeek(true);
+      this.successMessage.set('Workout bleibt offen und kann später fortgesetzt werden.');
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error && error.message === 'set_save_failed'
+          ? 'Einige Eingaben konnten nicht gesichert werden. Bitte speichere sie erneut, bevor du später fortsetzt.'
+          : formatAppError(error, 'Workout konnte nicht pausiert werden');
+      this.errorMessage.set(message);
+    }
+  }
+
+  async discardWorkout(): Promise<boolean> {
+    const session = this.activeSession();
+    if (!session) {
+      return false;
+    }
+
+    this.errorMessage.set(null);
+
+    try {
+      await this.flushPendingSetSaves({ allowQueued: true, blockOnError: false });
+      await this.trainingData.abortSession(session.sessionClientRef);
+      this.clearSessionState();
+      await this.loadDashboardWeek(true);
+      this.successMessage.set('Workout verworfen.');
+      return true;
+    } catch (error: unknown) {
+      this.errorMessage.set(formatAppError(error, 'Workout konnte nicht verworfen werden'));
       return false;
     }
   }
@@ -975,6 +1066,12 @@ export class GymFacadeService {
     this.setSelectedDate(dayIso);
     if (weekStart !== this.dashboardWeek()?.weekStart) {
       void this.loadDashboardWeek(true);
+      return;
+    }
+
+    const dashboard = this.dashboardWeek();
+    if (dashboard) {
+      void this.syncSelectedWorkoutPreview(dashboard, false);
     }
   }
 
@@ -1049,6 +1146,7 @@ export class GymFacadeService {
       }
 
       this.successMessage.set('Gym-Post erstellt.');
+      this.workoutCompletionSummary.set(null);
       this.resetWorkoutShareState();
       return true;
     } catch (error: unknown) {
@@ -1137,8 +1235,7 @@ export class GymFacadeService {
     dashboard: TrainingDashboardWeek,
     forceSessionRefresh = false,
   ): Promise<void> {
-    const selectedDayId = this.selectedWorkoutDay()?.dayId || null;
-    const nextWorkout = selectTrackedWorkoutDay(dashboard, selectedDayId);
+    const nextWorkout = selectTrackedWorkoutDay(dashboard, this.selectedDate());
 
     this.selectedWorkoutDay.set(nextWorkout);
 
@@ -1150,7 +1247,7 @@ export class GymFacadeService {
     const shouldRefresh = shouldRefreshWorkoutPreview({
       currentOverviewDayId: this.selectedOverview()?.dayId || null,
       nextWorkoutDayId: nextWorkout.dayId,
-      currentSessionClientRef: nextWorkout.currentSessionClientRef,
+      currentSessionClientRef: null,
       forceSessionRefresh,
     });
     if (!shouldRefresh) {
@@ -1161,6 +1258,7 @@ export class GymFacadeService {
   }
 
   private applyActiveSession(session: TrainingExecutionSession): void {
+    this.workoutCompletionSummary.set(null);
     this.resetExecutionPrefillState();
     this.resetPreviousPerformanceCache();
     this.activeSession.set(session);
@@ -1367,7 +1465,7 @@ export class GymFacadeService {
 
     const task = (async () => {
       this.markSetSaveState(clientRef, 'saving');
-      await this.trainingData.upsertSetLog({
+      const result = await this.trainingData.upsertSetLog({
         sessionClientRef: session.sessionClientRef,
         exerciseSortOrder: context.exercise.sortOrder,
         setNumber: context.setRow.setNumber,
@@ -1379,7 +1477,7 @@ export class GymFacadeService {
         clientRef: context.setRow.clientRef,
       });
 
-      this.markSetSaveState(clientRef, 'saved');
+      this.markSetSaveState(clientRef, result);
       const existing = this.pendingSetStateResets.get(clientRef);
       if (existing) {
         clearTimeout(existing);
@@ -1404,8 +1502,17 @@ export class GymFacadeService {
     }
   }
 
-  private async flushPendingSetSaves(): Promise<void> {
+  private async flushPendingSetSaves(options?: {
+    allowQueued?: boolean;
+    blockOnError?: boolean;
+  }): Promise<void> {
+    const allowQueued = options?.allowQueued ?? true;
+    const blockOnError = options?.blockOnError ?? true;
     const saves: Promise<void>[] = [];
+
+    for (const clientRef of this.erroredSetClientRefs()) {
+      saves.push(this.persistSetLog(clientRef));
+    }
 
     for (const [clientRef, timer] of this.pendingSetSaves.entries()) {
       clearTimeout(timer);
@@ -1415,13 +1522,25 @@ export class GymFacadeService {
 
     saves.push(...this.inFlightSetSaves.values());
     if (saves.length === 0) {
+      if (blockOnError) {
+        this.assertNoBlockedSetSaves(allowQueued);
+      }
       return;
     }
 
-    await Promise.allSettled(saves);
+    const results = await Promise.allSettled(saves);
+    if (blockOnError) {
+      if (results.some((result) => result.status === 'rejected')) {
+        throw new Error('set_save_failed');
+      }
+      this.assertNoBlockedSetSaves(allowQueued);
+    }
   }
 
-  private markSetSaveState(clientRef: string, state: 'idle' | 'saving' | 'saved' | 'error'): void {
+  private markSetSaveState(
+    clientRef: string,
+    state: 'idle' | 'saving' | TrainingSetSaveResult | 'error',
+  ): void {
     this.setSaveState.update((current) => {
       if (state === 'idle') {
         const { [clientRef]: removed, ...rest } = current;
@@ -1445,6 +1564,65 @@ export class GymFacadeService {
     this.previousPerformance.set([]);
   }
 
+  private erroredSetClientRefs(): string[] {
+    return Object.entries(this.setSaveState())
+      .filter(([, state]) => state === 'error')
+      .map(([clientRef]) => clientRef);
+  }
+
+  private assertNoBlockedSetSaves(allowQueued: boolean): void {
+    const states = Object.values(this.setSaveState());
+    if (states.some((state) => state === 'error' || state === 'saving')) {
+      throw new Error('set_save_failed');
+    }
+    if (!allowQueued && states.some((state) => state === 'queued')) {
+      throw new Error('set_save_queued');
+    }
+  }
+
+  private assertNoSetSaveErrors(session: TrainingExecutionSession): void {
+    const states = session.exercises.flatMap(
+      (exercise) => exercise.sets.map((setRow) => this.setSaveState()[setRow.clientRef] || 'idle'),
+    );
+    if (states.some((state) => state === 'error' || state === 'saving')) {
+      throw new Error('set_save_failed');
+    }
+  }
+
+  private buildCompletionSummary(session: TrainingExecutionSession): WorkoutCompletionSummary {
+    const completedExercises = session.exercises.filter((exercise) =>
+      exercise.sets.every((setRow) => setRow.isCompleted),
+    ).length;
+    const unfinishedExercises = session.exercises.length - completedExercises;
+    const unfinishedSets = session.exercises.reduce(
+      (total, exercise) => total + exercise.sets.filter((setRow) => !setRow.isCompleted).length,
+      0,
+    );
+
+    return {
+      dayName: this.selectedOverview()?.dayName || this.selectedWorkoutDay()?.name || 'Workout',
+      sessionDate: session.sessionDate,
+      completedExercises,
+      totalExercises: session.exercises.length,
+      unfinishedExercises,
+      unfinishedSets,
+    };
+  }
+
+  clearWorkoutCompletionSummary(): void {
+    this.workoutCompletionSummary.set(null);
+  }
+
+  private clearSessionState(): void {
+    this.resetAsyncState();
+    this.inFlightSetSaves.clear();
+    this.setSaveState.set({});
+    this.activeSession.set(null);
+    this.activeExerciseIndex.set(0);
+    this.resetExecutionPrefillState();
+    this.resetPreviousPerformanceCache();
+  }
+
   private updateSet(clientRef: string, updater: (setRow: TrainingExecutionSet) => void): void {
     this.activeSession.update((current) => {
       if (!current) {
@@ -1461,6 +1639,7 @@ export class GymFacadeService {
 
   resetForUserChange(): void {
     this.resetAsyncState();
+    this.inFlightSetSaves.clear();
     this.activeTab.set('tracker');
     this.scrollY.set(0);
     this.selectedDate.set(toIsoDate(new Date()));
@@ -1470,6 +1649,7 @@ export class GymFacadeService {
     this.activeSession.set(null);
     this.activeExerciseIndex.set(0);
     this.previousPerformance.set([]);
+    this.workoutCompletionSummary.set(null);
     this.plans.set([]);
     this.exercises.set([]);
     this.widgets.set([]);
